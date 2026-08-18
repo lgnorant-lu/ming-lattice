@@ -602,7 +602,7 @@ vertical:
   - name: awesome-re-mcp
     repo: https://github.com/crowdere/Awesome-RE-MCP.git
     path: vertical/awesome-re-mcp
-    pin: 17c9654
+    pin: 9c8e0d5
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
