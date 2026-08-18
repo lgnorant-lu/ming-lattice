@@ -729,6 +729,16 @@ vertical:
     domain: bin
     note: Frida patch(魔改 server/gadget, 开源版)
     deploy: {}
+
+  - name: appium-mcp
+    repo: https://github.com/appium/appium-mcp.git
+    path: vertical/appium-mcp
+    pin: null
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: apk
+    note: Appium 官方 MCP(Android/iOS UI 自动化, 控件自动化 oracle 场景)
+    deploy: {}
 deployable:
   # 部署包装层: SKILL.md 改写件(改名/描述精要/路径修复), 内容 symlink 指向 vertical 源
   - name: hello-js-reverse
@@ -887,6 +897,7 @@ private:
     enabled: true
     deploy:
       claude: true
+
 
 
 
