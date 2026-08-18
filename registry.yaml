@@ -296,7 +296,7 @@ vertical:
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: def485e
+      lastRemoteHead: bf4b158
   - name: trailofbits-skills
     repo: https://github.com/trailofbits/skills.git
     path: vertical/trailofbits-skills
@@ -425,7 +425,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: Burp 官方 MCP(含预编译 mcp-proxy-all.jar)
+    note: Burp 官方 MCP —— 已确认不用(Burp 非当前工作流), 保留源码备查
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -462,6 +462,30 @@ vertical:
     enabled: true
     domain: mcp
     note: x64dbg 40+ SDK 工具 MCP(Windows 调试)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: e7474e5
+  - name: har-mcp
+    repo: https://github.com/tjamet/har-mcp.git
+    path: vertical/har-mcp
+    pin: 2bf2e0c
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: mcp
+    note: HAR 解析 MCP(轻量 Go, 敏感头脱敏) —— HAR 分析首选
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 2bf2e0c
+  - name: harvest-mcp
+    repo: https://github.com/oscaromsn/harvest-mcp.git
+    path: vertical/harvest-mcp
+    pin: 13cda0a
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: mcp
+    note: HAR/API 分析 + 自动生成 API wrapper(重, 114 文件)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -598,6 +622,7 @@ private:
     enabled: true
     deploy:
       claude: true
+
 
 
 
