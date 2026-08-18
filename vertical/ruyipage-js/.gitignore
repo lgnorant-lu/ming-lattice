@@ -1,0 +1,30 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Packaging outputs
+build/
+dist/
+*.egg-info/
+ruyiPage.egg-info/
+pyproject.toml
+MANIFEST.in
+
+# Local tool cache
+.ruff_cache/
+.pytest_cache/
+
+# Generated example outputs
+examples/output/
+
+# Virtual environment
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+
+#local test
+node_modules/
+test/

@@ -63,6 +63,7 @@ foreach ($sectionName in @('base', 'vertical')) {
         if (-not $item.enabled) { continue }
         if ($Name.Count -gt 0 -and $item.name -notmatch ($Name -join '|')) { continue }
         if ([string]::IsNullOrWhiteSpace($item.repo)) { continue }
+        if ($item.sourceGone) { $stats.skip++; continue }   # 上游已下架/私有化: 零网络跳过
         $path = Join-Path $RepoRoot $item.path
         $hasGit = Test-Path (Join-Path $path '.git')
         if (-not $hasGit) {

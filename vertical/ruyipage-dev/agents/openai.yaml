@@ -1,0 +1,4 @@
+interface:
+  display_name: "RuyiPage Dev"
+  short_description: "Build and debug RuyiPage Firefox automation."
+  default_prompt: "Use $ruyipage-dev to implement, debug, or refactor RuyiPage automation in Python."

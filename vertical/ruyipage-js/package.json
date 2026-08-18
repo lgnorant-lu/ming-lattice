@@ -1,0 +1,67 @@
+{
+  "name": "ruyipage-js",
+  "version": "1.1.7",
+  "description": "基于 WebDriver BiDi 协议的 Firefox 浏览器自动化框架 (Node.js 版)",
+  "main": "index.js",
+  "scripts": {
+    "test": "node quickstart_bing_search.js",
+    "test:unit": "node test/unit/run.js",
+    "test:browser": "node test/integration/visible_smoke.js",
+    "test:parity:i01": "node test/integration/parity_i01_nav_click.js",
+    "test:parity:i03": "node test/integration/parity_i03_listener.js",
+    "test:parity:i04": "node test/integration/parity_i04_interceptor.js",
+    "test:parity:i05": "node test/integration/parity_i05_prompt.js",
+    "test:parity:i06": "node test/integration/parity_i06_browser_tools.js",
+    "test:parity:i08": "node test/integration/parity_i08_cloudflare.js",
+    "test:parity:i09": "node test/integration/parity_i09_storage.js",
+    "test:parity:i10": "node test/integration/parity_i10_waiters.js",
+    "test:parity:i11": "node test/integration/parity_i11_page_wait.js",
+    "test:parity:i12": "node test/integration/parity_i12_wait_title_url.js",
+    "test:parity:i13": "node test/integration/parity_i13_wait_ele_deleted.js",
+    "test:parity:i14": "node test/integration/parity_i14_functions_cookies_keys.js",
+    "test:parity:i15": "node test/integration/parity_i15_prompt_handler_edges.js",
+    "test:parity:i16": "node test/integration/parity_i16_prompt_login.js",
+    "test:parity:i17": "node test/integration/parity_i17_clear_prompt_idempotent.js",
+    "test:parity:i18": "node test/integration/parity_i18_wait_prompt.js",
+    "test:parity:i19": "node test/integration/parity_i19_handle_prompt.js",
+    "test:parity:i20": "node test/integration/parity_i20_prompt_strategy_matrix.js",
+    "test:parity:i21": "node test/integration/parity_i21_beforeunload_default.js",
+    "test:parity:i22": "node test/integration/parity_i22_prompt_login_edgecases.js",
+    "test:parity:i23": "node test/integration/parity_i23_prompt_context_isolation.js",
+    "test:parity:i24": "node test/integration/parity_i24_prompt_handler_replace.js",
+    "test:parity:i25": "node test/integration/parity_i25_prompt_handler_cleared_silent.js",
+    "test:parity:i26": "node test/integration/parity_i26_prompt_accept_ignores_text.js",
+    "test:parity:i27": "node test/integration/parity_i27_prompt_strategy_matrix.js",
+    "test:parity:i28": "node test/integration/parity_i28_prompt_text_matrix.js",
+    "test:parity:i29": "node test/integration/parity_i29_alert_confirm_ignore_prompt_text.js",
+    "test:parity:i30": "node test/integration/parity_i30_beforeunload_ignore_prompt_text.js",
+    "test:parity:i31": "node test/integration/parity_i31_clear_beforeunload_silent.js",
+    "test:parity:i32": "node test/integration/parity_i32_beforeunload_context_isolation.js",
+    "test:parity:i33": "node test/integration/parity_i33_beforeunload_handler_replace.js",
+    "test:parity:i34": "node test/integration/parity_i34_clear_then_reset_prompt_handler.js",
+    "test:parity:i35": "node test/integration/parity_i35_prompt_login_after_clear_reset.js",
+    "test:parity:i36": "node test/integration/parity_i36_prompt_login_context_isolation.js"
+  },
+  "keywords": [
+    "firefox",
+    "webdriver-bidi",
+    "browser-automation",
+    "automation",
+    "bidi"
+  ],
+  "author": "GanFish404",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GanFish404/ruyipage-js"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "^0.8.10",
+    "cheerio": "1.0.0-rc.12",
+    "ws": "^8.0.0",
+    "xpath": "^0.0.34"
+  }
+}

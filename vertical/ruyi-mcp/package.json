@@ -1,0 +1,40 @@
+{
+  "name": "ruyi-mcp",
+  "version": "0.1.7",
+  "description": "Community MCP server for ruyiPage browser automation, network inspection, fingerprint analysis, and WebDriver BiDi trace workflows",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "main": "build/src/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "check:python": "python -m py_compile bridge/ruyi_bridge.py scripts/runtime_ruyipage_1254.py scripts/runtime_capture_lifecycle.py",
+    "check:contract": "python scripts/contract_bridge.py",
+    "check:runtime": "python scripts/runtime_ruyipage_1254.py",
+    "check:capture-runtime": "python scripts/runtime_capture_lifecycle.py",
+    "smoke": "node scripts/smoke-list-tools.mjs",
+    "check": "npm run typecheck && npm run check:python && npm run check:contract && npm run build && npm run smoke",
+    "start": "node build/src/index.js",
+    "dev": "tsc && node build/src/index.js"
+  },
+  "keywords": ["mcp", "mcp-server", "ruyipage", "browser-automation", "firefox", "webdriver-bidi", "network-inspection", "fingerprinting", "trace"],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.3",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Facetomyself/ruyi-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Facetomyself/ruyi-mcp/issues"
+  },
+  "homepage": "https://github.com/Facetomyself/ruyi-mcp#readme"
+}

@@ -1,31 +1,26 @@
-# skills-collection 单一事实源 (Single Source of Truth) v1.1
-# sync.ps1 / update.ps1 / lint.ps1 均从此文件读取。修改部署/启用状态请只改此文件。
+﻿# skills-collection 鍗曚竴浜嬪疄婧?(Single Source of Truth) v1.1
+# sync.ps1 / update.ps1 / lint.ps1 鍧囦粠姝ゆ枃浠惰鍙栥€備慨鏀归儴缃?鍚敤鐘舵€佽鍙敼姝ゆ枃浠躲€?#
+# v1.1 鍙樻洿锛堝叏灞€鐗堟湰绠＄悊璁捐锛?
+#   - updatePolicy: 鏇存柊妫€娴嬬瓥鐣ワ紙TTL 鍐呯紦瀛樺懡涓?鈫?闆剁綉缁滐級
+#   - 姣忎釜 vertical 鏉＄洰: pin(鏈湴鍐呭瀵瑰簲 upstream commit) + acquiredAt(閲囬泦鏃ユ湡)
+#     + checkCache(lastCheckedAt/lastRemoteHead, 鐢?update.ps1 缁存姢)
+#   - vendored 浠撳簱淇濈暀 .git锛坆lob:none 杩囨护鍏冩暟鎹級, update.ps1 鐢?git fetch 澧為噺妫€娴?
+#     鏃犻渶姣忔鍏ㄩ噺璁＄畻
 #
-# v1.1 变更（全局版本管理设计）:
-#   - updatePolicy: 更新检测策略（TTL 内缓存命中 → 零网络）
-#   - 每个 vertical 条目: pin(本地内容对应 upstream commit) + acquiredAt(采集日期)
-#     + checkCache(lastCheckedAt/lastRemoteHead, 由 update.ps1 维护)
-#   - vendored 仓库保留 .git（blob:none 过滤元数据）, update.ps1 用 git fetch 增量检测,
-#     无需每次全量计算
-#
-# 字段说明:
-#   targets     : 目标客户端部署根目录（key = 客户端名, value = 目录绝对路径）
-#   updatePolicy: { ttlDays: 缓存有效期(天), fetchMode: 元数据拉取模式 }
-#   base        : 基座（submodule 跟踪 upstream, 按模块部署）; pin = tag
-#   vertical    : 垂直参考（vendored, 保留 .git）; pin = upstream commit(短 hash)
-#     domain    : js=Web/JS逆向 bin=二进制 apk=Android ios=iOS kb=知识库 ctf=CTF mw=恶意软件 misc=其他
-#     deploy    : 部署映射 { 客户端: bool }（空 = 仅参考不部署）
-
+# 瀛楁璇存槑:
+#   targets     : 鐩爣瀹㈡埛绔儴缃叉牴鐩綍锛坘ey = 瀹㈡埛绔悕, value = 鐩綍缁濆璺緞锛?#   updatePolicy: { ttlDays: 缂撳瓨鏈夋晥鏈?澶?, fetchMode: 鍏冩暟鎹媺鍙栨ā寮?}
+#   base        : 鍩哄骇锛坰ubmodule 璺熻釜 upstream, 鎸夋ā鍧楅儴缃诧級; pin = tag
+#   vertical    : 鍨傜洿鍙傝€冿紙vendored, 淇濈暀 .git锛? pin = upstream commit(鐭?hash)
+#     domain    : js=Web/JS閫嗗悜 bin=浜岃繘鍒?apk=Android ios=iOS kb=鐭ヨ瘑搴?ctf=CTF mw=鎭舵剰杞欢 misc=鍏朵粬
+#     deploy    : 閮ㄧ讲鏄犲皠 { 瀹㈡埛绔? bool }锛堢┖ = 浠呭弬鑰冧笉閮ㄧ讲锛?
 schemaVersion: "1.1"
-description: "skills-collection 单一事实源：源 → 本地路径 → 版本记录 → 部署目标"
+description: "skills-collection 鍗曚竴浜嬪疄婧愶細婧?鈫?鏈湴璺緞 鈫?鐗堟湰璁板綍 鈫?閮ㄧ讲鐩爣"
 
 updatePolicy:
-  ttlDays: 7            # checkCache 有效天数; 有效期内 update.ps1 不发起网络请求
-  fetchMode: blob:none  # vendored .git 元数据模式（commit/tree, 不含 blob）
-
+  ttlDays: 7            # checkCache 鏈夋晥澶╂暟; 鏈夋晥鏈熷唴 update.ps1 涓嶅彂璧风綉缁滆姹?  fetchMode: blob:none  # vendored .git 鍏冩暟鎹ā寮忥紙commit/tree, 涓嶅惈 blob锛?
 targets:
   claude: C:\Users\Lenovo\.cc-switch\skills
-  # codex: C:\Users\Lenovo\.codex\skills    # 需要时启用并安装对应客户端
+  # codex: C:\Users\Lenovo\.codex\skills    # 闇€瑕佹椂鍚敤骞跺畨瑁呭搴斿鎴风
 
 base:
   - name: reverse-skill
@@ -60,7 +55,7 @@ base:
       lastRemoteHead: ea582f3
 
 vertical:
-  # ── JS / Web 逆向 ──────────────────────────────────────────────
+  # 鈹€鈹€ JS / Web 閫嗗悜 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   - name: js-reverse-715494637
     repo: https://github.com/715494637/reverse-skill.git
     path: vertical/js-reverse-715494637
@@ -156,9 +151,9 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
-    note: 站点实战样本库(60+ 案例, 已过滤 mp4/xlsx/exe 噪声 210M→36M)
+    note: 绔欑偣瀹炴垬鏍锋湰搴?60+ 妗堜緥, 宸茶繃婊?mp4/xlsx/exe 鍣０ 210M鈫?6M)
     deploy: {}
-  # ── 二进制 / 恶意软件 ──────────────────────────────────────────
+  # 鈹€鈹€ 浜岃繘鍒?/ 鎭舵剰杞欢 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 4e34565
@@ -214,7 +209,7 @@ vertical:
     enabled: true
     domain: mw
     deploy: {}
-  # ── 移动端 ────────────────────────────────────────────────────
+  # 鈹€鈹€ 绉诲姩绔?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 5e67564
@@ -248,7 +243,7 @@ vertical:
     enabled: true
     domain: apk
     deploy: {}
-  # ── 知识库 / CTF / 杂项 ───────────────────────────────────────
+  # 鈹€鈹€ 鐭ヨ瘑搴?/ CTF / 鏉傞」 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 4eb5d2f
@@ -292,7 +287,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
-    note: sparse 采集 .claude/skills (10 个 SKILL.md); pin = upstream HEAD
+    note: sparse 閲囬泦 .claude/skills (10 涓?SKILL.md); pin = upstream HEAD
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -304,7 +299,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
-    note: ToB 官方安全审计 skill 市场(质量标杆, 基座作者对照清单)
+    note: ToB 瀹樻柟瀹夊叏瀹¤ skill 甯傚満(璐ㄩ噺鏍囨潌, 鍩哄骇浣滆€呭鐓ф竻鍗?
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -316,7 +311,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
-    note: 6 个 pentest 生命周期 skill + 纯 Python 脚本
+    note: 6 涓?pentest 鐢熷懡鍛ㄦ湡 skill + 绾?Python 鑴氭湰
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -328,7 +323,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
-    note: IDA 官方 Claude 插件(含 domain 自动化)
+    note: IDA 瀹樻柟 Claude 鎻掍欢(鍚?domain 鑷姩鍖?
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -336,7 +331,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
-    note: RE 工具 MCP 生态索引(IDA/Ghidra/BinNinja/radare2/debugger 全清单+缺失标注)
+    note: RE 宸ュ叿 MCP 鐢熸€佺储寮?IDA/Ghidra/BinNinja/radare2/debugger 鍏ㄦ竻鍗?缂哄け鏍囨敞)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -348,9 +343,9 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
-    note: 纯 Java MCP 服务器(jadx 分析 APK)
+    note: 绾?Java MCP 鏈嶅姟鍣?jadx 鍒嗘瀽 APK)
     deploy: {}
-  # ── MCP 服务器源码（接入评估用, domain=mcp） ────────────────────
+  # 鈹€鈹€ MCP 鏈嶅姟鍣ㄦ簮鐮侊紙鎺ュ叆璇勪及鐢? domain=mcp锛?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 19bd9c1
@@ -361,7 +356,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: Frida 进程管理/脚本注入/实时插桩 MCP(移动动态分析候选)
+    note: Frida 杩涚▼绠＄悊/鑴氭湰娉ㄥ叆/瀹炴椂鎻掓々 MCP(绉诲姩鍔ㄦ€佸垎鏋愬€欓€?
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -373,8 +368,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: GhidraMCP 5.4k★ 全功能
-    deploy: {}
+    note: GhidraMCP 5.4k鈽?鍏ㄥ姛鑳?    deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 27f316f
@@ -385,7 +379,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: radare2 官方 26+ 工具 MCP
+    note: radare2 瀹樻柟 26+ 宸ュ叿 MCP
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -397,7 +391,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: mobilehackinglab jadx MCP 插件
+    note: mobilehackinglab jadx MCP 鎻掍欢
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -409,7 +403,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: APK 操作 MCP
+    note: APK 鎿嶄綔 MCP
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -421,7 +415,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: Burp 官方 MCP —— 已确认不用(Burp 非当前工作流), 保留源码备查
+    note: Burp 瀹樻柟 MCP 鈥斺€?宸茬‘璁や笉鐢?Burp 闈炲綋鍓嶅伐浣滄祦), 淇濈暀婧愮爜澶囨煡
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -433,7 +427,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: Wireshark MCP(威胁检测)
+    note: Wireshark MCP(濞佽儊妫€娴?
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -445,7 +439,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: SQLMap/FFUF/NMAP/Masscan 集合(199 文件)
+    note: SQLMap/FFUF/NMAP/Masscan 闆嗗悎(199 鏂囦欢)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -457,7 +451,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: x64dbg 40+ SDK 工具 MCP(Windows 调试)
+    note: x64dbg 40+ SDK 宸ュ叿 MCP(Windows 璋冭瘯)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -469,8 +463,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: HAR 解析 MCP(轻量 Go, 敏感头脱敏) —— HAR 分析首选
-    deploy: {}
+    note: HAR 瑙ｆ瀽 MCP(杞婚噺 Go, 鏁忔劅澶磋劚鏁? 鈥斺€?HAR 鍒嗘瀽棣栭€?    deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 2bf2e0c
@@ -481,7 +474,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: HAR/API 分析 + 自动生成 API wrapper(重, 114 文件)
+    note: HAR/API 鍒嗘瀽 + 鑷姩鐢熸垚 API wrapper(閲? 114 鏂囦欢)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -493,7 +486,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
-    note: 世界最快 APK/Java 反编译器(C 实现, jadx 上位替代, 733★, 自带 MCP 模式)
+    note: 涓栫晫鏈€蹇?APK/Java 鍙嶇紪璇戝櫒(C 瀹炵幇, jadx 涓婁綅鏇夸唬, 733鈽? 鑷甫 MCP 妯″紡)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -501,7 +494,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
-    note: radare2 的 Garlic DEX/Dalvik 插件
+    note: radare2 鐨?Garlic DEX/Dalvik 鎻掍欢
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -513,7 +506,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
-    note: Python 原生 V8 环境运行时(470★, 最新 v0.1.4 2026-07-15, BOM/DOM 模拟+API监控+CDP)
+    note: Python 鍘熺敓 V8 鐜杩愯鏃?470鈽? 鏈€鏂?v0.1.4 2026-07-15, BOM/DOM 妯℃嫙+API鐩戞帶+CDP)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -525,7 +518,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
-    note: iv8 补环境全链 skill(v9.6) —— 经 deployable 部署
+    note: iv8 琛ョ幆澧冨叏閾?skill(v9.6) 鈥斺€?缁?deployable 閮ㄧ讲
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -533,7 +526,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
-    note: Babel AST 自动化反混淆(在线 playground+CLI+API, 反爬虫 AST 实战)
+    note: Babel AST 鑷姩鍖栧弽娣锋穯(鍦ㄧ嚎 playground+CLI+API, 鍙嶇埇铏?AST 瀹炴垬)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -545,7 +538,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
-    note: JS 混淆 AST 分析器(javascript-obfuscator 专攻, 478 文件)
+    note: JS 娣锋穯 AST 鍒嗘瀽鍣?javascript-obfuscator 涓撴敾, 478 鏂囦欢)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -557,7 +550,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
-    note: V8 字节码静态反混淆(bytenode 保护对抗, hasherezade)
+    note: V8 瀛楄妭鐮侀潤鎬佸弽娣锋穯(bytenode 淇濇姢瀵规姉, hasherezade)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -565,14 +558,14 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
-    note: V8 序列化字节码反编译(JSC → 可读代码)
+    note: V8 搴忓垪鍖栧瓧鑺傜爜鍙嶇紪璇?JSC 鈫?鍙浠ｇ爜)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 14946ae
 
 
-  # ── 微信/支付宝小程序 ─────────────────────────────────────────
+  # 鈹€鈹€ 寰俊/鏀粯瀹濆皬绋嬪簭 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   - name: wx-mp-mcp
     repo: https://github.com/WhiteNightShadow/wx-mp-mcp.git
     path: vertical/wx-mp-mcp
@@ -580,7 +573,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
-    note: 微信小程序逆向 MCP(hello_js 作者, 解包 .wxapkg)
+    note: 寰俊灏忕▼搴忛€嗗悜 MCP(hello_js 浣滆€? 瑙ｅ寘 .wxapkg)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -592,10 +585,10 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
-    note: 微信小程序签名/加密分析 SKILL(AI 反编译+定位签名+mitmproxy, 2026-07-31)
+    note: 寰俊灏忕▼搴忕鍚?鍔犲瘑鍒嗘瀽 SKILL(AI 鍙嶇紪璇?瀹氫綅绛惧悕+mitmproxy, 2026-07-31)
     deploy: {}
 
-  # ── MCP 生态索引 / V8 字节码 / 反混淆 / Garlic 插件（补插） ─────
+  # 鈹€鈹€ MCP 鐢熸€佺储寮?/ V8 瀛楄妭鐮?/ 鍙嶆贩娣?/ Garlic 鎻掍欢锛堣ˉ鎻掞級 鈹€鈹€鈹€鈹€鈹€
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: e647393
@@ -606,7 +599,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
-    note: RE 工具 MCP 生态索引(已过时, drop 候选, 保留对照)
+    note: RE 宸ュ叿 MCP 鐢熸€佺储寮?宸茶繃鏃? drop 鍊欓€? 淇濈暀瀵圭収)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -618,7 +611,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
-    note: radare2 的 Garlic DEX/Dalvik 插件
+    note: radare2 鐨?Garlic DEX/Dalvik 鎻掍欢
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -630,7 +623,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
-    note: Babel AST 自动化反混淆(web 形态无 CLI, 参考保留)
+    note: Babel AST 鑷姩鍖栧弽娣锋穯(web 褰㈡€佹棤 CLI, 鍙傝€冧繚鐣?
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -642,13 +635,13 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
-    note: V8 序列化字节码反编译(JSC→可读, 依赖 patched V8 二进制)
+    note: V8 搴忓垪鍖栧瓧鑺傜爜鍙嶇紪璇?JSC鈫掑彲璇? 渚濊禆 patched V8 浜岃繘鍒?
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 4a27e9b
 
-  # ── Flutter / 反检测 / Frida 深度（2026-08-18 第二轮补充） ─────
+  # 鈹€鈹€ Flutter / 鍙嶆娴?/ Frida 娣卞害锛?026-08-18 绗簩杞ˉ鍏咃級 鈹€鈹€鈹€鈹€鈹€
   - name: blutter
     repo: https://github.com/worawit/blutter.git
     path: vertical/blutter
@@ -656,7 +649,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
-    note: Flutter AOT 逆向核心工具(编译 Dart runtime, Android arm64 libapp.so)
+    note: Flutter AOT 閫嗗悜鏍稿績宸ュ叿(缂栬瘧 Dart runtime, Android arm64 libapp.so)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -668,7 +661,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
-    note: 反检测浏览器 CLI+Skills(C++级指纹伪造 canvas/WebGL/audio)
+    note: 鍙嶆娴嬫祻瑙堝櫒 CLI+Skills(C++绾ф寚绾逛吉閫?canvas/WebGL/audio)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -680,7 +673,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
-    note: Frida 全生命周期 skills(planning→writing→packaging→debugging, model-agnostic)
+    note: Frida 鍏ㄧ敓鍛藉懆鏈?skills(planning鈫抴riting鈫抪ackaging鈫抎ebugging, model-agnostic)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -692,7 +685,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
-    note: AI 驱动 Frida Hook 生成(Android 动态分析, Frida CLI 而非 python API)
+    note: AI 椹卞姩 Frida Hook 鐢熸垚(Android 鍔ㄦ€佸垎鏋? Frida CLI 鑰岄潪 python API)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -704,13 +697,13 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
-    note: frida-mcp 配套操作 skill(Frida 17 安全使用, 脚本生命周期卫生)
+    note: frida-mcp 閰嶅鎿嶄綔 skill(Frida 17 瀹夊叏浣跨敤, 鑴氭湰鐢熷懡鍛ㄦ湡鍗敓)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: d3f7350
 
-  # ── Frida Gadget 工具链（2026-08-18） ─────────────────────────
+  # 鈹€鈹€ Frida Gadget 宸ュ叿閾撅紙2026-08-18锛?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   - name: frida-gadget-helper
     repo: https://github.com/LunFengChen/frida-gadget-helper.git
     path: vertical/frida-gadget-helper
@@ -718,7 +711,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
-    note: 傻瓜式 gadget 注入(含预编译 libgadget-rusda.so 25M + xfinjectd + PDF 教程)
+    note: 鍌荤摐寮?gadget 娉ㄥ叆(鍚缂栬瘧 libgadget-rusda.so 25M + xfinjectd + PDF 鏁欑▼)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -730,7 +723,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
-    note: Frida patch(魔改 server/gadget, 开源版)
+    note: Frida patch(榄旀敼 server/gadget, 寮€婧愮増)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -743,46 +736,128 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
-    note: Appium 官方 MCP(Android/iOS UI 自动化, 控件自动化 oracle 场景)
+    note: Appium 瀹樻柟 MCP(Android/iOS UI 鑷姩鍖? 鎺т欢鑷姩鍖?oracle 鍦烘櫙)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 25c9ae9
+
+  # 鈹€鈹€ Ruyi(濡傛剰)鐢熸€?2026-08-18 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+  - name: ruyipage
+    repo: https://github.com/LoseNine/ruyipage.git
+    path: vertical/ruyipage
+    pin: 9444997
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: ruyi/web
+    note: ruyiPage 鑷姩鍖栨鏋?鈽?744 娲昏穬), BiDi 杩囨娴?Firefox 鍐呮牳
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 9444997
+  - name: ruyipage-skill
+    repo: https://github.com/LoseNine/ruyipage-skill.git
+    path: vertical/ruyipage-skill
+    pin: 5f00b6d
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: ruyi/web
+    note: 瀹樻柟 skill v1.2(BiDi 浼樺厛/浜烘満鍖?鎸囩汗娴忚鍣?, deployable 宸插寘瑁?    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 5f00b6d
+  - name: ruyi-trace-analyzer
+    repo: https://github.com/LoseNine/Firefox-FingerPrint-Analyzer.git
+    path: vertical/ruyi-trace-analyzer
+    pin: c32bf8a
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: ruyi/web
+    note: RuyiTrace 鏂囨。浠撳簱(鍐呮牳闂簮鍙戣), NDJSON 鏍煎紡+AI 鎻愮ず璇?12 闃叉姢妗堜緥
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: c32bf8a
+  - name: firefox-fingerprintBrowser
+    repo: https://github.com/LoseNine/firefox-fingerprintBrowser.git
+    path: vertical/firefox-fingerprintBrowser
+    pin: 401a2d2
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: ruyi/web
+    note: ruyiPage release 閰嶅鎸囩汗 Firefox 璇存槑椤?    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 401a2d2
+  - name: ruyipage-js
+    repo: https://github.com/LoseNine/ruyipage-js.git
+    path: vertical/ruyipage-js
+    pin: gone-2026-08-18
+    acquiredAt: 2026-08-18
+    enabled: true
+    sourceGone: true
+    domain: ruyi/web
+    note: ruyiPage JS 搴?77 files), 涓婃父浠撳簱宸蹭笅鏋?绉佹湁鍖? 鍐呭宸查噰闆?    deploy: {}
+  - name: ruyipage-go
+    repo: https://github.com/LoseNine/ruyipage-go.git
+    path: vertical/ruyipage-go
+    pin: gone-2026-08-18
+    acquiredAt: 2026-08-18
+    enabled: true
+    sourceGone: true
+    domain: ruyi/web
+    note: ruyiPage Go 搴?189 files), 涓婃父宸蹭笅鏋? 鍐呭宸查噰闆?    deploy: {}
+  - name: ruyipage-dev
+    repo: https://github.com/LoseNine/ruyipage-dev.git
+    path: vertical/ruyipage-dev
+    pin: gone-2026-08-18
+    acquiredAt: 2026-08-18
+    enabled: true
+    sourceGone: true
+    domain: ruyi/web
+    note: ruyiPage 寮€鍙戞枃妗ｄ粨搴?鍚?SKILL.md/agents/references, 15MB), 涓婃父宸蹭笅鏋?    deploy: {}
+  - name: ruyi-mcp
+    repo: https://github.com/LoseNine/ruyi-mcp.git
+    path: vertical/ruyi-mcp
+    pin: gone-2026-08-18
+    acquiredAt: 2026-08-18
+    enabled: true
+    sourceGone: true
+    domain: ruyi/web
+    note: ruyiPage MCP 妗ユ帴(98 files), 涓婃父宸蹭笅鏋? 鍐呭宸查噰闆?    deploy: {}
 deployable:
-  # 部署包装层: SKILL.md 改写件(改名/描述精要/路径修复), 内容 symlink 指向 vertical 源
-  - name: hello-js-reverse
+  # 閮ㄧ讲鍖呰灞? SKILL.md 鏀瑰啓浠?鏀瑰悕/鎻忚堪绮捐/璺緞淇), 鍐呭 symlink 鎸囧悜 vertical 婧?  - name: hello-js-reverse
     path: deployable/hello-js-reverse
     enabled: true
     domain: js
-    note: JSVMP 双路径实战(v3.4.1), 需 camoufox-reverse MCP
+    note: JSVMP 鍙岃矾寰勫疄鎴?v3.4.1), 闇€ camoufox-reverse MCP
     deploy:
       claude: true
   - name: rust-reverse
     path: deployable/rust-reverse
     enabled: true
     domain: bin
-    note: Rust 二进制专项, 补基座短板
-    deploy:
+    note: Rust 浜岃繘鍒朵笓椤? 琛ュ熀搴х煭鏉?    deploy:
       claude: true
   - name: android-reverse
     path: deployable/android-reverse
     enabled: true
     domain: apk
-    note: 自适应 Frida 绕过/Fragment 注入/Firebase 矩阵
+    note: 鑷€傚簲 Frida 缁曡繃/Fragment 娉ㄥ叆/Firebase 鐭╅樀
     deploy:
       claude: true
   - name: ios-reverse
     path: deployable/ios-reverse
     enabled: true
     domain: ios
-    note: iOS 静态逆向(路径变量已修复)
+    note: iOS 闈欐€侀€嗗悜(璺緞鍙橀噺宸蹭慨澶?
     deploy:
       claude: true
   - name: rs-js-reverse
     path: deployable/rs-js-reverse
     enabled: true
     domain: js
-    note: 瑞数/RS 专项(基座覆盖为零), 4 份专项 references
+    note: 鐟炴暟/RS 涓撻」(鍩哄骇瑕嗙洊涓洪浂), 4 浠戒笓椤?references
     deploy:
       claude: true
   - name: ctf-pwn
@@ -825,14 +900,14 @@ deployable:
     path: deployable/xbs-ast-deobfuscation
     enabled: true
     domain: js
-    note: AST 流水线+站点混淆专档(硬编码路径已修)
+    note: AST 娴佹按绾?绔欑偣娣锋穯涓撴。(纭紪鐮佽矾寰勫凡淇?
     deploy:
       claude: true
   - name: xbs-verify-patcher
     path: deployable/xbs-verify-patcher
     enabled: true
     domain: js
-    note: 验证码求解编排(基座空白)
+    note: 楠岃瘉鐮佹眰瑙ｇ紪鎺?鍩哄骇绌虹櫧)
     deploy:
       claude: true
   - name: areclaw-analyze-apk
@@ -869,21 +944,21 @@ deployable:
     path: deployable/malware-ioc-extraction
     enabled: true
     domain: mw
-    note: IOC YAML schema+证据规则
+    note: IOC YAML schema+璇佹嵁瑙勫垯
     deploy:
       claude: true
   - name: garlic-reverse
     path: deployable/garlic-reverse
     enabled: true
     domain: apk
-    note: Garlic 反编译专项(CLI 优先, jadx 上位替代, MCP 可选)
+    note: Garlic 鍙嶇紪璇戜笓椤?CLI 浼樺厛, jadx 涓婁綅鏇夸唬, MCP 鍙€?
     deploy:
       claude: true
   - name: web-reverse-iv8
     path: deployable/web-reverse-iv8
     enabled: true
     domain: js
-    note: iv8 补环境全链 skill(v9.6, HAR追踪→定位→反混淆→iv8环境→本地验证, 阶段门硬阻断)
+    note: iv8 琛ョ幆澧冨叏閾?skill(v9.6, HAR杩借釜鈫掑畾浣嶁啋鍙嶆贩娣嗏啋iv8鐜鈫掓湰鍦伴獙璇? 闃舵闂ㄧ‖闃绘柇)
     deploy:
       claude: true
 
@@ -891,10 +966,17 @@ deployable:
     path: deployable/jsc-deobfuscator
     enabled: true
     domain: js
-    note: V8 字节码静态反混淆(Python 脚本, bytenode 对抗)
+    note: V8 瀛楄妭鐮侀潤鎬佸弽娣锋穯(Python 鑴氭湰, bytenode 瀵规姉)
     deploy:
       claude: true
 
+  - name: ruyipage-skill
+    path: deployable/ruyipage-skill
+    enabled: true
+    domain: ruyi/web
+    note: ruyiPage 瀹樻柟 skill v1.2(BiDi 鍘熺敓/浜烘満鍖?鎸囩汗娴忚鍣?鍙嶇埇)
+    deploy:
+      claude: true
 private:
   - name: blog-content
     path: private/blog-content
@@ -904,8 +986,9 @@ private:
   - name: xfqtrace-kit
     path: private/xfqtrace-kit
     enabled: true
-    note: 我们维护的 xfqtrace v2.2(无痕 hook backend + hide.kpm + 30+ 站点 recipe, 双密码 ***REMOVED***/***REMOVED***)
+    note: 鎴戜滑缁存姢鐨?xfqtrace v2.2(鏃犵棔 hook backend + hide.kpm + 30+ 绔欑偣 recipe, 鍙屽瘑鐮?***REMOVED***/***REMOVED***)
     deploy: {}
+
 
 
 
