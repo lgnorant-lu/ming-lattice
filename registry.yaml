@@ -1,4 +1,4 @@
-﻿# skills-collection 鍗曚竴浜嬪疄婧?(Single Source of Truth) v1.1
+# skills-collection 鍗曚竴浜嬪疄婧?(Single Source of Truth) v1.1
 # sync.ps1 / update.ps1 / lint.ps1 鍧囦粠姝ゆ枃浠惰鍙栥€備慨鏀归儴缃?鍚敤鐘舵€佽鍙敼姝ゆ枃浠躲€?#
 # v1.1 鍙樻洿锛堝叏灞€鐗堟湰绠＄悊璁捐锛?
 #   - updatePolicy: 鏇存柊妫€娴嬬瓥鐣ワ紙TTL 鍐呯紦瀛樺懡涓?鈫?闆剁綉缁滐級
@@ -291,7 +291,7 @@ vertical:
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: b699ad3
+      lastRemoteHead: ae39214
   - name: trailofbits-skills
     repo: https://github.com/trailofbits/skills.git
     path: vertical/trailofbits-skills
@@ -988,6 +988,10 @@ private:
     enabled: true
     note: 鎴戜滑缁存姢鐨?xfqtrace v2.2(鏃犵棔 hook backend + hide.kpm + 30+ 绔欑偣 recipe, 鍙屽瘑鐮?***REMOVED***/***REMOVED***)
     deploy: {}
+
+
+
+
 
 
 

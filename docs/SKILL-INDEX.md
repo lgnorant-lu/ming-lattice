@@ -90,6 +90,18 @@
 
 **spiderking 结论**：GitHub 搜索无有效对应（同名项目 ★≤5 且无关）——**噱头居多, 不采集**。
 
+### Ruyi(如意)生态（2026-08-18 采集, LoseNine）
+
+| 条目 | 定位 | 状态 |
+|---|---|---|
+| ruyipage | BiDi 过检测 Firefox 自动化框架（★1744 活跃, `pip install ruyipage`, 配套指纹浏览器 release） | 源码入库（pin 9444997） |
+| ruyipage-skill | **官方 skill v1.2**（BiDi 优先/人机化动作/指纹浏览器/20 篇 docs 按需阅读） | ✅ **已部署**（deployable） |
+| ruyi-trace-analyzer | RuyiTrace 文档仓库：**ruyiPage 抓轮廓 → Trace 采 NDJSON → AI 补环境** 工作流 + 12 真实防护案例（akamai-酷航/kasada-reese84/abgous/h5st-滑块/某数6…） | reference（**内核为闭源发行版 427MB, 只采文档**） |
+| firefox-fingerprintBrowser | ruyiPage release 配套指纹 Firefox 说明页 | 源码入库 |
+| ruyipage-js / ruyipage-go / ruyipage-dev / ruyi-mcp | JS/Go 库 + 开发文档（含 SKILL.md/agents）+ MCP 桥接 | ⚠️ 上游 2026-08 下架/私有化（HTTP 404），**内容已持有, sourceGone 标记零网络跳过** |
+
+> 生态现状：ruyipage 与 ruyipage-skill 仍活跃（HTTP 200）；LoseNine 名下新仓库值得下一轮调研：AI_JS_DEBUGGER、Restore-JS、Crack-JS-Spider、FingerPrintJSBrowser、Chromium_FingerPrint_Tutorial、devtools-detecter、pjstealth。
+
 ### 反混淆工具评估结论（2026-08-18）
 
 | 工具 | CLI 可用性 | 结论 |
