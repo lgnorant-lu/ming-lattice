@@ -116,6 +116,20 @@
 
 > ⚠️ **404 判定教训**：codeload 瞬时 404 不一定是下架——Restore-JS/Crack-JS-Spider 曾判死又复活。**判定下架需三方一致**（codeload main+master + github 页面），瞬时故障用重试窗口验证。
 
+### LoseNine 第三轮（2026-08-18, 批量 fork/工具）
+
+| 条目 | 定位 | 状态 |
+|---|---|---|
+| ast-hook-for-js-RE | JS 内存漫游解决方案（WTFPL, 注入 hook 定位内存加密） | ✅ reference（pin 1a5f1a4） |
+| unveilr | 小程序逆向反编译（fork 自 r3x5ur/unveilr, 与 wx-mp-mcp/wxminidec 互补） | ✅ reference（ce76e69） |
+| v_jstools | chrome 插件快速调试前端 JS（inject hook） | ✅ reference（86eb180） |
+| Frida-Apk-Unpack | Frida dexDump.js APK 脱壳（基座 apk-reverse 补壳场景） | ✅ reference（b25ac27） |
+| CthulhuJs | 纯 JS 修改网页环境指纹（webpack 库, pjstealth 的 JS 版） | ✅ reference（28999a4） |
+| brotector | webdriver/自动化检测库（对抗面: 了解检测手段） | ✅ reference（98b3309） |
+| Cloudflare-Bybass-CDP-Chromium | Cloudflare Turnstile & Fingerprint solver（CDP 姿势） | ✅ reference（a1ae399） |
+| Crack-Website-code | 微博验证码 OCR（2020, 27MB 数据, 领域已变） | ❌ 不采（过时） |
+| session-android | Session IM 应用 fork（无关） | ❌ 不采 |
+
 ### 反混淆工具评估结论（2026-08-18）
 
 | 工具 | CLI 可用性 | 结论 |
