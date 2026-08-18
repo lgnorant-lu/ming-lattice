@@ -68,6 +68,36 @@
 - **jadx → Garlic**：CLI 优先（`garlic apk -o`），可选 `garlic -m` MCP（DuckDB SQL 分析）——新工具天然双形态，**不需要专门 MCP skill**
 - **IDA → Rizin**：rizin 命令与 radare2 兼容，**基座 radare2 skill 直接覆盖**，不需要专门 skill；CutterMCP 是 GUI 形态（按需）
 - CLI 仍是 AI 最佳搭档：skill 价值在方法论不在工具前缀；新工具（C 实现/单二进制）对 AI 调用更友好
+
+### iv8 生态（V8 环境 + 字节码还原, 2026-08-18 采集）
+
+| 条目 | 定位 | 状态 |
+|---|---|---|
+| iv8 (HanZzzzz000) | Python 原生 V8 运行时（470★, **最新 v0.1.4** 2026-07-15, BOM/DOM 模拟+API 监控+CDP, `pip install iv8`） | 源码入库 |
+| web-reverse-iv8 (Nan857) | **别人整理的成熟 skill**（v9.6: HAR→`_initiator.stack` 定位→反混淆→iv8 补环境→本地验证, 阶段门硬阻断） | ✅ **已部署**（deployable） |
+| jsc-deobfuscator (hasherezade) | V8 字节码静态反混淆（Python 脚本直接可跑, bytenode 对抗） | ✅ **已部署**（deployable） |
+| view8 (suleram) | V8 序列化字节码反编译（JSC→可读代码, 需 patched V8 二进制） | reference |
+| js-deobfuscator (kuizuo) | Babel AST 自动化反混淆（web 形态**无 CLI**, playground 在线） | reference（算法借鉴） |
+| decode-js (echo094) | javascript-obfuscator 专攻（库形态无 CLI） | reference |
+| ming_iv8_rs (用户自有) | V8+Rust 高保真 runtime（★20） | 用户项目, 互补 |
+
+### 微信/支付宝小程序（2026-08-18 采集）
+
+| 条目 | 定位 | 状态 |
+|---|---|---|
+| wx-mp-mcp (WhiteNightShadow) | 微信小程序逆向 MCP（hello_js 作者, 解包 .wxapkg） | 源码入库 |
+| wxminidec (killmonday) | 微信小程序**签名/加密分析 SKILL**（AI 反编译+定位签名+mitmproxy 脚本, 2026-07-31） | 源码入库, 待筛选 |
+
+**spiderking 结论**：GitHub 搜索无有效对应（同名项目 ★≤5 且无关）——**噱头居多, 不采集**。
+
+### 反混淆工具评估结论（2026-08-18）
+
+| 工具 | CLI 可用性 | 结论 |
+|---|---|---|
+| jsc_deobfuscator | ✅ Python 脚本直跑 | **deploy**（deployable 包装已建） |
+| view8 | ⚠️ 依赖 patched V8 二进制 | reference |
+| js-deobfuscator | ❌ web 形态无 CLI | reference（AST 算法借鉴源） |
+| decode-js | ❌ 库形态无 CLI | reference |
 | ios-reverse-claude-skill | iOS IPA/Mach-O 静态逆向（11 阶段 + Ghidra 脚本） | **deploy**（需修路径变量） | macOS 工具链或 Linux fallback |
 | areclaw | Windows 优先 Android 分析工作区（15 Frida 脚本 + MASTG 映射） | deploy-子集（脚本+映射） | Windows + Git Bash |
 | malware-re-skills | 防御性 RE：IOC 提取 + 脱壳评估（纯 prompt） | reference（IOC schema 吸收） | 无 |

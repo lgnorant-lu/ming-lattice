@@ -332,11 +332,7 @@ vertical:
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: 0abba7f
-  - name: awesome-re-mcp
-    repo: https://github.com/crowdere/Awesome-RE-MCP.git
-    path: vertical/awesome-re-mcp
-    pin: e400b88
+      lastRemoteHead: e400b88
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
@@ -502,10 +498,6 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 1ae29fa
-  - name: r2garlic
-    repo: https://github.com/radareorg/r2garlic.git
-    path: vertical/r2garlic
-    pin: 0aaa896
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -513,7 +505,7 @@ vertical:
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: a429871
+      lastRemoteHead: 1ae29fa
   - name: iv8
     repo: https://github.com/HanZzzzz000/iv8.git
     path: vertical/iv8
@@ -538,10 +530,6 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 9777340
-  - name: js-deobfuscator
-    repo: https://github.com/kuizuo/js-deobfuscator.git
-    path: vertical/js-deobfuscator
-    pin: 4a27e9b
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -549,7 +537,7 @@ vertical:
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: 21598ad
+      lastRemoteHead: 9777340
   - name: decode-js
     repo: https://github.com/echo094/decode-js.git
     path: vertical/decode-js
@@ -574,10 +562,6 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 14946ae
-  - name: view8
-    repo: https://github.com/suleram/View8.git
-    path: vertical/view8
-    pin: 21598ad
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -585,8 +569,84 @@ vertical:
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: 4a27e9b
+      lastRemoteHead: 14946ae
 
+
+  # ── 微信/支付宝小程序 ─────────────────────────────────────────
+  - name: wx-mp-mcp
+    repo: https://github.com/WhiteNightShadow/wx-mp-mcp.git
+    path: vertical/wx-mp-mcp
+    pin: e0d4bb8
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: 微信小程序逆向 MCP(hello_js 作者, 解包 .wxapkg)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: e0d4bb8
+  - name: wxminidec
+    repo: https://github.com/killmonday/wxminidec.git
+    path: vertical/wxminidec
+    pin: e647393
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: 微信小程序签名/加密分析 SKILL(AI 反编译+定位签名+mitmproxy, 2026-07-31)
+    deploy: {}
+
+  # ── MCP 生态索引 / V8 字节码 / 反混淆 / Garlic 插件（补插） ─────
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: e647393
+  - name: awesome-re-mcp
+    repo: https://github.com/crowdere/Awesome-RE-MCP.git
+    path: vertical/awesome-re-mcp
+    pin: 17c9654
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: misc
+    note: RE 工具 MCP 生态索引(已过时, drop 候选, 保留对照)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: e400b88
+  - name: r2garlic
+    repo: https://github.com/radareorg/r2garlic.git
+    path: vertical/r2garlic
+    pin: a429871
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: bin
+    note: radare2 的 Garlic DEX/Dalvik 插件
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: a429871
+  - name: js-deobfuscator
+    repo: https://github.com/kuizuo/js-deobfuscator.git
+    path: vertical/js-deobfuscator
+    pin: 21598ad
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: Babel AST 自动化反混淆(web 形态无 CLI, 参考保留)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 21598ad
+  - name: view8
+    repo: https://github.com/suleram/View8.git
+    path: vertical/view8
+    pin: 4a27e9b
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: V8 序列化字节码反编译(JSC→可读, 依赖 patched V8 二进制)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 4a27e9b
 deployable:
   # 部署包装层: SKILL.md 改写件(改名/描述精要/路径修复), 内容 symlink 指向 vertical 源
   - name: hello-js-reverse
@@ -726,12 +786,27 @@ deployable:
     deploy:
       claude: true
 
+  - name: jsc-deobfuscator
+    path: deployable/jsc-deobfuscator
+    enabled: true
+    domain: js
+    note: V8 字节码静态反混淆(Python 脚本, bytenode 对抗)
+    deploy:
+      claude: true
 private:
   - name: blog-content
     path: private/blog-content
     enabled: true
     deploy:
       claude: true
+
+
+
+
+
+
+
+
 
 
 
