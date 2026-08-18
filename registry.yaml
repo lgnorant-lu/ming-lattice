@@ -709,6 +709,26 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: d3f7350
+
+  # ── Frida Gadget 工具链（2026-08-18） ─────────────────────────
+  - name: frida-gadget-helper
+    repo: https://github.com/LunFengChen/frida-gadget-helper.git
+    path: vertical/frida-gadget-helper
+    pin: ee38b11
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: bin
+    note: 傻瓜式 gadget 注入(含预编译 libgadget-rusda.so 25M + xfinjectd + PDF 教程)
+    deploy: {}
+  - name: rusda
+    repo: https://github.com/taisuii/rusda.git
+    path: vertical/rusda
+    pin: 00f4889
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: bin
+    note: Frida patch(魔改 server/gadget, 开源版)
+    deploy: {}
 deployable:
   # 部署包装层: SKILL.md 改写件(改名/描述精要/路径修复), 内容 symlink 指向 vertical 源
   - name: hello-js-reverse
@@ -855,12 +875,23 @@ deployable:
     note: V8 字节码静态反混淆(Python 脚本, bytenode 对抗)
     deploy:
       claude: true
+
+  - name: xfqtrace-kit
+    path: private/xfqtrace-kit
+    enabled: true
+    note: 我们维护的 xfqtrace v2.2(无痕 hook backend + hide.kpm + 30+ 站点 recipe, 双密码 ***REMOVED***/***REMOVED***)
+    deploy: {}
 private:
   - name: blog-content
     path: private/blog-content
     enabled: true
     deploy:
       claude: true
+
+
+
+
+
 
 
 
