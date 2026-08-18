@@ -2,5 +2,7 @@
 .trash/
 # 本地临时
 *.log
-# 大体积下载中间产物（解压过滤后删除）
+# 大体积下载中间产物
 *.tar.gz
+# vendored 仓库的 git 元数据（保留 .git 供 update 增量 fetch, 但父仓库不跟踪）
+vertical/*/.git/

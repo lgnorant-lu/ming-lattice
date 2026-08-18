@@ -46,8 +46,8 @@ foreach ($s in $sources) {
             $issues += [ordered]@{ level = 'E'; name = $s.name; msg = 'SKILL.md 缺失（部署模块必须）'; file = $skillMd }
             continue
         }
-        # 参考源: 宽松——递归找 SKILL.md 或 CLAUDE.md/README.md
-        $nestedSkill = Get-ChildItem $s.src -Recurse -Depth 2 -Filter 'SKILL.md' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+        # 参考源: 宽松——递归找 SKILL.md 或 CLAUDE.md/README.md（排除 .git）
+        $nestedSkill = Get-ChildItem $s.src -Recurse -Depth 2 -Filter 'SKILL.md' -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '\\\.git\\' } | Select-Object -First 1
         if ($nestedSkill) {
             $issues += [ordered]@{ level = 'I'; name = $s.name; msg = "参考型: 子目录 SKILL.md ($($nestedSkill.FullName.Replace($s.src, '.')))"; file = $nestedSkill.FullName }
             $skillMd = $nestedSkill.FullName
@@ -99,8 +99,8 @@ foreach ($s in $sources) {
         }
     }
 
-    # 空壳检测: 目录内除 SKILL.md 外没有任何内容
-    $otherFiles = @(Get-ChildItem $s.src -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'SKILL.md' })
+    # 空壳检测: 目录内除 SKILL.md 外没有任何内容（排除 .git）
+    $otherFiles = @(Get-ChildItem $s.src -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'SKILL.md' -and $_.FullName -notmatch '\\\.git\\' })
     if ($otherFiles.Count -eq 0) {
         $issues += [ordered]@{ level = 'I'; name = $s.name; msg = '单文件 skill（无 references/scripts），检查是否够用'; file = $skillMd }
     }

@@ -1,23 +1,27 @@
-# skills-collection 单一事实源 (Single Source of Truth)
-# sync.ps1 / update.ps1 / lint.ps1 均从此文件读取。
-# 修改部署/启用状态请只改此文件，勿改脚本。
+# skills-collection 单一事实源 (Single Source of Truth) v1.1
+# sync.ps1 / update.ps1 / lint.ps1 均从此文件读取。修改部署/启用状态请只改此文件。
+#
+# v1.1 变更（全局版本管理设计）:
+#   - updatePolicy: 更新检测策略（TTL 内缓存命中 → 零网络）
+#   - 每个 vertical 条目: pin(本地内容对应 upstream commit) + acquiredAt(采集日期)
+#     + checkCache(lastCheckedAt/lastRemoteHead, 由 update.ps1 维护)
+#   - vendored 仓库保留 .git（blob:none 过滤元数据）, update.ps1 用 git fetch 增量检测,
+#     无需每次全量计算
 #
 # 字段说明:
-#   targets   : 目标客户端部署根目录（key = 客户端名, value = 目录绝对路径）
-#   base      : 基座（submodule 跟踪 upstream, 整体纳入, 按模块部署）
-#     name    : 条目名
-#     repo    : upstream 地址（update.ps1 用于 fetch 对比）
-#     path    : 相对本仓库的路径
-#     pin     : 当前 pin 的版本/tag（update.ps1 对比依据）
-#     enabled : 是否纳入管理（false = 跳过, 不删本地内容）
-#     modules : 部署映射 { 模块名: [客户端, ...] }  → 源 = <path>/skills/<模块名>
-#   vertical  : 垂直参考（vendored 只读; 有 upstream 时 update 同样可检测）
-#     deploy  : 部署映射 { 客户端: bool }
-#   private   : 私有 skill（仅本地维护, 无 upstream）
-#     enabled : false = 保留在仓库但不部署（如待修复项）
+#   targets     : 目标客户端部署根目录（key = 客户端名, value = 目录绝对路径）
+#   updatePolicy: { ttlDays: 缓存有效期(天), fetchMode: 元数据拉取模式 }
+#   base        : 基座（submodule 跟踪 upstream, 按模块部署）; pin = tag
+#   vertical    : 垂直参考（vendored, 保留 .git）; pin = upstream commit(短 hash)
+#     domain    : js=Web/JS逆向 bin=二进制 apk=Android ios=iOS kb=知识库 ctf=CTF mw=恶意软件 misc=其他
+#     deploy    : 部署映射 { 客户端: bool }（空 = 仅参考不部署）
 
-schemaVersion: "1.0"
-description: "skills-collection 单一事实源：源 → 本地路径 → 部署目标"
+schemaVersion: "1.1"
+description: "skills-collection 单一事实源：源 → 本地路径 → 版本记录 → 部署目标"
+
+updatePolicy:
+  ttlDays: 7            # checkCache 有效天数; 有效期内 update.ps1 不发起网络请求
+  fetchMode: blob:none  # vendored .git 元数据模式（commit/tree, 不含 blob）
 
 targets:
   claude: C:\Users\Lenovo\.cc-switch\skills
@@ -28,6 +32,7 @@ base:
     repo: https://github.com/zhaoxuya520/reverse-skill.git
     path: base/reverse-skill
     pin: v1.0.1
+    acquiredAt: 2026-08-18
     enabled: true
     modules:
       apk-reverse: [claude]
@@ -50,158 +55,284 @@ base:
       go-rust-reverse: [claude]
       macos-reverse: [claude]
       supply-chain-security: [claude]
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: ea582f3
 
 vertical:
-  # 采集参考集（enabled=true 已采集; deploy 留空 = 仅参考, 筛选后再部署）
-  # 垂直域标注: js=Web/JS逆向  bin=二进制  apk=Android  ios=iOS  kb=知识库  ctf=CTF  mw=恶意软件  misc=其他
+  # ── JS / Web 逆向 ──────────────────────────────────────────────
   - name: js-reverse-715494637
     repo: https://github.com/715494637/reverse-skill.git
     path: vertical/js-reverse-715494637
     pin: a3e116e
+    acquiredAt: 2026-08-18
     enabled: true
     domain: js
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: a3e116e
   - name: hello-js-reverse-skill
     repo: https://github.com/WhiteNightShadow/hello_js_reverse_skill.git
     path: vertical/hello-js-reverse-skill
     pin: c5f14bd
+    acquiredAt: 2026-08-18
     enabled: true
     domain: js
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: c5f14bd
   - name: xbs-reverse-skill
     repo: https://github.com/lwjjike/xbsReverseSkill.git
     path: vertical/xbs-reverse-skill
     pin: 5688300
+    acquiredAt: 2026-08-18
     enabled: true
     domain: js
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 5688300
   - name: ai-reverse-toolkit
     repo: https://github.com/zhizhuodemao/ai-reverse-toolkit.git
     path: vertical/ai-reverse-toolkit
     pin: 02799de
+    acquiredAt: 2026-08-18
     enabled: true
     domain: js
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 02799de
   - name: jshook-skill
     repo: https://github.com/wuji66dde/jshook-skill.git
     path: vertical/jshook-skill
     pin: ffbd3e8
+    acquiredAt: 2026-08-18
     enabled: true
     domain: js
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: ffbd3e8
   - name: codex-reverse-skills
     repo: https://github.com/firstrui/codex-reverse-skills.git
     path: vertical/codex-reverse-skills
     pin: c586c90
+    acquiredAt: 2026-08-18
     enabled: true
     domain: js
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: c586c90
   - name: js-reverse-ops
     repo: https://github.com/DQmyth/js-reverse-ops.git
     path: vertical/js-reverse-ops
     pin: 17076e2
+    acquiredAt: 2026-08-18
     enabled: true
     domain: js
     deploy: {}
-  - name: iwen-scraping
-    repo: https://github.com/xiao-heng/iwen-scraping.git
-    path: vertical/iwen-scraping
-    pin: 4e34565
-    enabled: true
-    domain: js
-    note: 站点实战样本库(60+ 案例, 已过滤 mp4/xlsx/exe 噪声 210M→36M)
-    deploy: {}
-  - name: reverse-skills-p4nda0s
-    repo: https://github.com/P4nda0s/reverse-skills.git
-    path: vertical/reverse-skills-p4nda0s
-    pin: a2baa31
-    enabled: true
-    domain: bin
-    deploy: {}
-  - name: open-reverselab
-    repo: https://github.com/LING71671/open-reverselab.git
-    path: vertical/open-reverselab
-    pin: 17b8a24
-    enabled: true
-    domain: kb
-    deploy: {}
-  - name: ctf-skills
-    repo: https://github.com/ljagiello/ctf-skills.git
-    path: vertical/ctf-skills
-    pin: d6662d2
-    enabled: true
-    domain: ctf
-    deploy: {}
-  - name: android-reverse-claude-skill
-    repo: https://github.com/incogbyte/android-reverse-engineering-claude-skill.git
-    path: vertical/android-reverse-claude-skill
-    pin: 68ba6ce
-    enabled: true
-    domain: apk
-    deploy: {}
-  - name: ios-reverse-claude-skill
-    repo: https://github.com/incogbyte/iOS-reverse-engineering-claude-skill.git
-    path: vertical/ios-reverse-claude-skill
-    pin: ced3523
-    enabled: true
-    domain: ios
-    deploy: {}
-  - name: re-skill-retro
-    repo: https://github.com/vgrichina/re-skill.git
-    path: vertical/re-skill-retro
-    pin: 64c3bff
-    enabled: true
-    domain: misc
-    deploy: {}
-  - name: areclaw
-    repo: https://github.com/TheQmaks/areclaw.git
-    path: vertical/areclaw
-    pin: 4eb5d2f
-    enabled: true
-    domain: apk
-    deploy: {}
-  - name: malware-re-skills
-    repo: https://github.com/hackersifu/reverse-engineering-skills.git
-    path: vertical/malware-re-skills
-    pin: 5e67564
-    enabled: true
-    domain: mw
-    deploy: {}
-  - name: binary-re-arm64
-    repo: https://github.com/2389-research/binary-re.git
-    path: vertical/binary-re-arm64
-    pin: 42aee90
-    enabled: true
-    domain: bin
-    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 17076e2
   - name: re-skill-mcp
     repo: https://github.com/ZhuSheng-0807/reverse-engineering-skill.git
     path: vertical/re-skill-mcp
     pin: e2ade50
+    acquiredAt: 2026-08-18
     enabled: true
     domain: js
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: e2ade50
+  - name: iwen-scraping
+    repo: https://github.com/xiao-heng/iwen-scraping.git
+    path: vertical/iwen-scraping
+    pin: 4e34565
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: 站点实战样本库(60+ 案例, 已过滤 mp4/xlsx/exe 噪声 210M→36M)
+    deploy: {}
+  # ── 二进制 / 恶意软件 ──────────────────────────────────────────
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 4e34565
+  - name: reverse-skills-p4nda0s
+    repo: https://github.com/P4nda0s/reverse-skills.git
+    path: vertical/reverse-skills-p4nda0s
+    pin: a2baa31
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: bin
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: a2baa31
+  - name: binary-re-arm64
+    repo: https://github.com/2389-research/binary-re.git
+    path: vertical/binary-re-arm64
+    pin: 42aee90
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: bin
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 42aee90
   - name: reveng-static
     repo: https://github.com/th3vib3coder/RevEng.git
     path: vertical/reveng-static
     pin: d66dd93
+    acquiredAt: 2026-08-18
     enabled: true
     domain: bin
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: d66dd93
   - name: rust-reverse-engineering-skill
     repo: https://github.com/jingjing2222/rust-reverse-engineering-skill.git
     path: vertical/rust-reverse-engineering-skill
-    pin: 6b1f0e7
+    pin: 03e19a7
+    acquiredAt: 2026-08-18
     enabled: true
     domain: bin
     deploy: {}
-  - name: game-security-skills
-    repo: https://github.com/gmh5225/awesome-game-security.git
-    path: vertical/game-security-skills
-    pin: sparse(.claude/skills)
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 03e19a7
+  - name: malware-re-skills
+    repo: https://github.com/hackersifu/reverse-engineering-skills.git
+    path: vertical/malware-re-skills
+    pin: 5e67564
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: mw
+    deploy: {}
+  # ── 移动端 ────────────────────────────────────────────────────
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 5e67564
+  - name: android-reverse-claude-skill
+    repo: https://github.com/incogbyte/android-reverse-engineering-claude-skill.git
+    path: vertical/android-reverse-claude-skill
+    pin: 68ba6ce
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: apk
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 68ba6ce
+  - name: ios-reverse-claude-skill
+    repo: https://github.com/incogbyte/iOS-reverse-engineering-claude-skill.git
+    path: vertical/ios-reverse-claude-skill
+    pin: ced3523
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: ios
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: ced3523
+  - name: areclaw
+    repo: https://github.com/TheQmaks/areclaw.git
+    path: vertical/areclaw
+    pin: 4eb5d2f
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: apk
+    deploy: {}
+  # ── 知识库 / CTF / 杂项 ───────────────────────────────────────
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 4eb5d2f
+  - name: open-reverselab
+    repo: https://github.com/LING71671/open-reverselab.git
+    path: vertical/open-reverselab
+    pin: 79641ba
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: kb
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 79641ba
+  - name: ctf-skills
+    repo: https://github.com/ljagiello/ctf-skills.git
+    path: vertical/ctf-skills
+    pin: d6662d2
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: ctf
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: d6662d2
+  - name: re-skill-retro
+    repo: https://github.com/vgrichina/re-skill.git
+    path: vertical/re-skill-retro
+    pin: 64c3bff
+    acquiredAt: 2026-08-18
     enabled: true
     domain: misc
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 64c3bff
+  - name: game-security-skills
+    repo: https://github.com/gmh5225/awesome-game-security.git
+    path: vertical/game-security-skills
+    pin: 8f650f3
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: misc
+    note: sparse 采集 .claude/skills (10 个 SKILL.md); pin = upstream HEAD
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 8f650f3
+  - name: trailofbits-skills
+    repo: https://github.com/trailofbits/skills.git
+    path: vertical/trailofbits-skills
+    pin: 04b2411
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: misc
+    note: ToB 官方安全审计 skill 市场(质量标杆, 基座作者对照清单)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 04b2411
+  - name: claude-code-pentest
+    repo: https://github.com/Orizon-eu/claude-code-pentest.git
+    path: vertical/claude-code-pentest
+    pin: f1cf16f
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: misc
+    note: 6 个 pentest 生命周期 skill + 纯 Python 脚本
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: f1cf16f
+  - name: ida-claude-plugins
+    repo: https://github.com/HexRaysSA/ida-claude-code-plugins.git
+    path: vertical/ida-claude-plugins
+    pin: 0abba7f
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: bin
+    note: IDA 官方 Claude 插件(含 domain 自动化)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 0abba7f
 
 private:
   - name: blog-content
@@ -209,3 +340,11 @@ private:
     enabled: true
     deploy:
       claude: true
+
+
+
+
+
+
+
+

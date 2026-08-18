@@ -83,6 +83,15 @@
 | 19 | th3vib3coder | RevEng | https://github.com/th3vib3coder/RevEng | 0 | 2026-05-23 | skills/ 子目录 · **静态优先**（不执行样本）· repo/binary/Android/Ghidra |
 | 20 | jingjing2222 | rust-reverse-engineering-skill | https://github.com/jingjing2222/rust-reverse-engineering-skill | 6 | 2026-04-18 | README 型 · Rust 逆向（防御性） |
 | 21 | gmh5225 | awesome-game-security（仅 .claude/skills 子目录） | https://github.com/gmh5225/awesome-game-security | ~ | ~ | **10 个 SKILL.md**：anti-cheat / dma-attack / game-engine / game-hacking / graphics-api / mobile-security / research-rigor / reverse-engineering / windows-kernel / overview · sparse checkout 8.4M |
+| 22 | trailofbits | skills | https://github.com/trailofbits/skills | ~ | ~ | ToB 官方审计 skill 市场（基座作者 2026-07 对照清单 · 质量标杆） |
+| 23 | Orizon-eu | claude-code-pentest | https://github.com/Orizon-eu/claude-code-pentest | ~ | ~ | 6 个 pentest 生命周期 skill + 纯 Python 脚本 |
+| 24 | HexRaysSA | ida-claude-code-plugins | https://github.com/HexRaysSA/ida-claude-code-plugins | ~ | ~ | IDA 官方 Claude 插件（含 domain 自动化, unsafe 默认不启用） |
+
+## 三·五、Grok 审计结论归档（2026-08-18）
+
+- 基座 zhaoxuya520/reverse-skill ★26.1k 高度匹配, 建议唯一路由入口；hello_js（★1.1k, v3.4.1）与 P4nda0s（★~2k）质量高, 优先使用；xbs 硬编码路径确认需清理
+- 待核查项结论：zhongjiaxiong 变体 `web-reverse-skill-notes-20260319`（★41, 低优先级笔记型）；incogbyte 名称已确认；areclaw/jshook MCP 保持观察；Yuyz0112 归类正确；mcpmarket 挂靠 skill 源仓库需单独追溯
+- 供应链：第三方 skill 只读参考, 部署前审 SKILL.md + scripts（基座 ops/skill-supply-chain.md 的 MUST 清单可复用）
 
 ## 四、待核查项（请 Grok 核查）
 
@@ -116,3 +125,17 @@
 ## 七、供应链安全提醒
 
 - 2026-05 有安全研究（labs.reversec.com）披露 **Claude Code 恶意 skill/agent 攻击面**（skill 文件可作为初始访问向量）。采集自第三方仓库的 skill 均**只读参考**（不部署、不自动执行），部署前请审阅 SKILL.md 与 scripts 内容。
+
+## 八、版本管理设计（registry v1.1）
+
+机构（zhaoxuya520）自身**没有**对 skill 仓库的版本记录（只 pin 工具: bootstrap-manifest.json 的 releaseTag+assetSha256；community-security-skills.md 仅登记日期）。registry v1.1 由我们全局设计：
+
+| 字段 | 含义 | 维护者 |
+|---|---|---|
+| `pin` | 本地内容对应的 upstream commit（短 hash）/ base 为 tag | 采集时人工/脚本写入 |
+| `acquiredAt` | 采集日期 | 采集时写入 |
+| `checkCache.lastCheckedAt` | 最近一次网络检测日期 | update.ps1 自动回写 |
+| `checkCache.lastRemoteHead` | 最近一次检测到的远端 HEAD | update.ps1 自动回写 |
+| `updatePolicy.ttlDays` | 缓存有效期（默认 7 天） | 顶层配置 |
+
+**检测路径**：TTL 内且 lastRemoteHead == 本地 HEAD → 零网络判定（实测 22 仓库 1.7s）；TTL 过期 → git fetch --depth 1 --filter=blob:none（增量元数据）→ 回写缓存。vendored 仓库保留 .git（父仓库 .gitignore 排除）是缓存机制的前提。
