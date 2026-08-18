@@ -24,12 +24,12 @@ $reg = ConvertFrom-YamlLite (Get-Content $RegistryPath -Raw)
 $sources = @()
 foreach ($base in @($reg.base)) {
     foreach ($modName in @($base.modules.Keys)) {
-        $sources += [ordered]@{ name = $modName; src = Join-Path $RepoRoot (Join-Path $base.path "skills\$modName"); enabled = $base.enabled }
+        $sources += [ordered]@{ name = $modName; src = Join-Path $RepoRoot (Join-Path $base.path "skills\$modName"); enabled = $base.enabled; kind = 'module' }
     }
 }
 foreach ($sectionName in @('vertical', 'private')) {
     foreach ($item in @($reg.$sectionName)) {
-        $sources += [ordered]@{ name = $item.name; src = Join-Path $RepoRoot $item.path; enabled = $item.enabled }
+        $sources += [ordered]@{ name = $item.name; src = Join-Path $RepoRoot $item.path; enabled = $item.enabled; kind = 'ref' }
     }
 }
 
@@ -38,12 +38,26 @@ $issues = @()  # [ordered]@{ level; name; msg; file }
 foreach ($s in $sources) {
     $skillMd = Join-Path $s.src 'SKILL.md'
     if (-not (Test-Path $skillMd)) {
-        if ($s.enabled) {
-            $issues += [ordered]@{ level = 'E'; name = $s.name; msg = 'SKILL.md 缺失（已启用但源不存在/空壳）'; file = $skillMd }
-        } else {
+        if (-not $s.enabled) {
             $issues += [ordered]@{ level = 'I'; name = $s.name; msg = '未采集（registry 登记, enabled=false）'; file = $skillMd }
+            continue
         }
-        continue
+        if ($s.kind -eq 'module') {
+            $issues += [ordered]@{ level = 'E'; name = $s.name; msg = 'SKILL.md 缺失（部署模块必须）'; file = $skillMd }
+            continue
+        }
+        # 参考源: 宽松——递归找 SKILL.md 或 CLAUDE.md/README.md
+        $nestedSkill = Get-ChildItem $s.src -Recurse -Depth 2 -Filter 'SKILL.md' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($nestedSkill) {
+            $issues += [ordered]@{ level = 'I'; name = $s.name; msg = "参考型: 子目录 SKILL.md ($($nestedSkill.FullName.Replace($s.src, '.')))"; file = $nestedSkill.FullName }
+            $skillMd = $nestedSkill.FullName
+        } elseif ((Test-Path (Join-Path $s.src 'CLAUDE.md')) -or (Test-Path (Join-Path $s.src 'README.md')) -or (Test-Path (Join-Path $s.src 'AGENTS.md'))) {
+            $issues += [ordered]@{ level = 'I'; name = $s.name; msg = '参考型: 无 SKILL.md, 有 CLAUDE.md/README.md/AGENTS.md'; file = $skillMd }
+            continue
+        } else {
+            $issues += [ordered]@{ level = 'E'; name = $s.name; msg = '空壳（无 SKILL.md 也无 README/CLAUDE/AGENTS）'; file = $skillMd }
+            continue
+        }
     }
 
     $content = Get-Content $skillMd -Raw -ErrorAction SilentlyContinue

@@ -52,48 +52,154 @@ base:
       supply-chain-security: [claude]
 
 vertical:
-  # 采集清单（enabled: false = 已登记待采集; 采集后改为 true 并填 pin/path）
+  # 采集参考集（enabled=true 已采集; deploy 留空 = 仅参考, 筛选后再部署）
+  # 垂直域标注: js=Web/JS逆向  bin=二进制  apk=Android  ios=iOS  kb=知识库  ctf=CTF  mw=恶意软件  misc=其他
   - name: js-reverse-715494637
     repo: https://github.com/715494637/reverse-skill.git
     path: vertical/js-reverse-715494637
-    pin: null
-    enabled: false
+    pin: a3e116e
+    enabled: true
+    domain: js
     deploy: {}
   - name: hello-js-reverse-skill
     repo: https://github.com/WhiteNightShadow/hello_js_reverse_skill.git
     path: vertical/hello-js-reverse-skill
-    pin: null
-    enabled: false
+    pin: c5f14bd
+    enabled: true
+    domain: js
     deploy: {}
   - name: xbs-reverse-skill
     repo: https://github.com/lwjjike/xbsReverseSkill.git
     path: vertical/xbs-reverse-skill
-    pin: null
-    enabled: false
+    pin: 5688300
+    enabled: true
+    domain: js
     deploy: {}
   - name: ai-reverse-toolkit
     repo: https://github.com/zhizhuodemao/ai-reverse-toolkit.git
     path: vertical/ai-reverse-toolkit
-    pin: null
-    enabled: false
-    deploy: {}
-  - name: reverse-skills-p4nda0s
-    repo: https://github.com/P4nda0s/reverse-skills.git
-    path: vertical/reverse-skills-p4nda0s
-    pin: null
-    enabled: false
-    deploy: {}
-  - name: open-reverselab
-    repo: https://github.com/LING71671/open-reverselab.git
-    path: vertical/open-reverselab
-    pin: null
-    enabled: false
+    pin: 02799de
+    enabled: true
+    domain: js
     deploy: {}
   - name: jshook-skill
     repo: https://github.com/wuji66dde/jshook-skill.git
     path: vertical/jshook-skill
+    pin: ffbd3e8
+    enabled: true
+    domain: js
+    deploy: {}
+  - name: codex-reverse-skills
+    repo: https://github.com/firstrui/codex-reverse-skills.git
+    path: vertical/codex-reverse-skills
+    pin: c586c90
+    enabled: true
+    domain: js
+    deploy: {}
+  - name: js-reverse-ops
+    repo: https://github.com/DQmyth/js-reverse-ops.git
+    path: vertical/js-reverse-ops
+    pin: 17076e2
+    enabled: true
+    domain: js
+    deploy: {}
+  - name: iwen-scraping
+    repo: https://github.com/xiao-heng/iwen-scraping.git
+    path: vertical/iwen-scraping
     pin: null
     enabled: false
+    domain: js
+    deploy: {}
+  - name: reverse-skills-p4nda0s
+    repo: https://github.com/P4nda0s/reverse-skills.git
+    path: vertical/reverse-skills-p4nda0s
+    pin: a2baa31
+    enabled: true
+    domain: bin
+    deploy: {}
+  - name: open-reverselab
+    repo: https://github.com/LING71671/open-reverselab.git
+    path: vertical/open-reverselab
+    pin: 17b8a24
+    enabled: true
+    domain: kb
+    deploy: {}
+  - name: ctf-skills
+    repo: https://github.com/ljagiello/ctf-skills.git
+    path: vertical/ctf-skills
+    pin: d6662d2
+    enabled: true
+    domain: ctf
+    deploy: {}
+  - name: android-reverse-claude-skill
+    repo: https://github.com/incogbyte/android-reverse-engineering-claude-skill.git
+    path: vertical/android-reverse-claude-skill
+    pin: 68ba6ce
+    enabled: true
+    domain: apk
+    deploy: {}
+  - name: ios-reverse-claude-skill
+    repo: https://github.com/incogbyte/iOS-reverse-engineering-claude-skill.git
+    path: vertical/ios-reverse-claude-skill
+    pin: ced3523
+    enabled: true
+    domain: ios
+    deploy: {}
+  - name: re-skill-retro
+    repo: https://github.com/vgrichina/re-skill.git
+    path: vertical/re-skill-retro
+    pin: 64c3bff
+    enabled: true
+    domain: misc
+    deploy: {}
+  - name: areclaw
+    repo: https://github.com/TheQmaks/areclaw.git
+    path: vertical/areclaw
+    pin: 4eb5d2f
+    enabled: true
+    domain: apk
+    deploy: {}
+  - name: malware-re-skills
+    repo: https://github.com/hackersifu/reverse-engineering-skills.git
+    path: vertical/malware-re-skills
+    pin: 5e67564
+    enabled: true
+    domain: mw
+    deploy: {}
+  - name: binary-re-arm64
+    repo: https://github.com/2389-research/binary-re.git
+    path: vertical/binary-re-arm64
+    pin: 42aee90
+    enabled: true
+    domain: bin
+    deploy: {}
+  - name: re-skill-mcp
+    repo: https://github.com/ZhuSheng-0807/reverse-engineering-skill.git
+    path: vertical/re-skill-mcp
+    pin: e2ade50
+    enabled: true
+    domain: js
+    deploy: {}
+  - name: reveng-static
+    repo: https://github.com/th3vib3coder/RevEng.git
+    path: vertical/reveng-static
+    pin: d66dd93
+    enabled: true
+    domain: bin
+    deploy: {}
+  - name: rust-reverse-engineering-skill
+    repo: https://github.com/jingjing2222/rust-reverse-engineering-skill.git
+    path: vertical/rust-reverse-engineering-skill
+    pin: 6b1f0e7
+    enabled: true
+    domain: bin
+    deploy: {}
+  - name: game-security-skills
+    repo: https://github.com/gmh5225/awesome-game-security.git
+    path: vertical/game-security-skills
+    pin: sparse(.claude/skills)
+    enabled: true
+    domain: misc
     deploy: {}
 
 private:
@@ -102,7 +208,3 @@ private:
     enabled: true
     deploy:
       claude: true
-  - name: roco-sandbox-engine
-    path: private/roco-sandbox-engine
-    enabled: false      # ⚠ references(LOGIC_ATLAS.md/EFFECT_DICTIONARY.md) 丢失, 修复后再启用
-    deploy: {}
