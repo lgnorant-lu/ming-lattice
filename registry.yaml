@@ -901,6 +901,92 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 9d36933
+
+  # ── LoseNine 第三轮 2026-08-18(批量 fork/工具采集) ──
+  - name: ast-hook-for-js-RE
+    repo: https://github.com/LoseNine/ast-hook-for-js-RE.git
+    path: vertical/ast-hook-for-js-RE
+    pin: 1a5f1a4
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: JS 内存漫游解决方案(fork, WTFPL), 注入 hook 定位内存加密
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 1a5f1a4
+  - name: unveilr
+    repo: https://github.com/LoseNine/unveilr.git
+    path: vertical/unveilr
+    pin: ce76e69
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: mp
+    note: 小程序逆向反编译(fork 自 r3x5ur/unveilr), 与 wx-mp-mcp/wxminidec 互补
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: ce76e69
+  - name: v_jstools
+    repo: https://github.com/LoseNine/v_jstools.git
+    path: vertical/v_jstools
+    pin: 86eb180
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: chrome 插件快速调试前端 JS(manifest/inject hook)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 86eb180
+  - name: Frida-Apk-Unpack
+    repo: https://github.com/LoseNine/Frida-Apk-Unpack.git
+    path: vertical/Frida-Apk-Unpack
+    pin: b25ac27
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: apk
+    note: Frida dexDump.js APK 脱壳脚本(基座 apk-reverse 补壳场景)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: b25ac27
+  - name: CthulhuJs
+    repo: https://github.com/LoseNine/CthulhuJs.git
+    path: vertical/CthulhuJs
+    pin: 28999a4
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: web
+    note: 纯 JS 修改网页环境指纹信息(webpack 库), 与 pjstealth 互补(JS 版)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 28999a4
+  - name: brotector
+    repo: https://github.com/LoseNine/brotector.git
+    path: vertical/brotector
+    pin: 98b3309
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: web
+    note: webdriver/自动化检测库 fork(对抗面研究: 了解检测手段)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 98b3309
+  - name: Cloudflare-Bybass-CDP-Chromium
+    repo: https://github.com/LoseNine/Cloudflare-Bybass-CDP-Chromium.git
+    path: vertical/Cloudflare-Bybass-CDP-Chromium
+    pin: a1ae399
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: web
+    note: Cloudflare Turnstile & Fingerprint solver(Chromium, CDP 姿势) 对抗面研究
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: a1ae399
 deployable:
   # 閮ㄧ讲鍖呰灞? SKILL.md 鏀瑰啓浠?鏀瑰悕/鎻忚堪绮捐/璺緞淇), 鍐呭 symlink 鎸囧悜 vertical 婧?  - name: hello-js-reverse
     path: deployable/hello-js-reverse
@@ -1064,6 +1150,7 @@ private:
     enabled: true
     note: 鎴戜滑缁存姢鐨?xfqtrace v2.2(鏃犵棔 hook backend + hide.kpm + 30+ 绔欑偣 recipe, 鍙屽瘑鐮?***REMOVED***/***REMOVED***)
     deploy: {}
+
 
 
 
