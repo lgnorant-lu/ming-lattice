@@ -1,0 +1,108 @@
+# skills-collection 单一事实源 (Single Source of Truth)
+# sync.ps1 / update.ps1 / lint.ps1 均从此文件读取。
+# 修改部署/启用状态请只改此文件，勿改脚本。
+#
+# 字段说明:
+#   targets   : 目标客户端部署根目录（key = 客户端名, value = 目录绝对路径）
+#   base      : 基座（submodule 跟踪 upstream, 整体纳入, 按模块部署）
+#     name    : 条目名
+#     repo    : upstream 地址（update.ps1 用于 fetch 对比）
+#     path    : 相对本仓库的路径
+#     pin     : 当前 pin 的版本/tag（update.ps1 对比依据）
+#     enabled : 是否纳入管理（false = 跳过, 不删本地内容）
+#     modules : 部署映射 { 模块名: [客户端, ...] }  → 源 = <path>/skills/<模块名>
+#   vertical  : 垂直参考（vendored 只读; 有 upstream 时 update 同样可检测）
+#     deploy  : 部署映射 { 客户端: bool }
+#   private   : 私有 skill（仅本地维护, 无 upstream）
+#     enabled : false = 保留在仓库但不部署（如待修复项）
+
+schemaVersion: "1.0"
+description: "skills-collection 单一事实源：源 → 本地路径 → 部署目标"
+
+targets:
+  claude: C:\Users\Lenovo\.cc-switch\skills
+  # codex: C:\Users\Lenovo\.codex\skills    # 需要时启用并安装对应客户端
+
+base:
+  - name: reverse-skill
+    repo: https://github.com/zhaoxuya520/reverse-skill.git
+    path: base/reverse-skill
+    pin: v1.0.1
+    enabled: true
+    modules:
+      apk-reverse: [claude]
+      ida-reverse: [claude]
+      radare2: [claude]
+      js-reverse: [claude]
+      mobile-reverse: [claude]
+      dotnet-reverse: [claude]
+      malware-analysis: [claude]
+      reverse-engineering: [claude]
+      protocol-reverse: [claude]
+      firmware-pentest: [claude]
+      ghidra-reverse: [claude]
+      pwn-chain: [claude]
+      thick-client: [claude]
+      code-audit: [claude]
+      pentest-tools: [claude]
+      patch-diff-exploit: [claude]
+      binary-diff: [claude]
+      go-rust-reverse: [claude]
+      macos-reverse: [claude]
+      supply-chain-security: [claude]
+
+vertical:
+  # 采集清单（enabled: false = 已登记待采集; 采集后改为 true 并填 pin/path）
+  - name: js-reverse-715494637
+    repo: https://github.com/715494637/reverse-skill.git
+    path: vertical/js-reverse-715494637
+    pin: null
+    enabled: false
+    deploy: {}
+  - name: hello-js-reverse-skill
+    repo: https://github.com/WhiteNightShadow/hello_js_reverse_skill.git
+    path: vertical/hello-js-reverse-skill
+    pin: null
+    enabled: false
+    deploy: {}
+  - name: xbs-reverse-skill
+    repo: https://github.com/lwjjike/xbsReverseSkill.git
+    path: vertical/xbs-reverse-skill
+    pin: null
+    enabled: false
+    deploy: {}
+  - name: ai-reverse-toolkit
+    repo: https://github.com/zhizhuodemao/ai-reverse-toolkit.git
+    path: vertical/ai-reverse-toolkit
+    pin: null
+    enabled: false
+    deploy: {}
+  - name: reverse-skills-p4nda0s
+    repo: https://github.com/P4nda0s/reverse-skills.git
+    path: vertical/reverse-skills-p4nda0s
+    pin: null
+    enabled: false
+    deploy: {}
+  - name: open-reverselab
+    repo: https://github.com/LING71671/open-reverselab.git
+    path: vertical/open-reverselab
+    pin: null
+    enabled: false
+    deploy: {}
+  - name: jshook-skill
+    repo: https://github.com/wuji66dde/jshook-skill.git
+    path: vertical/jshook-skill
+    pin: null
+    enabled: false
+    deploy: {}
+
+private:
+  - name: blog-content
+    path: private/blog-content
+    enabled: true
+    deploy:
+      claude: true
+  - name: roco-sandbox-engine
+    path: private/roco-sandbox-engine
+    enabled: false      # ⚠ references(LOGIC_ATLAS.md/EFFECT_DICTIONARY.md) 丢失, 修复后再启用
+    deploy: {}
