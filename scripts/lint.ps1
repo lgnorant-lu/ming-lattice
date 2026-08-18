@@ -71,6 +71,20 @@ foreach ($s in $sources) {
         $fm = $Matches[1]
         if ($fm -notmatch '(?m)^name\s*:') { $issues += [ordered]@{ level = 'W'; name = $s.name; msg = 'frontmatter 缺 name'; file = $skillMd } }
         if ($fm -notmatch '(?m)^description\s*:') { $issues += [ordered]@{ level = 'W'; name = $s.name; msg = 'frontmatter 缺 description'; file = $skillMd } }
+        else {
+            # description 质量检查（第一层路由依据）
+            $descMatch = [regex]::Match($fm, '(?ms)^description\s*:\s*[|>]?\s*\n?\s*(.+?)(?=\n\S|\z)')
+            $desc = if ($descMatch.Success) { $descMatch.Groups[1].Value.Trim() } else { (($fm -split "`n" | Where-Object { $_ -match '^description\s*:' } | Select-Object -First 1) -replace '^description\s*:\s*', '') }
+            if ([string]::IsNullOrWhiteSpace($desc)) {
+                $issues += [ordered]@{ level = 'W'; name = $s.name; msg = 'description 为空'; file = $skillMd }
+            }
+            elseif ($desc.Length -lt 20) {
+                $issues += [ordered]@{ level = 'W'; name = $s.name; msg = "description 过短($($desc.Length) 字符), 路由触发会不准: $desc"; file = $skillMd }
+            }
+            elseif ($desc -match '使用\s+\S+(-mcp|-server)|when using|requires? the') {
+                $issues += [ordered]@{ level = 'I'; name = $s.name; msg = "description 绑定具体工具名(工具不在则漏触发): $desc"; file = $skillMd }
+            }
+        }
     } else {
         $issues += [ordered]@{ level = 'W'; name = $s.name; msg = '无 frontmatter（--- 块缺失）'; file = $skillMd }
     }
