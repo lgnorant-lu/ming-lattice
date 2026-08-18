@@ -1,0 +1,1 @@
+D:/dogepy/skills-collection/vertical/ctf-skills/ctf-forensics/disk-and-memory.md

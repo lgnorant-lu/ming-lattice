@@ -46,7 +46,7 @@ foreach ($base in @($reg.base)) {
     }
 }
 
-foreach ($sectionName in @('vertical', 'private')) {
+foreach ($sectionName in @('vertical', 'deployable', 'private')) {
     foreach ($item in @($reg.$sectionName)) {
         if (-not $item.enabled) { continue }
         if ($Module.Count -gt 0 -and $item.name -notin $Module) { continue }

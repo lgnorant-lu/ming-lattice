@@ -1,0 +1,1 @@
+D:/dogepy/skills-collection/vertical/ctf-skills/ctf-forensics/stego-advanced-2.md

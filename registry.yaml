@@ -358,6 +358,131 @@ vertical:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 19bd9c1
 
+deployable:
+  # 部署包装层: SKILL.md 改写件(改名/描述精要/路径修复), 内容 symlink 指向 vertical 源
+  - name: hello-js-reverse
+    path: deployable/hello-js-reverse
+    enabled: true
+    domain: js
+    note: JSVMP 双路径实战(v3.4.1), 需 camoufox-reverse MCP
+    deploy:
+      claude: true
+  - name: rust-reverse
+    path: deployable/rust-reverse
+    enabled: true
+    domain: bin
+    note: Rust 二进制专项, 补基座短板
+    deploy:
+      claude: true
+  - name: android-reverse
+    path: deployable/android-reverse
+    enabled: true
+    domain: apk
+    note: 自适应 Frida 绕过/Fragment 注入/Firebase 矩阵
+    deploy:
+      claude: true
+  - name: ios-reverse
+    path: deployable/ios-reverse
+    enabled: true
+    domain: ios
+    note: iOS 静态逆向(路径变量已修复)
+    deploy:
+      claude: true
+  - name: rs-js-reverse
+    path: deployable/rs-js-reverse
+    enabled: true
+    domain: js
+    note: 瑞数/RS 专项(基座覆盖为零), 4 份专项 references
+    deploy:
+      claude: true
+  - name: ctf-pwn
+    path: deployable/ctf-pwn
+    enabled: true
+    domain: ctf
+    deploy:
+      claude: true
+  - name: ctf-web
+    path: deployable/ctf-web
+    enabled: true
+    domain: ctf
+    deploy:
+      claude: true
+  - name: ctf-reverse
+    path: deployable/ctf-reverse
+    enabled: true
+    domain: ctf
+    deploy:
+      claude: true
+  - name: ctf-crypto
+    path: deployable/ctf-crypto
+    enabled: true
+    domain: ctf
+    deploy:
+      claude: true
+  - name: ctf-misc
+    path: deployable/ctf-misc
+    enabled: true
+    domain: ctf
+    deploy:
+      claude: true
+  - name: ctf-forensics
+    path: deployable/ctf-forensics
+    enabled: true
+    domain: ctf
+    deploy:
+      claude: true
+  - name: xbs-ast-deobfuscation
+    path: deployable/xbs-ast-deobfuscation
+    enabled: true
+    domain: js
+    note: AST 流水线+站点混淆专档(硬编码路径已修)
+    deploy:
+      claude: true
+  - name: xbs-verify-patcher
+    path: deployable/xbs-verify-patcher
+    enabled: true
+    domain: js
+    note: 验证码求解编排(基座空白)
+    deploy:
+      claude: true
+  - name: areclaw-analyze-apk
+    path: deployable/areclaw-analyze-apk
+    enabled: true
+    domain: apk
+    deploy:
+      claude: true
+  - name: areclaw-compare-versions
+    path: deployable/areclaw-compare-versions
+    enabled: true
+    domain: apk
+    deploy:
+      claude: true
+  - name: areclaw-find-api
+    path: deployable/areclaw-find-api
+    enabled: true
+    domain: apk
+    deploy:
+      claude: true
+  - name: areclaw-intercept
+    path: deployable/areclaw-intercept
+    enabled: true
+    domain: apk
+    deploy:
+      claude: true
+  - name: areclaw-register
+    path: deployable/areclaw-register
+    enabled: true
+    domain: apk
+    deploy:
+      claude: true
+  - name: malware-ioc-extraction
+    path: deployable/malware-ioc-extraction
+    enabled: true
+    domain: mw
+    note: IOC YAML schema+证据规则
+    deploy:
+      claude: true
+
 private:
   - name: blog-content
     path: private/blog-content

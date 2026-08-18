@@ -1,0 +1,1 @@
+D:/dogepy/skills-collection/vertical/ctf-skills/ctf-crypto/prng-attacks.md

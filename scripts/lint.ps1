@@ -27,7 +27,7 @@ foreach ($base in @($reg.base)) {
         $sources += [ordered]@{ name = $modName; src = Join-Path $RepoRoot (Join-Path $base.path "skills\$modName"); enabled = $base.enabled; kind = 'module' }
     }
 }
-foreach ($sectionName in @('vertical', 'private')) {
+foreach ($sectionName in @('vertical', 'deployable', 'private')) {
     foreach ($item in @($reg.$sectionName)) {
         $sources += [ordered]@{ name = $item.name; src = Join-Path $RepoRoot $item.path; enabled = $item.enabled; kind = 'ref' }
     }
@@ -102,9 +102,12 @@ foreach ($s in $sources) {
         }
     }
 
-    # 硬编码绝对路径（他人机器特征）
-    if ($content -match 'C:\\Users\\[^\\]+\\|/home/[^/]+/|/root/') {
-        $issues += [ordered]@{ level = 'W'; name = $s.name; msg = "含硬编码绝对路径（疑似他人机器）: $($Matches[0])"; file = $skillMd }
+    # 硬编码绝对路径（他人机器特征）: Windows 用户目录 = W; Linux /home//root = I(CTF 题目路径常见)
+    if ($content -match 'C:\\Users\\[^\\]+\\') {
+        $issues += [ordered]@{ level = 'W'; name = $s.name; msg = "含硬编码 Windows 用户路径: $($Matches[0])"; file = $skillMd }
+    }
+    elseif ($content -match '/home/[^/]+/|/root/') {
+        $issues += [ordered]@{ level = 'I'; name = $s.name; msg = "含 Linux 路径(可能为题目示例): $($Matches[0])"; file = $skillMd }
     }
     foreach ($scriptFile in (Get-ChildItem (Join-Path $s.src 'scripts') -File -ErrorAction SilentlyContinue)) {
         $sc = Get-Content $scriptFile.FullName -Raw -ErrorAction SilentlyContinue
