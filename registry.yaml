@@ -487,6 +487,24 @@ vertical:
     domain: mcp
     note: HAR/API 分析 + 自动生成 API wrapper(重, 114 文件)
     deploy: {}
+  - name: garlic
+    repo: https://github.com/neocanable/garlic.git
+    path: vertical/garlic
+    pin: 1ae29fa
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: apk
+    note: 世界最快 APK/Java 反编译器(C 实现, jadx 上位替代, 733★, 自带 MCP 模式)
+    deploy: {}
+  - name: r2garlic
+    repo: https://github.com/radareorg/r2garlic.git
+    path: vertical/r2garlic
+    pin: 0aaa896
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: bin
+    note: radare2 的 Garlic DEX/Dalvik 插件
+    deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: e7474e5
@@ -613,6 +631,13 @@ deployable:
     enabled: true
     domain: mw
     note: IOC YAML schema+证据规则
+    deploy:
+      claude: true
+  - name: garlic-reverse
+    path: deployable/garlic-reverse
+    enabled: true
+    domain: apk
+    note: Garlic 反编译专项(CLI 优先, jadx 上位替代, MCP 可选)
     deploy:
       claude: true
 
