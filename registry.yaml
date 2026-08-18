@@ -296,7 +296,7 @@ vertical:
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: bf4b158
+      lastRemoteHead: b699ad3
   - name: trailofbits-skills
     repo: https://github.com/trailofbits/skills.git
     path: vertical/trailofbits-skills
@@ -720,6 +720,9 @@ vertical:
     domain: bin
     note: 傻瓜式 gadget 注入(含预编译 libgadget-rusda.so 25M + xfinjectd + PDF 教程)
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: ee38b11
   - name: rusda
     repo: https://github.com/taisuii/rusda.git
     path: vertical/rusda
@@ -729,16 +732,22 @@ vertical:
     domain: bin
     note: Frida patch(魔改 server/gadget, 开源版)
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 00f4889
 
   - name: appium-mcp
     repo: https://github.com/appium/appium-mcp.git
     path: vertical/appium-mcp
-    pin: null
+    pin: 25c9ae9
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
     note: Appium 官方 MCP(Android/iOS UI 自动化, 控件自动化 oracle 场景)
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 25c9ae9
 deployable:
   # 部署包装层: SKILL.md 改写件(改名/描述精要/路径修复), 内容 symlink 指向 vertical 源
   - name: hello-js-reverse
@@ -897,6 +906,8 @@ private:
     enabled: true
     deploy:
       claude: true
+
+
 
 
 
