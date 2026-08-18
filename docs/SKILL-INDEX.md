@@ -111,8 +111,10 @@
 | pjstealth | 浏览器特征抹除+指纹随机化 Python 库 | ✅ 入库 reference |
 | FingerPrintJSBrowser | 过 FingerPrintJS 的定制 chromium 141 指纹浏览器（闭源 release, 单 README） | ✅ 入库 reference |
 | Chromium_FingerPrint_Tutorial | 《Chromium 指纹浏览器开发教程》**宣传页**（README+15 图书截图, 内容走淘宝书/语雀付费） | ❌ 不采集（宣传页无内容） |
-| Restore-JS | 《反爬虫JS破解与混淆还原手册》教程书 | ❌ 已 404 下架（错过窗口） |
-| Crack-JS-Spider | （列表页出现后数分钟即下架） | ❌ 已 404 下架 |
+| Restore-JS | 《反爬虫AST原理与还原混淆实战》免费课程版（Chrome 调试/JSHook 原理/过反调试/拓展开发/AST 还原） | ✅ **复活后已采**（曾瞬时 404, 2026-08-18 复测 codeload 200, pin a4a629c） |
+| Crack-JS-Spider | 30+ 真实站 JS 破解案例库（拼多多 anti_content/知乎 x-zse-96/极验滑块 w/酷狗 kg_mid, 带补环境注释） | ✅ **复活后已采**（pin 9d36933） |
+
+> ⚠️ **404 判定教训**：codeload 瞬时 404 不一定是下架——Restore-JS/Crack-JS-Spider 曾判死又复活。**判定下架需三方一致**（codeload main+master + github 页面），瞬时故障用重试窗口验证。
 
 ### 反混淆工具评估结论（2026-08-18）
 

@@ -875,6 +875,32 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 7edbc74
+
+  # ── LoseNine 复活轮 2026-08-18(Restore-JS/Crack-JS-Spider 曾瞬时 404 后复活) ──
+  - name: Restore-JS
+    repo: https://github.com/LoseNine/Restore-JS.git
+    path: vertical/Restore-JS
+    pin: a4a629c
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: 《反爬虫AST原理与还原混淆实战》免费课程版(Chrome 调试/JSHook 原理/过反调试/拓展开发/AST 还原)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: a4a629c
+  - name: Crack-JS-Spider
+    repo: https://github.com/LoseNine/Crack-JS-Spider.git
+    path: vertical/Crack-JS-Spider
+    pin: 9d36933
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: 30+ 真实站 JS 破解案例库(拼多多 anti_content/知乎 x-zse-96/极验滑块 w/酷狗 kg_mid, 带补环境注释)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 9d36933
 deployable:
   # 閮ㄧ讲鍖呰灞? SKILL.md 鏀瑰啓浠?鏀瑰悕/鎻忚堪绮捐/璺緞淇), 鍐呭 symlink 鎸囧悜 vertical 婧?  - name: hello-js-reverse
     path: deployable/hello-js-reverse
@@ -1038,6 +1064,7 @@ private:
     enabled: true
     note: 鎴戜滑缁存姢鐨?xfqtrace v2.2(鏃犵棔 hook backend + hide.kpm + 30+ 绔欑偣 recipe, 鍙屽瘑鐮?***REMOVED***/***REMOVED***)
     deploy: {}
+
 
 
 
