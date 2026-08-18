@@ -511,6 +511,9 @@ vertical:
     domain: bin
     note: radare2 的 Garlic DEX/Dalvik 插件
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: a429871
   - name: iv8
     repo: https://github.com/HanZzzzz000/iv8.git
     path: vertical/iv8
@@ -520,46 +523,61 @@ vertical:
     domain: js
     note: Python 原生 V8 环境运行时(470★, 最新 v0.1.4 2026-07-15, BOM/DOM 模拟+API监控+CDP)
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 950c9b9
   - name: web-reverse-iv8
     repo: https://github.com/Nan857/web-reverse-iv8.git
     path: vertical/web-reverse-iv8
-    pin: null
+    pin: 9777340
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
     note: iv8 补环境全链 skill(v9.6) —— 经 deployable 部署
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 9777340
   - name: js-deobfuscator
     repo: https://github.com/kuizuo/js-deobfuscator.git
     path: vertical/js-deobfuscator
-    pin: null
+    pin: 4a27e9b
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
     note: Babel AST 自动化反混淆(在线 playground+CLI+API, 反爬虫 AST 实战)
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 21598ad
   - name: decode-js
     repo: https://github.com/echo094/decode-js.git
     path: vertical/decode-js
-    pin: null
+    pin: 3950235
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
     note: JS 混淆 AST 分析器(javascript-obfuscator 专攻, 478 文件)
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 3950235
   - name: jsc_deobfuscator
     repo: https://github.com/hasherezade/jsc_deobfuscator.git
     path: vertical/jsc_deobfuscator
-    pin: null
+    pin: 14946ae
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
     note: V8 字节码静态反混淆(bytenode 保护对抗, hasherezade)
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 14946ae
   - name: view8
     repo: https://github.com/suleram/View8.git
     path: vertical/view8
-    pin: null
+    pin: 21598ad
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -567,7 +585,7 @@ vertical:
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: a429871
+      lastRemoteHead: 4a27e9b
 
 deployable:
   # 部署包装层: SKILL.md 改写件(改名/描述精要/路径修复), 内容 symlink 指向 vertical 源
@@ -714,6 +732,8 @@ private:
     enabled: true
     deploy:
       claude: true
+
+
 
 
 
