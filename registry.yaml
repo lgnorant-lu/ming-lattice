@@ -895,17 +895,18 @@ deployable:
     deploy:
       claude: true
 
-  - name: xfqtrace-kit
-    path: private/xfqtrace-kit
-    enabled: true
-    note: 我们维护的 xfqtrace v2.2(无痕 hook backend + hide.kpm + 30+ 站点 recipe, 双密码 ***REMOVED***/***REMOVED***)
-    deploy: {}
 private:
   - name: blog-content
     path: private/blog-content
     enabled: true
     deploy:
       claude: true
+  - name: xfqtrace-kit
+    path: private/xfqtrace-kit
+    enabled: true
+    note: 我们维护的 xfqtrace v2.2(无痕 hook backend + hide.kpm + 30+ 站点 recipe, 双密码 ***REMOVED***/***REMOVED***)
+    deploy: {}
+
 
 
 
