@@ -487,6 +487,9 @@ vertical:
     domain: mcp
     note: HAR/API 分析 + 自动生成 API wrapper(重, 114 文件)
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 13cda0a
   - name: garlic
     repo: https://github.com/neocanable/garlic.git
     path: vertical/garlic
@@ -496,6 +499,9 @@ vertical:
     domain: apk
     note: 世界最快 APK/Java 反编译器(C 实现, jadx 上位替代, 733★, 自带 MCP 模式)
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 1ae29fa
   - name: r2garlic
     repo: https://github.com/radareorg/r2garlic.git
     path: vertical/r2garlic
@@ -507,7 +513,7 @@ vertical:
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: e7474e5
+      lastRemoteHead: a429871
 
 deployable:
   # 部署包装层: SKILL.md 改写件(改名/描述精要/路径修复), 内容 symlink 指向 vertical 源
@@ -647,6 +653,8 @@ private:
     enabled: true
     deploy:
       claude: true
+
+
 
 
 

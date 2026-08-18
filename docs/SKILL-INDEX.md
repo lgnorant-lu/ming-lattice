@@ -60,6 +60,14 @@
 | 仓库 | 一句话定位 | 筛选结论 | 前置依赖 |
 |---|---|---|---|
 | android-reverse-claude-skill | APK 全流程自动逆向（自适应 Frida 绕过/Fragment 注入/Firebase 测试） | **deploy**（脚本需搬） | bash, jadx |
+| garlic | 世界最快 APK/Java 反编译器（C 实现, jadx 上位替代, CLI+MCP 双形态） | **deploy**（deployable/garlic-reverse） | Garlic v1.6+ 二进制 |
+| r2garlic | radare2 的 Garlic DEX/Dalvik 插件 | reference | r2 + garlic |
+
+### 工具链结论（CLI vs MCP）
+
+- **jadx → Garlic**：CLI 优先（`garlic apk -o`），可选 `garlic -m` MCP（DuckDB SQL 分析）——新工具天然双形态，**不需要专门 MCP skill**
+- **IDA → Rizin**：rizin 命令与 radare2 兼容，**基座 radare2 skill 直接覆盖**，不需要专门 skill；CutterMCP 是 GUI 形态（按需）
+- CLI 仍是 AI 最佳搭档：skill 价值在方法论不在工具前缀；新工具（C 实现/单二进制）对 AI 调用更友好
 | ios-reverse-claude-skill | iOS IPA/Mach-O 静态逆向（11 阶段 + Ghidra 脚本） | **deploy**（需修路径变量） | macOS 工具链或 Linux fallback |
 | areclaw | Windows 优先 Android 分析工作区（15 Frida 脚本 + MASTG 映射） | deploy-子集（脚本+映射） | Windows + Git Bash |
 | malware-re-skills | 防御性 RE：IOC 提取 + 脱壳评估（纯 prompt） | reference（IOC schema 吸收） | 无 |
