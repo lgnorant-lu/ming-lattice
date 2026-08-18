@@ -296,7 +296,7 @@ vertical:
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: 8f650f3
+      lastRemoteHead: def485e
   - name: trailofbits-skills
     repo: https://github.com/trailofbits/skills.git
     path: vertical/trailofbits-skills
@@ -427,6 +427,9 @@ vertical:
     domain: mcp
     note: Burp 官方 MCP(含预编译 mcp-proxy-all.jar)
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 642e6fa
   - name: wire-mcp
     repo: https://github.com/0xKoda/WireMCP.git
     path: vertical/wire-mcp
@@ -595,6 +598,9 @@ private:
     enabled: true
     deploy:
       claude: true
+
+
+
 
 
 
