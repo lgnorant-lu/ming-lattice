@@ -100,7 +100,19 @@
 | firefox-fingerprintBrowser | ruyiPage release 配套指纹 Firefox 说明页 | 源码入库 |
 | ruyipage-js / ruyipage-go / ruyipage-dev / ruyi-mcp | JS/Go 库 + 开发文档（含 SKILL.md/agents）+ MCP 桥接 | ⚠️ 上游 2026-08 下架/私有化（HTTP 404），**内容已持有, sourceGone 标记零网络跳过** |
 
-> 生态现状：ruyipage 与 ruyipage-skill 仍活跃（HTTP 200）；LoseNine 名下新仓库值得下一轮调研：AI_JS_DEBUGGER、Restore-JS、Crack-JS-Spider、FingerPrintJSBrowser、Chromium_FingerPrint_Tutorial、devtools-detecter、pjstealth。
+> 生态现状：ruyipage 与 ruyipage-skill 仍活跃（HTTP 200）；**下架进行时**——Restore-JS（《反爬虫JS破解与混淆还原手册》教程书）与 Crack-JS-Spider 在列表页出现后数分钟内 404，ruyipage-js/go/dev/mcp 已先期下架，作者在批量收敛敏感资产；**看到即采**，不留到下一轮。
+
+### LoseNine 候选轮（2026-08-18, 下架窗口以分钟计）
+
+| 条目 | 定位 | 状态 |
+|---|---|---|
+| AI_JS_DEBUGGER | CDP AI 自动 JS 逆向 v0.4.0：断点/XHR 回溯/AES·RSA 密钥 hook/自动报告+mitmproxy 脚本生成（web UI, OpenAI 兼容 API; 原仓库 **Valerian7**/AI_JS_DEBUGGER, LoseNine fork） | ✅ 入库 reference（pin e748a44） |
+| devtools-detecter | 定时性能采样 DevTools 检测 JS 库（对抗面参考） | ✅ 入库 reference |
+| pjstealth | 浏览器特征抹除+指纹随机化 Python 库 | ✅ 入库 reference |
+| FingerPrintJSBrowser | 过 FingerPrintJS 的定制 chromium 141 指纹浏览器（闭源 release, 单 README） | ✅ 入库 reference |
+| Chromium_FingerPrint_Tutorial | 《Chromium 指纹浏览器开发教程》**宣传页**（README+15 图书截图, 内容走淘宝书/语雀付费） | ❌ 不采集（宣传页无内容） |
+| Restore-JS | 《反爬虫JS破解与混淆还原手册》教程书 | ❌ 已 404 下架（错过窗口） |
+| Crack-JS-Spider | （列表页出现后数分钟即下架） | ❌ 已 404 下架 |
 
 ### 反混淆工具评估结论（2026-08-18）
 
