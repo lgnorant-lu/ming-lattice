@@ -1050,6 +1050,104 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 46e9c43
+
+  # ── SSA/IR 专项 2026-08-18(VMP 去虚拟化 + microcode + JS 反混淆) ──
+  - name: Mergen
+    repo: https://github.com/NaC-L/Mergen.git
+    path: vertical/Mergen
+    pin: 71fc607
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: bin
+    note: VMP 去虚拟化首选(850★, 汇编→LLVM IR 整函数符号执行, VMProtect 3.4-3.8/Themida 实测)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 71fc607
+  - name: d810-ng
+    repo: https://github.com/w00tzenheimer/d810-ng.git
+    path: vertical/d810-ng
+    pin: 2e59ab4
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: bin
+    note: IDA microcode 反混淆规则框架(CFF/opaque predicate/死代码, 规则 JSON 化)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 2e59ab4
+  - name: hrtng
+    repo: https://github.com/KasperskyLab/hrtng.git
+    path: vertical/hrtng
+    pin: eb6b9c2
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: bin
+    note: Kaspersky 官方 IDA 插件(1894★, 解密/反混淆/Unflattening/microcode 优化器)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: eb6b9c2
+  - name: vmprotect-research
+    repo: https://github.com/Rasetsuu/vmprotect-research.git
+    path: vertical/vmprotect-research
+    pin: 899774d
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: bin
+    note: Rust 通用 VMP 去虚拟化器(1.x-3.6 全系, 22/22 样本, CLI+Ghidra 插件)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 899774d
+  - name: VTIL2
+    repo: https://github.com/pop-rip/vtil2.git
+    path: vertical/VTIL2
+    pin: 242d331
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: bin
+    note: C# 全重写 VM 去虚拟化框架(2025 获奖, 符号执行+100+ 化简规则)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 242d331
+  - name: synchrony
+    repo: https://github.com/relative/synchrony.git
+    path: vertical/synchrony
+    pin: 710e9f6
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: JS 反混淆基线(1237★, Babel AST 非 SSA, npm i -g deobfuscator)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 710e9f6
+  - name: sccp_js
+    repo: https://github.com/hsk/sccp_js.git
+    path: vertical/sccp_js
+    pin: cbf03b7
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: JS SSA 转换+SCCP 教学实现(CFG/支配边界/SSA 全套, 方法论参照)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: cbf03b7
+  - name: obfuscator-io-deobfuscator
+    repo: https://github.com/ben-sb/obfuscator-io-deobfuscator.git
+    path: vertical/obfuscator-io-deobfuscator
+    pin: 42efc01
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: obfuscator.io 反混淆(常量传播/别名去重/DCE/CFF, SSA 思想 AST 化)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 42efc01
 deployable:
   # 閮ㄧ讲鍖呰灞? SKILL.md 鏀瑰啓浠?鏀瑰悕/鎻忚堪绮捐/璺緞淇), 鍐呭 symlink 鎸囧悜 vertical 婧?  - name: hello-js-reverse
     path: deployable/hello-js-reverse
@@ -1219,6 +1317,7 @@ private:
     enabled: true
     note: 鎴戜滑缁存姢鐨?xfqtrace v2.2(鏃犵棔 hook backend + hide.kpm + 30+ 绔欑偣 recipe, 鍙屽瘑鐮?***REMOVED***/***REMOVED***)
     deploy: {}
+
 
 
 
