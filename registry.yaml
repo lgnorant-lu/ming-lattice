@@ -332,7 +332,7 @@ vertical:
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: e400b88
+      lastRemoteHead: 49d550a
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
@@ -340,7 +340,7 @@ vertical:
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: e400b88
+      lastRemoteHead: 49d550a
   - name: jadx-mcp-server
     repo: https://github.com/Qtty/jadx-mcp-server.git
     path: vertical/jadx-mcp-server
@@ -647,6 +647,68 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 4a27e9b
+
+  # ── Flutter / 反检测 / Frida 深度（2026-08-18 第二轮补充） ─────
+  - name: blutter
+    repo: https://github.com/worawit/blutter.git
+    path: vertical/blutter
+    pin: 528acbe
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: apk
+    note: Flutter AOT 逆向核心工具(编译 Dart runtime, Android arm64 libapp.so)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 528acbe
+  - name: camoufox-cli
+    repo: https://github.com/Bin-Huang/camoufox-cli.git
+    path: vertical/camoufox-cli
+    pin: 4d86686
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: 反检测浏览器 CLI+Skills(C++级指纹伪造 canvas/WebGL/audio)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 4d86686
+  - name: frida-skills
+    repo: https://github.com/Rudra-ravi/frida-skills.git
+    path: vertical/frida-skills
+    pin: 62c7806
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: bin
+    note: Frida 全生命周期 skills(planning→writing→packaging→debugging, model-agnostic)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 62c7806
+  - name: frida-mcp-agent
+    repo: https://github.com/1193776794/frida-mcp.git
+    path: vertical/frida-mcp-agent
+    pin: 3766675
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: apk
+    note: AI 驱动 Frida Hook 生成(Android 动态分析, Frida CLI 而非 python API)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 3766675
+  - name: frida-mcp-skills
+    repo: https://github.com/yfe404/frida-mcp-skills.git
+    path: vertical/frida-mcp-skills
+    pin: d3f7350
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: bin
+    note: frida-mcp 配套操作 skill(Frida 17 安全使用, 脚本生命周期卫生)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: d3f7350
 deployable:
   # 部署包装层: SKILL.md 改写件(改名/描述精要/路径修复), 内容 symlink 指向 vertical 源
   - name: hello-js-reverse
@@ -799,6 +861,8 @@ private:
     enabled: true
     deploy:
       claude: true
+
+
 
 
 
