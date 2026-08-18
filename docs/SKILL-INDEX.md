@@ -154,11 +154,48 @@
 | claude-code-pentest | 6 阶段 pentest 生命周期 + 43 纯 stdlib 脚本 | reference（MITRE 映射） | 无 |
 | awesome-re-mcp | RE MCP 生态索引（过时） | **drop** | 无 |
 
-## 三、私有（1）
+## 二点五、三方向专项采集（2026-08-18, 三份调研报告决策）
+
+### 安卓控件 oracle（自研方案）
+
+| 条目 | 定位 | 状态 |
+|---|---|---|
+| appium-mcp（appium 官方） | Appium MCP server v1.92+（454★ 日更, 30+ 工具, NO_UI 省 token 60-90%） | ✅ reference（25c9ae9） |
+| **ui-oracle-protocol** | **自研 skill**：UI 控件自动化作为协议逆向 oracle（8 步：时间戳对齐→基线差集→流量窗口切片→生成时机还原→交叉验证→重放判官）+ timestamper.py | ✅ **private 已部署** |
+| Repey（腾讯） | **查无此仓库**（未开源/名称误记；实际可核实 QT4A/QTAF 均非 MCP） | ❌ 不采 |
+| LAMDA（firerpa, 8194★） | UI+MITM+Frida 一体备选（需 root, 体量重） | 备选 |
+
+### JSVMP 专项（4 项）
+
+| 条目 | 定位 | 状态 |
+|---|---|---|
+| woxiangyangzhimao-skills | **200+ skill 逆向生态宿主仓**：jsvmp-bytecode-recovery（五步纪律化字节码还原）+ web-reverse-master/traffic-triage/parity-gate/app-reverse/param-encryptor | ✅ reference（c01cd6a） |
+| firefox-reverse | SpiderMonkey 引擎层 AI 逆向（687★, JSVMP 逐指令 trace, 页面 JS 不可检测） | ✅ reference（13bacdf） |
+| camoufox-reverse-mcp | 反检测浏览器 MCP（440★, hook_jsvmp_interpreter/verify_signer_offline） | ✅ reference（92c822f） |
+| jsir（google） | MLIR 基 JS 高层 IR（660★ 今日活跃, CASCADE 论文, Hermes 反编译）——SSA/IR 标准答案 | ✅ reference（46e9c43） |
+| 观望 | jshookmcp（1905★, js_symbolic_execute_jsvmp 符号执行独有）、xtrace（12★ 太新）、cy_jsvmp（加密端教材）、sdenv-ng | 观望 |
+
+### SSA/IR 专项（8 项 + 方法论）
+
+| 条目 | 定位 | 状态 |
+|---|---|---|
+| Mergen | VMP 去虚拟化首选（850★, LLVM IR 整函数符号执行, VMProtect 3.4-3.8/Themida 实测） | ✅ reference（71fc607） |
+| d810-ng | IDA microcode 反混淆规则框架（JSON 规则化） | ✅ reference（2e59ab4） |
+| hrtng | Kaspersky 官方 IDA 插件（1894★） | ✅ reference（eb6b9c2） |
+| vmprotect-research | Rust 通用去虚拟化（22/22 样本, CLI+Ghidra） | ✅ reference（899774d） |
+| VTIL2 | C# 重写 VM 去虚拟化（2025 获奖） | ✅ reference（242d331） |
+| synchrony | JS 反混淆基线（1237★, Babel AST 非 SSA） | ✅ reference（710e9f6） |
+| sccp_js | JS SSA+SCCP 教学实现 | ✅ reference（cbf03b7） |
+| obfuscator-io-deobfuscator | obfuscator.io 反混淆（SSA 思想 AST 化） | ✅ reference（42efc01） |
+| **docs/SSA-IR-METHODOLOGY.md** | 7 步方法论固化（分诊→IR 载体→pass 链→CFF→opaque→VMP→验证）+ 资产地图 + LLM 边界 | ✅ 文档 |
+| 排除 | SledgeHammer/Project X（零命中）、MogVMP/vmp2（归档）、webcrack/humanify（AST 已被 xbs 覆盖） | ❌ |
+
+## 三、私有（2）
 
 | skill | 一句话定位 | 状态 |
 |---|---|---|
 | blog-content | 博客创作与发布全流程规范 | 已部署 |
+| ui-oracle-protocol | 自研：安卓 UI 控件自动化作为协议逆向 oracle（见二点五） | 已部署 |
 
 ## 四、案例库（docs/cases/）
 
