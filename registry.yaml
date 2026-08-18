@@ -1000,6 +1000,56 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 25c9ae9
+
+  # ── JSVMP 专项 2026-08-18(引擎层 trace + 字节码还原方法论) ──
+  - name: woxiangyangzhimao-skills
+    repo: https://github.com/woxiangyangzhimao/skills.git
+    path: vertical/woxiangyangzhimao-skills
+    pin: c01cd6a
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: 200+ skill 逆向生态宿主仓(jsvmp-bytecode-recovery/web-reverse-master/traffic-triage/parity-gate/app-reverse/param-encryptor/env-patcher)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: c01cd6a
+  - name: firefox-reverse
+    repo: https://github.com/WhiteNightShadow/firefox-reverse.git
+    path: vertical/firefox-reverse
+    pin: 13bacdf
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: SpiderMonkey 引擎层 AI 逆向工作站(687★, JSVMP 逐指令 trace/WASM import 边界, 页面 JS 无法检测)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 13bacdf
+  - name: camoufox-reverse-mcp
+    repo: https://github.com/WhiteNightShadow/camoufox-reverse-mcp.git
+    path: vertical/camoufox-reverse-mcp
+    pin: 92c822f
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: 反检测浏览器 MCP(440★, 35 工具, hook_jsvmp_interpreter/verify_signer_offline 逐字符定位签名偏差)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 92c822f
+  - name: jsir
+    repo: https://github.com/google/jsir.git
+    path: vertical/jsir
+    pin: 46e9c43
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: Google 下一代 JS 分析工具(660★, MLIR 基高层 IR, CASCADE 论文, Hermes 字节码反编译) SSA/IR 标准答案
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 46e9c43
 deployable:
   # 閮ㄧ讲鍖呰灞? SKILL.md 鏀瑰啓浠?鏀瑰悕/鎻忚堪绮捐/璺緞淇), 鍐呭 symlink 鎸囧悜 vertical 婧?  - name: hello-js-reverse
     path: deployable/hello-js-reverse
@@ -1169,6 +1219,7 @@ private:
     enabled: true
     note: 鎴戜滑缁存姢鐨?xfqtrace v2.2(鏃犵棔 hook backend + hide.kpm + 30+ 绔欑偣 recipe, 鍙屽瘑鐮?***REMOVED***/***REMOVED***)
     deploy: {}
+
 
 
 
