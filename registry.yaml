@@ -333,6 +333,30 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 0abba7f
+  - name: awesome-re-mcp
+    repo: https://github.com/crowdere/Awesome-RE-MCP.git
+    path: vertical/awesome-re-mcp
+    pin: e400b88
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: misc
+    note: RE 工具 MCP 生态索引(IDA/Ghidra/BinNinja/radare2/debugger 全清单+缺失标注)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: e400b88
+  - name: jadx-mcp-server
+    repo: https://github.com/Qtty/jadx-mcp-server.git
+    path: vertical/jadx-mcp-server
+    pin: 19bd9c1
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: apk
+    note: 纯 Java MCP 服务器(jadx 分析 APK)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 19bd9c1
 
 private:
   - name: blog-content
@@ -340,6 +364,9 @@ private:
     enabled: true
     deploy:
       claude: true
+
+
+
 
 
 
