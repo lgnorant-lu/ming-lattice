@@ -987,6 +987,19 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: a1ae399
+
+  - name: appium-mcp
+    repo: https://github.com/appium/appium-mcp.git
+    path: vertical/appium-mcp
+    pin: 25c9ae9
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: android
+    note: 官方 Appium MCP server v1.92+(454★ 日更, 30+ 工具, NO_UI 省 token), ui-oracle-protocol 依赖
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 25c9ae9
 deployable:
   # 閮ㄧ讲鍖呰灞? SKILL.md 鏀瑰啓浠?鏀瑰悕/鎻忚堪绮捐/璺緞淇), 鍐呭 symlink 鎸囧悜 vertical 婧?  - name: hello-js-reverse
     path: deployable/hello-js-reverse
@@ -1145,11 +1158,19 @@ private:
     enabled: true
     deploy:
       claude: true
+  - name: ui-oracle-protocol
+    path: private/ui-oracle-protocol
+    enabled: true
+    note: 自研: UI 控件自动化作为协议逆向 oracle(时间戳对齐+流量窗口切片+重放判官), 配 timestamper.py
+    deploy:
+      claude: true
   - name: xfqtrace-kit
     path: private/xfqtrace-kit
     enabled: true
     note: 鎴戜滑缁存姢鐨?xfqtrace v2.2(鏃犵棔 hook backend + hide.kpm + 30+ 绔欑偣 recipe, 鍙屽瘑鐮?***REMOVED***/***REMOVED***)
     deploy: {}
+
+
 
 
 
