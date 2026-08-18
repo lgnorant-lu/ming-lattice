@@ -106,9 +106,10 @@ vertical:
   - name: iwen-scraping
     repo: https://github.com/xiao-heng/iwen-scraping.git
     path: vertical/iwen-scraping
-    pin: null
-    enabled: false
+    pin: 4e34565
+    enabled: true
     domain: js
+    note: 站点实战样本库(60+ 案例, 已过滤 mp4/xlsx/exe 噪声 210M→36M)
     deploy: {}
   - name: reverse-skills-p4nda0s
     repo: https://github.com/P4nda0s/reverse-skills.git
