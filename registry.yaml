@@ -511,6 +511,60 @@ vertical:
     domain: bin
     note: radare2 的 Garlic DEX/Dalvik 插件
     deploy: {}
+  - name: iv8
+    repo: https://github.com/HanZzzzz000/iv8.git
+    path: vertical/iv8
+    pin: v0.1.4
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: Python 原生 V8 环境运行时(470★, 最新 v0.1.4 2026-07-15, BOM/DOM 模拟+API监控+CDP)
+    deploy: {}
+  - name: web-reverse-iv8
+    repo: https://github.com/Nan857/web-reverse-iv8.git
+    path: vertical/web-reverse-iv8
+    pin: null
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: iv8 补环境全链 skill(v9.6) —— 经 deployable 部署
+    deploy: {}
+  - name: js-deobfuscator
+    repo: https://github.com/kuizuo/js-deobfuscator.git
+    path: vertical/js-deobfuscator
+    pin: null
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: Babel AST 自动化反混淆(在线 playground+CLI+API, 反爬虫 AST 实战)
+    deploy: {}
+  - name: decode-js
+    repo: https://github.com/echo094/decode-js.git
+    path: vertical/decode-js
+    pin: null
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: JS 混淆 AST 分析器(javascript-obfuscator 专攻, 478 文件)
+    deploy: {}
+  - name: jsc_deobfuscator
+    repo: https://github.com/hasherezade/jsc_deobfuscator.git
+    path: vertical/jsc_deobfuscator
+    pin: null
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: V8 字节码静态反混淆(bytenode 保护对抗, hasherezade)
+    deploy: {}
+  - name: view8
+    repo: https://github.com/suleram/View8.git
+    path: vertical/view8
+    pin: null
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: V8 序列化字节码反编译(JSC → 可读代码)
+    deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: a429871
@@ -644,6 +698,13 @@ deployable:
     enabled: true
     domain: apk
     note: Garlic 反编译专项(CLI 优先, jadx 上位替代, MCP 可选)
+    deploy:
+      claude: true
+  - name: web-reverse-iv8
+    path: deployable/web-reverse-iv8
+    enabled: true
+    domain: js
+    note: iv8 补环境全链 skill(v9.6, HAR追踪→定位→反混淆→iv8环境→本地验证, 阶段门硬阻断)
     deploy:
       claude: true
 
