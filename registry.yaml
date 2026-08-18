@@ -355,6 +355,9 @@ vertical:
     note: 纯 Java MCP 服务器(jadx 分析 APK)
     deploy: {}
   # ── MCP 服务器源码（接入评估用, domain=mcp） ────────────────────
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 19bd9c1
   - name: frida-mcp
     repo: https://github.com/dnakov/frida-mcp.git
     path: vertical/frida-mcp
@@ -364,6 +367,9 @@ vertical:
     domain: mcp
     note: Frida 进程管理/脚本注入/实时插桩 MCP(移动动态分析候选)
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: f8003c7
   - name: ghidra-mcp-lauriewired
     repo: https://github.com/LaurieWired/GhidraMCP.git
     path: vertical/ghidra-mcp-lauriewired
@@ -373,6 +379,9 @@ vertical:
     domain: mcp
     note: GhidraMCP 5.4k★ 全功能
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 27f316f
   - name: radare2-mcp
     repo: https://github.com/radareorg/radare2-mcp.git
     path: vertical/radare2-mcp
@@ -382,6 +391,9 @@ vertical:
     domain: mcp
     note: radare2 官方 26+ 工具 MCP
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: f738e9a
   - name: jadx-mcp-plugin
     repo: https://github.com/mobilehackinglab/Jadx-MCP-Plugin.git
     path: vertical/jadx-mcp-plugin
@@ -391,6 +403,9 @@ vertical:
     domain: mcp
     note: mobilehackinglab jadx MCP 插件
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: b6493ee
   - name: apktool-mcp-server
     repo: https://github.com/zinja-coder/apktool-mcp-server.git
     path: vertical/apktool-mcp-server
@@ -400,6 +415,9 @@ vertical:
     domain: mcp
     note: APK 操作 MCP
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 12bb331
   - name: burp-mcp-portswigger
     repo: https://github.com/PortSwigger/mcp-server.git
     path: vertical/burp-mcp-portswigger
@@ -418,6 +436,9 @@ vertical:
     domain: mcp
     note: Wireshark MCP(威胁检测)
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 7f45f8b
   - name: mcp-for-security
     repo: https://github.com/cyproxio/mcp-for-security.git
     path: vertical/mcp-for-security
@@ -427,6 +448,9 @@ vertical:
     domain: mcp
     note: SQLMap/FFUF/NMAP/Masscan 集合(199 文件)
     deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 51dd537
   - name: x64dbg-mcp
     repo: https://github.com/Wasdubya/x64dbgMCP.git
     path: vertical/x64dbg-mcp
@@ -438,7 +462,7 @@ vertical:
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: 19bd9c1
+      lastRemoteHead: e7474e5
 
 deployable:
   # 部署包装层: SKILL.md 改写件(改名/描述精要/路径修复), 内容 symlink 指向 vertical 源
@@ -571,6 +595,7 @@ private:
     enabled: true
     deploy:
       claude: true
+
 
 
 
