@@ -290,8 +290,8 @@ vertical:
     note: sparse 閲囬泦 .claude/skills (10 涓?SKILL.md); pin = upstream HEAD
     deploy: {}
     checkCache:
-      lastCheckedAt: 2026-08-18
-      lastRemoteHead: 3cd724c
+      lastCheckedAt: 2026-08-20
+      lastRemoteHead: 9bf1e10
   - name: trailofbits-skills
     repo: https://github.com/trailofbits/skills.git
     path: vertical/trailofbits-skills
@@ -602,7 +602,7 @@ vertical:
     note: RE 宸ュ叿 MCP 鐢熸€佺储寮?宸茶繃鏃? drop 鍊欓€? 淇濈暀瀵圭収)
     deploy: {}
     checkCache:
-      lastCheckedAt: 2026-08-18
+      lastCheckedAt: 2026-08-20
       lastRemoteHead: e400b88
   - name: r2garlic
     repo: https://github.com/radareorg/r2garlic.git
@@ -1338,6 +1338,13 @@ deployable:
     note: ruyiPage 瀹樻柟 skill v1.2(BiDi 鍘熺敓/浜烘満鍖?鎸囩汗娴忚鍣?鍙嶇埇)
     deploy:
       claude: true
+  - name: reverse-skill-router
+    path: deployable/reverse-skill-router
+    enabled: true
+    domain: routing
+    note: 路由总控基座(base/reverse-skill/skills/SKILL.md 组装: 路由执行契约+master-route.ps1+case-init+ops 门禁), 全部 symlink 指向 base 单一事实源
+    deploy:
+      claude: true
 private:
   - name: blog-content
     path: private/blog-content
@@ -1355,6 +1362,8 @@ private:
     enabled: true
     note: 鎴戜滑缁存姢鐨?xfqtrace v2.2(鏃犵棔 hook backend + hide.kpm + 30+ 绔欑偣 recipe, 鍙屽瘑鐮?***REMOVED***/***REMOVED***)
     deploy: {}
+
+
 
 
 
