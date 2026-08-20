@@ -1187,7 +1187,8 @@ vertical:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 3da93ec
 deployable:
-  # 閮ㄧ讲鍖呰灞? SKILL.md 鏀瑰啓浠?鏀瑰悕/鎻忚堪绮捐/璺緞淇), 鍐呭 symlink 鎸囧悜 vertical 婧?  - name: hello-js-reverse
+  # 閮ㄧ讲鍖呰灞? SKILL.md 鏀瑰啓浠?鏀瑰悕/鎻忚堪绮捐/璺緞淇), 鍐呭 symlink 鎸囧悜 vertical 婧?
+  - name: hello-js-reverse
     path: deployable/hello-js-reverse
     enabled: true
     domain: js
@@ -1361,7 +1362,8 @@ private:
     path: private/xfqtrace-kit
     enabled: true
     note: 鎴戜滑缁存姢鐨?xfqtrace v2.2(鏃犵棔 hook backend + hide.kpm + 30+ 绔欑偣 recipe, 鍙屽瘑鐮?***REMOVED***/***REMOVED***)
-    deploy: {}
+    deploy:
+      claude: true
 
 
 
