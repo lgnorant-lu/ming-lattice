@@ -291,7 +291,7 @@ vertical:
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: ae39214
+      lastRemoteHead: 3cd724c
   - name: trailofbits-skills
     repo: https://github.com/trailofbits/skills.git
     path: vertical/trailofbits-skills
@@ -1148,6 +1148,44 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 42efc01
+
+  # ── 观望单清零 2026-08-18 ──
+  - name: jshookmcp
+    repo: https://github.com/vmoranv/jshookmcp.git
+    path: vertical/jshookmcp
+    pin: 67fdd78
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: JS 逆向 MCP monorepo(1905★, js_analyze_vm/js_deobfuscate_jsvmp/js_symbolic_execute_jsvmp 字节码符号执行独有能力)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 67fdd78
+  - name: xtrace
+    repo: https://github.com/linn0x/xtrace.git
+    path: vertical/xtrace
+    pin: aeb8167
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: js
+    note: V8/Blink 引擎层非侵入插桩(9 类 JSVMP hook 家族, NDJSON trace), 与 firefox-reverse 互补
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: aeb8167
+  - name: uiautodev
+    repo: https://github.com/codeskyblue/uiautodev.git
+    path: vertical/uiautodev
+    pin: 3da93ec
+    acquiredAt: 2026-08-18
+    enabled: true
+    domain: android
+    note: uiautomator2 控件树检视工具(530★, weditor 替代), 配 ui-oracle-protocol
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-08-18
+      lastRemoteHead: 3da93ec
 deployable:
   # 閮ㄧ讲鍖呰灞? SKILL.md 鏀瑰啓浠?鏀瑰悕/鎻忚堪绮捐/璺緞淇), 鍐呭 symlink 鎸囧悜 vertical 婧?  - name: hello-js-reverse
     path: deployable/hello-js-reverse
@@ -1317,6 +1355,8 @@ private:
     enabled: true
     note: 鎴戜滑缁存姢鐨?xfqtrace v2.2(鏃犵棔 hook backend + hide.kpm + 30+ 绔欑偣 recipe, 鍙屽瘑鐮?***REMOVED***/***REMOVED***)
     deploy: {}
+
+
 
 
 

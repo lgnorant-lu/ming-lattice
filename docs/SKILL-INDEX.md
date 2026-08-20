@@ -173,7 +173,13 @@
 | firefox-reverse | SpiderMonkey 引擎层 AI 逆向（687★, JSVMP 逐指令 trace, 页面 JS 不可检测） | ✅ reference（13bacdf） |
 | camoufox-reverse-mcp | 反检测浏览器 MCP（440★, hook_jsvmp_interpreter/verify_signer_offline） | ✅ reference（92c822f） |
 | jsir（google） | MLIR 基 JS 高层 IR（660★ 今日活跃, CASCADE 论文, Hermes 反编译）——SSA/IR 标准答案 | ✅ reference（46e9c43） |
-| 观望 | jshookmcp（1905★, js_symbolic_execute_jsvmp 符号执行独有）、xtrace（12★ 太新）、cy_jsvmp（加密端教材）、sdenv-ng | 观望 |
+| 观望 | ~~jshookmcp~~ **已采（67fdd78）**：js_analyze_vm/js_deobfuscate_jsvmp/js_symbolic_execute_jsvmp（字节码符号执行独有）；~~xtrace~~ **已采（aeb8167）**：V8/Blink 引擎层插桩；sdenv-ng（npm 0.2.3, BSD-3, 瑞数补环境实测一致——npm 参考不采源码）；~~cy_jsvmp~~ **gone**（三方不可达, 加密端教材参考丢失） | 见上 |
+
+### 安卓 oracle 配套（观望单清零）
+
+| 条目 | 定位 | 状态 |
+|---|---|---|
+| uiautodev | uiautomator2 控件树检视（530★, weditor 替代） | ✅ reference（3da93ec） |
 
 ### SSA/IR 专项（8 项 + 方法论）
 
