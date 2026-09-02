@@ -1,0 +1,85 @@
+# testing-family 机器可读组合拓扑与互斥定义 (Machine-Readable Composition Spec)
+schemaVersion: "1.0"
+description: "定义 11 个 testing-* 技能的分层 (layer)、互斥 (mutex) 与推荐组合"
+
+layers:
+  oracle:
+    required: true
+    description: "全局判定中枢与通用禁令"
+    members:
+      - testing-core-oracle
+
+  workflow:
+    required: true
+    mutex: true
+    description: "驱动工作流（两套互斥：绿场规范驱动 vs 棕场现状锁定）"
+    members:
+      - name: testing-workflow-spec
+        stage: greenfield
+        purpose: "新需求/接口契约 -> Given/When/Then 失败验收先行"
+      - name: testing-workflow-characterize
+        stage: brownfield
+        purpose: "遗留代码/JS补丁重构 -> 捕获现状基线 -> 精准Golden护栏"
+
+  idiom:
+    required: true
+    description: "语言地道机制与工具链"
+    members:
+      - testing-rust-idiom
+      - testing-python-idiom
+      - testing-js-idiom
+      - testing-go-idiom
+
+  scenario:
+    required: false
+    description: "业务场景拓扑与特定领域契约"
+    members:
+      - testing-scenario-embed-ffi
+      - testing-scenario-cli
+      - testing-scenario-scraper
+
+  deep_verification:
+    required: false
+    description: "深层形式化性质与代码变异杀伤力审计"
+    members:
+      - testing-property-mutation
+
+standard_recipes:
+  embed_ffi_greenfield:
+    description: "Rust内核+V8/PyO3新接口开发"
+    compose:
+      - testing-core-oracle
+      - testing-scenario-embed-ffi
+      - testing-rust-idiom
+      - testing-workflow-spec
+
+  js_patch_refactor:
+    description: "JS行为补丁/AST混淆还原重构"
+    compose:
+      - testing-core-oracle
+      - testing-scenario-embed-ffi
+      - testing-js-idiom
+      - testing-workflow-characterize
+
+  cli_tool_dev:
+    description: "CLI命令行工具开发"
+    compose:
+      - testing-core-oracle
+      - testing-scenario-cli
+      - testing-rust-idiom  # or testing-go-idiom / testing-python-idiom
+      - testing-workflow-spec
+
+  pipeline_scraper_dev:
+    description: "爬虫采集与数据清洗管道开发"
+    compose:
+      - testing-core-oracle
+      - testing-scenario-scraper
+      - testing-python-idiom  # or testing-go-idiom
+      - testing-workflow-spec
+
+  deep_fuzz_hardening:
+    description: "算法/协议鲁棒性性质测试与变异加固"
+    compose:
+      - testing-core-oracle
+      - testing-rust-idiom
+      - testing-property-mutation

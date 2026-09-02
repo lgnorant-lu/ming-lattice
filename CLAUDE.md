@@ -8,8 +8,8 @@
 registry.yaml            唯一事实源: base(基座模块)/vertical(参考)/deployable(部署)/private(私有) + targets
 base/reverse-skill/      路由基座 (上游 submodule, 只读; 其 skills/ 下有 20 个模块 + router)
 vertical/                92 个 vendored 仓库 (参考/源码, 带 .git metadata, 不部署)
-deployable/              24 个部署包装 (SKILL.md 改写 + symlink 指向 vertical/base 源)
-private/                 3 个私有 (blog-content/ui-oracle-protocol/xfqtrace-kit)
+deployable/              26 个部署包装 (SKILL.md 改写 + symlink 指向 vertical/base 源)
+private/                 15 个私有 (4 个自研: blog-content/ui-oracle-protocol/ui-design-paradigms/xfqtrace-kit + 11 个 testing-family 测试规范族)
 scripts/                 sync/update/lint/verify + lib/yaml-lite.ps1
 docs/                    SKILL-INDEX(路由参考)/INVENTORY/SCREENING/MCP-INVENTORY/SSA-IR-METHODOLOGY/cases
 ```

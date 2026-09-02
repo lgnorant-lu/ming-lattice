@@ -196,12 +196,33 @@
 | **docs/SSA-IR-METHODOLOGY.md** | 7 步方法论固化（分诊→IR 载体→pass 链→CFF→opaque→VMP→验证）+ 资产地图 + LLM 边界 | ✅ 文档 |
 | 排除 | SledgeHammer/Project X（零命中）、MogVMP/vmp2（归档）、webcrack/humanify（AST 已被 xbs 覆盖） | ❌ |
 
-## 三、私有（2）
+## 三、私有与自研技能
 
+### 1. 通用与业务自研
 | skill | 一句话定位 | 状态 |
 |---|---|---|
 | blog-content | 博客创作与发布全流程规范 | 已部署 |
 | ui-oracle-protocol | 自研：安卓 UI 控件自动化作为协议逆向 oracle（见二点五） | 已部署 |
+| ui-design-paradigms | 全球数字产品主流 UI/UX 设计范式知识库 (Material 3 / shadcn / Apple HIG / Bento / Swiss / Neubrutalism) | 已部署 |
+| xfqtrace-kit | 私有无痕 hook 框架与逆向 recipe 库 | 已部署 |
+
+### 2. 测试规范体系族（testing-family，11 个包）
+
+> 组合协议：`1 元规则 + 1 场景 + 1 语言 + 1 驱动`，详细机读规则见 `private/testing-core-oracle/references/compose.yaml`。
+
+| 模块 / Skill | 层级 (Layer) | 一句话定位 | 核心触发词 |
+|---|---|---|---|
+| **testing-core-oracle** | 元规则中枢 | 独立 Oracle 判定律、Agile 四象限、三大禁令、质量属性 Overlay、组合协议 | test-strategy, oracle, test-quality, code-testing |
+| **testing-workflow-spec** | 驱动 (绿场) | 规格驱动开发 (Spec-Driven/BDD)，Given/When/Then 验收先行，对接 Pocock/Obra TDD 司机 | spec-driven, bdd-workflow, acceptance-test, test-first |
+| **testing-workflow-characterize** | 驱动 (棕场) | 表征测试与 Golden 现状锁定，遗留重构与补丁升级护栏，差异审计 | characterization-test, golden-master, legacy-refactor |
+| **testing-property-mutation** | 深层证伪 | 4 大数学不变量形式化、proptest/Hypothesis、变异杀伤率与存活变异诊断 | property-testing, mutation-testing, cargo-mutants |
+| **testing-rust-idiom** | 语言机制 | Rust 地道测试：cfg(test)与tests边界、Parse don't validate、Miri (--lib)、Fuzzing | rust-test, cargo-test, proptest-rust, miri-test |
+| **testing-python-idiom** | 语言机制 | Python 地道测试：pytest fixture分层、parametrize表驱动、raises异常契约、禁私有mock | python-test, pytest, pytest-patterns, python-fixtures |
+| **testing-js-idiom** | 语言机制 | JS/TS 地道测试：宿主上下文重置、Promise 异步契约断言、拒绝全量源码快照 | js-test, ts-test, vitest, jest, async-testing |
+| **testing-go-idiom** | 语言机制 | Go 地道测试：表驱动结构体切片、t.Run、wantErr、原生 Fuzzing、testdata 隔离 | go-test, golang-testing, table-driven-tests, go-fuzz |
+| **testing-scenario-embed-ffi** | 场景特化 | 嵌入式与跨语言 FFI (Rust+V8+PyO3+JS补丁)，跨端 Shared Testdata 契约，三册专项分流 | v8-test, pyo3-test, js-patch-test, ffi-test |
+| **testing-scenario-cli** | 场景特化 | 命令行与脚本工具契约：参数退出码矩阵、可注入FS/Env、幂等性与防半成品 | cli-test, command-line-testing, exit-codes, golden-files |
+| **testing-scenario-scraper** | 场景特化 | 采集爬虫与清洗管道：离线 Fixture 优先、领域不变量、选择器健康度、活网仅作探针 | scraper-testing, crawler-test, selector-health, fixture-parsing |
 
 ## 四、案例库（docs/cases/）
 
