@@ -17,7 +17,8 @@ description: Top-level domain router and recipe dispatcher for ming-skills. Rout
 
 2. **`ACT`（按决议动作执行）**：
    - **`domain=testing`**：
-     - 输出选定的测试配方（如 `testing-core-oracle` + `workflow` + `idiom` + `scenario`）。
+     - 若配方为 `testing-overview-catalog`（盘点/讲述意图）：**向用户全面陈述体系全貌、各包职责与路线图，禁止直接盲目动手改写代码**；
+     - 若配方为具体实现（如 `spec-driven-greenfield` / `embed-ffi`）：输出标准 1+1 装配并进入开发工作流；
      - **禁止**调用任何逆向 SOP 或 `case-init` 脚本。
    - **`domain=reverse`**：
      - 指引转交逆向专职路由器 `/reverse-skill-router` 进行深度工具链自举。
@@ -26,7 +27,7 @@ description: Top-level domain router and recipe dispatcher for ming-skills. Rout
    - **`domain=none`（拒识）**：
      - 输出 `[NO_ROUTE]` 说明，提示用户当前意图未命中本仓库已知领域，请显式指明具体技能。
    - **`domain=mixed`**：
-     - 输出多领域复合装配图，向用户提问澄清主次目标。
+     - 输出多领域复合候选名单与装配图，向用户提问澄清主次目标。
 
 3. **`STRICT INVARIANT`（铁律：零副作用）**：
    - 本路由器**绝对禁止**创建 `work/` 目录；

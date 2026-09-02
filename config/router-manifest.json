@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-09-02T10:09:39.928Z",
+  "generatedAt": "2026-09-02T10:14:35.319Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -193,6 +193,15 @@
       "description": "绿场规格驱动开发标准配方 (Oracle + Spec驱动 + 语言地道测试)",
       "skills": [
         "testing-core-oracle",
+        "testing-workflow-spec"
+      ]
+    },
+    "cli-tool-spec": {
+      "domain": "testing",
+      "description": "CLI 命令行工具链与运维脚本规范测试配方 (Oracle + CLI场景 + Spec驱动)",
+      "skills": [
+        "testing-core-oracle",
+        "testing-scenario-cli",
         "testing-workflow-spec"
       ]
     },

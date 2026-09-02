@@ -131,6 +131,8 @@ export function Decide(hint, manifest) {
     let selectedRecipeKey = 'spec-driven-greenfield';
     if (text.includes('盘点') || text.includes('讲述') || text.includes('找找') || text.includes('覆盖设计') || text.includes('规范族') || text.includes('体系')) {
       selectedRecipeKey = 'testing-overview-catalog';
+    } else if (text.includes('cli') || text.includes('脚本') || text.includes('退出码') || text.includes('命令行')) {
+      selectedRecipeKey = 'cli-tool-spec';
     } else if (text.includes('ffi') || text.includes('v8') || text.includes('pyo3') || text.includes('跨语言') || text.includes('嵌入')) {
       selectedRecipeKey = 'embed-ffi-greenfield';
     } else if (text.includes('爬虫') || text.includes('采集') || text.includes('scraper') || text.includes('清洗')) {
@@ -203,6 +205,42 @@ export function Decide(hint, manifest) {
     side_effects: 'none',
     must_not: ['initReverseCase', 'create_work_dir'],
     reasons
+  };
+}
+
+/**
+ * 通用适配层转换函数: 将 RouteDecision 翻译为具体 Harness 执行参数
+ * @param {object} decision RouteDecision 结构体
+ * @returns {object} 适配结果对象
+ */
+export function adapt(decision) {
+  if (!decision || typeof decision !== 'object') {
+    return {
+      injectedCandidates: [],
+      loadSkills: [],
+      allowCaseInit: false,
+      promptAction: 'handoff'
+    };
+  }
+
+  const injectedCandidates = decision.candidates || [];
+  const loadSkills = decision.active_recipe?.skills || [];
+  const allowCaseInit = decision.domain === 'reverse' && decision.confidence === 'high' && !decision.must_not?.includes('initReverseCase');
+
+  let promptAction = 'implement';
+  if (decision.action === 'handoff') {
+    promptAction = 'handoff';
+  } else if (decision.action === 'ask') {
+    promptAction = 'ask_clarification';
+  } else if (decision.active_recipe?.name === 'testing-overview-catalog') {
+    promptAction = 'overview_explain';
+  }
+
+  return {
+    injectedCandidates,
+    loadSkills,
+    allowCaseInit,
+    promptAction
   };
 }
 

@@ -93,6 +93,11 @@ const RECIPES = {
     description: "绿场规格驱动开发标准配方 (Oracle + Spec驱动 + 语言地道测试)",
     skills: ["testing-core-oracle", "testing-workflow-spec"]
   },
+  "cli-tool-spec": {
+    domain: "testing",
+    description: "CLI 命令行工具链与运维脚本规范测试配方 (Oracle + CLI场景 + Spec驱动)",
+    skills: ["testing-core-oracle", "testing-scenario-cli", "testing-workflow-spec"]
+  },
   "characterization-brownfield": {
     domain: "testing",
     description: "棕场遗留系统表征锁定配方 (Oracle + 表征测试 + 语言地道测试)",
