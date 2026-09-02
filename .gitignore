@@ -1,8 +1,27 @@
 # sync 备份的旧目标
 .trash/
-# 本地临时
+
+# 本地运行与临时产物
 *.log
-# 大体积下载中间产物
+work/
+__pycache__/
+*.py[cod]
+
+# 大体积压缩包与下载中间产物
 *.tar.gz
+*.tar
+*.zip
+*.7z
+*.rar
+
+# 大体积多媒体演示文件
+*.mp4
+*.mkv
+*.avi
+*.mov
+
+# 现场 trace 产生的大型日志目录
+**/xfqtrace_logs/
+
 # vendored 仓库的 git 元数据（保留 .git 供 update 增量 fetch, 但父仓库不跟踪）
 vertical/*/.git/
