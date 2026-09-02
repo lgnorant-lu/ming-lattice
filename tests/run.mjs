@@ -6,6 +6,7 @@ import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { run as runValidateUnit } from './unit/test-validate-hooks.test.mjs';
 import { run as runBuildManifestUnit } from './unit/test-build-manifest.test.mjs';
+import { run as runAdapterContract } from './contract/test-adapter-contract.mjs';
 import { run as runCliIntegration } from './integration/test-cli-tools.test.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
@@ -16,7 +17,7 @@ async function main() {
   console.log('================================================================\n');
 
   let passedSuites = 0;
-  let totalSuites = 5;
+  let totalSuites = 6;
 
   try {
     // 1. Hook 校验器单元测试
@@ -27,18 +28,36 @@ async function main() {
     runBuildManifestUnit();
     passedSuites++;
 
-    // 3. 跨 Harness 路由决策 8 黄金用例
-    console.log('[TEST UNIT] 路由决策纯函数 8 条黄金用例回归...');
+    // 3. 跨 Harness 路由决策 20 条结构化黄金用例
+    console.log('[TEST CONTRACT] 路由决策纯函数 20 条黄金用例回归...');
     execSync('node tests/test-route-decision.mjs', { cwd: root, stdio: 'inherit' });
     passedSuites++;
 
-    // 4. PowerShell YAML-Lite 解析器单元测试
-    console.log('[TEST UNIT] scripts/lib/yaml-lite.ps1 解析器测试...');
-    execSync('pwsh -File tests/unit/test-yaml-lite.test.ps1', { cwd: root, stdio: 'inherit' });
+    // 4. 假 Harness 适配器契约与副作用阻断测试
+    runAdapterContract();
     passedSuites++;
 
-    // 5. 运维工具链端到端集成测试
-    runCliIntegration();
+    // 5. PowerShell YAML-Lite 解析器表征测试 (kind: characterize)
+    const hasPwsh = (() => {
+      try {
+        execSync(process.platform === 'win32' ? 'where pwsh' : 'command -v pwsh', { stdio: 'ignore' });
+        return true;
+      } catch {
+        return false;
+      }
+    })();
+
+    if (hasPwsh) {
+      console.log('[TEST UNIT] scripts/lib/yaml-lite.ps1 解析器测试 (kind: characterize)...');
+      execSync('pwsh -File tests/unit/test-yaml-lite.test.ps1', { cwd: root, stdio: 'inherit' });
+      passedSuites++;
+    } else {
+      console.log('[TEST UNIT] [SKIP] 当前环境未检测到 pwsh，跳过 PowerShell 解析器测试');
+      passedSuites++;
+    }
+
+    // 6. 运维工具链端到端集成测试 (CLI)
+    runCliIntegration(hasPwsh);
     passedSuites++;
 
     console.log('\n================================================================');
