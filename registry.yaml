@@ -52,7 +52,7 @@ base:
       supply-chain-security: [claude]
     checkCache:
       lastCheckedAt: 2026-08-18
-      lastRemoteHead: ea582f3
+      lastRemoteHead: 71acc8e
 
 vertical:
   # 鈹€鈹€ JS / Web 閫嗗悜 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -261,7 +261,7 @@ vertical:
   - name: ctf-skills
     repo: https://github.com/ljagiello/ctf-skills.git
     path: vertical/ctf-skills
-    pin: d6662d2
+    pin: 36c72e5
     acquiredAt: 2026-08-18
     enabled: true
     domain: ctf
@@ -295,7 +295,7 @@ vertical:
   - name: trailofbits-skills
     repo: https://github.com/trailofbits/skills.git
     path: vertical/trailofbits-skills
-    pin: 04b2411
+    pin: 14e5a10
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
@@ -319,7 +319,7 @@ vertical:
   - name: ida-claude-plugins
     repo: https://github.com/HexRaysSA/ida-claude-code-plugins.git
     path: vertical/ida-claude-plugins
-    pin: 0abba7f
+    pin: 82d6625
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -339,7 +339,7 @@ vertical:
   - name: jadx-mcp-server
     repo: https://github.com/Qtty/jadx-mcp-server.git
     path: vertical/jadx-mcp-server
-    pin: 19bd9c1
+    pin: 4e6d890
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
@@ -375,7 +375,7 @@ vertical:
   - name: radare2-mcp
     repo: https://github.com/radareorg/radare2-mcp.git
     path: vertical/radare2-mcp
-    pin: f738e9a
+    pin: 87f43e9
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
@@ -482,7 +482,7 @@ vertical:
   - name: garlic
     repo: https://github.com/neocanable/garlic.git
     path: vertical/garlic
-    pin: 1ae29fa
+    pin: 6ea9787
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
@@ -534,7 +534,7 @@ vertical:
   - name: decode-js
     repo: https://github.com/echo094/decode-js.git
     path: vertical/decode-js
-    pin: 3950235
+    pin: 6cacb63
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -546,7 +546,7 @@ vertical:
   - name: jsc_deobfuscator
     repo: https://github.com/hasherezade/jsc_deobfuscator.git
     path: vertical/jsc_deobfuscator
-    pin: 14946ae
+    pin: 6970e4a
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -595,7 +595,7 @@ vertical:
   - name: awesome-re-mcp
     repo: https://github.com/crowdere/Awesome-RE-MCP.git
     path: vertical/awesome-re-mcp
-    pin: 9c8e0d5
+    pin: e400b88
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
@@ -645,7 +645,7 @@ vertical:
   - name: blutter
     repo: https://github.com/worawit/blutter.git
     path: vertical/blutter
-    pin: 528acbe
+    pin: 4a60ac6
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
@@ -732,7 +732,7 @@ vertical:
   - name: appium-mcp
     repo: https://github.com/appium/appium-mcp.git
     path: vertical/appium-mcp
-    pin: 25c9ae9
+    pin: b38a1f5
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
@@ -746,7 +746,7 @@ vertical:
   - name: ruyipage
     repo: https://github.com/LoseNine/ruyipage.git
     path: vertical/ruyipage
-    pin: 9444997
+    pin: cc93bde
     acquiredAt: 2026-08-18
     enabled: true
     domain: ruyi/web
@@ -1017,7 +1017,7 @@ vertical:
   - name: firefox-reverse
     repo: https://github.com/WhiteNightShadow/firefox-reverse.git
     path: vertical/firefox-reverse
-    pin: 13bacdf
+    pin: 4152483
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -1041,7 +1041,7 @@ vertical:
   - name: jsir
     repo: https://github.com/google/jsir.git
     path: vertical/jsir
-    pin: 46e9c43
+    pin: 7ea4e01
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -1153,7 +1153,7 @@ vertical:
   - name: jshookmcp
     repo: https://github.com/vmoranv/jshookmcp.git
     path: vertical/jshookmcp
-    pin: 67fdd78
+    pin: e5191ee
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -1364,59 +1364,76 @@ private:
     note: 鎴戜滑缁存姢鐨?xfqtrace v2.2(鏃犵棔 hook backend + hide.kpm + 30+ 绔欑偣 recipe, 鍙屽瘑鐮?***REMOVED***/***REMOVED***)
     deploy:
       claude: true
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  - name: ui-design-paradigms
+    path: private/ui-design-paradigms
+    enabled: true
+    note: "全球主流 UI/UX 设计范式知识库"
+    deploy:
+      claude: true
+  - name: testing-core-oracle
+    path: private/testing-core-oracle
+    enabled: true
+    note: "测试体系中枢元规则与独立判定律 (Testing Oracle)"
+    deploy:
+      claude: true
+  - name: testing-scenario-embed-ffi
+    path: private/testing-scenario-embed-ffi
+    enabled: true
+    note: "嵌入式与跨语言 FFI (Rust+V8+PyO3+JS补丁) 测试契约"
+    deploy:
+      claude: true
+  - name: testing-workflow-spec
+    path: private/testing-workflow-spec
+    enabled: true
+    note: "规格驱动开发 (Spec-Driven/BDD) 工作流驱动"
+    deploy:
+      claude: true
+  - name: testing-workflow-characterize
+    path: private/testing-workflow-characterize
+    enabled: true
+    note: "表征测试与 Golden 现状锁定 (Characterization Testing) 工作流驱动"
+    deploy:
+      claude: true
+  - name: testing-property-mutation
+    path: private/testing-property-mutation
+    enabled: true
+    note: "性质测试与变异测试杀伤力审计 (Property & Mutation Testing)"
+    deploy:
+      claude: true
+  - name: testing-rust-idiom
+    path: private/testing-rust-idiom
+    enabled: true
+    note: "Rust 地道测试机制规范 (Testing Rust Idiomatic)"
+    deploy:
+      claude: true
+  - name: testing-python-idiom
+    path: private/testing-python-idiom
+    enabled: true
+    note: "Python 地道测试机制规范 (Testing Python Idiomatic)"
+    deploy:
+      claude: true
+  - name: testing-js-idiom
+    path: private/testing-js-idiom
+    enabled: true
+    note: "JS/TS 地道测试机制规范 (Testing JS/TS Idiomatic)"
+    deploy:
+      claude: true
+  - name: testing-go-idiom
+    path: private/testing-go-idiom
+    enabled: true
+    note: "Go 地道测试机制规范 (Testing Go Idiomatic)"
+    deploy:
+      claude: true
+  - name: testing-scenario-cli
+    path: private/testing-scenario-cli
+    enabled: true
+    note: "CLI 命令行与脚本工具测试场景规范 (Testing CLI Scenario)"
+    deploy:
+      claude: true
+  - name: testing-scenario-scraper
+    path: private/testing-scenario-scraper
+    enabled: true
+    note: "数据采集与管道清洗测试场景规范 (Testing Scraper Scenario)"
+    deploy:
+      claude: true
 
