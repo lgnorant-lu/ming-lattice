@@ -14,7 +14,7 @@
 param(
     [string]$RegistryPath = (Join-Path (Split-Path $PSScriptRoot -Parent) 'registry.yaml'),
     [string]$RepoRoot = (Split-Path $PSScriptRoot -Parent),
-    [switch]$WhatIf,
+    [Alias('DryRun')][switch]$WhatIf,
     [string[]]$Module = @()
 )
 

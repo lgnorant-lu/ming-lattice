@@ -19,7 +19,8 @@ param(
     [string]$RepoRoot = (Split-Path $PSScriptRoot -Parent),
     [string[]]$Name = @(),
     [switch]$Force,
-    [switch]$Quiet
+    [switch]$Quiet,
+    [Alias('DryRun')][switch]$WhatIf
 )
 
 $ErrorActionPreference = 'Continue'
@@ -149,7 +150,11 @@ foreach ($item in @($reg.base) + @($reg.vertical)) {
         $regText = $regText.Replace($block.TrimEnd(), $block.TrimEnd() + $insert)
     }
 }
-Set-Content -Path $RegistryPath -Value $regText -Encoding UTF8
+if (-not $WhatIf) {
+    [System.IO.File]::WriteAllText($RegistryPath, $regText, [System.Text.UTF8Encoding]::new($false))
+} else {
+    Write-Host "[DryRun 演练模式] 已跳过 registry.yaml 缓存回写" -ForegroundColor DarkCyan
+}
 
 # ---------- 输出 ----------
 $updated = @($report | Where-Object { $_.updated })

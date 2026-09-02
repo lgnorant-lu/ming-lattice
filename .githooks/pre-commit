@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# ming-skills pre-commit hook
+# 跨平台兼容 (Git for Windows / macOS / Linux)
+
+node "$(dirname "$0")/../scripts/hooks/check.mjs"

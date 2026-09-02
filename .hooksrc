@@ -1,0 +1,17 @@
+# .hooksrc — ming-skills Git Hook 分级配置文件
+# 等级语义: error (阻断提交) | warn (打印警告不阻断) | off (跳过该检查)
+
+# 1. 提交格式 (feat/fix/chore/docs/style/refactor/test/perf/revert/collect/sync)
+requireCommitMsg=true
+
+# 2. Emoji 绝对禁令（严禁在技能、文档与提交中使用 emoji，使用 [禁止]/[警告]/[性能] 等文本标签）
+emojiLevel=error
+
+# 3. 编码防污染检查（严禁在 registry/文档/技能中写入 GBK/ANSI 转义乱码）
+mojibakeLevel=error
+
+# 4. 真实敏感密钥拦截（拦截 sk-, ghp_, AKIA, RSA/EC 私钥等真实生产凭据）
+secretLevel=error
+
+# 5. 全量完整性门禁（提交前自动执行 scripts/lint.ps1 校验，ERROR 必须为 0）
+lintLevel=error
