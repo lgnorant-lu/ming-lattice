@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-09-02T10:14:35.319Z",
+  "generatedAt": "2026-09-02T11:05:11.625Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -175,9 +175,60 @@
         "覆盖设计"
       ],
       "defaultRecipe": "ui-oracle-trace"
+    },
+    "engineering": {
+      "description": "软件工程质量属性与元规范族 (文档四体裁, 宽结构化事件, 安全供应链, 数据演进契约)",
+      "skills": [
+        "docs-core-paradigm",
+        "obs-core-paradigm",
+        "sec-core-paradigm",
+        "contract-core-paradigm"
+      ],
+      "triggers": [
+        "文档体裁",
+        "diataxis",
+        "adr",
+        "docs-as-code",
+        "架构决策记录",
+        "可观测",
+        "observability",
+        "structured logging",
+        "wide events",
+        "宽事件",
+        "相关id",
+        "安全元规则",
+        "ast10",
+        "agentic-skills",
+        "supply-chain",
+        "最小权限",
+        "数据契约",
+        "schema-evolution",
+        "tolerant-reader",
+        "data-contract",
+        "字段演进"
+      ],
+      "negatives": [
+        "脱壳",
+        "反编译",
+        "ida pro",
+        "gdb",
+        "rop",
+        "pwn"
+      ],
+      "defaultRecipe": "engineering-meta-catalog"
     }
   },
   "recipes": {
+    "engineering-meta-catalog": {
+      "domain": "engineering",
+      "description": "软件工程元规范综合装配 (文档 + 可观测 + 安全 + 契约)",
+      "skills": [
+        "docs-core-paradigm",
+        "obs-core-paradigm",
+        "sec-core-paradigm",
+        "contract-core-paradigm"
+      ]
+    },
     "testing-overview-catalog": {
       "domain": "testing",
       "description": "测试规范族全局盘点与覆盖设计配方 (Oracle + 双Workflow + 性质变异)",

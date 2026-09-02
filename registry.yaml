@@ -1357,6 +1357,30 @@ private:
     note: "全局无副作用领域分流与配方装配中枢 (Domain Gate & Recipe Dispatcher)"
     deploy:
       claude: true
+  - name: docs-core-paradigm
+    path: private/docs-core-paradigm
+    enabled: true
+    note: "跨场景文档元规则 (Diataxis四体裁 + Nygard ADR + 第一事实源)"
+    deploy:
+      claude: true
+  - name: obs-core-paradigm
+    path: private/obs-core-paradigm
+    enabled: true
+    note: "跨场景可观测元规则 (宽结构化事件 + 相关ID + 脱敏红线)"
+    deploy:
+      claude: true
+  - name: sec-core-paradigm
+    path: private/sec-core-paradigm
+    enabled: true
+    note: "跨场景安全元规则 (运行时防御 + OWASP AST01~10 供应链)"
+    deploy:
+      claude: true
+  - name: contract-core-paradigm
+    path: private/contract-core-paradigm
+    enabled: true
+    note: "跨场景数据契约元规则 (只加不改义演进五条 + 宽容读取)"
+    deploy:
+      claude: true
   - name: blog-content
     path: private/blog-content
     enabled: true

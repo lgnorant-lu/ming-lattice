@@ -20,14 +20,25 @@ export function run() {
   assert.ok(manifest.domains, 'domains 必须存在');
   assert.ok(manifest.recipes, 'recipes 必须存在');
 
-  // 2. 核心 4 个领域桶检查
-  const requiredDomains = ['testing', 'reverse', 'ui', 'protocol'];
+  // 2. 核心 5 个领域桶检查
+  const requiredDomains = ['testing', 'reverse', 'ui', 'protocol', 'engineering'];
   for (const dom of requiredDomains) {
     assert.ok(manifest.domains[dom], `缺少必要领域桶: ${dom}`);
     const d = manifest.domains[dom];
     assert.ok(Array.isArray(d.skills) && d.skills.length > 0, `${dom}.skills 不能为空`);
     assert.ok(Array.isArray(d.triggers) && d.triggers.length > 0, `${dom}.triggers 不能为空`);
     assert.ok(Array.isArray(d.negatives), `${dom}.negatives 必须是数组`);
+  }
+
+  // 2.1 engineering 领域检查 4 个元规范包
+  const expectedEngineeringSkills = [
+    'docs-core-paradigm',
+    'obs-core-paradigm',
+    'sec-core-paradigm',
+    'contract-core-paradigm'
+  ];
+  for (const s of expectedEngineeringSkills) {
+    assert.ok(manifest.domains.engineering.skills.includes(s), `engineering 领域遗漏技能包: ${s}`);
   }
 
   // 3. testing 领域必须涵盖 11 个测试技能包
