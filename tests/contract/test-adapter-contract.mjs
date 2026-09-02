@@ -37,13 +37,13 @@ class MockHarnessAdapter {
     // 2. 其它任何情况 (testing / ui / none / mixed / low confidence) 必须严格禁止调用建单！
     if (decision.domain === 'reverse' && decision.confidence === 'high' && decision.action === 'dispatch') {
       this.initReverseCase('auto-case');
-      this.dispatchedSkills = decision.skills;
+      this.dispatchedSkills = decision.active_recipe?.skills || [];
       this.lastAction = 'reverse_dispatched';
     } else if (decision.domain === 'testing') {
-      this.dispatchedSkills = decision.skills;
+      this.dispatchedSkills = decision.active_recipe?.skills || [];
       this.lastAction = 'testing_dispatched';
     } else if (decision.domain === 'ui') {
-      this.dispatchedSkills = decision.skills;
+      this.dispatchedSkills = decision.active_recipe?.skills || [];
       this.lastAction = 'ui_dispatched';
     } else if (decision.domain === 'mixed') {
       this.lastAction = 'ask_clarification';

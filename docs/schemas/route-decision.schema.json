@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "RouteDecision",
-  "description": "跨 Harness 统一路由判定决策对象 (无副作用 / 机读事实源)",
+  "description": "跨 Harness 统一路由判定决策对象 (解耦高召回候选集与高精度推荐装配)",
   "type": "object",
-  "required": ["domain", "confidence", "skills", "action", "side_effects", "reasons"],
+  "required": ["domain", "confidence", "candidates", "active_recipe", "action", "side_effects", "must_not", "reasons"],
   "properties": {
     "domain": {
       "type": "string",
@@ -13,29 +13,42 @@
       "type": "string",
       "enum": ["high", "medium", "low", "none"]
     },
-    "skills": {
+    "candidates": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "命中的技能包清单 (标准配方或单包)"
+      "description": "高召回候选集: 涵盖该领域及跨领域的完整技能包供给清单，供模型充分决策"
     },
-    "recipe": {
-      "type": "string",
-      "description": "命中的装配配方名称 (如 embed-ffi-greenfield, scraper-pipeline 等)"
+    "active_recipe": {
+      "type": "object",
+      "required": ["name", "skills"],
+      "properties": {
+        "name": { "type": "string" },
+        "skills": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "description": "高精度默认装配: compose 标准组合建议"
     },
     "action": {
       "type": "string",
       "enum": ["dispatch", "handoff", "ask"],
-      "description": "建议适配器采取的动作 (dispatch: 直接执行配方; handoff: 转交其它领域或平台; ask: 需要用户澄清)"
+      "description": "建议适配器动作"
     },
     "side_effects": {
       "type": "string",
       "const": "none",
-      "description": "内核永远保证零副作用，禁止任何文件创建或工单初始化"
+      "description": "内核恒定零副作用"
+    },
+    "must_not": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "明确的副作用禁止清单 (如 initReverseCase, create_work_dir)"
     },
     "reasons": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "决策判定依据链 (如 negatives_hit, triggers_hit, explicit_skill)"
+      "description": "决策判定依据链"
     }
   },
   "additionalProperties": false

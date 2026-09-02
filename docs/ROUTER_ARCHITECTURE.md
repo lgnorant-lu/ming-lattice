@@ -46,10 +46,26 @@
 {
   "domain": "testing | reverse | ui | protocol | mixed | none",
   "confidence": "high | medium | low | none",
-  "skills": ["testing-core-oracle", "testing-workflow-spec"],
-  "recipe": "spec-driven-greenfield",
+  "candidates": [
+    "testing-core-oracle",
+    "testing-workflow-spec",
+    "testing-workflow-characterize",
+    "testing-property-mutation",
+    "testing-rust-idiom",
+    "testing-python-idiom",
+    "testing-js-idiom",
+    "testing-go-idiom",
+    "testing-scenario-cli",
+    "testing-scenario-scraper",
+    "testing-scenario-embed-ffi"
+  ],
+  "active_recipe": {
+    "name": "spec-driven-greenfield",
+    "skills": ["testing-core-oracle", "testing-workflow-spec"]
+  },
   "action": "dispatch | handoff | ask",
   "side_effects": "none",
+  "must_not": ["initReverseCase", "create_work_dir"],
   "reasons": [
     "negatives_hit[reverse]: 测试覆盖, 覆盖设计",
     "domain_selected: testing (score=2)"

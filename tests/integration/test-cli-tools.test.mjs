@@ -36,6 +36,7 @@ export function run(hasPwsh = true) {
   const routeOut = execSync('node scripts/route-core.mjs "为 Rust 项目编写单元测试与性质测试"', { cwd: root, encoding: 'utf8' });
   const decision = JSON.parse(routeOut);
   assert.equal(decision.domain, 'testing');
+  assert.ok(Array.isArray(decision.candidates) && decision.candidates.length > 0);
   assert.equal(decision.side_effects, 'none');
 
   console.log('  -> 运维工具链全部端到端集成测试通过！');

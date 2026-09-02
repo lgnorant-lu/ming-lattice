@@ -1,7 +1,6 @@
 // tests/test-route-decision.mjs
 // ming-skills 核心路由决策 20 条结构化黄金用例集 (Structured Golden Decision Suite)
-// 依据: testing-core-oracle 独立判定律 & testing-scenario-cli 契约规范
-// 覆盖: 单领域 / 双领域复合 / 显式点名 / 歧义消歧 / 边界异常 / 拒识放行
+// 契约模型: 召回度量采用集合包含律 (must_include ⊆ candidates)，允许超集供大模型自由裁剪；安全断言采用 must_not
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -11,28 +10,48 @@ import { Decide } from '../scripts/route-core.mjs';
 const root = path.resolve(import.meta.dirname, '..');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'config/router-manifest.json'), 'utf8'));
 
+/**
+ * 辅助断言函数: 集合包含断言 (must_include ⊆ candidates)
+ */
+function assertSubset(mustInclude, candidates, message = '') {
+  for (const item of mustInclude) {
+    assert.ok(
+      candidates.includes(item),
+      `[召回漏洞/漏检] 必须包含的包 "${item}" 未出现在 candidates 候选集中! ${message}\n当前 candidates: [${candidates.join(', ')}]`
+    );
+  }
+}
+
 const GOLDEN_CASES = [
-  // ── 1. 单领域: 测试规范族 (Testing) ──
+  // ── 1. 单领域: 测试规范族 (Testing 宏观盘点与实现) ──
   {
     category: '单领域-测试',
-    name: '1.1 本次现场失败原句 (规范化测试覆盖设计)',
+    name: '1.1 本次现场失败原句 (规范化测试覆盖设计与规范族全量盘点)',
     hint: '规范化测试覆盖设计，找找相关的skill我们现有的里面，并且都讲述一番',
-    assert: (res) => {
+    must_include: [
+      'testing-core-oracle',
+      'testing-workflow-spec',
+      'testing-workflow-characterize',
+      'testing-property-mutation'
+    ],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'testing');
       assert.notEqual(res.domain, 'reverse');
-      assert.ok(res.skills.includes('testing-core-oracle'));
+      assertSubset(tc.must_include, res.candidates, tc.name);
       assert.equal(res.action, 'dispatch');
       assert.equal(res.side_effects, 'none');
+      assert.ok(res.must_not.includes('initReverseCase'));
     }
   },
   {
     category: '单领域-测试',
     name: '1.2 绿场 BDD/TDD 规格驱动测试',
     hint: '按照规格驱动开发规范为新模块编写 TDD 测试用例',
-    assert: (res) => {
+    must_include: ['testing-core-oracle', 'testing-workflow-spec'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'testing');
-      assert.equal(res.recipe, 'spec-driven-greenfield');
-      assert.ok(res.skills.includes('testing-workflow-spec'));
+      assertSubset(tc.must_include, res.candidates, tc.name);
+      assert.equal(res.active_recipe.name, 'spec-driven-greenfield');
       assert.equal(res.side_effects, 'none');
     }
   },
@@ -40,10 +59,11 @@ const GOLDEN_CASES = [
     category: '单领域-测试',
     name: '1.3 棕场遗留系统表征锁定',
     hint: '对遗留代码进行表征测试并锁定 Golden 行为输出',
-    assert: (res) => {
+    must_include: ['testing-core-oracle', 'testing-workflow-characterize'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'testing');
-      assert.equal(res.recipe, 'characterization-brownfield');
-      assert.ok(res.skills.includes('testing-workflow-characterize'));
+      assertSubset(tc.must_include, res.candidates, tc.name);
+      assert.equal(res.active_recipe.name, 'characterization-brownfield');
       assert.equal(res.side_effects, 'none');
     }
   },
@@ -51,10 +71,11 @@ const GOLDEN_CASES = [
     category: '单领域-测试',
     name: '1.4 跨语言 FFI 嵌入测试场景',
     hint: '设计跨语言 Rust+V8 FFI 运行时内存隔离契约测试',
-    assert: (res) => {
+    must_include: ['testing-core-oracle', 'testing-scenario-embed-ffi'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'testing');
-      assert.equal(res.recipe, 'embed-ffi-greenfield');
-      assert.ok(res.skills.includes('testing-scenario-embed-ffi'));
+      assertSubset(tc.must_include, res.candidates, tc.name);
+      assert.equal(res.active_recipe.name, 'embed-ffi-greenfield');
       assert.equal(res.side_effects, 'none');
     }
   },
@@ -62,20 +83,21 @@ const GOLDEN_CASES = [
     category: '单领域-测试',
     name: '1.5 爬虫与数据清洗离线测试场景',
     hint: '针对爬虫数据采集与清洗管道编写离线 fixture 单元测试',
-    assert: (res) => {
+    must_include: ['testing-core-oracle', 'testing-scenario-scraper'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'testing');
-      assert.equal(res.recipe, 'scraper-pipeline');
-      assert.ok(res.skills.includes('testing-scenario-scraper'));
-      assert.equal(res.side_effects, 'none');
+      assertSubset(tc.must_include, res.candidates, tc.name);
+      assert.equal(res.active_recipe.name, 'scraper-pipeline');
     }
   },
   {
     category: '单领域-测试',
     name: '1.6 性质测试与变异测试',
     hint: '使用 hypothesis 进行性质测试并复查变异杀伤率',
-    assert: (res) => {
+    must_include: ['testing-core-oracle', 'testing-property-mutation'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'testing');
-      assert.ok(res.skills.includes('testing-core-oracle'));
+      assertSubset(tc.must_include, res.candidates, tc.name);
       assert.equal(res.side_effects, 'none');
     }
   },
@@ -85,9 +107,10 @@ const GOLDEN_CASES = [
     category: '单领域-逆向',
     name: '2.1 Frida Hook 与小程序签名分析',
     hint: '用 Frida hook 微信小程序 sign 签名算法并分析 so 文件',
-    assert: (res) => {
+    must_include: ['reverse-skill-router'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'reverse');
-      assert.ok(res.skills.includes('reverse-skill-router'));
+      assertSubset(tc.must_include, res.candidates, tc.name);
       assert.equal(res.action, 'dispatch');
       assert.equal(res.side_effects, 'none');
     }
@@ -96,9 +119,10 @@ const GOLDEN_CASES = [
     category: '单领域-逆向',
     name: '2.2 APK 反编译与 Smali 分析',
     hint: '使用 jadx 逆向反编译 APK 并在 smali 中定位校验逻辑',
-    assert: (res) => {
+    must_include: ['apk-reverse'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'reverse');
-      assert.ok(res.skills.includes('reverse-skill-router'));
+      assertSubset(tc.must_include, res.candidates, tc.name);
       assert.equal(res.action, 'dispatch');
     }
   },
@@ -106,8 +130,10 @@ const GOLDEN_CASES = [
     category: '单领域-逆向',
     name: '2.3 IDA 二进制反汇编与 ROP 链构建',
     hint: '使用 IDA Pro 进行二进制反汇编分析并构建 pwn 链',
-    assert: (res) => {
+    must_include: ['ida-reverse', 'pwn-chain'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'reverse');
+      assertSubset(tc.must_include, res.candidates, tc.name);
       assert.equal(res.action, 'dispatch');
     }
   },
@@ -117,20 +143,23 @@ const GOLDEN_CASES = [
     category: '单领域-UI',
     name: '3.1 全局响应式布局与设计规范',
     hint: '为 Web 控制台设计全局响应式布局与交互设计规范',
-    assert: (res) => {
+    must_include: ['ui-design-paradigms'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'ui');
-      assert.ok(res.skills.includes('ui-design-paradigms'));
+      assertSubset(tc.must_include, res.candidates, tc.name);
       assert.equal(res.action, 'dispatch');
       assert.equal(res.side_effects, 'none');
+      assert.ok(res.must_not.includes('initReverseCase'));
     }
   },
   {
     category: '单领域-UI',
     name: '3.2 前端色彩体系与 Design Tokens',
     hint: '制定前端组件库的色彩体系与视觉设计规范',
-    assert: (res) => {
+    must_include: ['ui-design-paradigms'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'ui');
-      assert.ok(res.skills.includes('ui-design-paradigms'));
+      assertSubset(tc.must_include, res.candidates, tc.name);
       assert.equal(res.action, 'dispatch');
     }
   },
@@ -140,10 +169,10 @@ const GOLDEN_CASES = [
     category: '显式点名',
     name: '4.1 显式点名 testing-python-idiom',
     hint: '使用 testing-python-idiom 规范编写 pytest fixtures 与异常断言',
-    assert: (res) => {
+    must_include: ['testing-python-idiom', 'testing-core-oracle'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'testing');
-      assert.ok(res.skills.includes('testing-python-idiom'));
-      assert.ok(res.skills.includes('testing-core-oracle'));
+      assertSubset(tc.must_include, res.candidates, tc.name);
       assert.equal(res.action, 'dispatch');
     }
   },
@@ -151,18 +180,20 @@ const GOLDEN_CASES = [
     category: '显式点名',
     name: '4.2 显式点名 testing-rust-idiom',
     hint: '查看 testing-rust-idiom 的 miri 与 cargo test 最佳实践',
-    assert: (res) => {
+    must_include: ['testing-rust-idiom', 'testing-core-oracle'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'testing');
-      assert.ok(res.skills.includes('testing-rust-idiom'));
+      assertSubset(tc.must_include, res.candidates, tc.name);
     }
   },
   {
     category: '显式点名',
     name: '4.3 显式点名 ui-design-paradigms',
     hint: '加载 ui-design-paradigms 查阅主流界面模式',
-    assert: (res) => {
+    must_include: ['ui-design-paradigms'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'ui');
-      assert.ok(res.skills.includes('ui-design-paradigms'));
+      assertSubset(tc.must_include, res.candidates, tc.name);
     }
   },
 
@@ -171,9 +202,11 @@ const GOLDEN_CASES = [
     category: '歧义消歧',
     name: '5.1 单测同义词: "写单测与回归验收"',
     hint: '帮这个项目写单测，把回归验收自动化做起来',
-    assert: (res) => {
+    must_include: ['testing-core-oracle'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'testing');
       assert.notEqual(res.domain, 'reverse');
+      assertSubset(tc.must_include, res.candidates, tc.name);
       assert.equal(res.action, 'dispatch');
     }
   },
@@ -181,21 +214,25 @@ const GOLDEN_CASES = [
     category: '歧义消歧',
     name: '5.2 中英混写: "pytest coverage design"',
     hint: 'need pytest coverage design and test framework advice',
-    assert: (res) => {
+    must_include: ['testing-core-oracle', 'testing-python-idiom'],
+    assert: (res, tc) => {
       assert.equal(res.domain, 'testing');
       assert.notEqual(res.domain, 'reverse');
+      assertSubset(tc.must_include, res.candidates, tc.name);
     }
   },
 
   // ── 6. 跨领域复合意图 (Mixed) ──
   {
     category: '复合Mixed',
-    name: '6.1 逆向 + 测试复合意图',
+    name: '6.1 逆向 + 测试复合意图 (双域入口都在候选内，但严禁建单)',
     hint: '对目标进行逆向分析并为其核心算法设计单元测试规范',
-    assert: (res) => {
-      // 必须识别为 mixed 或包含 ask 机制，严禁静默硬选逆向并调用 case-init
-      assert.ok(res.domain === 'mixed' || res.domain === 'testing', '必须进入复合或受保护领域');
-      assert.equal(res.side_effects, 'none', '零副作用保证');
+    must_include: ['testing-core-oracle', 'reverse-skill-router'],
+    assert: (res, tc) => {
+      // 必须呈现双域候选包，让模型充分知情
+      assertSubset(tc.must_include, res.candidates, tc.name);
+      assert.equal(res.side_effects, 'none');
+      assert.ok(res.must_not.includes('initReverseCase'), '复合任务未确认前绝对严禁建单！');
     }
   },
 
@@ -204,10 +241,11 @@ const GOLDEN_CASES = [
     category: '边界拒识',
     name: '7.1 无关闲聊自然语言',
     hint: '今天天气真好，出去散步晒太阳',
+    must_include: [],
     assert: (res) => {
       assert.equal(res.domain, 'none');
       assert.equal(res.action, 'handoff');
-      assert.equal(res.skills.length, 0);
+      assert.equal(res.candidates.length, 0);
       assert.equal(res.side_effects, 'none');
     }
   },
@@ -215,6 +253,7 @@ const GOLDEN_CASES = [
     category: '边界拒识',
     name: '7.2 纯空字符串与空格',
     hint: '      ',
+    must_include: [],
     assert: (res) => {
       assert.equal(res.domain, 'none');
       assert.equal(res.action, 'handoff');
@@ -225,6 +264,7 @@ const GOLDEN_CASES = [
     category: '边界拒识',
     name: '7.3 纯特殊符号与斜杠',
     hint: '/// ??? !!! ###',
+    must_include: [],
     assert: (res) => {
       assert.equal(res.domain, 'none');
       assert.equal(res.action, 'handoff');
@@ -237,11 +277,11 @@ export function run() {
   let passed = 0;
   let failed = 0;
 
-  console.log(`\n========== [ming-skills 路由决策内核 20 条结构化黄金用例集] ==========`);
+  console.log(`\n========== [ming-skills 路由决策内核 20 条结构化黄金用例集 (高召回断言)] ==========`);
   for (const tc of GOLDEN_CASES) {
     try {
       const decision = Decide(tc.hint, manifest);
-      tc.assert(decision);
+      tc.assert(decision, tc);
       console.log(`[PASS] [${tc.category}] ${tc.name}`);
       passed++;
     } catch (err) {
@@ -250,7 +290,7 @@ export function run() {
       failed++;
     }
   }
-  console.log(`======================================================================`);
+  console.log(`==================================================================================`);
   console.log(`结果: ${passed}/${GOLDEN_CASES.length} 黄金用例全部通过！\n`);
 
   if (failed > 0) {

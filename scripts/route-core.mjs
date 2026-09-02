@@ -1,6 +1,6 @@
 // scripts/route-core.mjs
 // ming-skills 核心路由决策纯函数 (与 Harness 无关 / 零 I/O / 零副作用)
-// 契约: Decide(hint, manifest) -> RouteDecision
+// 核心设计: 解耦 candidates (高召回供给清单) 与 active_recipe (高精度默认装配)
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -19,10 +19,11 @@ export function Decide(hint, manifest) {
     return {
       domain: 'none',
       confidence: 'none',
-      skills: [],
-      recipe: '',
+      candidates: [],
+      active_recipe: { name: '', skills: [] },
       action: 'handoff',
       side_effects: 'none',
+      must_not: ['initReverseCase', 'create_work_dir'],
       reasons: ['empty_hint']
     };
   }
@@ -40,20 +41,30 @@ export function Decide(hint, manifest) {
         if (domName === 'testing' && skill !== 'testing-core-oracle') {
           targetSkills = ['testing-core-oracle', skill];
         }
+
+        const mustNot = ['create_work_dir'];
+        if (domName !== 'reverse') {
+          mustNot.push('initReverseCase');
+        }
+
         return {
           domain: domName,
           confidence: 'high',
-          skills: targetSkills,
-          recipe: domInfo.defaultRecipe || '',
+          candidates: domInfo.skills || targetSkills, // 依然保留全域候选供模型参考
+          active_recipe: {
+            name: domInfo.defaultRecipe || 'explicit-dispatch',
+            skills: targetSkills
+          },
           action: 'dispatch',
           side_effects: 'none',
+          must_not: mustNot,
           reasons
         };
       }
     }
   }
 
-  // 3. 计算各领域得分与负向命中
+  // 3. 计算各领域正向命中与负向命中
   const domainScores = {};
   const negativeHits = {};
 
@@ -61,14 +72,14 @@ export function Decide(hint, manifest) {
     let score = 0;
     const negs = [];
 
-    // 正向 Triggers 命中
+    // 正向 Triggers 命中统计
     for (const trig of (domInfo.triggers || [])) {
       if (text.includes(trig.toLowerCase())) {
         score += 1;
       }
     }
 
-    // 负向 Negatives 命中
+    // 负向 Negatives 命中统计
     for (const neg of (domInfo.negatives || [])) {
       if (text.includes(neg.toLowerCase())) {
         negs.push(neg);
@@ -79,94 +90,116 @@ export function Decide(hint, manifest) {
     domainScores[domName] = score;
   }
 
-  // 4. 关键领域闸门: 负向熔断 (特别是 reverse 桶对 testing/ui 负向硬阻断)
-  for (const [domName, negs] of Object.entries(negativeHits)) {
-    if (negs.length > 0) {
-      reasons.push(`negatives_hit[${domName}]: ${negs.join(', ')}`);
-      // 若负向命中，严厉扣分或直接熔断为 0
-      domainScores[domName] = 0;
-    }
+  // 4. 判定领域闸门
+  // 注意：负向命中阻断的是该领域的单独 PRIMARY dispatch 与副作用，但在复合任务中不截断 candidates
+  const isTestingPositive = (domainScores.testing || 0) > 0;
+  const isReversePositive = (domainScores.reverse || 0) > 0;
+  const isReverseNegHit = (negativeHits.reverse || []).length > 0;
+
+  if (isReverseNegHit) {
+    reasons.push(`negatives_hit[reverse]: ${negativeHits.reverse.join(', ')}`);
   }
 
-  // 5. 排序各领域得分
-  const activeDomains = Object.entries(domainScores)
-    .filter(([_, sc]) => sc > 0)
-    .sort((a, b) => b[1] - a[1]);
-
-  // 6. 分流结果判定
-  // 6.1 零命中 -> 拒识 (None / Handoff)
-  if (activeDomains.length === 0) {
-    reasons.push('no_domain_triggers_matched');
-    return {
-      domain: 'none',
-      confidence: 'none',
-      skills: [],
-      recipe: '',
-      action: 'handoff',
-      side_effects: 'none',
-      reasons
-    };
-  }
-
-  // 6.2 复合命中 (跨领域且得分相近) -> Mixed / Ask
-  if (activeDomains.length >= 2 && activeDomains[0][1] === activeDomains[1][1]) {
-    const dom1 = activeDomains[0][0];
-    const dom2 = activeDomains[1][0];
-    reasons.push(`multi_domain_hit: ${dom1}, ${dom2}`);
-    const combinedSkills = [
-      ...(domains[dom1]?.skills?.slice(0, 2) || []),
-      ...(domains[dom2]?.skills?.slice(0, 2) || [])
+  // 5. 分流逻辑决策
+  // 5.1 复合意图 (Composite Domain): 同时命中测试与逆向正向特征 -> 必须输出双域完整候选集供模型裁剪
+  if (isTestingPositive && isReversePositive) {
+    reasons.push('composite_domain_hit: testing + reverse');
+    const combinedCandidates = [
+      ...(domains.testing?.skills || []),
+      ...(domains.reverse?.skills || [])
     ];
     return {
       domain: 'mixed',
       confidence: 'medium',
-      skills: combinedSkills,
-      recipe: 'mixed-hybrid',
+      candidates: combinedCandidates, // 双域全量候选高召回
+      active_recipe: {
+        name: 'mixed-reverse-testing',
+        skills: ['testing-core-oracle', 'reverse-skill-router']
+      },
       action: 'ask',
       side_effects: 'none',
+      must_not: ['initReverseCase', 'create_work_dir'], // 严禁副作用
       reasons
     };
   }
 
-  // 6.3 单一胜出领域 -> Dispatch
-  const [winnerDomain, winScore] = activeDomains[0];
-  reasons.push(`domain_selected: ${winnerDomain} (score=${winScore})`);
+  // 5.2 纯测试意图 (或逆向正向为0) -> testing 域全量 11 包高召回
+  if (isTestingPositive) {
+    reasons.push(`domain_selected: testing (score=${domainScores.testing})`);
 
-  let selectedRecipeKey = domains[winnerDomain]?.defaultRecipe || '';
-  let selectedSkills = [...(domains[winnerDomain]?.skills || [])];
-
-  // 细粒度测试配方装配逻辑
-  if (winnerDomain === 'testing') {
+    // 细粒度测试配方装配逻辑 (高精度 active_recipe)
+    let selectedRecipeKey = 'spec-driven-greenfield';
     if (text.includes('ffi') || text.includes('v8') || text.includes('pyo3') || text.includes('跨语言') || text.includes('嵌入')) {
       selectedRecipeKey = 'embed-ffi-greenfield';
     } else if (text.includes('爬虫') || text.includes('采集') || text.includes('scraper') || text.includes('清洗')) {
       selectedRecipeKey = 'scraper-pipeline';
     } else if (text.includes('表征') || text.includes('锁定') || text.includes('遗留') || text.includes('characteriz')) {
       selectedRecipeKey = 'characterization-brownfield';
-    } else {
-      selectedRecipeKey = 'spec-driven-greenfield';
     }
 
-    if (recipes[selectedRecipeKey]) {
-      selectedSkills = recipes[selectedRecipeKey].skills;
-    }
-  } else if (winnerDomain === 'reverse') {
-    selectedRecipeKey = 'reverse-general';
-    selectedSkills = ['reverse-skill-router'];
-  } else if (winnerDomain === 'ui') {
-    selectedRecipeKey = 'ui-design-standard';
-    selectedSkills = ['ui-design-paradigms'];
+    const recipeSkills = recipes[selectedRecipeKey]?.skills || ['testing-core-oracle', 'testing-workflow-spec'];
+
+    return {
+      domain: 'testing',
+      confidence: domainScores.testing >= 2 ? 'high' : 'medium',
+      candidates: domains.testing?.skills || [], // 全量 11 包完整供给，杜绝空缺
+      active_recipe: {
+        name: selectedRecipeKey,
+        skills: recipeSkills
+      },
+      action: 'dispatch',
+      side_effects: 'none',
+      must_not: ['initReverseCase', 'create_work_dir'],
+      reasons
+    };
   }
 
-  const confidence = winScore >= 2 ? 'high' : 'medium';
+  // 5.3 纯逆向意图 (正向命中且无测试负向)
+  if (isReversePositive && !isReverseNegHit) {
+    reasons.push(`domain_selected: reverse (score=${domainScores.reverse})`);
+    return {
+      domain: 'reverse',
+      confidence: domainScores.reverse >= 2 ? 'high' : 'medium',
+      candidates: domains.reverse?.skills || ['reverse-skill-router'],
+      active_recipe: {
+        name: 'reverse-general',
+        skills: ['reverse-skill-router']
+      },
+      action: 'dispatch',
+      side_effects: 'none',
+      must_not: ['create_work_dir_without_auth'],
+      reasons
+    };
+  }
 
+  // 5.4 UI 领域意图
+  if ((domainScores.ui || 0) > 0) {
+    reasons.push(`domain_selected: ui (score=${domainScores.ui})`);
+    return {
+      domain: 'ui',
+      confidence: 'high',
+      candidates: domains.ui?.skills || ['ui-design-paradigms'],
+      active_recipe: {
+        name: 'ui-design-standard',
+        skills: ['ui-design-paradigms']
+      },
+      action: 'dispatch',
+      side_effects: 'none',
+      must_not: ['initReverseCase', 'create_work_dir'],
+      reasons
+    };
+  }
+
+  // 5.5 零命中 -> 拒识放行
+  reasons.push('no_domain_triggers_matched');
   return {
-    domain: winnerDomain,
-    confidence,
-    skills: selectedSkills,
-    recipe: selectedRecipeKey,
-    action: 'dispatch',
+    domain: 'none',
+    confidence: 'none',
+    candidates: [],
+    active_recipe: { name: '', skills: [] },
+    action: 'handoff',
     side_effects: 'none',
+    must_not: ['initReverseCase', 'create_work_dir'],
     reasons
   };
 }
