@@ -103,16 +103,16 @@ function runPreCommitChecks() {
     }
   }
 
-  // 5. 完整性门禁 (执行 scripts/lint.ps1)
+  // 5. 自动化测试金字塔与完整性门禁 (执行 tests/run.mjs)
   if (config.lintLevel !== 'off' && !hasError) {
-    console.log('[pre-commit] 运行 scripts/lint.ps1 完整性与软链校验...');
+    console.log('[pre-commit] 运行自动化测试套件 (tests/run.mjs)...');
     try {
-      execSync('pwsh -File scripts/lint.ps1', {
+      execSync('node tests/run.mjs', {
         cwd: ROOT_DIR,
         stdio: 'inherit'
       });
     } catch (e) {
-      console.error('[ERROR] scripts/lint.ps1 校验失败，禁止提交！');
+      console.error('[ERROR] 自动化测试套件校验失败，禁止提交！');
       hasError = true;
     }
   }

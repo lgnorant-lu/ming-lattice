@@ -11,13 +11,15 @@ registry.yaml            唯一事实源: base(基座模块)/vertical(参考)/de
 base/reverse-skill/      路由基座 (上游 submodule, 只读; 其 skills/ 下有 20 个模块 + router)
 vertical/                92 个 vendored 仓库 (参考/源码, 带 .git metadata, 不部署)
 deployable/              26 个部署包装 (SKILL.md 改写 + symlink 指向 vertical/base 源)
-private/                 15 个私有 (4 个自研: blog-content/ui-oracle-protocol/ui-design-paradigms/xfqtrace-kit + 11 个 testing-family 测试规范族)
-scripts/                 sync/update/lint/verify + hooks/(validate/check) + install-hooks
-docs/                    STANDARDS(工程总纲)/GIT_HOOKS(门禁)/SKILL-INDEX(路由)/INVENTORY/PLAYBOOK
+private/                 16 个私有 (5 个自研: ming-skills-router/blog-content/ui-oracle-protocol/ui-design-paradigms/xfqtrace-kit + 11 个 testing-family 测试规范族)
+scripts/                 sync/update/lint/test + route-core/build-router-manifest + hooks/(validate/check) + install-hooks
+tests/                   run.mjs 统一驱动 + unit/ + integration/ + test-route-decision.mjs
+docs/                    STANDARDS(工程总纲)/ROUTER_ARCHITECTURE(路由契约)/TESTING(测试自举)/GIT_HOOKS(门禁)/SKILL-INDEX
 ```
 
 ## 工作流（常规操作）
 
+- **全量测试自举**: `pwsh scripts/test.ps1` 或 `node tests/run.mjs`（单元测试 + 8 黄金用例 + 工具链集成测试）
 - **安装 Git 门禁**: `pwsh scripts/install-hooks.ps1`（配置 core.hooksPath 指向 .githooks）
 - **部署到客户端**: `pwsh scripts/sync.ps1`（支持 `-DryRun` 演练预览，链接到 .cc-switch/skills）
 - **激活 Claude**: `.cc-switch/skills` → 符号链接补到 `~/.claude/skills`（Claude 启动时快照, 重启生效）
