@@ -1,20 +1,23 @@
-# skills-collection 鍗曚竴浜嬪疄婧?(Single Source of Truth) v1.1
-# sync.ps1 / update.ps1 / lint.ps1 鍧囦粠姝ゆ枃浠惰鍙栥€備慨鏀归儴缃?鍚敤鐘舵€佽鍙敼姝ゆ枃浠躲€?#
-# v1.1 鍙樻洿锛堝叏灞€鐗堟湰绠＄悊璁捐锛?
-#   - updatePolicy: 鏇存柊妫€娴嬬瓥鐣ワ紙TTL 鍐呯紦瀛樺懡涓?鈫?闆剁綉缁滐級
-#   - 姣忎釜 vertical 鏉＄洰: pin(鏈湴鍐呭瀵瑰簲 upstream commit) + acquiredAt(閲囬泦鏃ユ湡)
-#     + checkCache(lastCheckedAt/lastRemoteHead, 鐢?update.ps1 缁存姢)
-#   - vendored 浠撳簱淇濈暀 .git锛坆lob:none 杩囨护鍏冩暟鎹級, update.ps1 鐢?git fetch 澧為噺妫€娴?
-#     鏃犻渶姣忔鍏ㄩ噺璁＄畻
+# ming-skills 单一事实源 (Single Source of Truth) v1.1
+# sync.ps1 / update.ps1 / lint.ps1 均从此文件读取。修改部署/启用状态请只改此文件。
 #
-# 瀛楁璇存槑:
-#   targets     : 鐩爣瀹㈡埛绔儴缃叉牴鐩綍锛坘ey = 瀹㈡埛绔悕, value = 鐩綍缁濆璺緞锛?#   updatePolicy: { ttlDays: 缂撳瓨鏈夋晥鏈?澶?, fetchMode: 鍏冩暟鎹媺鍙栨ā寮?}
-#   base        : 鍩哄骇锛坰ubmodule 璺熻釜 upstream, 鎸夋ā鍧楅儴缃诧級; pin = tag
-#   vertical    : 鍨傜洿鍙傝€冿紙vendored, 淇濈暀 .git锛? pin = upstream commit(鐭?hash)
-#     domain    : js=Web/JS閫嗗悜 bin=浜岃繘鍒?apk=Android ios=iOS kb=鐭ヨ瘑搴?ctf=CTF mw=鎭舵剰杞欢 misc=鍏朵粬
-#     deploy    : 閮ㄧ讲鏄犲皠 { 瀹㈡埛绔? bool }锛堢┖ = 浠呭弬鑰冧笉閮ㄧ讲锛?
+# v1.1 变更（全局版本管理设计）：
+#   - updatePolicy: 更新检测策略（TTL 内缓存命中 → 零网络）
+#   - 每个 vertical 条目: pin(本地内容对应 upstream commit) + acquiredAt(采集日期)
+#     + checkCache(lastCheckedAt/lastRemoteHead, 由 update.ps1 维护)
+#   - vendored 仓库保留 .git（blob:none 过滤元数据）, update.ps1 用 git fetch 增量检测
+#     无需每次全量计算
+#
+# 字段说明:
+#   targets     : 目标客户端部署根目录（key = 客户端名, value = 目录绝对路径）
+#   updatePolicy: { ttlDays: 缓存有效天数, fetchMode: 元数据拉取模式 }
+#   base        : 基座（submodule 跟踪 upstream, 按模块部署）; pin = tag
+#   vertical    : 垂直参考（vendored, 保留 .git）; pin = upstream commit(短 hash)
+#     domain    : js=Web/JS逆向 bin=二进制 apk=Android ios=iOS kb=知识库 ctf=CTF mw=恶意软件 misc=其他
+#     deploy    : 部署映射 { 客户端: bool }（空 = 仅参考不部署）
+
 schemaVersion: "1.1"
-description: "skills-collection 鍗曚竴浜嬪疄婧愶細婧?鈫?鏈湴璺緞 鈫?鐗堟湰璁板綍 鈫?閮ㄧ讲鐩爣"
+description: "ming-skills 单一事实源：源 → 本地路径 → 版本记录 → 部署目标"
 
 updatePolicy:
   ttlDays: 7            # checkCache 鏈夋晥澶╂暟; 鏈夋晥鏈熷唴 update.ps1 涓嶅彂璧风綉缁滆姹?  fetchMode: blob:none  # vendored .git 鍏冩暟鎹ā寮忥紙commit/tree, 涓嶅惈 blob锛?

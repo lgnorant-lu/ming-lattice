@@ -1,6 +1,6 @@
-# skills-collection — 技能集散仓库（我们维护）
+# ming-skills — Agent 技能集散与工程中枢（我们维护）
 
-本仓库是统一技能集散地：registry.yaml 是**单一事实源**，vertical/deployable/private 分层存放，scripts/ 负责增删改查部署。
+本仓库是统一技能集散地与工程中枢：registry.yaml 是**单一事实源**，vertical/deployable/private 分层存放，scripts/ 负责增删改查部署。
 
 ## 仓库地图
 

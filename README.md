@@ -1,15 +1,16 @@
-# skills-collection
+# ming-skills
 
-逆向分析 Skill 集散仓库：统一管理基座 + 垂直参考 + 私有 Skill，客户端无关部署，可自主迭代更新。
+Ming 的 Agent 技能集散与工程中枢（Skills Hub & Monorepo）：统一管理自研测试规范族、逆向与安全知识库、垂直参考生态与部署分发，具备自主版本雷达与全量门控体系。
 
 ## 结构
 
 ```
-skills-collection/
+ming-skills/
 ├── registry.yaml              # 单一事实源：源 → 本地路径 → 部署目标/启用状态
+├── private/                   # 自主核心资产（测试规范体系族 11 包 + UI 范式 + 自研工具）
+├── deployable/                # 部署包装层（精炼门面, symlink 映射）
 ├── base/reverse-skill/        # 基座（submodule, 跟踪 zhaoxuya520/reverse-skill upstream）
-├── vertical/                  # 垂直参考（vendored 只读, 待采集）
-├── private/                   # 私有 skill（本地维护）
+├── vertical/                  # 垂直参考（92 个 vendored 社区参考库, 增量跟踪）
 ├── scripts/
 │   ├── sync.ps1               # 按 registry 部署到各客户端（symlink, 失败 fallback 复制）
 │   ├── update.ps1             # 检测上游更新（fetch + 版本/commit 对比 + 变更摘要）
