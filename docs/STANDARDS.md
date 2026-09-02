@@ -115,3 +115,30 @@ pwsh scripts/sync.ps1
    - 任何大型外部样本必须通过 `.gitignore` 过滤，或通过 Git LFS 外部托管。
 3. **单一事实源原则（Single Source of Truth）**：
    - 客户端激活状态、路径映射与版本 Pin 仅由 [`registry.yaml`](file:///d:/dogepy/skills-collection/registry.yaml) 统一声明，严禁在客户端目录手动修改产生漂移。
+
+---
+
+## 5. 数据契约演进五条禁令
+
+为了确保跨 Harness 消费端（Claude Code / OpenCode / Codex）的长期稳定性，所有公开 Schema（如 `RouteDecision`, `RouterManifest`）的演进必须严格遵守五条禁令：
+
+1. **[禁止] 随意删除已有字段**：已发布的公开字段（如 `domain`, `candidates`, `active_recipe`）严禁直接移除，避免下游解析直接崩溃；
+2. **[禁止] 修改已有字段的语义与类型**：字段名称与数据类型的映射必须不可变（例如 `confidence` 不得从 `string` 改为 `number`）；
+3. **[强制] 破坏性变更必须升级顶级版本号**：若出现不可调和的结构破坏，必须升级 `schemaVersion`（如从 `1.0` 升级为 `2.0`）；
+4. **[规范] 多版本共存显式演进**：若未来出现 v1/v2 并存需求，遵循双读单写（Dual-read Single-write）过渡期机制；
+5. **[规范] 读取端宽容读取策略（Tolerant Reader）**：所有读取契约 JSON 的适配器必须忽略未知扩展字段，不得因出现未定义新字段而抛出异常。
+
+---
+
+## 6. 宽结构化事件名规范（OTel 语义对齐）
+
+运维与决策工具链的机读日志统一采用宽结构化事件（Wide Structured Events），遵循 OpenTelemetry 命名约定：
+
+| 规范事件名 (event.name) | 触发场景 | 核心必填字段 |
+|---|---|---|
+| `route.decided` | `route-core.mjs` 完成一次路由决策 | `timestamp`, `hint_hash`, `domain`, `recipe`, `duration_ms` |
+| `manifest.built` | `build-router-manifest.mjs` 编译完成 | `timestamp`, `domains_count`, `recipes_count`, `output_path` |
+| `sync.completed` | `sync.ps1` 软链部署或演练完成 | `timestamp`, `linked_count`, `skipped_count`, `is_dry_run` |
+| `lint.checked` | `lint.ps1` 全量静态门禁检查完成 | `timestamp`, `sources_checked`, `error_count`, `warn_count` |
+| `test.suite_finished` | `tests/run.mjs` 测试套件运行完毕 | `timestamp`, `passed_suites`, `total_suites`, `duration_ms` |
+
