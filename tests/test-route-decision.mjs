@@ -38,6 +38,7 @@ const GOLDEN_CASES = [
       assert.equal(res.domain, 'testing');
       assert.notEqual(res.domain, 'reverse');
       assertSubset(tc.must_include, res.candidates, tc.name);
+      assert.equal(res.active_recipe.name, 'testing-overview-catalog', '盘点意图必须匹配 catalog 目录卡配方！');
       assert.equal(res.action, 'dispatch');
       assert.equal(res.side_effects, 'none');
       assert.ok(res.must_not.includes('initReverseCase'));

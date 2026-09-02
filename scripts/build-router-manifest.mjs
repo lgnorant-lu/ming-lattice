@@ -83,6 +83,11 @@ const DOMAIN_DEFS = {
 
 // 预定义标准装配配方 (Recipes)
 const RECIPES = {
+  "testing-overview-catalog": {
+    domain: "testing",
+    description: "测试规范族全局盘点与覆盖设计配方 (Oracle + 双Workflow + 性质变异)",
+    skills: ["testing-core-oracle", "testing-workflow-spec", "testing-workflow-characterize", "testing-property-mutation"]
+  },
   "spec-driven-greenfield": {
     domain: "testing",
     description: "绿场规格驱动开发标准配方 (Oracle + Spec驱动 + 语言地道测试)",

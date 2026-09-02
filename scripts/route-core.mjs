@@ -129,7 +129,9 @@ export function Decide(hint, manifest) {
 
     // 细粒度测试配方装配逻辑 (高精度 active_recipe)
     let selectedRecipeKey = 'spec-driven-greenfield';
-    if (text.includes('ffi') || text.includes('v8') || text.includes('pyo3') || text.includes('跨语言') || text.includes('嵌入')) {
+    if (text.includes('盘点') || text.includes('讲述') || text.includes('找找') || text.includes('覆盖设计') || text.includes('规范族') || text.includes('体系')) {
+      selectedRecipeKey = 'testing-overview-catalog';
+    } else if (text.includes('ffi') || text.includes('v8') || text.includes('pyo3') || text.includes('跨语言') || text.includes('嵌入')) {
       selectedRecipeKey = 'embed-ffi-greenfield';
     } else if (text.includes('爬虫') || text.includes('采集') || text.includes('scraper') || text.includes('清洗')) {
       selectedRecipeKey = 'scraper-pipeline';

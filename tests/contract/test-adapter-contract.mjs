@@ -1,7 +1,9 @@
 // tests/contract/test-adapter-contract.mjs
 // 契约测试: 假 Harness 适配器行为验证 (Mock Harness Adapter Contract Test)
 // 依据: testing-core-oracle 独立判定律 & testing-scenario-cli 契约规范
-// 核心目标: 证明任何读取 RouteDecision 的适配器，在非 reverse 高置信场景下，绝对严禁触发工单初始化/写盘副作用！
+// 核心目标:
+// 1. 证明任何读取 RouteDecision 的适配器，在非 reverse 高置信场景下，绝对严禁触发工单初始化/写盘副作用！
+// 2. 证明适配器默认只将 active_recipe 的核心包正文加载进上下文，绝不无脑倾倒 11 份正文，实现 Token 经济性与高召回并存！
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -19,6 +21,8 @@ class MockHarnessAdapter {
     this.caseInitCalled = false;
     this.workspaceTouched = false;
     this.dispatchedSkills = [];
+    this.loadedSkillBodies = []; // 模拟实际注入会话上下文的正文包
+    this.injectedCandidateList = []; // 模拟注入会话的机读候选清单 (仅名称)
     this.lastAction = null;
   }
 
@@ -31,6 +35,12 @@ class MockHarnessAdapter {
   // 模拟适配器执行 RouteDecision
   execute(hint) {
     const decision = Decide(hint, manifest);
+
+    // 注入机读候选名单供模型知情全局
+    this.injectedCandidateList = decision.candidates;
+
+    // 默认仅加载 active_recipe 推荐装配的正文，杜绝上下文爆炸
+    this.loadedSkillBodies = decision.active_recipe?.skills || [];
 
     // 适配器硬性契约规范:
     // 1. 只有当 domain === 'reverse' 且 confidence === 'high' 时，才允许在用户明确意图下调用 initReverseCase
@@ -58,7 +68,7 @@ class MockHarnessAdapter {
 export function run() {
   console.log('[TEST CONTRACT] 假 Harness 适配器契约与副作用阻断测试...');
 
-  // 契约 1: 现场失败原句 -> 必须分流 testing, 绝对严禁调用 initReverseCase
+  // 契约 1: 现场原句 -> 盘点意图: 候选集全量 11 包提供，但默认正文只加载 catalog 4 包！
   {
     const adapter = new MockHarnessAdapter();
     const d = adapter.execute('规范化测试覆盖设计，找找相关的skill我们现有的里面，并且都讲述一番');
@@ -66,6 +76,14 @@ export function run() {
     assert.equal(adapter.caseInitCalled, false, 'CRITICAL: 测试任务严禁触发逆向工单初始化！');
     assert.equal(adapter.workspaceTouched, false, 'CRITICAL: 测试任务严禁触碰工作区！');
     assert.equal(adapter.lastAction, 'testing_dispatched');
+
+    // 召回与加载经济性断言
+    assert.equal(adapter.injectedCandidateList.length, 11, '候选集必须全量 11 包供模型盘点');
+    assert.equal(adapter.loadedSkillBodies.length, 4, '默认上下文正文必须只加载 catalog 推荐的 4 个核心包');
+    assert.ok(adapter.loadedSkillBodies.includes('testing-core-oracle'));
+    assert.ok(adapter.loadedSkillBodies.includes('testing-workflow-spec'));
+    assert.ok(adapter.loadedSkillBodies.includes('testing-workflow-characterize'));
+    assert.ok(adapter.loadedSkillBodies.includes('testing-property-mutation'));
   }
 
   // 契约 2: 纯逆向高置信用例 -> 允许按需派发
@@ -90,14 +108,15 @@ export function run() {
   {
     const adapter = new MockHarnessAdapter();
     const d = adapter.execute('逆向分析某模块并为该逻辑编写单元测试');
-    // 当同时命中 reverse 与 testing 时
-    if (d.domain === 'mixed') {
-      assert.equal(adapter.caseInitCalled, false, '复合任务在澄清前禁止偷跑建单');
-      assert.equal(adapter.lastAction, 'ask_clarification');
-    }
+    assert.equal(d.domain, 'mixed');
+    assert.equal(adapter.caseInitCalled, false, '复合任务在澄清前禁止偷跑建单');
+    assert.equal(adapter.lastAction, 'ask_clarification');
+    // 双域候选集必须同时可见
+    assert.ok(adapter.injectedCandidateList.includes('testing-core-oracle'));
+    assert.ok(adapter.injectedCandidateList.includes('reverse-skill-router'));
   }
 
-  console.log('  -> 假 Harness 适配器契约测试全部通过！');
+  console.log('  -> 假 Harness 适配器契约与加载经济性测试全部通过！');
 }
 
 if (process.argv[1] && process.argv[1].endsWith('test-adapter-contract.mjs')) {
