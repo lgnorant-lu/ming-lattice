@@ -82,25 +82,33 @@ foreach ($u in $units) {
 
         if ($WhatIf) { Write-Host "        (演练) 链接或复制: $($u.src)"; continue }
 
-        # 目标已存在: 相同来源跳过; 不同来源备份到 .trash
-        if (Test-Path $dst) {
+        # 目标已存在 (含悬空符号链接)
+        $existing = Get-Item -LiteralPath $dst -Force -ErrorAction SilentlyContinue
+        if ($existing) {
             $same = $false
             try {
-                $item = Get-Item $dst
-                if ($item.LinkType -and $item.Target) { $same = $item.Target -eq $u.src }
+                if ($existing.LinkType -and $existing.Target) { 
+                    $same = ($existing.Target -eq $u.src) -or ($existing.Target -eq (Resolve-Path $u.src -ErrorAction SilentlyContinue).Path)
+                }
             } catch { $same = $false }
             if ($same) {
                 Write-Host "        (跳过) 已链接同源" -ForegroundColor DarkGray
                 $modeStat.skip++
                 continue
             }
-            $backup = Join-Path $trash $u.name
-            $n = 1
-            while (Test-Path $backup) { $backup = Join-Path $trash "$($u.name).$n"; $n++ }
-            New-Item -ItemType Directory -Force -Path (Split-Path $backup -Parent) | Out-Null
-            Move-Item $dst $backup -Force
-            Write-Host "        (备份) 旧目标已移入 .trash\$($u.name)" -ForegroundColor DarkGray
-            $modeStat.backup++
+            # 若为旧符号链接/重解析点，直接删除重建；若为真实物理目录，备份到 .trash
+            if ($existing.LinkType -or ($existing.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+                $existing.Delete()
+                Write-Host "        (更新) 移除旧符号链接" -ForegroundColor DarkGray
+            } else {
+                $backup = Join-Path $trash $u.name
+                $n = 1
+                while (Test-Path $backup) { $backup = Join-Path $trash "$($u.name).$n"; $n++ }
+                New-Item -ItemType Directory -Force -Path (Split-Path $backup -Parent) | Out-Null
+                Move-Item $dst $backup -Force
+                Write-Host "        (备份) 旧目标已移入 .trash\$($u.name)" -ForegroundColor DarkGray
+                $modeStat.backup++
+            }
         }
 
         # 建链接: symlink → fallback robocopy

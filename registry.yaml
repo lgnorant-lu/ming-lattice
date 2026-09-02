@@ -1358,31 +1358,31 @@ private:
     deploy:
       claude: true
   - name: docs-core-paradigm
-    path: private/docs-core-paradigm
+    path: private/engineering/docs-core-paradigm
     enabled: true
     note: "跨场景文档元规则 (Diataxis四体裁 + Nygard ADR + 第一事实源)"
     deploy:
       claude: true
   - name: obs-core-paradigm
-    path: private/obs-core-paradigm
+    path: private/engineering/obs-core-paradigm
     enabled: true
     note: "跨场景可观测元规则 (宽结构化事件 + 相关ID + 脱敏红线)"
     deploy:
       claude: true
   - name: sec-core-paradigm
-    path: private/sec-core-paradigm
+    path: private/engineering/sec-core-paradigm
     enabled: true
     note: "跨场景安全元规则 (运行时防御 + OWASP AST01~10 供应链)"
     deploy:
       claude: true
   - name: contract-core-paradigm
-    path: private/contract-core-paradigm
+    path: private/engineering/contract-core-paradigm
     enabled: true
     note: "跨场景数据契约元规则 (只加不改义演进五条 + 宽容读取)"
     deploy:
       claude: true
   - name: overlay-core-paradigm
-    path: private/overlay-core-paradigm
+    path: private/engineering/overlay-core-paradigm
     enabled: true
     note: "跨场景B级质量属性横切不变量 (性能/隐私/韧性/成本/兼容/无障碍)"
     deploy:
@@ -1411,67 +1411,67 @@ private:
     deploy:
       claude: true
   - name: testing-core-oracle
-    path: private/testing-core-oracle
+    path: private/engineering/testing/testing-core-oracle
     enabled: true
     note: "测试体系中枢元规则与独立判定律 (Testing Oracle)"
     deploy:
       claude: true
   - name: testing-scenario-embed-ffi
-    path: private/testing-scenario-embed-ffi
+    path: private/engineering/testing/testing-scenario-embed-ffi
     enabled: true
     note: "嵌入式与跨语言 FFI (Rust+V8+PyO3+JS补丁) 测试契约"
     deploy:
       claude: true
   - name: testing-workflow-spec
-    path: private/testing-workflow-spec
+    path: private/engineering/testing/testing-workflow-spec
     enabled: true
     note: "规格驱动开发 (Spec-Driven/BDD) 工作流驱动"
     deploy:
       claude: true
   - name: testing-workflow-characterize
-    path: private/testing-workflow-characterize
+    path: private/engineering/testing/testing-workflow-characterize
     enabled: true
     note: "表征测试与 Golden 现状锁定 (Characterization Testing) 工作流驱动"
     deploy:
       claude: true
   - name: testing-property-mutation
-    path: private/testing-property-mutation
+    path: private/engineering/testing/testing-property-mutation
     enabled: true
     note: "性质测试与变异测试杀伤力审计 (Property & Mutation Testing)"
     deploy:
       claude: true
   - name: testing-rust-idiom
-    path: private/testing-rust-idiom
+    path: private/engineering/testing/testing-rust-idiom
     enabled: true
     note: "Rust 地道测试机制规范 (Testing Rust Idiomatic)"
     deploy:
       claude: true
   - name: testing-python-idiom
-    path: private/testing-python-idiom
+    path: private/engineering/testing/testing-python-idiom
     enabled: true
     note: "Python 地道测试机制规范 (Testing Python Idiomatic)"
     deploy:
       claude: true
   - name: testing-js-idiom
-    path: private/testing-js-idiom
+    path: private/engineering/testing/testing-js-idiom
     enabled: true
     note: "JS/TS 地道测试机制规范 (Testing JS/TS Idiomatic)"
     deploy:
       claude: true
   - name: testing-go-idiom
-    path: private/testing-go-idiom
+    path: private/engineering/testing/testing-go-idiom
     enabled: true
     note: "Go 地道测试机制规范 (Testing Go Idiomatic)"
     deploy:
       claude: true
   - name: testing-scenario-cli
-    path: private/testing-scenario-cli
+    path: private/engineering/testing/testing-scenario-cli
     enabled: true
     note: "CLI 命令行与脚本工具测试场景规范 (Testing CLI Scenario)"
     deploy:
       claude: true
   - name: testing-scenario-scraper
-    path: private/testing-scenario-scraper
+    path: private/engineering/testing/testing-scenario-scraper
     enabled: true
     note: "数据采集与管道清洗测试场景规范 (Testing Scraper Scenario)"
     deploy:
