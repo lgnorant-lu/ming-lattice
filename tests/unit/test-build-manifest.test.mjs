@@ -30,12 +30,13 @@ export function run() {
     assert.ok(Array.isArray(d.negatives), `${dom}.negatives 必须是数组`);
   }
 
-  // 2.1 engineering 领域检查 4 个元规范包
+  // 2.1 engineering 领域检查 5 个元规范包
   const expectedEngineeringSkills = [
     'docs-core-paradigm',
     'obs-core-paradigm',
     'sec-core-paradigm',
-    'contract-core-paradigm'
+    'contract-core-paradigm',
+    'overlay-core-paradigm'
   ];
   for (const s of expectedEngineeringSkills) {
     assert.ok(manifest.domains.engineering.skills.includes(s), `engineering 领域遗漏技能包: ${s}`);

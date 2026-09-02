@@ -1381,6 +1381,12 @@ private:
     note: "跨场景数据契约元规则 (只加不改义演进五条 + 宽容读取)"
     deploy:
       claude: true
+  - name: overlay-core-paradigm
+    path: private/overlay-core-paradigm
+    enabled: true
+    note: "跨场景B级质量属性横切不变量 (性能/隐私/韧性/成本/兼容/无障碍)"
+    deploy:
+      claude: true
   - name: blog-content
     path: private/blog-content
     enabled: true

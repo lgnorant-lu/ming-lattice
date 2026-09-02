@@ -80,18 +80,20 @@ const DOMAIN_DEFS = {
     defaultRecipe: "ui-oracle-trace"
   },
   engineering: {
-    description: "软件工程质量属性与元规范族 (文档四体裁, 宽结构化事件, 安全供应链, 数据演进契约)",
+    description: "软件工程质量属性与元规范族 (文档四体裁, 宽结构化事件, 安全供应链, 数据演进契约, B级质量Overlay)",
     skills: [
       "docs-core-paradigm",
       "obs-core-paradigm",
       "sec-core-paradigm",
-      "contract-core-paradigm"
+      "contract-core-paradigm",
+      "overlay-core-paradigm"
     ],
     triggers: [
       "文档体裁", "diataxis", "adr", "docs-as-code", "架构决策记录",
       "可观测", "observability", "structured logging", "wide events", "宽事件", "相关id",
       "安全元规则", "ast10", "agentic-skills", "supply-chain", "最小权限",
-      "数据契约", "schema-evolution", "tolerant-reader", "data-contract", "字段演进"
+      "数据契约", "schema-evolution", "tolerant-reader", "data-contract", "字段演进",
+      "性能横切", "隐私", "韧性", "上下文成本", "可移植", "overlay"
     ],
     negatives: [
       "脱壳", "反编译", "ida pro", "gdb", "rop", "pwn"
@@ -104,8 +106,14 @@ const DOMAIN_DEFS = {
 const RECIPES = {
   "engineering-meta-catalog": {
     domain: "engineering",
-    description: "软件工程元规范综合装配 (文档 + 可观测 + 安全 + 契约)",
-    skills: ["docs-core-paradigm", "obs-core-paradigm", "sec-core-paradigm", "contract-core-paradigm"]
+    description: "软件工程元规范综合装配 (文档 + 可观测 + 安全 + 契约 + B级质量Overlay)",
+    skills: [
+      "docs-core-paradigm",
+      "obs-core-paradigm",
+      "sec-core-paradigm",
+      "contract-core-paradigm",
+      "overlay-core-paradigm"
+    ]
   },
   "testing-overview-catalog": {
     domain: "testing",
