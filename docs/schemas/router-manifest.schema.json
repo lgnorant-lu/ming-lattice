@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RouterManifest",
+  "description": "从 registry 与各包 frontmatter 自动编译的机读路由清单",
+  "type": "object",
+  "required": ["version", "domains", "recipes"],
+  "properties": {
+    "version": { "type": "string" },
+    "domains": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["description", "skills", "triggers", "negatives"],
+        "properties": {
+          "description": { "type": "string" },
+          "skills": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "triggers": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "negatives": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "defaultRecipe": { "type": "string" }
+        }
+      }
+    },
+    "recipes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["domain", "description", "skills"],
+        "properties": {
+          "domain": { "type": "string" },
+          "description": { "type": "string" },
+          "skills": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1351,6 +1351,12 @@ deployable:
     deploy:
       claude: true
 private:
+  - name: ming-skills-router
+    path: private/ming-skills-router
+    enabled: true
+    note: "全局无副作用领域分流与配方装配中枢 (Domain Gate & Recipe Dispatcher)"
+    deploy:
+      claude: true
   - name: blog-content
     path: private/blog-content
     enabled: true

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RouteDecision",
+  "description": "跨 Harness 统一路由判定决策对象 (无副作用 / 机读事实源)",
+  "type": "object",
+  "required": ["domain", "confidence", "skills", "action", "side_effects", "reasons"],
+  "properties": {
+    "domain": {
+      "type": "string",
+      "enum": ["testing", "reverse", "ui", "protocol", "mixed", "none"]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low", "none"]
+    },
+    "skills": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "命中的技能包清单 (标准配方或单包)"
+    },
+    "recipe": {
+      "type": "string",
+      "description": "命中的装配配方名称 (如 embed-ffi-greenfield, scraper-pipeline 等)"
+    },
+    "action": {
+      "type": "string",
+      "enum": ["dispatch", "handoff", "ask"],
+      "description": "建议适配器采取的动作 (dispatch: 直接执行配方; handoff: 转交其它领域或平台; ask: 需要用户澄清)"
+    },
+    "side_effects": {
+      "type": "string",
+      "const": "none",
+      "description": "内核永远保证零副作用，禁止任何文件创建或工单初始化"
+    },
+    "reasons": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "决策判定依据链 (如 negatives_hit, triggers_hit, explicit_skill)"
+    }
+  },
+  "additionalProperties": false
+}
