@@ -165,6 +165,11 @@ export function buildRouterManifest() {
     fs.mkdirSync(CONFIG_DIR, { recursive: true });
   }
 
+  const skillConfigDir = path.join(ROOT_DIR, 'private/ming-skills-router/config');
+  if (!fs.existsSync(skillConfigDir)) {
+    fs.mkdirSync(skillConfigDir, { recursive: true });
+  }
+
   const manifest = {
     version: "1.0.0",
     generatedAt: new Date().toISOString(),
@@ -172,8 +177,14 @@ export function buildRouterManifest() {
     recipes: RECIPES
   };
 
-  fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2), 'utf8');
+  const jsonStr = JSON.stringify(manifest, null, 2);
+  fs.writeFileSync(MANIFEST_PATH, jsonStr, 'utf8');
   console.log(`[build-router-manifest] 成功生成机读清单: ${path.relative(ROOT_DIR, MANIFEST_PATH)}`);
+
+  const skillManifestPath = path.join(skillConfigDir, 'router-manifest.json');
+  fs.writeFileSync(skillManifestPath, jsonStr, 'utf8');
+  console.log(`[build-router-manifest] 成功同步技能机读清单: ${path.relative(ROOT_DIR, skillManifestPath)}`);
+
   return manifest;
 }
 
