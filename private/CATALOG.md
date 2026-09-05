@@ -15,6 +15,7 @@ private/
 │   ├── README.md                      # 工程总族导引与 Universal Compose 公式
 │   ├── testing/                       # 测试规范子族 (11 包四层解耦模型)
 │   ├── docs-core-paradigm/            # A列: 跨场景文档元规则 (Diataxis + ADR)
+│   ├── docs-presentation-idiom/       # A列: GitHub 文档视觉排版与去疲劳范式
 │   ├── obs-core-paradigm/             # A列: 跨场景可观测元规则 (宽事件 + 脱敏)
 │   ├── sec-core-paradigm/             # A列: 跨场景安全元规则 (运行时 + AST10)
 │   ├── contract-core-paradigm/        # A列: 跨场景数据契约元规则 (演进五条)

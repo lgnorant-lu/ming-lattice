@@ -15,7 +15,8 @@ private/engineering/
 │   ├── testing-scenario-*/            # 3 大场景特化
 │   └── testing-property-mutation/     # 性质变异
 │
-├── docs-core-paradigm/                # [A列-文档] Diataxis 四体裁、ADR 决策留痕、第一事实源
+├── docs-core-paradigm/                # [A列-文档内容] Diataxis 四体裁、ADR 决策留痕、第一事实源
+├── docs-presentation-idiom/           # [A列-文档表现] GitHub Markdown 视觉排版、动线与去疲劳
 ├── obs-core-paradigm/                 # [A列-可观测] 宽结构化事件、相关 ID 穿透、脱敏红线
 ├── sec-core-paradigm/                 # [A列-安全] 不可信输入、最小权限、OWASP AST01~10 供应链
 ├── contract-core-paradigm/            # [A列-契约] 演进五条（只加不改义）、破坏升版本、宽容读取

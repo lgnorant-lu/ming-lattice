@@ -1363,6 +1363,12 @@ private:
     note: "跨场景文档元规则 (Diataxis四体裁 + Nygard ADR + 第一事实源)"
     deploy:
       claude: true
+  - name: docs-presentation-idiom
+    path: private/engineering/docs-presentation-idiom
+    enabled: true
+    note: "GitHub文档视觉排版与去疲劳范式 (块动线 + 零前缀 + 读者分流)"
+    deploy:
+      claude: true
   - name: obs-core-paradigm
     path: private/engineering/obs-core-paradigm
     enabled: true

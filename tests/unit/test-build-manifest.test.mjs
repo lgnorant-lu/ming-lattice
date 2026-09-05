@@ -30,9 +30,10 @@ export function run() {
     assert.ok(Array.isArray(d.negatives), `${dom}.negatives 必须是数组`);
   }
 
-  // 2.1 engineering 领域检查 5 个元规范包
+  // 2.1 engineering 领域检查 6 个元规范包
   const expectedEngineeringSkills = [
     'docs-core-paradigm',
+    'docs-presentation-idiom',
     'obs-core-paradigm',
     'sec-core-paradigm',
     'contract-core-paradigm',

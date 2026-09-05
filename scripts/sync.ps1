@@ -19,6 +19,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 . (Join-Path $PSScriptRoot 'lib\yaml-lite.ps1')
 
 if (-not (Test-Path $RegistryPath)) { throw "registry 不存在: $RegistryPath" }
