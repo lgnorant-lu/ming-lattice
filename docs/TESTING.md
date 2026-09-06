@@ -1,102 +1,54 @@
-# ming-skills 自动化测试体系与自举规范 (Testing Governance & Bootstrapping)
+# 测试与验证
 
-本文档定义 `ming-skills` 仓库自身工具链与技能规范的**自动化测试体系**。本仓库遵循 `private/testing-core-oracle` 元规则中枢，实现了**「用自己的测试方法论，守护自己的工程工具链」**的自举闭环。
+需要 Node.js 22+。完整套件还需要 PowerShell 7 和 Git；不下载依赖，不连接真实上游，不部署到个人客户端。
 
----
-
-## 1. 测试金字塔与契约分层
-
-```
-                ┌─────────────────────────────┐
-                │   Integration Tests (集成)   │
-                │   - lint.ps1 / sync.ps1     │
-                │   - update.ps1 / CLI 端到端 │
-                └──────────────┬──────────────┘
-                               │
-                ┌──────────────▼──────────────┐
-                │   Contract Tests (契约与断言)│
-                │   - 20 条结构化黄金用例集   │
-                │   - 假 Harness 适配器断言   │
-                │   - Schema 校验与零副作用   │
-                └──────────────┬──────────────┘
-                               │
-                ┌──────────────▼──────────────┐
-                │     Unit Tests (单元与表征)  │
-                │     - validate.mjs (Hook)   │
-                │     - build-manifest.mjs    │
-                │     - yaml-lite (characterize)│
-                └─────────────────────────────┘
+```bash
+node tests/run.mjs --require-all
 ```
 
-## 2. testing-family 规范族在本体的装配映射
+也可通过 `pwsh scripts/test.ps1 --require-all` 或 `sh scripts/test.sh --require-all` 透传。省略 `--require-all` 时，缺少工具的套件单列为 skipped，不计入 passed；严格模式下任何跳过也使退出码非零。
 
-依据 [`private/testing-core-oracle/references/compose.yaml`](file:///d:/dogepy/skills-collection/private/testing-core-oracle/references/compose.yaml)，本仓库（CLI 工具链 + 跨 Harness 路由中枢）装配以下核心包：
+## 验证范围
 
-| 层级 | 装配技能包 | 核心职责与应用契约 |
-|---|---|---|
-| **元规则** | `testing-core-oracle` | 独立判定律（Schema 与黄金事实源）、Goodhart 三禁令（拒绝盲目覆盖率 KPI）、零副作用密封性 |
-| **场景层** | `testing-scenario-cli` | 脚本当产品：退出码矩阵（0/1/2）、`-DryRun` 零写盘、跨平台路径分隔符、POSIX/Win 双外壳 |
-| **语言层** | `testing-js-idiom` | 纯 `.mjs` 零依赖决策内核、流式断言、崩溃免疫 |
-| **驱动层** | `testing-workflow-spec` + `testing-workflow-characterize` | 新功能（路由决策）走 Spec 驱动；已有存量工具（`yaml-lite.ps1`）标记为 `kind: characterize` 表征回归 |
-| **加深层** | `testing-property-mutation` | 关键不变式形式化断言（幂等性、`side_effects === "none"`、`testing` 与 `reverse` 互斥） |
+| 套件 | 判定来源与检查 |
+|---|---|
+| Hook 单测 | 提交格式的合法/非法输入 |
+| Manifest 单测 | 合成 registry 与入口；启用、停用、缺失、身份错误、重复及路径越界；默认无写盘，显式写入仅临时根 |
+| 路由黄金 | 典型任务的分类与候选回归，不单独代表配方质量 |
+| 路由安全回归 | 只读模式、多包名、否定和引用、词边界、实际配方、可用性、未知契约安全退回 |
+| 适配器契约 | 模式映射、候选与正文分离；分类永不授予 case-init 权限 |
+| YAML/registry | 标量、列表和真实 registry 可解析；隔离集成另验证重复键及部署结构 |
+| CLI 隔离集成 | 临时仓库中真实部署内容、DryRun 状态不变、无效配置拒绝、包装重建不覆盖正文 |
+| Hook 暂存区集成 | 临时 Git 仓库的 staged/unstaged 分离、工作文件已删、Unicode 和空格路径；不提交 |
+| Manifest 新鲜度 | `--check` 比较两份清单，忽略生成时间；只读，不自动修复 |
 
----
+测试定义在 [tests/run.mjs](../tests/run.mjs)，计数以运行结果为准。测试使用临时目录并在 finally 清理；可用 `SKILLS_TEST_TMPDIR` 指定已存在的测试临时父目录。
 
-## 3. 自动化测试套件矩阵
+## 内容与部署检查
 
-| 测试套件 | 对应源文件 | 测试类型 | 核心断言与覆盖内容 |
-|---|---|---|---|
-| `tests/unit/test-validate-hooks.test.mjs` | `scripts/hooks/validate.mjs` | 单元测试 | Conventional Commits 格式、Type 白名单、Emoji 阻断、Mojibake 拦截 |
-| `tests/unit/test-build-manifest.test.mjs` | `scripts/build-router-manifest.mjs` | 单元测试 | Manifest 编译完整性、11 个测试技能包收录、负向表存在性、配方引用 |
-| `tests/test-route-decision.mjs` | `scripts/route-core.mjs` | 契约黄金测试 | **20 条结构化黄金用例**：单领域（测试/逆向/UI）、双领域 mixed、点名、歧义消歧、边界拒识 |
-| `tests/contract/test-adapter-contract.mjs` | 假 Harness 适配器 | 契约测试 | 证明适配器在读取 `RouteDecision` 时，非 reverse 高置信绝不触发 `initCase()` 或工作区写盘 |
-| `tests/unit/test-yaml-lite.test.ps1` | `scripts/lib/yaml-lite.ps1` | 表征测试 | `kind: characterize` 表征回归，校验 YAML 解析器对真实 `registry.yaml` 的结构还原 |
-| `tests/integration/test-cli-tools.test.mjs` | `scripts/` 全量工具链 | 集成测试 | `lint.ps1` 0 ERROR 闭环、`sync.ps1 -DryRun` 演练、`update.ps1 -DryRun` 演练 |
-
----
-
-## 3. 测试执行指南
-
-### 一键执行全量测试套件
-
-- **跨平台入口 (Node.js)**:
-  ```bash
-  node tests/run.mjs
-  ```
-- **PowerShell 入口**:
-  ```powershell
-  pwsh scripts/test.ps1
-  ```
-
-### 输出示例
-```
-================================================================
-       ming-skills 自动化测试金字塔与契约套件驱动器              
-================================================================
-
-[TEST UNIT] scripts/hooks/validate.mjs...
-  -> validate.mjs 全部断言通过！
-[TEST UNIT] scripts/build-router-manifest.mjs...
-[build-router-manifest] 成功生成机读清单: config\router-manifest.json
-  -> build-router-manifest.mjs 全部断言通过！
-[TEST UNIT] 路由决策纯函数 8 条黄金用例回归...
-  ...
-[TEST UNIT] scripts/lib/yaml-lite.ps1 解析器测试...
-  -> yaml-lite.ps1 全部断言通过！
-[TEST INTEGRATION] 运维工具链端到端集成测试...
-  -> 运维工具链全部端到端集成测试通过！
-
-================================================================
-  测试总结果: 5/5 套件全部通过！(100% GREEN)
-================================================================
+```powershell
+pwsh -NoProfile -File scripts/lint.ps1
+pwsh -NoProfile -File scripts/lint.ps1 -Json
+pwsh -NoProfile -File scripts/sync.ps1 -DryRun -Module rust-reverse
 ```
 
----
+lint 对启用的部署单元要求入口及身份有效，参考仓库不按完整部署包验收。`-Json` 始终输出数组且错误退出码与文本模式一致。相对引用检查仍是启发式，不能证明全部运行时依赖齐全。
 
-## 4. 门禁联动与防御机制
+`update.ps1 -DryRun` 仅预览，连同 `-Force` 也不 fetch/ls-remote、不写 registry；未检查的来源显示 `NOT_CHECKED`，不是“最新”。真实更新检查需用户另行允许。
 
-1. **Pre-commit 强门禁**：
-   - 每次执行 `git commit` 时，`.githooks/pre-commit` 会自动触发 `node tests/run.mjs`；
-   - 任何一个单元测试、黄金用例或集成测试失败，**Git 将强制拦截提交**，确保问题绝不流入主干。
-2. **零副作用原则**：
-   - 所有测试用例均在内存中或通过 `-DryRun` 运行，严禁在测试过程中污染真实工作区或创建临时孤儿目录。
+## 刷新清单
+
+```bash
+node scripts/build-router-manifest.mjs
+node scripts/build-router-manifest.mjs --check
+```
+
+前者是显式写操作，后者只检查。测试不会自动重写两份真实 manifest。每个文件采用临时文件后改名；两份清单不是跨文件事务，中断后用 `--check` 发现不一致并重新生成。
+
+## 门禁与限制
+
+已安装的 pre-commit 对暂存 blob 扫描，再执行严格测试模式。测试读取工作树，因此部分暂存不等于对完整待提交树进行了隔离验证，提交前仍需审阅 staged/unstaged 差异。
+
+通过这些测试不代表所有 Skill 内容正确、真实客户端遵循限制或所有 OS 已通过。当前没有完整 JSON Schema 验证器、跨客户端效果评估、实际浏览器 E2E、规模基准或自动变异活动；不要用 passed 比例代替这些证据。
+
+方法论入口：[testing-core-oracle](../private/engineering/testing/testing-core-oracle/SKILL.md)；只读流程：[review.md](../private/engineering/testing/testing-core-oracle/references/review.md)。

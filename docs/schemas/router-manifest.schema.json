@@ -1,11 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "RouterManifest",
-  "description": "从 registry 与各包 frontmatter 自动编译的机读路由清单",
+  "description": "Curated domains and recipes with registry-backed, build-time availability",
   "type": "object",
-  "required": ["version", "domains", "recipes"],
+  "required": ["version", "domains", "recipes", "availability"],
   "properties": {
-    "version": { "type": "string" },
+    "version": { "const": "2.0.0" },
+    "generatedAt": { "type": "string" },
+    "availability": {
+      "type": "object",
+      "additionalProperties": { "enum": ["ready", "disabled", "missing", "invalid", "unregistered"] }
+    },
     "domains": {
       "type": "object",
       "additionalProperties": {
@@ -25,7 +30,8 @@
             "type": "array",
             "items": { "type": "string" }
           },
-          "defaultRecipe": { "type": "string" }
+          "defaultRecipe": { "type": "string" },
+          "skillTriggers": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } } }
         }
       }
     },
@@ -44,5 +50,6 @@
         }
       }
     }
-  }
+  },
+  "additionalProperties": true
 }

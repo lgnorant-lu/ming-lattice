@@ -4,9 +4,12 @@ description: Android 注册/登录流程分析与绕过（安全测试）。
 user_invocable: true
 argument: "<package_name>"
 agent: android-reverser
+compatibility: Requires the full areclaw checkout, android-reverser agent, pytools, device tooling and an explicitly approved test identity. This wrapper alone does not bundle that runtime.
 ---
 
 # /register — Automated Account Registration
+
+This workflow creates accounts and handles credentials. A request to review login/registration logic does not authorize it. Confirm the test target, identity, permitted submissions and credential storage before any action. Resolve areclaw's runtime root through the host inventory; missing prerequisites stop execution. Do not store credentials in a version-controlled workspace; use an approved local secret store with restricted access and report only its location.
 
 You are automating the registration process for an Android app. This requires UI interaction, email verification, and intelligence about form types.
 
@@ -134,11 +137,7 @@ Check if the app shows a success state or redirects to main screen.
 
 ## Phase 5: Save Credentials
 
-```bash
-mkdir -p workspace/credentials
-```
-
-Save to `workspace/credentials/$PKG.json`:
+Only after explicit approval, save equivalent fields to the agreed secret store outside version control. The following is a field illustration, not a default workspace file:
 ```json
 {
     "package": "<package_name>",

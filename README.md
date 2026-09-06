@@ -10,10 +10,10 @@ ming-skills/
 ├── private/                   # 自主核心资产（测试规范体系族 11 包 + UI 范式 + 自研工具）
 ├── deployable/                # 部署包装层（精炼门面, symlink 映射）
 ├── base/reverse-skill/        # 基座（submodule, 跟踪 zhaoxuya520/reverse-skill upstream）
-├── vertical/                  # 垂直参考（92 个 vendored 社区参考库, 增量跟踪）
+├── vertical/                  # 垂直参考（vendored 社区参考库, 增量跟踪）
 ├── scripts/
 │   ├── sync.ps1               # 按 registry 部署到各客户端（symlink, 失败 fallback 复制）
-│   ├── update.ps1             # 检测上游更新（fetch + 版本/commit 对比 + 变更摘要）
+│   ├── update.ps1             # 缓存/上游版本检查；DryRun 不联网不写回
 │   ├── lint.ps1               # 完整性校验（SKILL.md/frontmatter/引用/硬编码路径/空壳）
 │   └── lib/yaml-lite.ps1      # 零依赖 YAML 子集解析器（仅支撑 registry.yaml 结构）
 └── .trash/                    # sync 备份的旧目标（确认无误后手动删）
@@ -53,5 +53,5 @@ skills-collection/  →(sync.ps1 symlink)→  .cc-switch/skills/  →(cc-switch 
 
 - **符号链接**：Windows 需管理员或开发者模式；无权限时 sync 自动 fallback 为 robocopy 复制（源更新后需重新 sync）
 - **`.trash`**：sync 备份的旧目录，确认部署无误后删除：`Remove-Item .trash -Recurse`
-- **授权边界**：基座 RULES.md 的授权门（field-journal/precedent-auth）默认按"已授权研究"执行，实际操作前请确认 scope 契约
+- **授权边界**：Skill 文本不授予目标、网络、设备或文件操作权限；实际操作前由用户请求与宿主权限确认 scope 契约
 - 脚本需 **pwsh 7+**（Windows PowerShell 5.1 会因 UTF-8/GBK 编码解析错误）

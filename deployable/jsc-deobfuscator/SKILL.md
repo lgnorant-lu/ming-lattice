@@ -1,45 +1,33 @@
 ---
 name: jsc-deobfuscator
-description: V8 字节码静态反混淆（bytenode/electron 保护对抗, hasherezade 出品）。适用于 .jsc 编译产物、javascript-obfuscator 保护的 V8 字节码的静态还原与 AI 辅助分析。
+description: 对 View8 反编译并序列化的 JSCeal/V8 伪代码做静态反混淆与函数命名。适用于匹配的 javascript-obfuscator 模式；不直接接受原始 .jsc，不输出可运行 JavaScript，不用于普通 JS 源码反混淆。
+compatibility: Python 3.10+、本包 requirements.txt 依赖及匹配目标 V8 版本的反汇编器；上游 View8 产物必须由受控流程本地生成。AI 命名另需经允许的模型后端。
 ---
 
-# JSC Deobfuscator — V8 字节码反混淆
+# JSC Deobfuscator
 
-来源：hasherezade/jsc_deobfuscator（2026-08-04 更新），针对 **javascript-obfuscator 保护的编译 V8 字节码**（.jsc 文件，bytenode/Electron 场景）的静态还原。
+本地契约依据：[README](README.md) 和 [deobf_all.py](deobf_all.py)。来源为 hasherezade/jsc_deobfuscator，版本以部署包实际内容为准，不以一次采集日期推断兼容性。
 
-## 工具形态（Python 脚本, CLI 直接调用）
+## 输入与边界
 
-```bash
-# 全自动反混淆（推荐起点）
-python deobf_all.py <input.jsc> [输出目录]
-
-# AI 辅助模式（分步, 可控）
-python deobf_ai.py <input.jsc>          # 分阶段执行, 适合配合 AI 分析中间态
-
-# 辅助脚本（按需）
-deobf_commons.py          # 公共库
-deobf_globals.py          # 全局变量处理
-deobf_scope2.py           # 作用域处理
-deobf_inline_temporaries.py / deobf_replace_ops.py  # 临时变量内联/算子替换
-```
+- 原始 `.jsc` 需先确认压缩形式与 V8 版本，经匹配的反汇编器和 View8 生成序列化产物。本工具不替代这两个阶段。
+- `deobf_all.py` 输入是 View8 序列化文件，输出是静态分析伪代码和可选序列化结果，不是可直接交给 Node.js 或 iv8 执行的 JS。
+- View8 序列化使用 pickle。不得加载来源不明的 `.pkl`；静态分析工具处理恶意序列化输入仍可能执行代码。只用受控环境中本地生成且未被替换的产物。
+- 用户只要求审阅时不运行样本、不安装依赖、不调用外部模型。缺工具、版本不匹配或输入来源不明时停止并报告缺口。
 
 ## 工作流
 
-1. **确认形态**：目标是 `.jsc`（V8 序列化字节码）→ 本工具；目标是原始 JS 混淆 → 走 AST 路线（js-deobfuscator/decode-js 参考, xbs-ast-deobfuscation 已部署）
-2. **反混淆**：`deobf_all.py` 全自动跑一遍, 检查输出可读性
-3. **不理想 → AI 辅助**：`deobf_ai.py` 分步执行, 每步中间态交给 AI 分析（配合基座 js-reverse 的定位方法论）
-4. **验证**：反混淆输出与真实运行行为对照（iv8 环境跑一遍比对）
+1. 从宿主技能位置解析本包根目录，确认 [README](README.md) 中的依赖与目标版本。不要猜本机路径或把整个目录默认当作可执行权限。
+2. 保留输入来源、样本摘要、V8/反汇编器/View8 版本及生成命令；不同样本不共用 decoder 缓存。
+3. 在允许的隔离输出目录运行静态转换。以下 `SKILL_ROOT` 和 `CASE_ROOT` 由宿主解析，路径均需引用：
 
-## 与 iv8/View8 的配合
+```bash
+python "$SKILL_ROOT/deobf_all.py" --inp "$CASE_ROOT/decompiled/app.dec.pkl" --out "$CASE_ROOT/deobfuscated/app.deobf.txt" --export_format decompiled serialized
+```
 
-| 工具 | 层 | 场景 |
-|---|---|---|
-| **jsc_deobfuscator** | 静态还原 | javascript-obfuscator 保护的 .jsc |
-| **view8** | 静态反编译 | 任意 V8 序列化字节码 → 可读代码（需 patched V8 二进制） |
-| **iv8** | 动态运行 | 补环境跑目标 JS（验证/复现） |
+4. 对照转换前后的函数、常量、控制流和未处理模式，验证重要结论。输出存在或更易读不等于语义已被证明，也不能仅凭退出码判定成功。
+5. AI 命名是可选独立阶段。先按本包 README 确认参数、模型及数据发送范围；模型命名只是待验证假设，不是证据。
 
-## 注意事项
+## 交付与失败
 
-- 只处理**已授权**研究目标（scope 门由基座 ops 契约管理）
-- Python 3.x, 无额外依赖（纯标准库脚本）
-- 仅静态分析, 不执行目标代码
+交付输入来源与工具版本、实际命令、输出路径、关键变换的证据、残留模式和未验证结论。依赖失败、输入不兼容、部分转换分别标明，不自动更新工具或转为执行样本。

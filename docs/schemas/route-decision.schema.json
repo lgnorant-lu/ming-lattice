@@ -3,11 +3,13 @@
   "title": "RouteDecision",
   "description": "跨 Harness 统一路由判定决策对象 (解耦高召回候选集与高精度推荐装配)",
   "type": "object",
-  "required": ["domain", "confidence", "candidates", "active_recipe", "action", "side_effects", "must_not", "reasons"],
+  "required": ["schemaVersion", "mode", "domain", "confidence", "candidates", "active_recipe", "action", "side_effects", "must_not", "reasons"],
   "properties": {
+    "schemaVersion": { "const": "2.0" },
+    "mode": { "enum": ["review", "explain", "plan", "implement"] },
     "domain": {
       "type": "string",
-      "enum": ["testing", "reverse", "ui", "protocol", "mixed", "none"]
+      "enum": ["testing", "reverse", "ui", "protocol", "engineering", "mixed", "none"]
     },
     "confidence": {
       "type": "string",
@@ -51,5 +53,5 @@
       "description": "决策判定依据链"
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }

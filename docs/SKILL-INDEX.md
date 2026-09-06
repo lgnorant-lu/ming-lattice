@@ -73,13 +73,13 @@
 
 | 条目 | 定位 | 状态 |
 |---|---|---|
-| iv8 (HanZzzzz000) | Python 原生 V8 运行时（470★, **最新 v0.1.4** 2026-07-15, BOM/DOM 模拟+API 监控+CDP, `pip install iv8`） | 源码入库 |
-| web-reverse-iv8 (Nan857) | **别人整理的成熟 skill**（v9.6: HAR→`_initiator.stack` 定位→反混淆→iv8 补环境→本地验证, 阶段门硬阻断） | ✅ **已部署**（deployable） |
-| jsc-deobfuscator (hasherezade) | V8 字节码静态反混淆（Python 脚本直接可跑, bytenode 对抗） | ✅ **已部署**（deployable） |
+| iv8 (HanZzzzz000) | Python 原生 V8 运行时（470stars, **最新 v0.1.4** 2026-07-15, BOM/DOM 模拟+API 监控+CDP, `pip install iv8`） | 源码入库 |
+| web-reverse-iv8 (Nan857) | **别人整理的成熟 skill**（v9.6: HAR→`_initiator.stack` 定位→反混淆→iv8 补环境→本地验证, 阶段门硬阻断） | [已] **已部署**（deployable） |
+| jsc-deobfuscator (hasherezade) | V8 字节码静态反混淆（Python 脚本直接可跑, bytenode 对抗） | [已] **已部署**（deployable） |
 | view8 (suleram) | V8 序列化字节码反编译（JSC→可读代码, 需 patched V8 二进制） | reference |
 | js-deobfuscator (kuizuo) | Babel AST 自动化反混淆（web 形态**无 CLI**, playground 在线） | reference（算法借鉴） |
 | decode-js (echo094) | javascript-obfuscator 专攻（库形态无 CLI） | reference |
-| ming_iv8_rs (用户自有) | V8+Rust 高保真 runtime（★20） | 用户项目, 互补 |
+| ming_iv8_rs (用户自有) | V8+Rust 高保真 runtime（stars20） | 用户项目, 互补 |
 
 ### 微信/支付宝小程序（2026-08-18 采集）
 
@@ -88,17 +88,17 @@
 | wx-mp-mcp (WhiteNightShadow) | 微信小程序逆向 MCP（hello_js 作者, 解包 .wxapkg） | 源码入库 |
 | wxminidec (killmonday) | 微信小程序**签名/加密分析 SKILL**（AI 反编译+定位签名+mitmproxy 脚本, 2026-07-31） | 源码入库, 待筛选 |
 
-**spiderking 结论**：GitHub 搜索无有效对应（同名项目 ★≤5 且无关）——**噱头居多, 不采集**。
+**spiderking 结论**：GitHub 搜索无有效对应（同名项目 stars≤5 且无关）——**噱头居多, 不采集**。
 
 ### Ruyi(如意)生态（2026-08-18 采集, LoseNine）
 
 | 条目 | 定位 | 状态 |
 |---|---|---|
-| ruyipage | BiDi 过检测 Firefox 自动化框架（★1744 活跃, `pip install ruyipage`, 配套指纹浏览器 release） | 源码入库（pin 9444997） |
-| ruyipage-skill | **官方 skill v1.2**（BiDi 优先/人机化动作/指纹浏览器/20 篇 docs 按需阅读） | ✅ **已部署**（deployable） |
+| ruyipage | BiDi 过检测 Firefox 自动化框架（stars1744 活跃, `pip install ruyipage`, 配套指纹浏览器 release） | 源码入库（pin 9444997） |
+| ruyipage-skill | **官方 skill v1.2**（BiDi 优先/人机化动作/指纹浏览器/20 篇 docs 按需阅读） | [已] **已部署**（deployable） |
 | ruyi-trace-analyzer | RuyiTrace 文档仓库：**ruyiPage 抓轮廓 → Trace 采 NDJSON → AI 补环境** 工作流 + 12 真实防护案例（akamai-酷航/kasada-reese84/abgous/h5st-滑块/某数6…） | reference（**内核为闭源发行版 427MB, 只采文档**） |
 | firefox-fingerprintBrowser | ruyiPage release 配套指纹 Firefox 说明页 | 源码入库 |
-| ruyipage-js / ruyipage-go / ruyipage-dev / ruyi-mcp | JS/Go 库 + 开发文档（含 SKILL.md/agents）+ MCP 桥接 | ⚠️ 上游 2026-08 下架/私有化（HTTP 404），**内容已持有, sourceGone 标记零网络跳过** |
+| ruyipage-js / ruyipage-go / ruyipage-dev / ruyi-mcp | JS/Go 库 + 开发文档（含 SKILL.md/agents）+ MCP 桥接 | [警告] 上游 2026-08 下架/私有化（HTTP 404），**内容已持有, sourceGone 标记零网络跳过** |
 
 > 生态现状：ruyipage 与 ruyipage-skill 仍活跃（HTTP 200）；**下架进行时**——Restore-JS（《反爬虫JS破解与混淆还原手册》教程书）与 Crack-JS-Spider 在列表页出现后数分钟内 404，ruyipage-js/go/dev/mcp 已先期下架，作者在批量收敛敏感资产；**看到即采**，不留到下一轮。
 
@@ -106,38 +106,38 @@
 
 | 条目 | 定位 | 状态 |
 |---|---|---|
-| AI_JS_DEBUGGER | CDP AI 自动 JS 逆向 v0.4.0：断点/XHR 回溯/AES·RSA 密钥 hook/自动报告+mitmproxy 脚本生成（web UI, OpenAI 兼容 API; 原仓库 **Valerian7**/AI_JS_DEBUGGER, LoseNine fork） | ✅ 入库 reference（pin e748a44） |
-| devtools-detecter | 定时性能采样 DevTools 检测 JS 库（对抗面参考） | ✅ 入库 reference |
-| pjstealth | 浏览器特征抹除+指纹随机化 Python 库 | ✅ 入库 reference |
-| FingerPrintJSBrowser | 过 FingerPrintJS 的定制 chromium 141 指纹浏览器（闭源 release, 单 README） | ✅ 入库 reference |
-| Chromium_FingerPrint_Tutorial | 《Chromium 指纹浏览器开发教程》**宣传页**（README+15 图书截图, 内容走淘宝书/语雀付费） | ❌ 不采集（宣传页无内容） |
-| Restore-JS | 《反爬虫AST原理与还原混淆实战》免费课程版（Chrome 调试/JSHook 原理/过反调试/拓展开发/AST 还原） | ✅ **复活后已采**（曾瞬时 404, 2026-08-18 复测 codeload 200, pin a4a629c） |
-| Crack-JS-Spider | 30+ 真实站 JS 破解案例库（拼多多 anti_content/知乎 x-zse-96/极验滑块 w/酷狗 kg_mid, 带补环境注释） | ✅ **复活后已采**（pin 9d36933） |
+| AI_JS_DEBUGGER | CDP AI 自动 JS 逆向 v0.4.0：断点/XHR 回溯/AES·RSA 密钥 hook/自动报告+mitmproxy 脚本生成（web UI, OpenAI 兼容 API; 原仓库 **Valerian7**/AI_JS_DEBUGGER, LoseNine fork） | [已] 入库 reference（pin e748a44） |
+| devtools-detecter | 定时性能采样 DevTools 检测 JS 库（对抗面参考） | [已] 入库 reference |
+| pjstealth | 浏览器特征抹除+指纹随机化 Python 库 | [已] 入库 reference |
+| FingerPrintJSBrowser | 过 FingerPrintJS 的定制 chromium 141 指纹浏览器（闭源 release, 单 README） | [已] 入库 reference |
+| Chromium_FingerPrint_Tutorial | 《Chromium 指纹浏览器开发教程》**宣传页**（README+15 图书截图, 内容走淘宝书/语雀付费） | [不采] 不采集（宣传页无内容） |
+| Restore-JS | 《反爬虫AST原理与还原混淆实战》免费课程版（Chrome 调试/JSHook 原理/过反调试/拓展开发/AST 还原） | [已] **复活后已采**（曾瞬时 404, 2026-08-18 复测 codeload 200, pin a4a629c） |
+| Crack-JS-Spider | 30+ 真实站 JS 破解案例库（拼多多 anti_content/知乎 x-zse-96/极验滑块 w/酷狗 kg_mid, 带补环境注释） | [已] **复活后已采**（pin 9d36933） |
 
-> ⚠️ **404 判定教训**：codeload 瞬时 404 不一定是下架——Restore-JS/Crack-JS-Spider 曾判死又复活。**判定下架需三方一致**（codeload main+master + github 页面），瞬时故障用重试窗口验证。
+> [警告] **404 判定教训**：codeload 瞬时 404 不一定是下架——Restore-JS/Crack-JS-Spider 曾判死又复活。**判定下架需三方一致**（codeload main+master + github 页面），瞬时故障用重试窗口验证。
 
 ### LoseNine 第三轮（2026-08-18, 批量 fork/工具）
 
 | 条目 | 定位 | 状态 |
 |---|---|---|
-| ast-hook-for-js-RE | JS 内存漫游解决方案（WTFPL, 注入 hook 定位内存加密） | ✅ reference（pin 1a5f1a4） |
-| unveilr | 小程序逆向反编译（fork 自 r3x5ur/unveilr, 与 wx-mp-mcp/wxminidec 互补） | ✅ reference（ce76e69） |
-| v_jstools | chrome 插件快速调试前端 JS（inject hook） | ✅ reference（86eb180） |
-| Frida-Apk-Unpack | Frida dexDump.js APK 脱壳（基座 apk-reverse 补壳场景） | ✅ reference（b25ac27） |
-| CthulhuJs | 纯 JS 修改网页环境指纹（webpack 库, pjstealth 的 JS 版） | ✅ reference（28999a4） |
-| brotector | webdriver/自动化检测库（对抗面: 了解检测手段） | ✅ reference（98b3309） |
-| Cloudflare-Bybass-CDP-Chromium | Cloudflare Turnstile & Fingerprint solver（CDP 姿势） | ✅ reference（a1ae399） |
-| Crack-Website-code | 微博验证码 OCR（2020, 27MB 数据, 领域已变） | ❌ 不采（过时） |
-| session-android | Session IM 应用 fork（无关） | ❌ 不采 |
+| ast-hook-for-js-RE | JS 内存漫游解决方案（WTFPL, 注入 hook 定位内存加密） | [已] reference（pin 1a5f1a4） |
+| unveilr | 小程序逆向反编译（fork 自 r3x5ur/unveilr, 与 wx-mp-mcp/wxminidec 互补） | [已] reference（ce76e69） |
+| v_jstools | chrome 插件快速调试前端 JS（inject hook） | [已] reference（86eb180） |
+| Frida-Apk-Unpack | Frida dexDump.js APK 脱壳（基座 apk-reverse 补壳场景） | [已] reference（b25ac27） |
+| CthulhuJs | 纯 JS 修改网页环境指纹（webpack 库, pjstealth 的 JS 版） | [已] reference（28999a4） |
+| brotector | webdriver/自动化检测库（对抗面: 了解检测手段） | [已] reference（98b3309） |
+| Cloudflare-Bybass-CDP-Chromium | Cloudflare Turnstile & Fingerprint solver（CDP 姿势） | [已] reference（a1ae399） |
+| Crack-Website-code | 微博验证码 OCR（2020, 27MB 数据, 领域已变） | [不采] 不采（过时） |
+| session-android | Session IM 应用 fork（无关） | [不采] 不采 |
 
 ### 反混淆工具评估结论（2026-08-18）
 
 | 工具 | CLI 可用性 | 结论 |
 |---|---|---|
-| jsc_deobfuscator | ✅ Python 脚本直跑 | **deploy**（deployable 包装已建） |
-| view8 | ⚠️ 依赖 patched V8 二进制 | reference |
-| js-deobfuscator | ❌ web 形态无 CLI | reference（AST 算法借鉴源） |
-| decode-js | ❌ 库形态无 CLI | reference |
+| jsc_deobfuscator | [已] Python 脚本直跑 | **deploy**（deployable 包装已建） |
+| view8 | [警告] 依赖 patched V8 二进制 | reference |
+| js-deobfuscator | [不采] web 形态无 CLI | reference（AST 算法借鉴源） |
+| decode-js | [不采] 库形态无 CLI | reference |
 | ios-reverse-claude-skill | iOS IPA/Mach-O 静态逆向（11 阶段 + Ghidra 脚本） | **deploy**（需修路径变量） | macOS 工具链或 Linux fallback |
 | areclaw | Windows 优先 Android 分析工作区（15 Frida 脚本 + MASTG 映射） | deploy-子集（脚本+映射） | Windows + Git Bash |
 | malware-re-skills | 防御性 RE：IOC 提取 + 脱壳评估（纯 prompt） | reference（IOC schema 吸收） | 无 |
@@ -160,41 +160,41 @@
 
 | 条目 | 定位 | 状态 |
 |---|---|---|
-| appium-mcp（appium 官方） | Appium MCP server v1.92+（454★ 日更, 30+ 工具, NO_UI 省 token 60-90%） | ✅ reference（25c9ae9） |
-| **ui-oracle-protocol** | **自研 skill**：UI 控件自动化作为协议逆向 oracle（8 步：时间戳对齐→基线差集→流量窗口切片→生成时机还原→交叉验证→重放判官）+ timestamper.py | ✅ **private 已部署** |
-| Repey（腾讯） | **查无此仓库**（未开源/名称误记；实际可核实 QT4A/QTAF 均非 MCP） | ❌ 不采 |
-| LAMDA（firerpa, 8194★） | UI+MITM+Frida 一体备选（需 root, 体量重） | 备选 |
+| appium-mcp（appium 官方） | Appium MCP server v1.92+（454stars 日更, 30+ 工具, NO_UI 省 token 60-90%） | [已] reference（25c9ae9） |
+| **ui-oracle-protocol** | **自研 skill**：UI 控件自动化作为协议逆向 oracle（8 步：时间戳对齐→基线差集→流量窗口切片→生成时机还原→交叉验证→重放判官）+ timestamper.py | [已] **private 已部署** |
+| Repey（腾讯） | **查无此仓库**（未开源/名称误记；实际可核实 QT4A/QTAF 均非 MCP） | [不采] 不采 |
+| LAMDA（firerpa, 8194stars） | UI+MITM+Frida 一体备选（需 root, 体量重） | 备选 |
 
 ### JSVMP 专项（4 项）
 
 | 条目 | 定位 | 状态 |
 |---|---|---|
-| woxiangyangzhimao-skills | **200+ skill 逆向生态宿主仓**：jsvmp-bytecode-recovery（五步纪律化字节码还原）+ web-reverse-master/traffic-triage/parity-gate/app-reverse/param-encryptor | ✅ reference（c01cd6a） |
-| firefox-reverse | SpiderMonkey 引擎层 AI 逆向（687★, JSVMP 逐指令 trace, 页面 JS 不可检测） | ✅ reference（13bacdf） |
-| camoufox-reverse-mcp | 反检测浏览器 MCP（440★, hook_jsvmp_interpreter/verify_signer_offline） | ✅ reference（92c822f） |
-| jsir（google） | MLIR 基 JS 高层 IR（660★ 今日活跃, CASCADE 论文, Hermes 反编译）——SSA/IR 标准答案 | ✅ reference（46e9c43） |
+| woxiangyangzhimao-skills | **200+ skill 逆向生态宿主仓**：jsvmp-bytecode-recovery（五步纪律化字节码还原）+ web-reverse-master/traffic-triage/parity-gate/app-reverse/param-encryptor | [已] reference（c01cd6a） |
+| firefox-reverse | SpiderMonkey 引擎层 AI 逆向（687stars, JSVMP 逐指令 trace, 页面 JS 不可检测） | [已] reference（13bacdf） |
+| camoufox-reverse-mcp | 反检测浏览器 MCP（440stars, hook_jsvmp_interpreter/verify_signer_offline） | [已] reference（92c822f） |
+| jsir（google） | MLIR 基 JS 高层 IR（660stars 今日活跃, CASCADE 论文, Hermes 反编译）——SSA/IR 标准答案 | [已] reference（46e9c43） |
 | 观望 | ~~jshookmcp~~ **已采（67fdd78）**：js_analyze_vm/js_deobfuscate_jsvmp/js_symbolic_execute_jsvmp（字节码符号执行独有）；~~xtrace~~ **已采（aeb8167）**：V8/Blink 引擎层插桩；sdenv-ng（npm 0.2.3, BSD-3, 瑞数补环境实测一致——npm 参考不采源码）；~~cy_jsvmp~~ **gone**（三方不可达, 加密端教材参考丢失） | 见上 |
 
 ### 安卓 oracle 配套（观望单清零）
 
 | 条目 | 定位 | 状态 |
 |---|---|---|
-| uiautodev | uiautomator2 控件树检视（530★, weditor 替代） | ✅ reference（3da93ec） |
+| uiautodev | uiautomator2 控件树检视（530stars, weditor 替代） | [已] reference（3da93ec） |
 
 ### SSA/IR 专项（8 项 + 方法论）
 
 | 条目 | 定位 | 状态 |
 |---|---|---|
-| Mergen | VMP 去虚拟化首选（850★, LLVM IR 整函数符号执行, VMProtect 3.4-3.8/Themida 实测） | ✅ reference（71fc607） |
-| d810-ng | IDA microcode 反混淆规则框架（JSON 规则化） | ✅ reference（2e59ab4） |
-| hrtng | Kaspersky 官方 IDA 插件（1894★） | ✅ reference（eb6b9c2） |
-| vmprotect-research | Rust 通用去虚拟化（22/22 样本, CLI+Ghidra） | ✅ reference（899774d） |
-| VTIL2 | C# 重写 VM 去虚拟化（2025 获奖） | ✅ reference（242d331） |
-| synchrony | JS 反混淆基线（1237★, Babel AST 非 SSA） | ✅ reference（710e9f6） |
-| sccp_js | JS SSA+SCCP 教学实现 | ✅ reference（cbf03b7） |
-| obfuscator-io-deobfuscator | obfuscator.io 反混淆（SSA 思想 AST 化） | ✅ reference（42efc01） |
-| **docs/SSA-IR-METHODOLOGY.md** | 7 步方法论固化（分诊→IR 载体→pass 链→CFF→opaque→VMP→验证）+ 资产地图 + LLM 边界 | ✅ 文档 |
-| 排除 | SledgeHammer/Project X（零命中）、MogVMP/vmp2（归档）、webcrack/humanify（AST 已被 xbs 覆盖） | ❌ |
+| Mergen | VMP 去虚拟化首选（850stars, LLVM IR 整函数符号执行, VMProtect 3.4-3.8/Themida 实测） | [已] reference（71fc607） |
+| d810-ng | IDA microcode 反混淆规则框架（JSON 规则化） | [已] reference（2e59ab4） |
+| hrtng | Kaspersky 官方 IDA 插件（1894stars） | [已] reference（eb6b9c2） |
+| vmprotect-research | Rust 通用去虚拟化（22/22 样本, CLI+Ghidra） | [已] reference（899774d） |
+| VTIL2 | C# 重写 VM 去虚拟化（2025 获奖） | [已] reference（242d331） |
+| synchrony | JS 反混淆基线（1237stars, Babel AST 非 SSA） | [已] reference（710e9f6） |
+| sccp_js | JS SSA+SCCP 教学实现 | [已] reference（cbf03b7） |
+| obfuscator-io-deobfuscator | obfuscator.io 反混淆（SSA 思想 AST 化） | [已] reference（42efc01） |
+| **docs/SSA-IR-METHODOLOGY.md** | 7 步方法论固化（分诊→IR 载体→pass 链→CFF→opaque→VMP→验证）+ 资产地图 + LLM 边界 | [已] 文档 |
+| 排除 | SledgeHammer/Project X（零命中）、MogVMP/vmp2（归档）、webcrack/humanify（AST 已被 xbs 覆盖） | [不采] |
 
 ## 三、私有与自研技能
 
@@ -208,7 +208,7 @@
 
 ### 2. 测试规范体系族（testing-family，11 个包）
 
-> 组合协议：`1 元规则 + 1 场景 + 1 语言 + 1 驱动`，详细机读规则见 `private/testing-core-oracle/references/compose.yaml`。
+> 组合协议：`testing-core-oracle` 加当前工作流、已确认语言和适用场景；实施时同一工作项最多一个 workflow，审阅不激活实施司机。详细规则见 `private/engineering/testing/testing-core-oracle/references/compose.yaml` 和 `references/review.md`。
 
 | 模块 / Skill | 层级 (Layer) | 一句话定位 | 核心触发词 |
 |---|---|---|---|

@@ -4,9 +4,12 @@ description: Frida 拦截/抓包（Hook 注入/流量拦截, Windows 优先环�
 user_invocable: true
 argument: "<package_name>"
 agent: android-reverser
+compatibility: Requires the full areclaw checkout, android-reverser agent, device tooling, pytools, and workspace conventions. This wrapper alone does not bundle that runtime.
 ---
 
 # /intercept — Intelligent Traffic Interception
+
+Resolve the areclaw source root, installed package and APK before execution. Confirm allowed device/network changes and record the existing proxy settings for restoration. Missing prerequisites block execution; review-only requests do not change proxies, inject scripts or capture traffic.
 
 You are setting up intelligent traffic interception. Not just "run mitmproxy" — choose the right strategy based on the app's protections.
 
@@ -94,8 +97,8 @@ May need to hook native functions in specific .so files.
 
 ### Strategy E: mitmproxy (for full request/response bodies)
 ```bash
-# Start mitmproxy with HAR dump
-mitmdump -w workspace/traffic/$PKG.har --set stream_large_bodies=10m
+# Save native mitmproxy flows, not HAR
+mitmdump -w workspace/traffic/$PKG.flow --set stream_large_bodies=10m
 
 # Configure device proxy
 adb shell settings put global http_proxy <computer_ip>:8080
@@ -159,8 +162,8 @@ Report to user:
 
 ## Phase 5: Cleanup
 ```bash
-# Remove proxy if set
-adb shell settings put global http_proxy :0
+# Restore the proxy value recorded before this workflow; do not erase another session's proxy.
+adb shell settings put global http_proxy "<previous_proxy_value>"
 ```
 
 

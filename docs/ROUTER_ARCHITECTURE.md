@@ -1,114 +1,43 @@
-# 跨 Harness 领域路由架构设计规范 (Router Architecture Specification)
+# 路由架构
 
-本文档定义 `ming-skills` 作为独立主权技能平台的核心路由体系规范。本架构实现了**「抽象决策内核（Core）」与「平台宿主外壳（Harness Adapters）」的彻底解耦**，确保在任何 AI 编码客户端中均能保持确定性、无副作用的分流与配方装配。
+定位：个人使用优先、可迁移的技能库，不是公共技能市场或拥有操作权限的执行平台。通用方法与本机路径、私有资产分开；现有目录不为概念分层而搬迁。
 
----
+## 当前链路
 
-## 1. 架构设计哲学
-
-```
-                用户输入意图 Hint (纯文本，不假设有无 / 前缀)
-                               │
-               ┌───────────────▼───────────────┐
-               │    route-core 纯函数决策内核    │
-               │    (零 I/O、零网络、零副作用)    │
-               │    输入: (hint, manifest)     │
-               └───────────────┬───────────────┘
-                               │
-               ┌───────────────▼───────────────┐
-               │      RouteDecision JSON       │
-               │      (跨 Harness 统一契约)     │
-               │      side_effects: "none"     │
-               └───────────────┬───────────────┘
-                               │
-      ┌────────────────┬───────┴────────┬────────────────┐
-      ▼                ▼                ▼                ▼
-【Claude Code】   【OpenCode】     【Codex / Grok】    【DSH / 其它】
-- ming-skills-    - 按 Decision    - 注入 Recipe       - 统一读取 JSON
-  router 输出       skills[] 加载    装配提示词        - 严格遵循零副作用
-- reverse 负向镜像
-- 阻断非 RE 建单
+```text
+registry + 本地 SKILL.md 身份 -> 构建时 availability
+维护者策划的领域/触发词/配方 -> build-router-manifest.mjs
+                           -> 两份同内容 manifest
+用户当前意图 + manifest     -> Decide（纯函数）
+                           -> RouteDecision v2
+                           -> adapt（纯映射）
+                           -> 宿主另行检查权限、资源与加载限制
 ```
 
-### 核心三铁律
-1. **决策层与副作用彻底剥离**：路由决策内核（`route-core.mjs`）永远保证 `side_effects: "none"`，严禁在路由阶段创建文件或初始化工单。
-2. **拒识（`none` / `handoff`）是一等公民**：当任务未匹配到强特征时，输出 `domain: "none"`，绝不机械兜底到某一特定领域（如通用逆向）。
-3. **输出是装配配方（Recipe 集合），而非单个文件**：工程任务的解法往往是多技能组合（如 `testing-core-oracle` + `workflow` + `idiom` + `scenario`）。
+领域与配方仍在 [build-router-manifest.mjs](../scripts/build-router-manifest.mjs) 策划维护，尚未从任意 Skill description 自动推导。registry 决定条目与部署启用，构建检查入口身份并记录可用性；`compose.yaml` 是测试方法组合参考，当前不作为编译输入。不能把三者说成已经自动统一。
 
----
+## 分类与组合
 
-## 2. 统一机读契约 (Machine-Readable Schemas)
+实际内核：[route-core.mjs](../private/ming-skills-router/scripts/route-core.mjs)。先识别 review/explain/plan/implement，处理 Markdown 引用、围栏与明确否定，再按词边界匹配。多包名不会在第一个命中时提前返回。
 
-### 2.1 决策对象契约 (`RouteDecision`)
-定义于 [`docs/schemas/route-decision.schema.json`](file:///d:/dogepy/skills-collection/docs/schemas/route-decision.schema.json)：
+测试任务按语言、场景与工作流组合，工程质量可叠加。CLI 不覆盖表征意图；性质测试进入实际加载清单。测试/逆向等主任务冲突时返回 ask，而不是用置信度允许目标操作。
 
-```json
-{
-  "domain": "testing | reverse | ui | protocol | mixed | none",
-  "confidence": "high | medium | low | none",
-  "candidates": [
-    "testing-core-oracle",
-    "testing-workflow-spec",
-    "testing-workflow-characterize",
-    "testing-property-mutation",
-    "testing-rust-idiom",
-    "testing-python-idiom",
-    "testing-js-idiom",
-    "testing-go-idiom",
-    "testing-scenario-cli",
-    "testing-scenario-scraper",
-    "testing-scenario-embed-ffi"
-  ],
-  "active_recipe": {
-    "name": "spec-driven-greenfield",
-    "skills": ["testing-core-oracle", "testing-workflow-spec"]
-  },
-  "action": "dispatch | handoff | ask",
-  "side_effects": "none",
-  "must_not": ["initReverseCase", "create_work_dir"],
-  "reasons": [
-    "negatives_hit[reverse]: 测试覆盖, 覆盖设计",
-    "domain_selected: testing (score=2)"
-  ]
-}
-```
+这是确定性规则分类，不是完整自然语言解析器。复杂否定、嵌套引用、阶段切换和仓库事实缺失必须由宿主确认；不要宣称任意长 prompt 都已正确理解。
 
-### 2.2 路由清单契约 (`RouterManifest`)
-定义于 [`docs/schemas/router-manifest.schema.json`](file:///d:/dogepy/skills-collection/docs/schemas/router-manifest.schema.json)，由 `scripts/build-router-manifest.mjs` 自动生成至 `config/router-manifest.json`：
-- **`domains`**：领域定义、包含的技能包列表、正向触发词（`triggers`）、负向排除词（`negatives`）、默认配方；
-- **`recipes`**：标准预定义装配图（如 `spec-driven-greenfield`、`embed-ffi-greenfield`、`scraper-pipeline` 等）。
+## 契约与权限
 
----
+- [RouteDecision schema](schemas/route-decision.schema.json) 是生产者字段定义；v2 增加模式和显式版本，支持 engineering 领域。
+- [RouterManifest schema](schemas/router-manifest.schema.json) 定义构建快照。`ready` 仅表示构建时可引用入口，不代表全部依赖、MCP、私有 kit 或实际权限就绪。
+- `adapt()` 将未知/v1 控制契约安全退回 handoff，不实施未经验证的兼容推断。消费端可忽略额外数据键，但不能把未知命令或模式当成功。
+- `allowCaseInit` 恒为 false。输出限制由宿主继续落实，纯函数和一份禁止列表不是安全沙箱。
+- 候选名称与正文加载分离；ask/handoff 不加载执行配方，review/plan/explain 的限制必须传给下游。
 
-## 3. 决策流程与判定优先级
+与 v1 的变更理由见 [ADR-0005](adr/ADR-0005-review-safe-routing.md)。
 
-纯函数 `Decide(hint, manifest)` 遵循严格的优先级次序：
+## 跨端与分发
 
-1. **显式点名技能包（Explicit Mention）**：
-   - 若输入文本包含具体的包名（如 `testing-python-idiom`、`apk-reverse`），直接精准派发该技能（若属于 testing 则自动补齐 `testing-core-oracle`）。
-2. **负向特征熔断（Negatives Gate）**：
-   - 若输入文本命中某领域的 `negatives`（例如：逆向领域命中了“单元测试”、“覆盖率设计”），该领域的得分**硬性归零**，彻底阻断跨领域误入。
-3. **正向特征积分（Positive Scoring）**：
-   - 统计各领域 `triggers` 的命中频次并排序。
-4. **决策结果输出**：
-   - **单领域胜出** $\rightarrow$ `action: "dispatch"`，输出精细化 Recipe；
-   - **多领域并列** $\rightarrow$ `domain: "mixed", action: "ask"`；
-   - **零特征命中** $\rightarrow$ `domain: "none", action: "handoff"`。
+Node.js 22+ 可运行同包 CLI，读取同包 manifest；不要求完整管理仓库或 PowerShell。构建阶段需要 PowerShell 7，复用受校验 registry 解析器，避免维护另一套 YAML 解析。
 
----
+宿主解析技能位置和本机工具路径。私有资产不自动公开；跨端分发必须检查所选技能的资源依赖和许可。Android/iOS 包声明 Bash 与平台要求，改为 SKILL_ROOT 不等于原生 Windows 工具已兼容。
 
-## 4. 跨 Harness 适配器规范
-
-| 宿主环境 (Harness) | 适配器职责 | 严禁事项 |
-|---|---|---|
-| **Claude Code** | 部署 `ming-skills-router`；在 `reverse-skill-router` 的 description 镜像负向声明；低置信度时阻断 `case-init`。 | 严禁在总控内直接执行 `case-init.ps1` 建单。 |
-| **OpenCode** | 读取 `RouteDecision.skills` 进行动态模块加载。 | 严禁假设存在特定的 Slash 指令。 |
-| **Codex / Grok** | 将装配配方注入当前会话执行上下文。 | 严禁依赖特定 OS 终端的日志输出格式。 |
-| **DSH / 自动化流水线** | 调用 `node scripts/route-core.mjs "<hint>"` 读取纯 JSON 决议。 | 严禁在外部自建第二套私有分流字典。 |
-
----
-
-## 5. 黄金测试套件保障 (Golden Tests)
-
-在 [`tests/test-route-decision.mjs`](file:///d:/dogepy/skills-collection/tests/test-route-decision.mjs) 中固化了 8 条黄金回归用例，确保任何重构都不会破坏以下核心用例：
-- `规范化测试覆盖设计，找找相关的skill...` $\rightarrow$ **100% 判定为 testing 领域，负向硬阻断 reverse，零副作用**。
+本批不做语义向量检索、全量元数据迁移或多 Agent 调度。验证覆盖与未实现项见 [TESTING](TESTING.md)。

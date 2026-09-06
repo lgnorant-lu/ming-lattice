@@ -14,6 +14,7 @@ description: 规格驱动开发工作流（Testing Workflow Spec-Driven & BDD）
 
 - **适用场景**：新功能开发（0 到 1）、含糊需求澄清、跨语言/跨模块公共接口契约设计。
 - **与棕场/重构的区别**：本工作流用于**无既有实现或需求即将发生质变**的绿场；遗留代码重构请使用 `testing-workflow-characterize`。
+- 按工作项选择：棕场仓库中的新行为或 Bug 修复也可以使用本流程；保行为重构使用表征流程。仅审阅或规划时不开始写测试、删代码或安装依赖。
 
 ---
 
@@ -31,7 +32,7 @@ description: 规格驱动开发工作流（Testing Workflow Spec-Driven & BDD）
 
 ### 步骤二：验收测试先行（Executable Acceptance）
 - 将上述行为清单直接转化为可运行的测试代码，并在测试数据中标记 `kind: "spec"`。
-- **门禁要求**：运行该测试，**必须确认其因缺少实现而失败（Red）**。严禁在未见证测试失败的情况下直接写实现代码。
+- **门禁要求**：确认测试因目标行为缺失或错误而失败。缺依赖、语法错误、环境失败不算有效 Red；已有实现恰好满足新规格时记录事实，不人为破坏代码制造失败。
 
 ### 步骤三：极简实现让测试变绿（Make it Green）
 - 编写满足该测试的**最少生产代码**。
@@ -54,7 +55,7 @@ description: 规格驱动开发工作流（Testing Workflow Spec-Driven & BDD）
 | 外部 TDD 司机 | 核心侧重 | 选用场景 |
 |---|---|---|
 | **Matt Pocock `tdd`** (`mattpocock/skills`) | 垂直切片（Vertical Slice）、聚焦公开 Seam 契约、反实现细节绑定 | 适用于模块边界设计、Web/API 服务、组件交互开发 |
-| **Obra `test-driven-development`** (`obra/superpowers`) | 强流程门禁（Strict Discipline）、无失败测试严禁写实现、先写实现必须删除 | 适用于核心算法、高风险状态机、严格防偷跑场景 |
+| **Obra `test-driven-development`** (`obra/superpowers`) | 严格红绿循环；本地采用时仍保留用户已有代码与工作树，不照搬自动删除规则 | 适用于核心算法、高风险状态机 |
 
 ### [警告] 协同约束：
-- 在同一 Agent 对话或开发任务中，**只能选择其中一个作为主执行司机**，避免双重流程提示词互相干扰。
+- 同一工作项、同一实施阶段只选一个主执行司机；审阅时可比较多个参考。外部 Skill 不覆盖用户的读写范围、权限和提交限制。

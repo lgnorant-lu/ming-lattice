@@ -1,6 +1,7 @@
 ---
 name: android-reverse
 description: Android APK 全流程逆向（jadx 反编译/API 提取/自适应 Frida 绕过/Fragment 注入检测/Firebase 测试矩阵）。适用于 APK 接口提取、防护绕过、安全测试。
+compatibility: Requires Bash and the dependencies checked by the bundled scripts. Windows needs a supported Bash/tool environment; native PowerShell compatibility is not implied.
 ---
 
 # Android Reverse Engineering
@@ -9,13 +10,15 @@ Decompile Android APK, XAPK, AAB, DEX, JAR, and AAR files using jadx and Fernflo
 
 ## Prerequisites
 
+Resolve `SKILL_ROOT` to this installed skill directory using the host inventory, and pass a Bash-compatible absolute path. Check that its scripts and references are present; a broken link is a packaging failure. Do not assume the caller's cwd or a particular repository location. The workflow below applies only to approved execution: review/plan requests do not install dependencies, run samples, alter devices, or contact target APIs. Required dependencies still need permission to install.
+
 This skill requires **Java JDK 17+** and **jadx** to be installed. **Fernflower/Vineflower** and **dex2jar** are optional but recommended for better decompilation quality. **bundletool** is required for AAB (App Bundle) files. For dynamic analysis (Phase 7), **Python 3.8+**, **adb**, and a device/emulator with **frida-server** are needed — the `setup-frida.sh` script handles the full setup. Run the dependency checker to verify:
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/check-deps.sh
+bash "$SKILL_ROOT/scripts/check-deps.sh"
 ```
 
-If anything is missing, follow the installation instructions in `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/setup-guide.md`.
+If anything is missing, follow the installation instructions in `$SKILL_ROOT/references/setup-guide.md`.
 
 ## Workflow
 
@@ -26,7 +29,7 @@ Before decompiling, confirm that the required tools are available — and instal
 **Action**: Run the dependency check script.
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/check-deps.sh
+bash "$SKILL_ROOT/scripts/check-deps.sh"
 ```
 
 The output contains machine-readable lines:
@@ -36,7 +39,7 @@ The output contains machine-readable lines:
 **If required dependencies are missing** (exit code 1), install them automatically:
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/install-dep.sh <dep>
+bash "$SKILL_ROOT/scripts/install-dep.sh" <dep>
 ```
 
 The install script detects the OS and package manager, then:
@@ -55,7 +58,7 @@ Use the decompile wrapper script to process the target file. The script supports
 **Action**: Choose the engine and run the decompile script. The script handles APK, XAPK, AAB, DEX, JAR, and AAR files.
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/decompile.sh [OPTIONS] <file>
+bash "$SKILL_ROOT/scripts/decompile.sh" [OPTIONS] <file>
 ```
 
 For **XAPK** files (ZIP bundles containing multiple APKs, used by APKPure and similar stores): the script automatically extracts the archive, identifies all APK files inside (base + split APKs), and decompiles each one into a separate subdirectory. The XAPK manifest is copied to the output for reference.
@@ -85,7 +88,7 @@ When using `--engine both`, the outputs go into `<output>/jadx/` and `<output>/f
 
 For APK files with Fernflower, the script automatically uses dex2jar as an intermediate step. dex2jar must be installed for this to work.
 
-See `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/jadx-usage.md` and `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/fernflower-usage.md` for the full CLI references.
+See `$SKILL_ROOT/references/jadx-usage.md` and `$SKILL_ROOT/references/fernflower-usage.md` for the full CLI references.
 
 ### Phase 3: Analyze Structure
 
@@ -130,7 +133,7 @@ Follow execution paths from user-facing entry points down to network calls.
 
 5. **Handle obfuscated code**: When class names are mangled, use string literals and library API calls as anchors. Retrofit annotations and URL strings are never obfuscated.
 
-See `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/call-flow-analysis.md` for detailed techniques and grep commands.
+See `$SKILL_ROOT/references/call-flow-analysis.md` for detailed techniques and grep commands.
 
 ### Phase 5: Extract and Document APIs
 
@@ -139,7 +142,7 @@ Find all API endpoints and produce structured documentation.
 **Action**: Run the API search script for a broad sweep.
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/find-api-calls.sh <output>/sources/
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/sources/
 ```
 
 Additional options:
@@ -150,31 +153,31 @@ Additional options:
 Targeted searches:
 ```bash
 # Only Retrofit
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/find-api-calls.sh <output>/sources/ --retrofit
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/sources/ --retrofit
 
 # Only hardcoded URLs
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/find-api-calls.sh <output>/sources/ --urls
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/sources/ --urls
 
 # Only auth patterns
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/find-api-calls.sh <output>/sources/ --auth
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/sources/ --auth
 
 # Only Kotlin coroutines/Flow patterns
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/find-api-calls.sh <output>/sources/ --kotlin
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/sources/ --kotlin
 
 # Only RxJava patterns
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/find-api-calls.sh <output>/sources/ --rxjava
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/sources/ --rxjava
 
 # Only GraphQL patterns
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/find-api-calls.sh <output>/sources/ --graphql
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/sources/ --graphql
 
 # Only WebSocket patterns
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/find-api-calls.sh <output>/sources/ --websocket
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/sources/ --websocket
 
 # Only security patterns (cert pinning, exposed secrets, debug flags)
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/find-api-calls.sh <output>/sources/ --security
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/sources/ --security
 
 # Full analysis with context and Markdown report
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/find-api-calls.sh <output>/sources/ --context 3 --dedup --report report.md
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/sources/ --context 3 --dedup --report report.md
 ```
 
 Then, for each discovered endpoint, read the surrounding source code to extract:
@@ -200,7 +203,7 @@ Then, for each discovered endpoint, read the surrounding source code to extract:
 - **Called from**: `LoginActivity → LoginViewModel → UserRepository → ApiService`
 ```
 
-See `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/api-extraction-patterns.md` for library-specific search patterns and the full documentation template.
+See `$SKILL_ROOT/references/api-extraction-patterns.md` for library-specific search patterns and the full documentation template.
 
 ### Phase 6: Security Patterns Scan
 
@@ -209,7 +212,7 @@ Run the automated security sweep over the decompiled source to surface security-
 **Action**: Run the security-focused search:
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/find-api-calls.sh <output>/sources/ --security --context 3
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/sources/ --security --context 3
 ```
 
 Look for and flag:
@@ -232,7 +235,7 @@ This phase requires a connected device/emulator. The user likely already has fri
 **Action**: Run the Frida setup script. It detects the existing environment before changing anything.
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/setup-frida.sh
+bash "$SKILL_ROOT/scripts/setup-frida.sh"
 ```
 
 The script performs these checks in order:
@@ -246,7 +249,7 @@ The script performs these checks in order:
 
 If frida-server is missing from the device, the script prints instructions. To auto-install:
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/setup-frida.sh --install-server
+bash "$SKILL_ROOT/scripts/setup-frida.sh" --install-server
 ```
 
 **Important**: The venv ensures frida-tools never pollutes the global Python environment. The version matching ensures client and server are compatible. If the user already has a working frida-server, the script adapts to their version instead of forcing an upgrade.
@@ -260,7 +263,7 @@ Before writing any Frida script, check if the app even runs on this device. Many
 **Action**: Launch the app and capture crash diagnostics.
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/adb-crash-capture.sh -p <package>
+bash "$SKILL_ROOT/scripts/adb-crash-capture.sh" -p <package>
 ```
 
 Options:
@@ -364,7 +367,7 @@ Java.perform(function() {
 **Action**: Save the generated script to a temp file and run it:
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/frida-run.sh \
+bash "$SKILL_ROOT/scripts/frida-run.sh" \
   -p <package> -l /tmp/bypass.js -t 15
 ```
 
@@ -426,7 +429,7 @@ $FRIDA_VENV/bin/frida-trace -U -f <package> -j 'com.example.api.*!*'
 **Action**: Write the analysis script, run it, and interpret results:
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/frida-run.sh \
+bash "$SKILL_ROOT/scripts/frida-run.sh" \
   -p <package> -l /tmp/analysis.js -t 60 --output-dir ./frida-output/
 ```
 
@@ -463,7 +466,7 @@ Android `PreferenceActivity` honours an Intent extra (`:android:show_fragment`) 
 **Action**: Run the detector against the decompiled output.
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/find-fragment-injection.sh \
+bash "$SKILL_ROOT/scripts/find-fragment-injection.sh" \
   <output>/ --report <output>/fragment-injection-report.md --json <output>/fragment-injection.json
 ```
 
@@ -476,7 +479,7 @@ Read the machine-readable output:
 
 For each candidate, confirm dynamically: launch the activity via adb with the `:android:show_fragment` extra set to an internal fragment, and observe logcat/Frida for the fragment instantiating (lifecycle logs or a fragment-stack crash). Use `--pause` Frida spawn gating to hook the **candidate subclass's** `isValidFragment`/`Fragment.instantiate` before `onCreate`.
 
-See `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/android-fragment-injection.md` for the full detection-→-exploitation-→-classification playbook, adb and Frida commands, and remediation guidance.
+See `$SKILL_ROOT/references/android-fragment-injection.md` for the full detection-→-exploitation-→-classification playbook, adb and Frida commands, and remediation guidance.
 
 ### Phase 9: Firebase & Google API Testing (Conditional)
 
@@ -489,7 +492,7 @@ This phase is strictly for apps the user is authorized to test (their own apps, 
 **Action**: Run the detection script against the decompiled output. Its exit code drives the rest of the phase.
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/find-firebase-config.sh \
+bash "$SKILL_ROOT/scripts/find-firebase-config.sh" \
   <output>/ --env /tmp/fb-env.sh --json /tmp/fb-env.json
 ```
 
@@ -510,7 +513,7 @@ Before running any probe, confirm with the user that the app is in scope for Fir
 **Action**: Run the automated matrix against the extracted configuration.
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/scripts/test-firebase-google.sh \
+bash "$SKILL_ROOT/scripts/test-firebase-google.sh" \
   --env /tmp/fb-env.sh --report <output>/firebase-google-report.md
 ```
 
@@ -520,7 +523,7 @@ Useful flags:
 - `--only auth,rtdb,firestore` — restrict to specific sections (`auth`, `rtdb`, `firestore`, `remoteconfig`, `storage`, `dynamiclinks`, `fcm`, `gemini`, `billable`).
 - `--api-key <KEY>` — override the key (useful when iterating through multiple keys from `API_KEYS`).
 
-The script runs the full playbook in `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/firebase-google-api-testing.md` — Firebase Auth (signup, signin, OIDC providers, phone, OOB codes, enumeration), Realtime DB (unauth and authenticated reads, rules, write test), Firestore (list root, common collections, authenticated Bearer), Remote Config (`firebase:fetch`), Cloud Storage (both bucket conventions), Dynamic Links (open redirect / phishing check), FCM legacy send, Gemini (`/files`, `/models`, `/cachedContents`, `gemini-pro:generateContent` — TruffleSecurity vector), and billable Maps/AI/YouTube/Cloud Functions probes.
+The script runs the full playbook in `$SKILL_ROOT/references/firebase-google-api-testing.md` — Firebase Auth (signup, signin, OIDC providers, phone, OOB codes, enumeration), Realtime DB (unauth and authenticated reads, rules, write test), Firestore (list root, common collections, authenticated Bearer), Remote Config (`firebase:fetch`), Cloud Storage (both bucket conventions), Dynamic Links (open redirect / phishing check), FCM legacy send, Gemini (`/files`, `/models`, `/cachedContents`, `gemini-pro:generateContent` — TruffleSecurity vector), and billable Maps/AI/YouTube/Cloud Functions probes.
 
 Each probe is classified as `VULNERABLE`, `SAFE`, `BLOCKED`, `NOT_FOUND`, `OK`, `ERROR-200`, `INFO`, or `NETWORK_ERROR`. When Firebase Auth returns an `idToken` (anonymous or email signup open), the script captures it and reuses it as `$JWT` for the authenticated Realtime DB / Firestore / lookup probes in the same run.
 
@@ -535,7 +538,7 @@ If `find-firebase-config.sh` reported `API_KEY_COUNT > 1`, re-run `test-firebase
 
 #### Interpreting results
 
-See `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/firebase-google-api-testing.md` for the full response-interpretation table (`SERVICE_DISABLED`, `PERMISSION_DENIED`, `ADMIN_ONLY_OPERATION`, `OPERATION_NOT_ALLOWED`, `NO_TEMPLATE`, etc.) and for the raw curl commands to re-run any single probe manually.
+See `$SKILL_ROOT/references/firebase-google-api-testing.md` for the full response-interpretation table (`SERVICE_DISABLED`, `PERMISSION_DENIED`, `ADMIN_ONLY_OPERATION`, `OPERATION_NOT_ALLOWED`, `NO_TEMPLATE`, etc.) and for the raw curl commands to re-run any single probe manually.
 
 ---
 
@@ -560,14 +563,14 @@ Use `--report report.md` on find-api-calls.sh to generate a structured Markdown 
 
 ## References
 
-- `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/setup-guide.md` — Installing Java, jadx, Fernflower/Vineflower, dex2jar, and optional tools
-- `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/jadx-usage.md` — jadx CLI options and workflows
-- `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/fernflower-usage.md` — Fernflower/Vineflower CLI options, when to use, APK workflow
-- `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/api-extraction-patterns.md` — Library-specific search patterns and documentation template
-- `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/call-flow-analysis.md` — Techniques for tracing call flows in decompiled code
-- `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/firebase-google-api-testing.md` — Phase 9 playbook: Firebase Auth, Realtime DB, Firestore, Remote Config, Storage, Dynamic Links, FCM, Gemini, billable Maps/AI probes
-- `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/android-fragment-injection.md` — Phase 8 playbook: detecting and exploiting Fragment Injection via exported PreferenceActivity, adb/Frida confirmation, result classification, remediation
-- `D:\dogepy\skills-collection\\vertical\\android-reverse-claude-skill\\plugins\\android-reverse-engineering/skills/android-reverse-engineering/references/setup-guide.md` — Frida setup section covers Python venv, frida-server, and version matching
+- `$SKILL_ROOT/references/setup-guide.md` — Installing Java, jadx, Fernflower/Vineflower, dex2jar, and optional tools
+- `$SKILL_ROOT/references/jadx-usage.md` — jadx CLI options and workflows
+- `$SKILL_ROOT/references/fernflower-usage.md` — Fernflower/Vineflower CLI options, when to use, APK workflow
+- `$SKILL_ROOT/references/api-extraction-patterns.md` — Library-specific search patterns and documentation template
+- `$SKILL_ROOT/references/call-flow-analysis.md` — Techniques for tracing call flows in decompiled code
+- `$SKILL_ROOT/references/firebase-google-api-testing.md` — Phase 9 playbook: Firebase Auth, Realtime DB, Firestore, Remote Config, Storage, Dynamic Links, FCM, Gemini, billable Maps/AI probes
+- `$SKILL_ROOT/references/android-fragment-injection.md` — Phase 8 playbook: detecting and exploiting Fragment Injection via exported PreferenceActivity, adb/Frida confirmation, result classification, remediation
+- `$SKILL_ROOT/references/setup-guide.md` — Frida setup section covers Python venv, frida-server, and version matching
 
 
 

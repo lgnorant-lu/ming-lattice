@@ -41,7 +41,7 @@
 
 ## 2. 测试规范体系与 Oracle 质量治理
 
-本仓库内嵌完整的 **11 包测试规范族（testing-family）**，由 [`private/testing-core-oracle`](file:///d:/dogepy/skills-collection/private/testing-core-oracle/SKILL.md) 作为元规则中枢。
+本仓库内嵌完整的 **11 包测试规范族（testing-family）**，由 [`private/engineering/testing/testing-core-oracle`](../private/engineering/testing/testing-core-oracle/SKILL.md) 作为元规则中枢。
 
 ### 2.1 测试分层与四大禁令
 1. **独立判定律（Test Oracle）**：测试代码必须具备独立的期望来源，严禁「调用生产代码获取结果后再断言结果等于该结果」（同义反复）。
@@ -52,26 +52,29 @@
 3. **质量属性 Overlay**：覆盖确定性（FIRST 原则）、可诊断性（失败时输出可读 Diff）与密封性（测试间零状态残留）。
 
 ### 2.2 组合路由拓扑（Composition Routing）
-Agent 在执行项目测试任务时，必须严格按照 [`private/testing-core-oracle/references/compose.yaml`](file:///d:/dogepy/skills-collection/private/testing-core-oracle/references/compose.yaml) 进行标准装配：
+Agent 在执行项目测试任务时，按 [`private/engineering/testing/testing-core-oracle/references/compose.yaml`](../private/engineering/testing/testing-core-oracle/references/compose.yaml) 选择适用组合。审阅时不激活实施司机，实施时同一工作项最多选择一个 workflow：
 
-$$\text{Active Skills} = \text{testing-core-oracle} + \text{1 Workflow} + \text{1 Idiom} + [\text{N Scenario}] + [\text{Deep Verification}]$$
+```text
+Active Skills = testing-core-oracle + 当前 workflow（实施时最多一个）
+                + 已确认语言 + 适用场景 + 按风险选择的深度验证
+```
 
-- **标准配方 1（绿场全栈驱动）**：`oracle` + `workflow-spec` + `rust-idiom` + `scenario-cli`
-- **标准配方 2（棕场逆向/存量表征）**：`oracle` + `workflow-characterize` + `python-idiom` + `scenario-embed-ffi`
-- **标准配方 3（数据采集流水线）**：`oracle` + `workflow-spec` + `python-idiom` + `scenario-scraper`
+- **绿场行为**：`testing-core-oracle` + `testing-workflow-spec` + 已确认语言/场景包
+- **棕场保行为**：`testing-core-oracle` + `testing-workflow-characterize` + 已确认语言/场景包
+- **仓库审阅**：`testing-core-oracle` + `references/review.md`；不自动加载 workflow
 
 ---
 
 ## 3. 上游生态吸收与 Dry-run 运行规范
 
-为确保上游 92 个社区仓库更新不会破坏本仓库的自洽性，建立**两阶段 Dry-run 雷达工作流**：
+为确保上游社区仓库更新不会破坏本仓库的自洽性，建立“缓存读取/网络检查/显式应用”分层流程。DryRun 只预览，不联网、不写 registry：
 
 ### 3.1 变更检测（Dry-run 优先）
 ```powershell
 # 1. 默认检测（读取 TTL 缓存，零网络开销）
 pwsh scripts/update.ps1
 
-# 2. 演练检测（-DryRun 开关，强制网络扫描且不修改本地 registry.yaml）
+# 2. 演练预览（-DryRun 开关，零网络且不修改本地 registry.yaml）
 pwsh scripts/update.ps1 -Force -DryRun
 
 # 3. 指定目标检测
@@ -79,14 +82,14 @@ pwsh scripts/update.ps1 -Name decode-js
 ```
 
 ### 3.2 增量拉取与吸收标准流程
-1. **审查雷达报告**：查看 `update.ps1` 输出的可更新清单与 Commit 摘要；
+1. **审查检测报告**：查看 `update.ps1` 输出的可更新清单与 Commit 摘要；DryRun 的 `NOT_CHECKED` 不是“最新”；
 2. **安全与凭据初筛**：拉取前评估上游变更，严禁引入未经脱敏的真实生产密钥；
 3. **增量拉取与检出**：
    ```powershell
    git -C vertical/<name> fetch --depth 1 origin main
    git -C vertical/<name> checkout FETCH_HEAD
    ```
-4. **刷新事实源**：更新 [`registry.yaml`](file:///d:/dogepy/skills-collection/registry.yaml) 中对应条目的 `pin` 与 `acquiredAt`；
+4. **刷新事实源**：更新 [`registry.yaml`](../registry.yaml) 中对应条目的 `pin` 与 `acquiredAt`；
 5. **门禁全量验收**：
    ```powershell
    pwsh scripts/lint.ps1    # 必须 ERROR=0
@@ -114,25 +117,25 @@ pwsh scripts/sync.ps1
    - 严禁将超过 `50MB` 的二进制、多媒体（`*.mp4`）或归档压缩包（`*.tar.gz`、`*.zip`）加入 Git 版本控制；
    - 任何大型外部样本必须通过 `.gitignore` 过滤，或通过 Git LFS 外部托管。
 3. **单一事实源原则（Single Source of Truth）**：
-   - 客户端激活状态、路径映射与版本 Pin 仅由 [`registry.yaml`](file:///d:/dogepy/skills-collection/registry.yaml) 统一声明，严禁在客户端目录手动修改产生漂移。
+   - 客户端激活状态、路径映射与版本 Pin 仅由 [`registry.yaml`](../registry.yaml) 统一声明，严禁在客户端目录手动修改产生漂移。
 
 ---
 
 ## 5. 数据契约演进五条禁令
 
-为了确保跨 Harness 消费端（Claude Code / OpenCode / Codex）的长期稳定性，所有公开 Schema（如 `RouteDecision`, `RouterManifest`）的演进必须严格遵守五条禁令：
+为了确保跨 Harness 消费端的长期稳定性，公开 Schema（如 `RouteDecision`, `RouterManifest`）的演进必须遵守以下规则。字段以 schema 为准，v2 的模式与安全退回见 [ADR-0005](adr/ADR-0005-review-safe-routing.md)：
 
 1. **[禁止] 随意删除已有字段**：已发布的公开字段（如 `domain`, `candidates`, `active_recipe`）严禁直接移除，避免下游解析直接崩溃；
 2. **[禁止] 修改已有字段的语义与类型**：字段名称与数据类型的映射必须不可变（例如 `confidence` 不得从 `string` 改为 `number`）；
 3. **[强制] 破坏性变更必须升级顶级版本号**：若出现不可调和的结构破坏，必须升级 `schemaVersion`（如从 `1.0` 升级为 `2.0`）；
 4. **[规范] 多版本共存显式演进**：若未来出现 v1/v2 并存需求，遵循双读单写（Dual-read Single-write）过渡期机制；
-5. **[规范] 读取端宽容读取策略（Tolerant Reader）**：所有读取契约 JSON 的适配器必须忽略未知扩展字段，不得因出现未定义新字段而抛出异常。
+5. **[规范] 读取端宽容读取策略（Tolerant Reader）**：允许忽略未知数据字段，但未知控制命令、模式、权限或版本必须安全退回，不能当作成功。
 
 ---
 
 ## 6. 宽结构化事件名规范（OTel 语义对齐）
 
-运维与决策工具链的机读日志统一采用宽结构化事件（Wide Structured Events），遵循 OpenTelemetry 命名约定：
+以下是拟议的宽结构化事件命名，不代表当前脚本已经接入 OpenTelemetry。实施时需保留已有的人读文本和 stdout 契约，并对事件值、关联 ID 和脱敏单独测试：
 
 | 规范事件名 (event.name) | 触发场景 | 核心必填字段 |
 |---|---|---|
@@ -141,4 +144,3 @@ pwsh scripts/sync.ps1
 | `sync.completed` | `sync.ps1` 软链部署或演练完成 | `timestamp`, `linked_count`, `skipped_count`, `is_dry_run` |
 | `lint.checked` | `lint.ps1` 全量静态门禁检查完成 | `timestamp`, `sources_checked`, `error_count`, `warn_count` |
 | `test.suite_finished` | `tests/run.mjs` 测试套件运行完毕 | `timestamp`, `passed_suites`, `total_suites`, `duration_ms` |
-

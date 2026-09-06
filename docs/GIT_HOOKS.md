@@ -9,8 +9,7 @@
 | Hook | 触发阶段 | 检查核心内容 | 拦截策略 |
 |---|---|---|---|
 | `commit-msg` | 提交信息录入 | Conventional Commits 主题格式、type 白名单、Emoji 禁令、乱码防御 | 格式/type 恒为 `error` 级；Emoji / 乱码按 `.hooksrc` 分级 |
-| `pre-commit` | 提交前暂存区 | 大文件防御（>50MB）、GBK 乱码扫描、高危凭据防泄漏、Emoji 禁令、`lint.ps1` 校验 | 命中任何 error 级规则即阻断提交 |
-| `pre-push` | 推送远端前 | 校验当前分支与远端状态一致性，防止误推未清洗的大文件 | 可选门控 |
+| `pre-commit` | 提交前暂存区 | 暂存 blob 的大文件、乱码、凭据和 Emoji 扫描；严格隔离测试 | 命中 error 或完整测试失败即阻断提交 |
 
 ---
 
@@ -40,14 +39,15 @@
    - 对暂存的 `.md`, `.yaml`, `.ps1`, `.json`, `.js` 进行字符扫描，拦截 GBK 转义乱码。
 3. **真实生产敏感密钥防泄漏（Secret Prevention）**：
    - 拦截包含 `ghp_` (GitHub Token), `sk-` (OpenAI Key), `AKIA` (AWS Key), `BEGIN PRIVATE KEY` 等真实生产私钥。
-4. **全量完整性门禁（`scripts/lint.ps1`）**：
-   - 自动执行 `pwsh scripts/lint.ps1`，确保 151+ 源在注册表、软链、Frontmatter 层面 **`ERROR=0`**。
+4. **严格测试门禁**：执行 `node tests/run.mjs --require-all`，包含隔离部署、路由与 manifest 新鲜度。全仓内容 lint 单独运行，参见 [TESTING](TESTING.md)。静态扫描范围有限，不证明没有凭据或恶意指令。
+
+文件名由 Git 的 NUL 分隔输出读取，内容来自 index blob，不读取同名工作区文件冒充待提交内容。测试仍运行工作树代码，部分暂存时需要审阅两份 diff。
 
 ---
 
 ## 3. Hook 分级机制（`.hooksrc`）
 
-仓库根目录通过 [`.hooksrc`](file:///d:/dogepy/skills-collection/.hooksrc) 进行门禁等级配置：
+仓库根目录通过 [`.hooksrc`](../.hooksrc) 进行门禁等级配置：
 
 ```ini
 # .hooksrc — ming-skills Git Hook 分级配置

@@ -1,6 +1,7 @@
 ---
 name: ios-reverse
 description: iOS IPA/Mach-O 静态逆向（提取/API 提取/凭据扫描/r2-Ghidra 二进制/反篡改检测/漏洞审计）。适用于 iOS App 逆向分析。
+compatibility: Requires Bash and platform-specific tools checked by the bundled scripts. macOS/Linux paths are documented upstream; native Windows execution is not assumed.
 ---
 
 # iOS Reverse Engineering
@@ -9,13 +10,15 @@ Extract and analyze iOS IPA files, .app bundles, Mach-O binaries, dynamic librar
 
 ## Prerequisites
 
+Resolve `SKILL_ROOT` from this installed skill's location, not from the caller's cwd. Verify bundled scripts/references and the platform before execution. Missing prerequisites require a report or an approved installation, not an automatic install. Review-only requests read this workflow without running samples, creating outputs or validating credentials against external services.
+
 This skill requires **ipsw** (which includes class-dump functionality and much more) and, on macOS, the standard developer tools (**otool**, **strings**, **plutil**, **codesign**) via Xcode Command Line Tools. For deep binary analysis, **radare2** (or **rizin**) is recommended; **Ghidra headless** is optional for advanced decompilation. **On Linux**, `ipsw` provides cross-platform Mach-O analysis, entitlements, class-dump and thinning; `libplist`/`plistutil` (or `python3` plistlib) provide plist parsing; `binutils` provides `strings`/`nm`. `otool`/`codesign`/`plutil`/`PlistBuddy`/`lipo` are macOS-only and the scripts fall back to `ipsw`/`plistutil`/`python3` automatically — no macOS tools required on Linux. Run the dependency checker to verify:
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/check-deps.sh
+bash "$SKILL_ROOT/scripts/check-deps.sh"
 ```
 
-If anything is missing, follow the installation instructions in `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/setup-guide.md`.
+If anything is missing, follow the installation instructions in `$SKILL_ROOT/references/setup-guide.md`.
 
 ## Workflow
 
@@ -26,7 +29,7 @@ Before analyzing, confirm that the required tools are available — and install 
 **Action**: Run the dependency check script.
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/check-deps.sh
+bash "$SKILL_ROOT/scripts/check-deps.sh"
 ```
 
 The output contains machine-readable lines:
@@ -36,7 +39,7 @@ The output contains machine-readable lines:
 **If required dependencies are missing** (exit code 1), install them automatically:
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/install-dep.sh <dep>
+bash "$SKILL_ROOT/scripts/install-dep.sh" <dep>
 ```
 
 The install script detects the OS and package manager, then:
@@ -55,7 +58,7 @@ Use the extraction script to process the target file. The script supports IPA, .
 **Action**: Run the extraction script.
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/extract-ipa.sh [OPTIONS] <file>
+bash "$SKILL_ROOT/scripts/extract-ipa.sh" [OPTIONS] <file>
 ```
 
 For **IPA** files: the script extracts the ZIP archive, locates the .app bundle inside `Payload/`, identifies the main Mach-O binary, runs `ipsw class-dump`, extracts Info.plist, entitlements, embedded frameworks, string constants, the Mach-O header flags (`macho-flags.txt` — PIE / hardened-runtime indicators), and Apple's privacy manifest (`PrivacyInfo.xcprivacy`, copied to the analysis root when present).
@@ -72,7 +75,7 @@ Options:
 - `--thin <arch>` — Extract a specific architecture from fat binaries (e.g., `arm64`)
 - `--swift-demangle` — Demangle Swift symbols in output
 
-See `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/class-dump-usage.md` for the full ipsw class-dump reference.
+See `$SKILL_ROOT/references/class-dump-usage.md` for the full ipsw class-dump reference.
 
 ### Phase 3: Analyze Structure
 
@@ -134,7 +137,7 @@ Follow execution paths from user-facing entry points down to network calls.
 
 5. **Handle Swift name mangling**: When symbols are mangled, use strings output and ipsw class-dump headers as anchors. Protocol conformances and property names are readable even in optimized builds.
 
-See `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/call-flow-analysis.md` for detailed techniques and grep commands.
+See `$SKILL_ROOT/references/call-flow-analysis.md` for detailed techniques and grep commands.
 
 ### Phase 5: Extract and Document APIs
 
@@ -143,7 +146,7 @@ Find all API endpoints and produce structured documentation.
 **Action**: Run the API search script for a broad sweep.
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/find-api-calls.sh <output>/
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/
 ```
 
 Additional options:
@@ -154,31 +157,31 @@ Additional options:
 Targeted searches:
 ```bash
 # Only URLSession patterns
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/find-api-calls.sh <output>/ --urlsession
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/ --urlsession
 
 # Only Alamofire/AFNetworking
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/find-api-calls.sh <output>/ --alamofire
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/ --alamofire
 
 # Only hardcoded URLs
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/find-api-calls.sh <output>/ --urls
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/ --urls
 
 # Only auth patterns
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/find-api-calls.sh <output>/ --auth
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/ --auth
 
 # Only Combine/async-await patterns
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/find-api-calls.sh <output>/ --swift-concurrency
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/ --swift-concurrency
 
 # Only GraphQL patterns
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/find-api-calls.sh <output>/ --graphql
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/ --graphql
 
 # Only WebSocket patterns
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/find-api-calls.sh <output>/ --websocket
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/ --websocket
 
 # Only security patterns (ATS, cert pinning, jailbreak detection)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/find-api-calls.sh <output>/ --security
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/ --security
 
 # Full analysis with context and Markdown report
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/find-api-calls.sh <output>/ --context 3 --dedup --report report.md
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/ --context 3 --dedup --report report.md
 ```
 
 Then, for each discovered endpoint, read the surrounding source/strings to extract:
@@ -204,7 +207,7 @@ Then, for each discovered endpoint, read the surrounding source/strings to extra
 - **Called from**: `LoginViewController → LoginViewModel → AuthService → APIClient`
 ```
 
-See `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/api-extraction-patterns.md` for library-specific search patterns and the full documentation template.
+See `$SKILL_ROOT/references/api-extraction-patterns.md` for library-specific search patterns and the full documentation template.
 
 ### Phase 6: Security Analysis
 
@@ -213,7 +216,7 @@ Scan for security-relevant patterns in the extracted app.
 **Action**: Run the security-focused search:
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/find-api-calls.sh <output>/ --security --context 3
+bash "$SKILL_ROOT/scripts/find-api-calls.sh" <output>/ --security --context 3
 ```
 
 Look for and flag:
@@ -226,7 +229,7 @@ Look for and flag:
 - **Debug flags** — `#if DEBUG` artifacts, staging URLs, verbose logging
 - **Privacy** — clipboard access, pasteboard snooping, tracking without consent
 
-See `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/api-extraction-patterns.md` for the full list of security patterns.
+See `$SKILL_ROOT/references/api-extraction-patterns.md` for the full list of security patterns.
 
 ### Phase 7: LLM Deep Secret & Credential Analysis
 
@@ -235,11 +238,11 @@ Perform a comprehensive scan for cloud provider credentials, API keys, and secre
 **Action**: Run the deep secret scanner:
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/deep-secret-scan.sh <output>/ --report secrets-report.md
+bash "$SKILL_ROOT/scripts/deep-secret-scan.sh" <output>/ --report secrets-report.md
 ```
 
 **False-positive minimization (built in)**: the scanner extracts candidate secrets by **value** (not grep line) and deduplicates, so a secret in 3 files is 1 finding. Each candidate is then validated against:
-- a **placeholder allowlist** (`AKIAIOSFODNN7EXAMPLE`, `your_key`, `sk_test`/`pk_test` via a separate lower-severity pattern, `<...>`, `placeholder`, etc.) → downgraded to INFO,
+- a **placeholder allowlist** (`<AWS_ACCESS_KEY_ID_PLACEHOLDER>`, `your_key`, `sk_test`/`pk_test` via a separate lower-severity pattern, `<...>`, `placeholder`, etc.) → downgraded to INFO,
 - a **strict format/charset check** per provider (AWS `AKIA` + 16, GCP `AIza` + 35, Stripe prefix + 24, JWT 3-segment header, etc.) → mismatch raises FP-likelihood,
 - **Shannon entropy** (< ~3.0 bits/char → likely binary artifact, not a secret),
 - a **client-safe flag** (Firebase API Key, Stripe publishable, Mapbox public, Infura/Alchemy → `client-safe=yes`, critical downgraded to medium).
@@ -248,43 +251,43 @@ Every finding carries an **FP-likelihood** (Low/Medium/High) and **client-safe**
 
 ```bash
 # Brute-force: keep every match (placeholders still listed, tagged FP:High)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/deep-secret-scan.sh <output>/ --raw --severity info --report secrets-raw.md
+bash "$SKILL_ROOT/scripts/deep-secret-scan.sh" <output>/ --raw --severity info --report secrets-raw.md
 ```
 
 Targeted scans:
 ```bash
 # Firebase / Google only
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/deep-secret-scan.sh <output>/ --firebase
+bash "$SKILL_ROOT/scripts/deep-secret-scan.sh" <output>/ --firebase
 
 # AWS only
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/deep-secret-scan.sh <output>/ --aws
+bash "$SKILL_ROOT/scripts/deep-secret-scan.sh" <output>/ --aws
 
 # Azure only
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/deep-secret-scan.sh <output>/ --azure
+bash "$SKILL_ROOT/scripts/deep-secret-scan.sh" <output>/ --azure
 
 # GCP only
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/deep-secret-scan.sh <output>/ --gcp
+bash "$SKILL_ROOT/scripts/deep-secret-scan.sh" <output>/ --gcp
 
 # Payment providers (Stripe, PayPal, RevenueCat)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/deep-secret-scan.sh <output>/ --payments
+bash "$SKILL_ROOT/scripts/deep-secret-scan.sh" <output>/ --payments
 
 # Messaging (Twilio, SendGrid, Slack, OneSignal)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/deep-secret-scan.sh <output>/ --messaging
+bash "$SKILL_ROOT/scripts/deep-secret-scan.sh" <output>/ --messaging
 
 # Analytics (Sentry, Mixpanel, Amplitude, Segment)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/deep-secret-scan.sh <output>/ --analytics
+bash "$SKILL_ROOT/scripts/deep-secret-scan.sh" <output>/ --analytics
 
 # JWT tokens
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/deep-secret-scan.sh <output>/ --jwt
+bash "$SKILL_ROOT/scripts/deep-secret-scan.sh" <output>/ --jwt
 
 # Developer-platform keys (GitHub, GitLab, Mailgun, Mailchimp, Telegram, Square)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/deep-secret-scan.sh <output>/ --devtools
+bash "$SKILL_ROOT/scripts/deep-secret-scan.sh" <output>/ --devtools
 
 # Web3 keys (Infura, Alchemy, Ethereum private keys, PEM blocks)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/deep-secret-scan.sh <output>/ --web3
+bash "$SKILL_ROOT/scripts/deep-secret-scan.sh" <output>/ --web3
 
 # Critical and high severity only
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/deep-secret-scan.sh <output>/ --severity high --report secrets-report.md
+bash "$SKILL_ROOT/scripts/deep-secret-scan.sh" <output>/ --severity high --report secrets-report.md
 ```
 
 **LLM Analysis**: After the scan completes, read the report and for each finding:
@@ -310,7 +313,7 @@ bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-
 - **Remediation**: Specific steps to fix
 ```
 
-See `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/cloud-secrets-patterns.md` for the full list of cloud provider patterns, key formats, and risk assessments.
+See `$SKILL_ROOT/references/cloud-secrets-patterns.md` for the full list of cloud provider patterns, key formats, and risk assessments.
 
 ### Phase 8: Deep Binary Reversing with LLM Analysis
 
@@ -319,25 +322,25 @@ Use CLI reversing tools (radare2/rizin or Ghidra headless) to perform deep binar
 **Prerequisites**: radare2/rizin or Ghidra must be installed. Install with:
 
 ```bash
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/install-dep.sh radare2
+bash "$SKILL_ROOT/scripts/install-dep.sh" radare2
 # or
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/install-dep.sh ghidra
+bash "$SKILL_ROOT/scripts/install-dep.sh" ghidra
 ```
 
 **Action**: Run the reversing analysis on the main binary:
 
 ```bash
 # Full analysis (functions, strings, imports, exports, classes, security, network, crypto, auth, entropy)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/reversing-analyze.sh <main-binary> -o <output>/reversing
+bash "$SKILL_ROOT/scripts/reversing-analyze.sh" <main-binary> -o <output>/reversing
 
 # Quick scan (functions + strings + imports only)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/reversing-analyze.sh --quick <main-binary> -o <output>/reversing
+bash "$SKILL_ROOT/scripts/reversing-analyze.sh" --quick <main-binary> -o <output>/reversing
 
 # Force Ghidra headless (uses Java scripts for decompilation, secret scanning, crypto analysis)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/reversing-analyze.sh --tool ghidra <main-binary> -o <output>/reversing
+bash "$SKILL_ROOT/scripts/reversing-analyze.sh" --tool ghidra <main-binary> -o <output>/reversing
 ```
 
-**Ghidra Headless Scripts**: When using Ghidra, the tool automatically runs specialized Java scripts from `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/ghidra/`:
+**Ghidra Headless Scripts**: When using Ghidra, the tool automatically runs specialized Java scripts from `$SKILL_ROOT/scripts/ghidra/`:
 - `DecompileAllFunctions.java` — Decompiles all functions to pseudo-C (or `--security-only` for targeted decompilation)
 - `FindSecrets.java` — Searches decompiled code for hardcoded credentials, API keys, and secrets
 - `ExportAPICalls.java` — Finds networking API symbols, traces callers, extracts URLs from decompiled code
@@ -347,31 +350,31 @@ bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-
 Targeted analysis:
 ```bash
 # Focus on secret/credential handling code
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/reversing-analyze.sh --secrets <binary> -o <output>/reversing
+bash "$SKILL_ROOT/scripts/reversing-analyze.sh" --secrets <binary> -o <output>/reversing
 
 # Focus on networking code
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/reversing-analyze.sh --network <binary> -o <output>/reversing
+bash "$SKILL_ROOT/scripts/reversing-analyze.sh" --network <binary> -o <output>/reversing
 
 # Focus on crypto implementations
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/reversing-analyze.sh --crypto <binary> -o <output>/reversing
+bash "$SKILL_ROOT/scripts/reversing-analyze.sh" --crypto <binary> -o <output>/reversing
 
 # Focus on authentication logic
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/reversing-analyze.sh --auth <binary> -o <output>/reversing
+bash "$SKILL_ROOT/scripts/reversing-analyze.sh" --auth <binary> -o <output>/reversing
 
 # Decompile a specific function
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/reversing-analyze.sh --decompile "sym.objc.AuthService.login" <binary> -o <output>/reversing
+bash "$SKILL_ROOT/scripts/reversing-analyze.sh" --decompile "sym.objc.AuthService.login" <binary> -o <output>/reversing
 
 # Decompile all functions matching a pattern
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/reversing-analyze.sh --decompile-pattern "auth\|login\|token" <binary> -o <output>/reversing
+bash "$SKILL_ROOT/scripts/reversing-analyze.sh" --decompile-pattern "auth\|login\|token" <binary> -o <output>/reversing
 
 # Cross-references to a specific function
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/reversing-analyze.sh --xrefs "sym.imp.CCCrypt" <binary> -o <output>/reversing
+bash "$SKILL_ROOT/scripts/reversing-analyze.sh" --xrefs "sym.imp.CCCrypt" <binary> -o <output>/reversing
 
 # Call graph for a function
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/reversing-analyze.sh --callgraph "sym.objc.NetworkManager.request" <binary> -o <output>/reversing
+bash "$SKILL_ROOT/scripts/reversing-analyze.sh" --callgraph "sym.objc.NetworkManager.request" <binary> -o <output>/reversing
 
 # Entropy analysis (detect packing/encryption)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/reversing-analyze.sh --entropy <binary> -o <output>/reversing
+bash "$SKILL_ROOT/scripts/reversing-analyze.sh" --entropy <binary> -o <output>/reversing
 ```
 
 **LLM Analysis**: After the reversing tool produces output, read the generated files and analyze:
@@ -395,7 +398,7 @@ bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-
 - Jailbreak detection logic (for understanding, not bypassing)
 - Obfuscated string decryption routines
 
-See `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/reversing-tools-guide.md` for the full radare2/rizin/Ghidra command reference.
+See `$SKILL_ROOT/references/reversing-tools-guide.md` for the full radare2/rizin/Ghidra command reference.
 
 ### Phase 9: SDK & Framework Fingerprinting
 
@@ -405,13 +408,13 @@ Identify all third-party SDKs and frameworks embedded in the application. Detect
 
 ```bash
 # Full SDK detection with CVE checking
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/detect-sdks.sh <output>/ --check-cves --report sdks-report.md
+bash "$SKILL_ROOT/scripts/detect-sdks.sh" <output>/ --check-cves --report sdks-report.md
 
 # Verbose output with match details
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/detect-sdks.sh <output>/ --verbose --check-cves
+bash "$SKILL_ROOT/scripts/detect-sdks.sh" <output>/ --verbose --check-cves
 
 # JSON output for programmatic use
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/detect-sdks.sh <output>/ --json --check-cves
+bash "$SKILL_ROOT/scripts/detect-sdks.sh" <output>/ --json --check-cves
 ```
 
 The script fingerprints SDKs by searching:
@@ -432,7 +435,7 @@ The script fingerprints SDKs by searching:
 5. **Privacy compliance** — Verify ATT (App Tracking Transparency) for tracking SDKs
 6. **Unnecessary SDKs** — Unused SDKs increase risk without benefit
 
-See `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/sdk-fingerprinting.md` for the full SDK fingerprint database, detection techniques, and CVE reference.
+See `$SKILL_ROOT/references/sdk-fingerprinting.md` for the full SDK fingerprint database, detection techniques, and CVE reference.
 
 ### Phase 10: Protection & Anti-Tampering Detection
 
@@ -442,31 +445,31 @@ Detect security protections, anti-tampering mechanisms, obfuscation, and anti-de
 
 ```bash
 # Full protection analysis
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/detect-protections.sh <output>/ --report protections-report.md
+bash "$SKILL_ROOT/scripts/detect-protections.sh" <output>/ --report protections-report.md
 
 # With direct binary analysis (more accurate for some checks)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/detect-protections.sh <output>/ --binary <path-to-macho-binary> --report protections-report.md
+bash "$SKILL_ROOT/scripts/detect-protections.sh" <output>/ --binary <path-to-macho-binary> --report protections-report.md
 ```
 
 Targeted analysis:
 ```bash
 # Only obfuscation detection
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/detect-protections.sh <output>/ --obfuscation
+bash "$SKILL_ROOT/scripts/detect-protections.sh" <output>/ --obfuscation
 
 # Only anti-debugging checks
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/detect-protections.sh <output>/ --debugger
+bash "$SKILL_ROOT/scripts/detect-protections.sh" <output>/ --debugger
 
 # Only dylib injection prevention
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/detect-protections.sh <output>/ --injection
+bash "$SKILL_ROOT/scripts/detect-protections.sh" <output>/ --injection
 
 # Only integrity/tampering checks
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/detect-protections.sh <output>/ --integrity
+bash "$SKILL_ROOT/scripts/detect-protections.sh" <output>/ --integrity
 
 # Only jailbreak detection
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/detect-protections.sh <output>/ --jailbreak
+bash "$SKILL_ROOT/scripts/detect-protections.sh" <output>/ --jailbreak
 
 # Only binary encryption (FairPlay DRM)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/detect-protections.sh <output>/ --encryption
+bash "$SKILL_ROOT/scripts/detect-protections.sh" <output>/ --encryption
 ```
 
 **Protection types detected**:
@@ -493,7 +496,7 @@ bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-
 4. **Obfuscation coverage** — Partial obfuscation may leave sensitive code readable
 5. **Server-side attestation** — Client-side checks can be bypassed; App Attest/DeviceCheck cannot
 
-See `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/anti-tampering-patterns.md` for the full reference on protection patterns and detection techniques.
+See `$SKILL_ROOT/references/anti-tampering-patterns.md` for the full reference on protection patterns and detection techniques.
 
 ### Phase 11: Static Vulnerability Audit
 
@@ -503,40 +506,40 @@ Audit the extracted app for iOS-specific vulnerability classes that pattern-leve
 
 ```bash
 # Full audit across all categories, with a Markdown report
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/audit-vulnerabilities.sh <output>/ --all --report vuln-report.md
+bash "$SKILL_ROOT/scripts/audit-vulnerabilities.sh" <output>/ --all --report vuln-report.md
 ```
 
 Category filters (run individually or combine):
 ```bash
 # Insecure local storage (UserDefaults tokens, sqlite/realm, UIFileSharingEnabled, file protection off)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/audit-vulnerabilities.sh <output>/ --storage
+bash "$SKILL_ROOT/scripts/audit-vulnerabilities.sh" <output>/ --storage
 
 # WebView / JS-bridge (UIWebView, allowUniversalAccessFromFileURLs, addScriptMessageHandler, TLS-bypass)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/audit-vulnerabilities.sh <output>/ --webview
+bash "$SKILL_ROOT/scripts/audit-vulnerabilities.sh" <output>/ --webview
 
 # Deeplink / URL-scheme hijack (custom schemes, token-in-callback, universal links)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/audit-vulnerabilities.sh <output>/ --deeplink
+bash "$SKILL_ROOT/scripts/audit-vulnerabilities.sh" <output>/ --deeplink
 
 # Weak crypto / RNG (ECB, arc4random/rand for tokens, MD5/SHA1, hardcoded IV/salt)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/audit-vulnerabilities.sh <output>/ --crypto
+bash "$SKILL_ROOT/scripts/audit-vulnerabilities.sh" <output>/ --crypto
 
 # Biometric/local-auth, sensitive-data logging, ATS detail, privacy/tracking, entitlements, debug artifacts
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/audit-vulnerabilities.sh <output>/ --auth --logging --network --privacy --entitlements --debug
+bash "$SKILL_ROOT/scripts/audit-vulnerabilities.sh" <output>/ --auth --logging --network --privacy --entitlements --debug
 
 # Mach-O hardening flags (non-PIE executable, no MH_NO_HEAP_EXECUTION, hardened-runtime weakening)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/audit-vulnerabilities.sh <output>/ --hardening
+bash "$SKILL_ROOT/scripts/audit-vulnerabilities.sh" <output>/ --hardening
 
 # Data injection / dynamic dispatch (NSPredicate/NSExpression format strings, KVC, NSSelectorFromString/performSelector, stringWithFormat)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/audit-vulnerabilities.sh <output>/ --injection
+bash "$SKILL_ROOT/scripts/audit-vulnerabilities.sh" <output>/ --injection
 
 # Insecure deserialization (NSKeyedUnarchiver unsafe APIs, decodeObject(forKey:) without NSSecureCoding)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/audit-vulnerabilities.sh <output>/ --deserialization
+bash "$SKILL_ROOT/scripts/audit-vulnerabilities.sh" <output>/ --deserialization
 
 # Unsafe parsing / archive handling (XXE via NSXMLParser/libxml2, Zip Slip via archive libs)
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/audit-vulnerabilities.sh <output>/ --parsing
+bash "$SKILL_ROOT/scripts/audit-vulnerabilities.sh" <output>/ --parsing
 
 # Only high/critical findings
-bash D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/scripts/audit-vulnerabilities.sh <output>/ --all --severity high --report vuln-report.md
+bash "$SKILL_ROOT/scripts/audit-vulnerabilities.sh" <output>/ --all --severity high --report vuln-report.md
 ```
 
 **Categories detected**: insecure local storage (**including backup-exclusion absence and App-Group `UserDefaults` secret exposure**), WebView/JS-bridge, deeplink/URL-scheme hijack, weak crypto/RNG, biometric/local-auth patterns (**including Sign in with Apple nonce absence**), sensitive-data logging, ATS detail (NSAllowsArbitraryLoads/ForMedia, NSMinimumTLSVersion, NSRequiresForwardSecrecy), cleartext/insecure-WebSocket, **third-party certificate-pinning misconfiguration (AFNetworking/TrustKit/Alamofire) and permanently-persisted URL credentials**, privacy/tracking (IDFA without ATT, pasteboard, screen-capture, **app-switcher/background-snapshot leak, `LSApplicationQueriesSchemes` fingerprinting**, privacy manifest `PrivacyInfo.xcprivacy` absence + usage-description × API cross-check), entitlements risk (disable-library-validation, app groups, shared keychain), debug/staging artifacts, Mach-O hardening flags (PIE / hardened runtime / library validation), data injection / dynamic dispatch (NSPredicate/NSExpression, KVC, NSSelectorFromString/performSelector, stringWithFormat), **insecure deserialization (NSKeyedUnarchiver unsafe APIs, missing NSSecureCoding)**, **unsafe parsing / archive handling (XXE via NSXMLParser/libxml2, Zip Slip via archive-extraction libraries)**.
@@ -552,7 +555,7 @@ Each finding carries **Severity**, **Confidence**, **FP-likelihood** (Low/Medium
 3. **Map evidence back to code** — read the `file:line:match` in the decompiled/class-dumped output (Phase 8) to confirm exploitability.
 4. **Cross-reference** — correlate with `deep-secret-scan.sh` (Phase 7) for actual credential values and `detect-protections.sh` (Phase 10) for whether anti-tampering would block dynamic confirmation.
 
-See `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/vulnerability-patterns.md` for the full pattern reference (severity, FP notes, vulnerable code, remediation).
+See `$SKILL_ROOT/references/vulnerability-patterns.md` for the full pattern reference (severity, FP notes, vulnerable code, remediation).
 
 ## Output
 
@@ -573,15 +576,15 @@ Use `--report report.md` on find-api-calls.sh, deep-secret-scan.sh, detect-sdks.
 
 ## References
 
-- `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/setup-guide.md` — Installing ipsw, jtool2, frida, and optional tools
-- `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/class-dump-usage.md` — ipsw class-dump CLI options, Swift support, and Mach-O analysis
-- `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/api-extraction-patterns.md` — Library-specific search patterns and documentation template
-- `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/call-flow-analysis.md` — Techniques for tracing call flows in iOS apps
-- `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/cloud-secrets-patterns.md` — Cloud provider credential patterns (Firebase, GCP, AWS, Azure, Stripe, GitHub, GitLab, web3, etc.) and false-positive minimization
-- `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/reversing-tools-guide.md` — CLI reversing tools reference (radare2, rizin, Ghidra headless)
-- `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/sdk-fingerprinting.md` — SDK fingerprint database, class prefixes, version extraction, and CVE reference
-- `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/anti-tampering-patterns.md` — Anti-tampering, obfuscation, anti-debug, and injection prevention patterns
-- `D:\dogepy\skills-collection\\vertical\\ios-reverse-claude-skill/skills/ios-reverse-engineering/references/vulnerability-patterns.md` — iOS vulnerability classes (storage, WebView, deeplink, crypto, auth, logging, ATS, privacy, entitlements, debug, Mach-O hardening, data injection/dynamic dispatch, insecure deserialization, unsafe parsing/archive handling) with FP notes and remediation
+- `$SKILL_ROOT/references/setup-guide.md` — Installing ipsw, jtool2, frida, and optional tools
+- `$SKILL_ROOT/references/class-dump-usage.md` — ipsw class-dump CLI options, Swift support, and Mach-O analysis
+- `$SKILL_ROOT/references/api-extraction-patterns.md` — Library-specific search patterns and documentation template
+- `$SKILL_ROOT/references/call-flow-analysis.md` — Techniques for tracing call flows in iOS apps
+- `$SKILL_ROOT/references/cloud-secrets-patterns.md` — Cloud provider credential patterns (Firebase, GCP, AWS, Azure, Stripe, GitHub, GitLab, web3, etc.) and false-positive minimization
+- `$SKILL_ROOT/references/reversing-tools-guide.md` — CLI reversing tools reference (radare2, rizin, Ghidra headless)
+- `$SKILL_ROOT/references/sdk-fingerprinting.md` — SDK fingerprint database, class prefixes, version extraction, and CVE reference
+- `$SKILL_ROOT/references/anti-tampering-patterns.md` — Anti-tampering, obfuscation, anti-debug, and injection prevention patterns
+- `$SKILL_ROOT/references/vulnerability-patterns.md` — iOS vulnerability classes (storage, WebView, deeplink, crypto, auth, logging, ATS, privacy, entitlements, debug, Mach-O hardening, data injection/dynamic dispatch, insecure deserialization, unsafe parsing/archive handling) with FP notes and remediation
 
 
 

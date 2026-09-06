@@ -12,7 +12,7 @@ metadata:
 
 ## 1. 形状
 
-- **工作单元** — 一次请求、一次 CLI 调用、一次 Decide、一次批次、一次跨界调用。单元结束时发出 **一条** 宽结构化事件。
+- **工作单元**：一次请求、CLI 调用、决策、批次或跨界调用。正常完成路径优先发出一条摘要事件；重试、子任务和长任务进度可以有独立事件，通过相关 ID 连接。异常终止可能来不及发结束事件，不伪造完成。
 - **结构化 ≠ 宽事件** — JSON 五行散落仍不可切。宽事件是同一条记录上足够多的维度。
 - **高基数进事件，低基数进指标** — request_id / user_id / batch_id 不当 metrics label。
 - **字段 canonical** — event 名、error_code 与契约枚举、测试断言用同一套词。
@@ -32,7 +32,7 @@ metadata:
 
 - 存在名为稳定枚举的事件（如 `route.decided`、`sync.completed`）。
 - 含 `error_code` 或成功标志、duration、相关 ID。
-- 测试只断言事件名、code、必填字段存在，不断言文案。
+- 测试验证事件名、code、字段类型与含义、正确的成功/失败/取消状态及关联关系，不只检查字段存在。时间长度非负、重试次数正确、敏感字段未泄漏；不将未承诺的自然语言文案作为契约。
 - 同一 trace/decision/batch ID 能串起跨边界记录。
 
 建议字段（名称可映射 OTel semconv，不绑导出器）：`timestamp`、`event`、`trace_id`、`error_code`、`duration_ms`、场景差字段。
@@ -46,6 +46,6 @@ obs-core-paradigm
 + contract-core-paradigm（error_code 与 schema 枚举同源）
 ```
 
-人读摘要（stderr 一行）可以并存；机读事实源是宽事件，不是 Write-Host 散文。
+人读文本可以并存。先核实已有 stdout/stderr 契约，再用显式机读模式或独立通道增加结构化事件，不能粗暴替换现有人读输出，也不能污染 stdout 上的 JSON。纯决策函数返回数据，由外层在获准的通道记录日志。
 
 游戏每 sprite 打点、逆向 journal 的法律边界见场景差；无实践则跳过。

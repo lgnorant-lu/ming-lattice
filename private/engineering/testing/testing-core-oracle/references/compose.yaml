@@ -12,7 +12,7 @@ layers:
   workflow:
     required: true
     mutex: true
-    description: "驱动工作流（两套互斥：绿场规范驱动 vs 棕场现状锁定）"
+    description: "实施时同一工作项/阶段只选一个司机；审阅可比较两者而不执行"
     members:
       - name: testing-workflow-spec
         stage: greenfield
@@ -23,7 +23,7 @@ layers:
 
   idiom:
     required: true
-    description: "语言地道机制与工具链"
+    description: "按已确认运行时选择；跨语言边界可多选，未知时待确认"
     members:
       - testing-rust-idiom
       - testing-python-idiom

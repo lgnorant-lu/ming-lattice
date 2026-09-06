@@ -4,9 +4,12 @@ description: Android App API 定位（端点/接口提取）。
 user_invocable: true
 argument: "<package_name_or_apk_path>"
 agent: android-reverser
+compatibility: Requires the full areclaw checkout with its android-reverser agent, tools, pytools, and workspace conventions. This wrapper alone does not bundle that runtime.
 ---
 
 # /find-api — API Discovery & Documentation
+
+Resolve the areclaw source root through the host's skill/source inventory. Commands below use that root, not the caller's working directory. Confirm APK/package inputs and required pytools before execution; stop with a prerequisite report if missing. Review-only requests do not capture traffic, install dependencies, or create outputs.
 
 You are mapping the complete API surface of an Android application. Goal: a developer could rebuild the API client from your output.
 

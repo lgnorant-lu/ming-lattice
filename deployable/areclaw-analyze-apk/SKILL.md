@@ -4,9 +4,12 @@ description: Android APK 分析（5 阶段流程: 框架判定 Flutter/RN/IL2CPP
 user_invocable: true
 argument: "<package_name_or_apk_path>"
 agent: android-reverser
+compatibility: Requires the full areclaw checkout with its android-reverser agent, tools, pytools, and workspace conventions. This wrapper alone does not bundle that runtime.
 ---
 
 # /analyze-apk — Full Application Analysis
+
+Resolve the areclaw source root through the host's skill/source inventory before using the commands below. Do not assume the caller's working directory is that root. If the agent or required resources are absent, report the missing prerequisites; do not guess paths or install automatically. Review-only requests read this workflow as reference and do not run acquisition, credential validation, or device operations.
 
 You are performing a comprehensive security analysis. **Think, don't checklist.**
 

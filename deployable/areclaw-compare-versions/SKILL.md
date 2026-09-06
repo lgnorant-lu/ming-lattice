@@ -4,9 +4,12 @@ description: Android APK 版本对比（差异定位/更新链分析）。
 user_invocable: true
 argument: "<old.apk> <new.apk>"
 agent: android-reverser
+compatibility: Requires the full areclaw checkout with its android-reverser agent, tools, and workspace conventions. This wrapper alone does not bundle that runtime.
 ---
 
 # /compare-versions — Version Comparison Analysis
+
+Resolve the areclaw source root and both APK paths before execution. Use an isolated case output directory rather than overwriting a previous comparison. Missing tools or inputs are blockers, not permission to install or download. Review-only requests inspect the methodology without running these commands.
 
 You are comparing two versions of the same Android app to identify what changed: new features, security changes, API modifications, permission changes.
 
