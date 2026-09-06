@@ -15,6 +15,7 @@ node tests/run.mjs --require-all
 | Hook 单测 | 提交格式的合法/非法输入 |
 | Manifest 单测 | 合成 registry 与入口；启用、停用、缺失、身份错误、重复及路径越界；默认无写盘，显式写入仅临时根 |
 | 路由黄金 | 典型任务的分类与候选回归，不单独代表配方质量 |
+| 路由效果评估 | `tests/evals/route-effects.json` 的独立任务契约；验证 mode/domain/action/recipe、实际加载集合和禁止动作 |
 | 路由安全回归 | 只读模式、多包名、否定和引用、词边界、实际配方、可用性、未知契约安全退回 |
 | 适配器契约 | 模式映射、候选与正文分离；分类永不授予 case-init 权限 |
 | YAML/registry | 标量、列表和真实 registry 可解析；隔离集成另验证重复键及部署结构 |

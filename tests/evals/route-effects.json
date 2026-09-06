@@ -1,0 +1,143 @@
+[
+  {
+    "id": "review-quality-overlays",
+    "kind": "spec",
+    "source": "user task: testing-first repository review with quality overlays",
+    "hint": "只审阅测试体系，同时检查结构化日志、性能、安全和数据契约，不修改",
+    "expected": {
+      "mode": "review",
+      "domain": "testing",
+      "action": "dispatch",
+      "recipe": "testing-review",
+      "promptAction": "review",
+      "loadSkills": [
+        "testing-core-oracle",
+        "obs-core-paradigm",
+        "sec-core-paradigm",
+        "contract-core-paradigm",
+        "overlay-core-paradigm"
+      ],
+      "candidateIncludes": ["testing-core-oracle", "obs-core-paradigm", "sec-core-paradigm"],
+      "mustNotIncludes": ["modify_files", "install_tools", "execute_target"],
+      "allowCaseInit": false
+    }
+  },
+  {
+    "id": "review-one-engineering-skill",
+    "kind": "spec",
+    "source": "explicit review request",
+    "hint": "只审阅 obs-core-paradigm，不修改",
+    "expected": {
+      "mode": "review",
+      "domain": "engineering",
+      "action": "dispatch",
+      "recipe": "engineering-meta-catalog",
+      "promptAction": "review",
+      "loadSkills": ["obs-core-paradigm"],
+      "mustNotIncludes": ["modify_files", "install_tools", "execute_target"],
+      "allowCaseInit": false
+    }
+  },
+  {
+    "id": "rust-property-implementation",
+    "kind": "spec",
+    "source": "language plus deep-verification request",
+    "hint": "为 Rust 项目编写性质测试",
+    "expected": {
+      "mode": "implement",
+      "domain": "testing",
+      "action": "dispatch",
+      "recipe": "spec-driven-greenfield",
+      "promptAction": "implement",
+      "loadSkills": [
+        "testing-core-oracle",
+        "testing-workflow-spec",
+        "testing-rust-idiom",
+        "testing-property-mutation"
+      ],
+      "allowCaseInit": false
+    }
+  },
+  {
+    "id": "brownfield-cli-characterization",
+    "kind": "spec",
+    "source": "existing CLI characterization request",
+    "hint": "给现有 JS CLI 补表征测试",
+    "expected": {
+      "mode": "implement",
+      "domain": "testing",
+      "action": "dispatch",
+      "recipe": "cli-tool-characterize",
+      "promptAction": "implement",
+      "loadSkills": [
+        "testing-core-oracle",
+        "testing-scenario-cli",
+        "testing-workflow-characterize",
+        "testing-js-idiom"
+      ],
+      "allowCaseInit": false
+    }
+  },
+  {
+    "id": "negative-reverse-skill-mention",
+    "kind": "spec",
+    "source": "explicit negative constraint",
+    "hint": "不使用 apk-reverse，仅讨论测试规范",
+    "expected": {
+      "mode": "explain",
+      "domain": "testing",
+      "action": "dispatch",
+      "recipe": "spec-driven-greenfield",
+      "promptAction": "overview_explain",
+      "loadSkills": ["testing-core-oracle"],
+      "loadSkillsExclude": ["apk-reverse", "testing-workflow-spec"],
+      "allowCaseInit": false
+    }
+  },
+  {
+    "id": "protocol-trace-request",
+    "kind": "spec",
+    "source": "protocol evidence request",
+    "hint": "xfqtrace 流量窗口切片",
+    "expected": {
+      "mode": "implement",
+      "domain": "protocol",
+      "action": "dispatch",
+      "recipe": "ui-oracle-trace",
+      "promptAction": "implement",
+      "loadSkills": ["ui-oracle-protocol", "xfqtrace-kit"],
+      "allowCaseInit": false
+    }
+  },
+  {
+    "id": "mixed-domain-handoff",
+    "kind": "spec",
+    "source": "incompatible reverse and testing request",
+    "hint": "用 Frida 分析签名并补单元测试",
+    "expected": {
+      "mode": "implement",
+      "domain": "mixed",
+      "action": "ask",
+      "recipe": "",
+      "promptAction": "ask_clarification",
+      "loadSkills": [],
+      "mustNotIncludes": ["initReverseCase", "create_work_dir"],
+      "allowCaseInit": false
+    }
+  },
+  {
+    "id": "unmatched-handoff",
+    "kind": "spec",
+    "source": "unrelated request",
+    "hint": "build package",
+    "expected": {
+      "mode": "implement",
+      "domain": "none",
+      "action": "handoff",
+      "recipe": "",
+      "promptAction": "handoff",
+      "loadSkills": [],
+      "allowCaseInit": false
+    }
+  }
+]

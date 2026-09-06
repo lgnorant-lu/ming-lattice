@@ -4,6 +4,7 @@ import { run as runValidateUnit } from './unit/test-validate-hooks.test.mjs';
 import { run as runBuildManifestUnit } from './unit/test-build-manifest.test.mjs';
 import { run as runAdapterContract } from './contract/test-adapter-contract.mjs';
 import { run as runCliIntegration } from './integration/test-cli-tools.test.mjs';
+import { run as runRouteEffects } from './evals/test-route-effects.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const requireAll = process.argv.includes('--require-all');
@@ -19,6 +20,7 @@ const suites = [
   { name: 'manifest-unit', run: runBuildManifestUnit },
   { name: 'route-golden', run: () => node('tests/test-route-decision.mjs') },
   { name: 'adapter-contract', run: runAdapterContract },
+  { name: 'route-effects', run: runRouteEffects },
   { name: 'route-safety', run: () => node('--test', 'tests/contract/test-route-safety.test.mjs') },
   { name: 'hook-index', git: true, run: () => node('--test', 'tests/integration/test-hook-index.test.mjs') },
   { name: 'yaml-contract', pwsh: true, run: () => execFileSync('pwsh', ['-NoProfile', '-File', 'tests/unit/test-yaml-lite.test.ps1'], { cwd: root, stdio: 'inherit', timeout: 30000 }) },
