@@ -5,8 +5,9 @@
 export * from '../private/ming-skills-router/scripts/route-core.mjs';
 import { route } from '../private/ming-skills-router/scripts/route-core.mjs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname.replace(/^\/([a-zA-Z]:)/, '$1'))) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const hintArg = process.argv.slice(2).join(' ');
   const decision = route(hintArg);
   console.log(JSON.stringify(decision, null, 2));

@@ -3,7 +3,7 @@
 #
 # 用法:
 #   powershell -File scripts/sync.ps1                # 全量部署
-#   powershell -File scripts/sync.ps1 -WhatIf        # 演练（不实际改动）
+#   powershell -File scripts/sync.ps1 -WhatIf        # 演练（不实际改动，不创建目录）
 #   powershell -File scripts/sync.ps1 -Module ida-reverse   # 只部署某模块
 #
 # 行为:
@@ -20,10 +20,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-. (Join-Path $PSScriptRoot 'lib\yaml-lite.ps1')
+. (Join-Path $PSScriptRoot 'lib/registry.ps1')
 
 if (-not (Test-Path $RegistryPath)) { throw "registry 不存在: $RegistryPath" }
-$reg = ConvertFrom-YamlLite (Get-Content $RegistryPath -Raw)
+$reg = Read-SkillRegistry -RegistryPath $RegistryPath
 $targets = $reg.targets
 $trash = Join-Path $RepoRoot '.trash'
 
@@ -62,26 +62,42 @@ foreach ($sectionName in @('vertical', 'deployable', 'private')) {
     }
 }
 
+foreach ($requested in $Module) {
+    if ($requested -notin $units.name) { throw "sync_unavailable_module: $requested" }
+}
+foreach ($u in $units) {
+    if (-not (Test-Path -LiteralPath (Join-Path $u.src 'SKILL.md') -PathType Leaf)) {
+        throw "sync_missing_skill: $($u.name)"
+    }
+    $body = Get-Content -LiteralPath (Join-Path $u.src 'SKILL.md') -Raw -Encoding UTF8
+    if ($body -notmatch '(?s)^---\s*\n(.*?)\n---') { throw "sync_invalid_metadata: $($u.name)" }
+    $fm = $Matches[1]
+    $name = [regex]::Match($fm, '(?m)^name\s*:\s*([^\r\n]+)').Groups[1].Value.Trim().Trim('"', "'")
+    if ($name -cne $u.name -or [string]::IsNullOrWhiteSpace((Get-SkillDescription -Frontmatter $fm))) { throw "sync_invalid_metadata: $($u.name)" }
+    foreach ($client in $u.clients) {
+        if (-not $targets.Contains($client) -or [string]::IsNullOrWhiteSpace($targets[$client])) {
+            throw "sync_unknown_client: $client"
+        }
+        $sourceRoot = [IO.Path]::GetFullPath($u.src).TrimEnd([IO.Path]::DirectorySeparatorChar)
+        $destination = [IO.Path]::GetFullPath((Join-Path $targets[$client] $u.name))
+        if ($destination -eq $sourceRoot -or $destination.StartsWith($sourceRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "sync_invalid_destination: $($u.name)"
+        }
+    }
+}
 if ($units.Count -eq 0) { Write-Host "[sync] 无部署单元（registry 为空或全部未启用）"; exit 0 }
 
 # ---------- 部署 ----------
 $modeStat = @{ link = 0; copy = 0; skip = 0; backup = 0 }
 foreach ($u in $units) {
-    if (-not (Test-Path $u.src)) {
-        Write-Host "[sync][WARN] 源不存在, 跳过: $($u.src)" -ForegroundColor Yellow
-        continue
-    }
     foreach ($client in $u.clients) {
-        if (-not $targets.PSObject.Properties.Name -contains $client) {
-            Write-Host "[sync][WARN] 未定义的客户端 '$client'（registry targets 中不存在）" -ForegroundColor Yellow
-            continue
-        }
         $targetRoot = $targets.$client
         if ([string]::IsNullOrWhiteSpace($targetRoot)) { continue }
         $dst = Join-Path $targetRoot $u.name
         Write-Host "[sync] $($u.source)/$($u.name) -> $dst"
 
         if ($WhatIf) { Write-Host "        (演练) 链接或复制: $($u.src)"; continue }
+        New-Item -ItemType Directory -Force -Path $targetRoot | Out-Null
 
         # 目标已存在 (含悬空符号链接)
         $existing = Get-Item -LiteralPath $dst -Force -ErrorAction SilentlyContinue
@@ -124,13 +140,14 @@ foreach ($u in $units) {
             Write-Host "        (链接) symlink -> $($u.src)" -ForegroundColor Green
             $modeStat.link++
         } else {
-            robocopy $u.src $dst /E /NFL /NDL /NJH /NJS /NP | Out-Null
-            if ($LASTEXITCODE -lt 8) {
-                Write-Host "        (复制) robocopy 完成" -ForegroundColor Green
-                $modeStat.copy++
+            if ($IsWindows) {
+                robocopy $u.src $dst /E /NFL /NDL /NJH /NJS /NP | Out-Null
+                if ($LASTEXITCODE -ge 8) { throw "sync_copy_failed: $($u.name) code=$LASTEXITCODE" }
             } else {
-                Write-Host "        [ERROR] robocopy 失败 (code=$LASTEXITCODE)" -ForegroundColor Red
+                Copy-Item -LiteralPath $u.src -Destination $dst -Recurse -ErrorAction Stop
             }
+            Write-Host "        (复制) 完成" -ForegroundColor Green
+            $modeStat.copy++
         }
     }
 }
@@ -140,3 +157,4 @@ Write-Host "[sync] 完成: 链接=$($modeStat.link) 复制=$($modeStat.copy) 跳
 if ((Get-ChildItem $trash -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0) {
     Write-Host "[sync] 提示: .trash 中有备份, 确认无误后可手动删除 (Remove-Item .trash -Recurse)"
 }
+exit 0

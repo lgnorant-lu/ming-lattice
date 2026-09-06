@@ -1,9 +1,11 @@
 // scripts/build-router-manifest.mjs
-// 编译机读路由清单 (RouterManifest): 从 registry.yaml 与技能元数据中提取领域桶、Triggers、Negatives 与 Recipes
+// Curated routing definitions; registry and local SKILL.md determine availability.
 // 输出: config/router-manifest.json
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const CONFIG_DIR = path.join(ROOT_DIR, 'config');
@@ -30,7 +32,7 @@ const DOMAIN_DEFS = {
       "测试", "单测", "覆盖率", "测试用例", "测试规范", "测试覆盖", "测试体系", "测试计划",
       "单元测试", "性质测试", "变异测试", "表征测试", "契约测试", "集成测试", "回归测试",
       "tdd", "bdd", "pytest", "cargo test", "miri", "vitest", "jest", "hypothesis",
-      "proptest", "test framework", "oracle", "golden test", "spec test"
+      "proptest", "test framework", "oracle", "golden test", "spec test", "unit test", "testing", "property-based", "mutation testing"
     ],
     negatives: [
       "脱壳", "反编译", "ida pro", "gdb", "rop", "pwn", "hook_installed", "抓包", "绕过frida"
@@ -46,7 +48,7 @@ const DOMAIN_DEFS = {
       "patch-diff-exploit", "binary-diff", "go-rust-reverse", "macos-reverse"
     ],
     triggers: [
-      "逆向", "反编译", "脱壳", "frida", "hook", "ida", "ghidra", "radare2", "jadx",
+      "逆向", "反编译", "脱壳", "frida", "ida", "ghidra", "radare2", "jadx",
       "smali", "apk逆向", "jsvmp", "补环境", "混淆还原", "ast解混淆", "抓包分析",
       "协议分析", "私有协议", "签名算法", "sign算法", "so逆向", "rop", "pwn", "固件提取"
     ],
@@ -92,20 +94,38 @@ const DOMAIN_DEFS = {
     triggers: [
       "文档体裁", "diataxis", "adr", "docs-as-code", "架构决策记录",
       "文档排版", "readme排版", "去emoji", "去疲劳", "动线", "docs-presentation",
-      "可观测", "observability", "structured logging", "wide events", "宽事件", "相关id",
+      "可观测", "日志", "observability", "structured logging", "wide events", "宽事件", "相关id",
       "安全元规则", "ast10", "agentic-skills", "supply-chain", "最小权限",
       "数据契约", "schema-evolution", "tolerant-reader", "data-contract", "字段演进",
-      "性能横切", "隐私", "韧性", "上下文成本", "可移植", "overlay"
+      "性能", "安全", "隐私", "韧性", "上下文成本", "可移植", "overlay"
     ],
     negatives: [
       "脱壳", "反编译", "ida pro", "gdb", "rop", "pwn"
     ],
-    defaultRecipe: "engineering-meta-catalog"
+    defaultRecipe: "engineering-meta-catalog",
+    skillTriggers: {
+      "docs-core-paradigm": ["文档", "diataxis", "adr", "docs-as-code"],
+      "docs-presentation-idiom": ["排版", "readme", "动线"],
+      "obs-core-paradigm": ["日志", "可观测", "observability", "logging", "telemetry", "宽事件", "相关id"],
+      "sec-core-paradigm": ["安全", "security", "供应链", "supply-chain", "最小权限", "ast10"],
+      "contract-core-paradigm": ["数据契约", "字段演进", "schema-evolution", "schemaVersion", "tolerant-reader", "data-contract"],
+      "overlay-core-paradigm": ["性能", "performance", "隐私", "privacy", "韧性", "可移植", "上下文成本", "overlay"]
+    }
   }
 };
 
 // 预定义标准装配配方 (Recipes)
 const RECIPES = {
+  "testing-review": {
+    domain: "testing",
+    description: "Read-only testing review; load language, scene and quality references as needed",
+    skills: ["testing-core-oracle"]
+  },
+  "ui-oracle-trace": {
+    domain: "protocol",
+    description: "Protocol evidence references; execution requires a separate scope decision",
+    skills: ["ui-oracle-protocol", "xfqtrace-kit"]
+  },
   "engineering-meta-catalog": {
     domain: "engineering",
     description: "软件工程元规范综合装配 (文档内容+表现 + 可观测 + 安全 + 契约 + B级质量Overlay)",
@@ -138,15 +158,20 @@ const RECIPES = {
     description: "棕场遗留系统表征锁定配方 (Oracle + 表征测试 + 语言地道测试)",
     skills: ["testing-core-oracle", "testing-workflow-characterize"]
   },
+  "cli-tool-characterize": {
+    domain: "testing",
+    description: "CLI characterization with language selected from task evidence",
+    skills: ["testing-core-oracle", "testing-scenario-cli", "testing-workflow-characterize"]
+  },
   "embed-ffi-greenfield": {
     domain: "testing",
     description: "嵌入式与跨语言 FFI 契约测试配方 (Rust+V8+PyO3+JS补丁)",
-    skills: ["testing-core-oracle", "testing-scenario-embed-ffi", "testing-rust-idiom"]
+    skills: ["testing-core-oracle", "testing-scenario-embed-ffi", "testing-workflow-spec"]
   },
   "scraper-pipeline": {
     domain: "testing",
     description: "数据采集与管道清洗离线测试配方",
-    skills: ["testing-core-oracle", "testing-scenario-scraper", "testing-python-idiom"]
+    skills: ["testing-core-oracle", "testing-scenario-scraper", "testing-workflow-spec"]
   },
   "reverse-general": {
     domain: "reverse",
@@ -160,35 +185,79 @@ const RECIPES = {
   }
 };
 
-export function buildRouterManifest() {
-  if (!fs.existsSync(CONFIG_DIR)) {
-    fs.mkdirSync(CONFIG_DIR, { recursive: true });
+export function buildRouterManifest({ repoRoot = ROOT_DIR, registry, write = false, generatedAt = new Date().toISOString() } = {}) {
+  registry ??= JSON.parse(execFileSync('pwsh', ['-NoProfile', '-File',
+    path.join(ROOT_DIR, 'scripts/read-registry.ps1'), '-RegistryPath', path.join(repoRoot, 'registry.yaml')],
+  { encoding: 'utf8', timeout: 30000, maxBuffer: 4 * 1024 * 1024 }));
+  const units = new Map();
+  for (const base of registry.base || []) {
+    for (const [name, clients] of Object.entries(base.modules || {})) {
+      units.set(name, { path: `${base.path}/skills/${name}`, enabled: base.enabled === true && clients.length > 0 });
+    }
   }
-
-  const skillConfigDir = path.join(ROOT_DIR, 'private/ming-skills-router/config');
-  if (!fs.existsSync(skillConfigDir)) {
-    fs.mkdirSync(skillConfigDir, { recursive: true });
+  for (const section of ['vertical', 'deployable', 'private']) {
+    for (const item of registry[section] || []) {
+      if (section === 'vertical' && !Object.values(item.deploy || {}).some(Boolean)) continue;
+      if (units.has(item.name)) throw new Error(`duplicate_skill: ${item.name}`);
+      units.set(item.name, { path: item.path, enabled: item.enabled === true && Object.values(item.deploy || {}).some(value => value === true) });
+    }
   }
-
+  const availability = {};
+  for (const name of [...new Set(Object.values(DOMAIN_DEFS).flatMap(info => info.skills))].sort()) {
+    const unit = units.get(name);
+    if (!unit) { availability[name] = 'unregistered'; continue; }
+    if (!unit.enabled) { availability[name] = 'disabled'; continue; }
+    const source = path.resolve(repoRoot, unit.path, 'SKILL.md');
+    const relative = path.relative(path.resolve(repoRoot), source);
+    if (relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) throw new Error(`invalid_skill_path: ${name}`);
+    if (!fs.existsSync(source)) { availability[name] = 'missing'; continue; }
+    const text = fs.readFileSync(source, 'utf8').replace(/^\uFEFF/, '');
+    const frontmatter = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    const actualName = frontmatter?.[1].match(/^name:\s*["']?([^"'\r\n]+?)["']?\s*$/m)?.[1];
+    let description = frontmatter?.[1].match(/^description:[\t ]*([^\r\n]*)/m)?.[1].trim() || '';
+    if (/^[>|]/.test(description)) {
+      description = frontmatter[1].match(/^description:[^\r\n]*\r?\n((?:[\t ]+[^\r\n]*(?:\r?\n|$))+)/m)?.[1].trim() || '';
+    } else {
+      description = description.replace(/^(["'])(.*)\1$/, '$2').trim();
+    }
+    availability[name] = actualName === name && description ? 'ready' : 'invalid';
+  }
   const manifest = {
-    version: "1.0.0",
-    generatedAt: new Date().toISOString(),
-    domains: DOMAIN_DEFS,
-    recipes: RECIPES
+    version: '2.0.0', generatedAt,
+    domains: structuredClone(DOMAIN_DEFS), recipes: structuredClone(RECIPES), availability
   };
-
-  const jsonStr = JSON.stringify(manifest, null, 2);
-  fs.writeFileSync(MANIFEST_PATH, jsonStr, 'utf8');
-  console.log(`[build-router-manifest] 成功生成机读清单: ${path.relative(ROOT_DIR, MANIFEST_PATH)}`);
-
-  const skillManifestPath = path.join(skillConfigDir, 'router-manifest.json');
-  fs.writeFileSync(skillManifestPath, jsonStr, 'utf8');
-  console.log(`[build-router-manifest] 成功同步技能机读清单: ${path.relative(ROOT_DIR, skillManifestPath)}`);
-
+  if (write) {
+    for (const relative of ['config/router-manifest.json', 'private/ming-skills-router/config/router-manifest.json']) {
+      const output = path.join(repoRoot, relative);
+      fs.mkdirSync(path.dirname(output), { recursive: true });
+      const temporary = `${output}.${process.pid}.tmp`;
+      try {
+        fs.writeFileSync(temporary, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+        fs.renameSync(temporary, output);
+      } finally {
+        fs.rmSync(temporary, { force: true });
+      }
+    }
+  }
   return manifest;
 }
 
-// CLI 执行
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname.replace(/^\/([a-zA-Z]:)/, '$1'))) {
-  buildRouterManifest();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    const check = process.argv[2] === '--check';
+    if (process.argv.length > 3 || (process.argv[2] && !check)) throw new Error('usage: build-router-manifest.mjs [--check]');
+    const manifest = buildRouterManifest({ write: !check });
+    if (check) {
+      for (const file of [MANIFEST_PATH, path.join(ROOT_DIR, 'private/ming-skills-router/config/router-manifest.json')]) {
+        const existing = JSON.parse(fs.readFileSync(file, 'utf8'));
+        if (JSON.stringify({ ...existing, generatedAt: null }) !== JSON.stringify({ ...manifest, generatedAt: null })) {
+          throw new Error(`stale_manifest: ${path.relative(ROOT_DIR, file)}`);
+        }
+      }
+    }
+    console.log(check ? 'manifest_checked' : 'manifest_built');
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 1;
+  }
 }

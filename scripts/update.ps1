@@ -1,17 +1,18 @@
-# update.ps1 v2 — 版本检测（缓存优先 + 增量 fetch）
+# update.ps1 v2 — 版本检测（缓存优先 + 显式网络检查）
 # 设计目标: "获取一次后快速响应, 不每次全量计算"
 #   1. 缓存命中: registry 条目 checkCache.lastCheckedAt 在 updatePolicy.ttlDays 内
 #      且 lastRemoteHead == 本地 HEAD → 零网络, 直接判定无更新
-#   2. 缓存过期: 有 .git 的仓库 → git fetch --depth 1（增量传输 commit/tree, blob:none）
+#   2. 缓存过期且未使用 DryRun: 有 .git 的仓库 → git fetch --depth 1（增量传输 commit/tree, blob:none）
 #                无 .git 的仓库 → git ls-remote（仅元数据）
-#   3. 检测后回写 registry 的 checkCache（lastCheckedAt / lastRemoteHead）
+#   3. 非 DryRun 检测后回写 registry 的 checkCache（lastCheckedAt / lastRemoteHead）
 #   4. 只检测与提示, 不自动更新。确认后手动应用:
 #      base:    cd base/reverse-skill && git pull --rebase   （或 checkout 新 tag）
 #      vertical: git -C vertical/<name> fetch --depth 1 origin main && git checkout FETCH_HEAD
 #
 # 用法:
 #   pwsh scripts/update.ps1                  # 全量检测
-#   pwsh scripts/update.ps1 -Force           # 忽略缓存强制网络检测
+#   pwsh scripts/update.ps1 -Force           # 忽略缓存并执行网络检测
+#   pwsh scripts/update.ps1 -Force -DryRun   # 只生成未联网预览
 #   pwsh scripts/update.ps1 -Name hello-js   # 只看指定条目（模糊匹配）
 
 param(
@@ -23,15 +24,16 @@ param(
     [Alias('DryRun')][switch]$WhatIf
 )
 
-$ErrorActionPreference = 'Continue'
-. (Join-Path $PSScriptRoot 'lib\yaml-lite.ps1')
+$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'lib/registry.ps1')
 
-$reg = ConvertFrom-YamlLite (Get-Content $RegistryPath -Raw)
+$reg = Read-SkillRegistry -RegistryPath $RegistryPath
 $ttlDays = [int]$reg.updatePolicy.ttlDays
 if ($ttlDays -lt 1) { $ttlDays = 7 }
 $today = (Get-Date).ToString('yyyy-MM-dd')
 $report = @()
 $stats = @{ cache = 0; net = 0; updated = 0; skip = 0 }
+$namePattern = if ($Name.Count -gt 0) { ($Name | ForEach-Object { [regex]::Escape($_) }) -join '|' } else { $null }
 
 # ---------- 工具函数 ----------
 function Get-LocalHead($path) {
@@ -62,16 +64,23 @@ function Test-CacheFresh($entry, $localHead) {
 foreach ($sectionName in @('base', 'vertical')) {
     foreach ($item in @($reg.$sectionName)) {
         if (-not $item.enabled) { continue }
-        if ($Name.Count -gt 0 -and $item.name -notmatch ($Name -join '|')) { continue }
+        if ($namePattern -and $item.name -notmatch $namePattern) { continue }
         if ([string]::IsNullOrWhiteSpace($item.repo)) { continue }
         if ($item.sourceGone) { $stats.skip++; continue }   # 上游已下架/私有化: 零网络跳过
         $path = Join-Path $RepoRoot $item.path
         $hasGit = Test-Path (Join-Path $path '.git')
         if (-not $hasGit) {
-            # 无 .git 的纯文件条目: 仍可用 ls-remote 检测（低频）
+            # 无 .git 的纯文件条目: 非 DryRun 时用 ls-remote 检测（低频）
         }
 
         $entry = [ordered]@{ name = $item.name; type = $sectionName; mode = ''; local = ''; remote = ''; updated = $false; summary = @() }
+        if ($WhatIf) {
+            $entry.mode = 'dry-run'
+            $entry.local = $item.pin
+            $entry.remote = 'NOT_CHECKED'
+            $report += $entry
+            continue
+        }
         $localHead = if ($hasGit) { Get-LocalHead $path } else { $item.pin }
 
         # ── 快速路径: 缓存命中 → 零网络 ──
@@ -158,11 +167,12 @@ if (-not $WhatIf) {
 
 # ---------- 输出 ----------
 $updated = @($report | Where-Object { $_.updated })
-$current = @($report | Where-Object { -not $_.updated })
+$current = @($report | Where-Object { -not $_.updated -and $_.remote -notin @('NOT_CHECKED', 'DETECT-FAIL') })
+$unverified = @($report | Where-Object { $_.remote -in @('NOT_CHECKED', 'DETECT-FAIL') })
 
 if (-not $Quiet) {
     Write-Host "=== 可更新 ($($updated.Count)) ==="
-    if ($updated.Count -eq 0) { Write-Host "  全部为最新" -ForegroundColor Green }
+    if ($updated.Count -eq 0) { Write-Host "  本次未确认可更新项" -ForegroundColor Green }
     foreach ($e in $updated) {
         Write-Host ""
         Write-Host "[$($e.type)] $($e.name) ($($e.mode))" -ForegroundColor Yellow
@@ -180,7 +190,9 @@ if (-not $Quiet) {
         $tag = ''
         Write-Host "  [OK] $($e.name) [$($e.mode)]: $($e.local)" -ForegroundColor DarkGray
     }
+    foreach ($e in $unverified) { Write-Host "  [UNVERIFIED] $($e.name): $($e.remote)" -ForegroundColor Yellow }
     Write-Host ""
-    Write-Host "[update] 缓存命中=$($stats.cache) 网络检测=$($stats.net) 可更新=$($stats.updated) 失败=$($stats.skip) (TTL=$ttlDays 天)"
+    $networkLabel = if ($WhatIf) { '网络检测=0 (DryRun)' } else { "网络检测=$($stats.net)" }
+    Write-Host "[update] 缓存命中=$($stats.cache) $networkLabel 可更新=$($stats.updated) 未验证=$($stats.skip) (TTL=$ttlDays 天)"
 }
 exit 0

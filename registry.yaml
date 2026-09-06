@@ -332,14 +332,6 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 49d550a
-    acquiredAt: 2026-08-18
-    enabled: true
-    domain: misc
-    note: RE 工具 MCP 生态索引(IDA/Ghidra/BinNinja/radare2/debugger 全清单+缺失标注)
-    deploy: {}
-    checkCache:
-      lastCheckedAt: 2026-08-18
-      lastRemoteHead: 49d550a
   - name: jadx-mcp-server
     repo: https://github.com/Qtty/jadx-mcp-server.git
     path: vertical/jadx-mcp-server
@@ -372,7 +364,8 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: GhidraMCP 5.4k★ 全功能    deploy: {}
+    note: GhidraMCP
+    deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 27f316f
@@ -467,7 +460,8 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: HAR 瑙ｆ瀽 MCP(杞婚噺 Go, 鏁忔劅澶磋劚鏁? 鈥斺€?HAR 鍒嗘瀽棣栭€?    deploy: {}
+    note: HAR 分析 MCP
+    deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 2bf2e0c
@@ -491,14 +485,6 @@ vertical:
     enabled: true
     domain: apk
     note: 世界最快 APK/Java 反编译器(C 实现, jadx 上位替代, 733★, 自带 MCP 模式)
-    deploy: {}
-    checkCache:
-      lastCheckedAt: 2026-08-18
-      lastRemoteHead: 1ae29fa
-    acquiredAt: 2026-08-18
-    enabled: true
-    domain: bin
-    note: radare2 的 Garlic DEX/Dalvik 插件
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -527,14 +513,6 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 9777340
-    acquiredAt: 2026-08-18
-    enabled: true
-    domain: js
-    note: Babel AST 自动化反混淆(在线 playground+CLI+API, 反爬虫 AST 实战)
-    deploy: {}
-    checkCache:
-      lastCheckedAt: 2026-08-18
-      lastRemoteHead: 9777340
   - name: decode-js
     repo: https://github.com/echo094/decode-js.git
     path: vertical/decode-js
@@ -555,14 +533,6 @@ vertical:
     enabled: true
     domain: js
     note: V8 字节码静态反混淆(bytenode 保护对抗, hasherezade)
-    deploy: {}
-    checkCache:
-      lastCheckedAt: 2026-08-18
-      lastRemoteHead: 14946ae
-    acquiredAt: 2026-08-18
-    enabled: true
-    domain: js
-    note: V8 序列化字节码反编译器(JSC → 可读代码)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -740,7 +710,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
-    note: Appium 瀹樻柟 MCP(Android/iOS UI 鑷姩鍖? 鎺т欢鑷姩鍖?oracle 鍦烘櫙)
+    note: Appium MCP（Android/iOS UI 自动化）；保留本地 HEAD 对应 pin，远端版本仅记录在 checkCache
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -766,7 +736,8 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: ruyi/web
-    note: 瀹樻柟 skill v1.2(BiDi 浼樺厛/浜烘満鍖?鎸囩汗娴忚鍣?, deployable 宸插寘瑁?    deploy: {}
+    note: ruyiPage skill v1.2，经 deployable 包装
+    deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 5f00b6d
@@ -789,7 +760,8 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: ruyi/web
-    note: ruyiPage release 閰嶅鎸囩汗 Firefox 璇存槑椤?    deploy: {}
+    note: ruyiPage 配套 Firefox 发行说明
+    deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 401a2d2
@@ -801,7 +773,8 @@ vertical:
     enabled: true
     sourceGone: true
     domain: ruyi/web
-    note: ruyiPage JS 库(77 files), 上游仓库已下架/私有化, 内容已采集    deploy: {}
+    note: ruyiPage JS 库(77 files), 上游仓库已下架/私有化, 内容已采集
+    deploy: {}
   - name: ruyipage-go
     repo: https://github.com/LoseNine/ruyipage-go.git
     path: vertical/ruyipage-go
@@ -810,7 +783,8 @@ vertical:
     enabled: true
     sourceGone: true
     domain: ruyi/web
-    note: ruyiPage Go 库(189 files), 上游已下架, 内容已采集    deploy: {}
+    note: ruyiPage Go 库(189 files), 上游已下架, 内容已采集
+    deploy: {}
   - name: ruyipage-dev
     repo: https://github.com/LoseNine/ruyipage-dev.git
     path: vertical/ruyipage-dev
@@ -819,7 +793,8 @@ vertical:
     enabled: true
     sourceGone: true
     domain: ruyi/web
-    note: ruyiPage 开发文档仓库(含 SKILL.md/agents/references, 15MB), 上游已下架    deploy: {}
+    note: ruyiPage 开发文档仓库(含 SKILL.md/agents/references, 15MB), 上游已下架
+    deploy: {}
   - name: ruyi-mcp
     repo: https://github.com/LoseNine/ruyi-mcp.git
     path: vertical/ruyi-mcp
@@ -828,7 +803,8 @@ vertical:
     enabled: true
     sourceGone: true
     domain: ruyi/web
-    note: ruyiPage MCP 桥接(98 files), 上游已下架, 内容已采集    deploy: {}
+    note: ruyiPage MCP 桥接(98 files), 上游已下架, 内容已采集
+    deploy: {}
 
   # ── LoseNine 候选轮 2026-08-18(下架进行时: Restore-JS/Crack-JS-Spider 已 404) ──
   - name: AI_JS_DEBUGGER
@@ -991,19 +967,6 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: a1ae399
-
-  - name: appium-mcp
-    repo: https://github.com/appium/appium-mcp.git
-    path: vertical/appium-mcp
-    pin: 25c9ae9
-    acquiredAt: 2026-08-18
-    enabled: true
-    domain: android
-    note: 官方 Appium MCP server v1.92+(454★ 日更, 30+ 工具, NO_UI 省 token), ui-oracle-protocol 依赖
-    deploy: {}
-    checkCache:
-      lastCheckedAt: 2026-08-18
-      lastRemoteHead: 25c9ae9
 
   # ── JSVMP 专项 2026-08-18(引擎层 trace + 字节码还原方法论) ──
   - name: woxiangyangzhimao-skills
@@ -1203,7 +1166,8 @@ deployable:
     path: deployable/rust-reverse
     enabled: true
     domain: bin
-    note: Rust 二进制专项, 补基座短板    deploy:
+    note: Rust 二进制专项, 补基座短板
+    deploy:
       claude: true
   - name: android-reverse
     path: deployable/android-reverse
@@ -1482,4 +1446,3 @@ private:
     note: "数据采集与管道清洗测试场景规范 (Testing Scraper Scenario)"
     deploy:
       claude: true
-

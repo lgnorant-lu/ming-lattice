@@ -16,20 +16,33 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-. (Join-Path $PSScriptRoot 'lib\yaml-lite.ps1')
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+. (Join-Path $PSScriptRoot 'lib/registry.ps1')
 
-$reg = ConvertFrom-YamlLite (Get-Content $RegistryPath -Raw)
+try {
+    $reg = Read-SkillRegistry -RegistryPath $RegistryPath
+} catch {
+    if ($Json) {
+        ConvertTo-Json -InputObject @([ordered]@{ level = 'E'; name = 'registry'; msg = $_.Exception.Message; file = $RegistryPath })
+    } else {
+        [Console]::Error.WriteLine($_.Exception.Message)
+    }
+    exit 1
+}
 
 # ---------- 收集全部候选源（含未启用的条目, 便于提前发现待修复/待采集项） ----------
 $sources = @()
 foreach ($base in @($reg.base)) {
+    if ($null -eq $base) { continue }
     foreach ($modName in @($base.modules.Keys)) {
         $sources += [ordered]@{ name = $modName; src = Join-Path $RepoRoot (Join-Path $base.path "skills\$modName"); enabled = $base.enabled; kind = 'module' }
     }
 }
 foreach ($sectionName in @('vertical', 'deployable', 'private')) {
     foreach ($item in @($reg.$sectionName)) {
-        $sources += [ordered]@{ name = $item.name; src = Join-Path $RepoRoot $item.path; enabled = $item.enabled; kind = 'ref' }
+        if ($null -eq $item) { continue }
+        $kind = if ($sectionName -eq 'vertical' -and @($item.deploy.Values | Where-Object { $_ -eq $true }).Count -eq 0) { 'ref' } else { 'module' }
+        $sources += [ordered]@{ name = $item.name; src = Join-Path $RepoRoot $item.path; enabled = $item.enabled; kind = $kind }
     }
 }
 
@@ -60,7 +73,7 @@ foreach ($s in $sources) {
         }
     }
 
-    $content = Get-Content $skillMd -Raw -ErrorAction SilentlyContinue
+    $content = Get-Content -LiteralPath $skillMd -Raw -Encoding UTF8 -ErrorAction SilentlyContinue
     if ([string]::IsNullOrWhiteSpace($content)) {
         $issues += [ordered]@{ level = 'E'; name = $s.name; msg = 'SKILL.md 为空'; file = $skillMd }
         continue
@@ -69,14 +82,18 @@ foreach ($s in $sources) {
     # frontmatter
     if ($content -match '(?s)^---\s*\n(.*?)\n---') {
         $fm = $Matches[1]
-        if ($fm -notmatch '(?m)^name\s*:') { $issues += [ordered]@{ level = 'W'; name = $s.name; msg = 'frontmatter 缺 name'; file = $skillMd } }
-        if ($fm -notmatch '(?m)^description\s*:') { $issues += [ordered]@{ level = 'W'; name = $s.name; msg = 'frontmatter 缺 description'; file = $skillMd } }
+        $level = if ($s.kind -eq 'module' -and $s.enabled) { 'E' } else { 'W' }
+        if ($fm -notmatch '(?m)^name\s*:') { $issues += [ordered]@{ level = $level; name = $s.name; msg = 'frontmatter 缺 name'; file = $skillMd } }
+        elseif ($s.kind -eq 'module') {
+            $declared = [regex]::Match($fm, '(?m)^name\s*:\s*([^\r\n]+)').Groups[1].Value.Trim().Trim('"', "'")
+            if ($declared -cne $s.name) { $issues += [ordered]@{ level = $level; name = $s.name; msg = "skill_name_mismatch: $declared"; file = $skillMd } }
+        }
+        if ($fm -notmatch '(?m)^description\s*:') { $issues += [ordered]@{ level = $level; name = $s.name; msg = 'frontmatter 缺 description'; file = $skillMd } }
         else {
             # description 质量检查（第一层路由依据）
-            $descMatch = [regex]::Match($fm, '(?ms)^description\s*:\s*[|>]?\s*\n?\s*(.+?)(?=\n\S|\z)')
-            $desc = if ($descMatch.Success) { $descMatch.Groups[1].Value.Trim() } else { (($fm -split "`n" | Where-Object { $_ -match '^description\s*:' } | Select-Object -First 1) -replace '^description\s*:\s*', '') }
+            $desc = Get-SkillDescription -Frontmatter $fm
             if ([string]::IsNullOrWhiteSpace($desc)) {
-                $issues += [ordered]@{ level = 'W'; name = $s.name; msg = 'description 为空'; file = $skillMd }
+                $issues += [ordered]@{ level = $level; name = $s.name; msg = 'description 为空'; file = $skillMd }
             }
             elseif ($desc.Length -lt 20) {
                 $issues += [ordered]@{ level = 'W'; name = $s.name; msg = "description 过短($($desc.Length) 字符), 路由触发会不准: $desc"; file = $skillMd }
@@ -86,7 +103,8 @@ foreach ($s in $sources) {
             }
         }
     } else {
-        $issues += [ordered]@{ level = 'W'; name = $s.name; msg = '无 frontmatter（--- 块缺失）'; file = $skillMd }
+        $level = if ($s.kind -eq 'module' -and $s.enabled) { 'E' } else { 'W' }
+        $issues += [ordered]@{ level = $level; name = $s.name; msg = '无 frontmatter（--- 块缺失）'; file = $skillMd }
     }
 
     # 相对引用检查（排除 http/mailto/锚点）
@@ -124,8 +142,9 @@ foreach ($s in $sources) {
 }
 
 # ---------- 输出 ----------
+$e = @($issues | Where-Object { $_.level -eq 'E' }).Count
 if ($Json) {
-    $issues | ConvertTo-Json -Depth 4
+    ConvertTo-Json -InputObject @($issues) -Depth 4
 } else {
     $e = 0; $w = 0; $i = 0
     foreach ($iss in $issues) {

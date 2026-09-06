@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "generatedAt": "2026-09-05T18:41:05.888Z",
+  "version": "2.0.0",
+  "generatedAt": "2026-09-05T18:41:29.274Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -45,7 +45,11 @@
         "test framework",
         "oracle",
         "golden test",
-        "spec test"
+        "spec test",
+        "unit test",
+        "testing",
+        "property-based",
+        "mutation testing"
       ],
       "negatives": [
         "脱壳",
@@ -86,7 +90,6 @@
         "反编译",
         "脱壳",
         "frida",
-        "hook",
         "ida",
         "ghidra",
         "radare2",
@@ -199,6 +202,7 @@
         "动线",
         "docs-presentation",
         "可观测",
+        "日志",
         "observability",
         "structured logging",
         "wide events",
@@ -214,7 +218,8 @@
         "tolerant-reader",
         "data-contract",
         "字段演进",
-        "性能横切",
+        "性能",
+        "安全",
         "隐私",
         "韧性",
         "上下文成本",
@@ -229,10 +234,73 @@
         "rop",
         "pwn"
       ],
-      "defaultRecipe": "engineering-meta-catalog"
+      "defaultRecipe": "engineering-meta-catalog",
+      "skillTriggers": {
+        "docs-core-paradigm": [
+          "文档",
+          "diataxis",
+          "adr",
+          "docs-as-code"
+        ],
+        "docs-presentation-idiom": [
+          "排版",
+          "readme",
+          "动线"
+        ],
+        "obs-core-paradigm": [
+          "日志",
+          "可观测",
+          "observability",
+          "logging",
+          "telemetry",
+          "宽事件",
+          "相关id"
+        ],
+        "sec-core-paradigm": [
+          "安全",
+          "security",
+          "供应链",
+          "supply-chain",
+          "最小权限",
+          "ast10"
+        ],
+        "contract-core-paradigm": [
+          "数据契约",
+          "字段演进",
+          "schema-evolution",
+          "schemaVersion",
+          "tolerant-reader",
+          "data-contract"
+        ],
+        "overlay-core-paradigm": [
+          "性能",
+          "performance",
+          "隐私",
+          "privacy",
+          "韧性",
+          "可移植",
+          "上下文成本",
+          "overlay"
+        ]
+      }
     }
   },
   "recipes": {
+    "testing-review": {
+      "domain": "testing",
+      "description": "Read-only testing review; load language, scene and quality references as needed",
+      "skills": [
+        "testing-core-oracle"
+      ]
+    },
+    "ui-oracle-trace": {
+      "domain": "protocol",
+      "description": "Protocol evidence references; execution requires a separate scope decision",
+      "skills": [
+        "ui-oracle-protocol",
+        "xfqtrace-kit"
+      ]
+    },
     "engineering-meta-catalog": {
       "domain": "engineering",
       "description": "软件工程元规范综合装配 (文档内容+表现 + 可观测 + 安全 + 契约 + B级质量Overlay)",
@@ -280,13 +348,22 @@
         "testing-workflow-characterize"
       ]
     },
+    "cli-tool-characterize": {
+      "domain": "testing",
+      "description": "CLI characterization with language selected from task evidence",
+      "skills": [
+        "testing-core-oracle",
+        "testing-scenario-cli",
+        "testing-workflow-characterize"
+      ]
+    },
     "embed-ffi-greenfield": {
       "domain": "testing",
       "description": "嵌入式与跨语言 FFI 契约测试配方 (Rust+V8+PyO3+JS补丁)",
       "skills": [
         "testing-core-oracle",
         "testing-scenario-embed-ffi",
-        "testing-rust-idiom"
+        "testing-workflow-spec"
       ]
     },
     "scraper-pipeline": {
@@ -295,7 +372,7 @@
       "skills": [
         "testing-core-oracle",
         "testing-scenario-scraper",
-        "testing-python-idiom"
+        "testing-workflow-spec"
       ]
     },
     "reverse-general": {
@@ -312,5 +389,44 @@
         "ui-design-paradigms"
       ]
     }
+  },
+  "availability": {
+    "apk-reverse": "ready",
+    "binary-diff": "ready",
+    "contract-core-paradigm": "ready",
+    "docs-core-paradigm": "ready",
+    "docs-presentation-idiom": "ready",
+    "dotnet-reverse": "ready",
+    "firmware-pentest": "ready",
+    "ghidra-reverse": "ready",
+    "go-rust-reverse": "ready",
+    "ida-reverse": "ready",
+    "js-reverse": "ready",
+    "macos-reverse": "ready",
+    "malware-analysis": "ready",
+    "mobile-reverse": "ready",
+    "obs-core-paradigm": "ready",
+    "overlay-core-paradigm": "ready",
+    "patch-diff-exploit": "ready",
+    "protocol-reverse": "ready",
+    "pwn-chain": "ready",
+    "radare2": "ready",
+    "reverse-engineering": "ready",
+    "reverse-skill-router": "ready",
+    "sec-core-paradigm": "ready",
+    "testing-core-oracle": "ready",
+    "testing-go-idiom": "ready",
+    "testing-js-idiom": "ready",
+    "testing-property-mutation": "ready",
+    "testing-python-idiom": "ready",
+    "testing-rust-idiom": "ready",
+    "testing-scenario-cli": "ready",
+    "testing-scenario-embed-ffi": "ready",
+    "testing-scenario-scraper": "ready",
+    "testing-workflow-characterize": "ready",
+    "testing-workflow-spec": "ready",
+    "ui-design-paradigms": "ready",
+    "ui-oracle-protocol": "ready",
+    "xfqtrace-kit": "ready"
   }
 }

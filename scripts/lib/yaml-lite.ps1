@@ -63,6 +63,7 @@ function ConvertFrom-YamlLite {
             elseif ($parent.kind -in @('map', 'pending', 'listitem')) { $target = $parent.obj }
             else { throw "yaml-lite: 意外的 map key 在 list 下: $line" }
 
+            if ($target.Contains($key)) { throw "yaml_duplicate_key: $key" }
             if ($val -eq '') {
                 # pending: 先建空容器。子 key 挂 obj（容器自身）; 若后续出现 list 项, list 分支写 parentObj[lastKey] 替换
                 $target[$key] = [ordered]@{}

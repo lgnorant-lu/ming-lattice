@@ -33,7 +33,7 @@ function Set-NameDesc($dir, $newName, $newDesc) {
 }
 
 function Fix-Paths($dir, $pattern, $replacement) {
-    foreach ($f in @(Get-ChildItem (Join-Path $dep $dir) -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '\\\.git\\' })) {
+    foreach ($f in @(Get-Item -LiteralPath (Join-Path $dep "$dir/SKILL.md") -ErrorAction SilentlyContinue)) {
         $t = Get-Content $f.FullName -Raw -ErrorAction SilentlyContinue
         if ($t -and $t -match $pattern) {
             $t2 = $t -replace $pattern, $replacement
@@ -57,10 +57,12 @@ Set-NameDesc 'areclaw-register' 'areclaw-register' 'Android 注册/登录流程�
 Set-NameDesc 'malware-ioc-extraction' 'malware-ioc-extraction' '证据驱动 IOC 提取与规范化（严格 YAML schema/置信度词汇/verbatim 证据）。适用于恶意样本分析报告与 IOC 沉淀。'
 
 # ── 2. 路径修复 ────────────────────────────────────────────────
-# android/ios 的 ${CLAUDE_PLUGIN_ROOT} → 实际仓库路径（skills 可独立运行）
-$root = Split-Path $PSScriptRoot -Parent
-Fix-Paths 'android-reverse' '\$\{CLAUDE_PLUGIN_ROOT\}' ($root + '\vertical\android-reverse-claude-skill\plugins\android-reverse-engineering'.Replace('\', '\\'))
-Fix-Paths 'ios-reverse' '\$\{CLAUDE_PLUGIN_ROOT\}' ($root + '\vertical\ios-reverse-claude-skill'.Replace('\', '\\'))
+# Resolve SKILL_ROOT through the host; never rewrite linked upstream resources.
+Fix-Paths 'android-reverse' '\$\{CLAUDE_PLUGIN_ROOT\}/skills/android-reverse-engineering' '$$SKILL_ROOT'
+Fix-Paths 'ios-reverse' '\$\{CLAUDE_PLUGIN_ROOT\}/skills/ios-reverse-engineering' '$$SKILL_ROOT'
+foreach ($name in @('android-reverse', 'ios-reverse')) {
+    Fix-Paths $name 'bash (\$SKILL_ROOT/scripts/[A-Za-z0-9_.-]+)' 'bash "$1"'
+}
 # xbs 硬编码他人路径 → 说明性占位
 Fix-Paths 'xbs-ast-deobfuscation' 'C:\\Users\\25198\\(?:\\[\w.-]+)*' '%USERPROFILE%\\.codex\\skills'
 

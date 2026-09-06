@@ -1,283 +1,232 @@
-// scripts/route-core.mjs
-// ming-skills 核心路由决策纯函数 (与 Harness 无关 / 零 I/O / 零副作用)
-// 核心设计: 解耦 candidates (高召回供给清单) 与 active_recipe (高精度默认装配)
-
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-/**
- * 核心决策纯函数
- * @param {string} hint 用户意图文本
- * @param {object} manifest 编译后的机读路由清单 (RouterManifest)
- * @returns {object} RouteDecision 结构体
- */
+const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+const isStringArray = value => Array.isArray(value) && value.every(item => typeof item === 'string');
+const isSkillName = value => typeof value === 'string' && value.length <= 64 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+
 export function Decide(hint, manifest) {
-  const text = (typeof hint === 'string' ? hint : '').trim().toLowerCase();
-
-  // 1. 空意图直接拒识
-  if (!text) {
-    return {
-      domain: 'none',
-      confidence: 'none',
-      candidates: [],
-      active_recipe: { name: '', skills: [] },
-      action: 'handoff',
-      side_effects: 'none',
-      must_not: ['initReverseCase', 'create_work_dir'],
-      reasons: ['empty_hint']
-    };
-  }
-
-  const reasons = [];
-  const domains = manifest?.domains || {};
-  const recipes = manifest?.recipes || {};
-
-  // 2. 规则 1: 显式点名具体技能包 (Explicit Skill Mention)
-  for (const [domName, domInfo] of Object.entries(domains)) {
-    for (const skill of (domInfo.skills || [])) {
-      if (text.includes(skill.toLowerCase())) {
-        reasons.push(`explicit_skill_hit: ${skill}`);
-        let targetSkills = [skill];
-        if (domName === 'testing' && skill !== 'testing-core-oracle') {
-          targetSkills = ['testing-core-oracle', skill];
-        }
-
-        const mustNot = ['create_work_dir'];
-        if (domName !== 'reverse') {
-          mustNot.push('initReverseCase');
-        }
-
-        return {
-          domain: domName,
-          confidence: 'high',
-          candidates: domInfo.skills || targetSkills, // 依然保留全域候选供模型参考
-          active_recipe: {
-            name: domInfo.defaultRecipe || 'explicit-dispatch',
-            skills: targetSkills
-          },
-          action: 'dispatch',
-          side_effects: 'none',
-          must_not: mustNot,
-          reasons
-        };
-      }
-    }
-  }
-
-  // 3. 计算各领域正向命中与负向命中
-  const domainScores = {};
-  const negativeHits = {};
-
-  for (const [domName, domInfo] of Object.entries(domains)) {
-    let score = 0;
-    const negs = [];
-
-    // 正向 Triggers 命中统计
-    for (const trig of (domInfo.triggers || [])) {
-      if (text.includes(trig.toLowerCase())) {
-        score += 1;
-      }
-    }
-
-    // 负向 Negatives 命中统计
-    for (const neg of (domInfo.negatives || [])) {
-      if (text.includes(neg.toLowerCase())) {
-        negs.push(neg);
-      }
-    }
-
-    negativeHits[domName] = negs;
-    domainScores[domName] = score;
-  }
-
-  // 4. 判定领域闸门
-  // 注意：负向命中阻断的是该领域的单独 PRIMARY dispatch 与副作用，但在复合任务中不截断 candidates
-  const isTestingPositive = (domainScores.testing || 0) > 0;
-  const isReversePositive = (domainScores.reverse || 0) > 0;
-  const isReverseNegHit = (negativeHits.reverse || []).length > 0;
-
-  if (isReverseNegHit) {
-    reasons.push(`negatives_hit[reverse]: ${negativeHits.reverse.join(', ')}`);
-  }
-
-  // 5. 分流逻辑决策
-  // 5.1 复合意图 (Composite Domain): 同时命中测试与逆向正向特征 -> 必须输出双域完整候选集供模型裁剪
-  if (isTestingPositive && isReversePositive) {
-    reasons.push('composite_domain_hit: testing + reverse');
-    const combinedCandidates = [
-      ...(domains.testing?.skills || []),
-      ...(domains.reverse?.skills || [])
-    ];
-    return {
-      domain: 'mixed',
-      confidence: 'medium',
-      candidates: combinedCandidates, // 双域全量候选高召回
-      active_recipe: {
-        name: 'mixed-reverse-testing',
-        skills: ['testing-core-oracle', 'reverse-skill-router']
-      },
-      action: 'ask',
-      side_effects: 'none',
-      must_not: ['initReverseCase', 'create_work_dir'], // 严禁副作用
-      reasons
-    };
-  }
-
-  // 5.2 纯测试意图 (或逆向正向为0) -> testing 域全量 11 包高召回
-  if (isTestingPositive) {
-    reasons.push(`domain_selected: testing (score=${domainScores.testing})`);
-
-    // 细粒度测试配方装配逻辑 (高精度 active_recipe)
-    let selectedRecipeKey = 'spec-driven-greenfield';
-    if (text.includes('盘点') || text.includes('讲述') || text.includes('找找') || text.includes('覆盖设计') || text.includes('规范族') || text.includes('体系')) {
-      selectedRecipeKey = 'testing-overview-catalog';
-    } else if (text.includes('cli') || text.includes('脚本') || text.includes('退出码') || text.includes('命令行')) {
-      selectedRecipeKey = 'cli-tool-spec';
-    } else if (text.includes('ffi') || text.includes('v8') || text.includes('pyo3') || text.includes('跨语言') || text.includes('嵌入')) {
-      selectedRecipeKey = 'embed-ffi-greenfield';
-    } else if (text.includes('爬虫') || text.includes('采集') || text.includes('scraper') || text.includes('清洗')) {
-      selectedRecipeKey = 'scraper-pipeline';
-    } else if (text.includes('表征') || text.includes('锁定') || text.includes('遗留') || text.includes('characteriz')) {
-      selectedRecipeKey = 'characterization-brownfield';
-    }
-
-    const recipeSkills = recipes[selectedRecipeKey]?.skills || ['testing-core-oracle', 'testing-workflow-spec'];
-
-    return {
-      domain: 'testing',
-      confidence: domainScores.testing >= 2 ? 'high' : 'medium',
-      candidates: domains.testing?.skills || [], // 全量 11 包完整供给，杜绝空缺
-      active_recipe: {
-        name: selectedRecipeKey,
-        skills: recipeSkills
-      },
-      action: 'dispatch',
-      side_effects: 'none',
-      must_not: ['initReverseCase', 'create_work_dir'],
-      reasons
-    };
-  }
-
-  // 5.3 纯逆向意图 (正向命中且无测试负向)
-  if (isReversePositive && !isReverseNegHit) {
-    reasons.push(`domain_selected: reverse (score=${domainScores.reverse})`);
-    return {
-      domain: 'reverse',
-      confidence: domainScores.reverse >= 2 ? 'high' : 'medium',
-      candidates: domains.reverse?.skills || ['reverse-skill-router'],
-      active_recipe: {
-        name: 'reverse-general',
-        skills: ['reverse-skill-router']
-      },
-      action: 'dispatch',
-      side_effects: 'none',
-      must_not: ['create_work_dir_without_auth'],
-      reasons
-    };
-  }
-
-  // 5.4 UI 领域意图
-  if ((domainScores.ui || 0) > 0) {
-    reasons.push(`domain_selected: ui (score=${domainScores.ui})`);
-    return {
-      domain: 'ui',
-      confidence: 'high',
-      candidates: domains.ui?.skills || ['ui-design-paradigms'],
-      active_recipe: {
-        name: 'ui-design-standard',
-        skills: ['ui-design-paradigms']
-      },
-      action: 'dispatch',
-      side_effects: 'none',
-      must_not: ['initReverseCase', 'create_work_dir'],
-      reasons
-    };
-  }
-
-  // 5.5 零命中 -> 拒识放行
-  reasons.push('no_domain_triggers_matched');
-  return {
-    domain: 'none',
-    confidence: 'none',
-    candidates: [],
-    active_recipe: { name: '', skills: [] },
-    action: 'handoff',
-    side_effects: 'none',
-    must_not: ['initReverseCase', 'create_work_dir'],
-    reasons
+  const text = (typeof hint === 'string' ? hint : '').trim().toLowerCase()
+    .replace(/```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)/g, '')
+    .replace(/^\s*>.*$/gm, '');
+  const matches = (value, term) => {
+    if (typeof term !== 'string' || !term) return false;
+    const literal = term.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const left = /^[a-z0-9_]/i.test(term) ? '(^|[^a-z0-9_-])' : '';
+    const right = /[a-z0-9_]$/i.test(term) ? '($|[^a-z0-9_-])' : '';
+    return new RegExp(`${left}${literal}${right}`, 'i').test(value);
   };
+  const has = (...terms) => terms.some(term => matches(text, term));
+  const readOnly = /(?:不(?:要)?|禁止|勿)(?:再|直接|擅自)?(?:修改|改动|实现|写入|执行)|\b(?:read[- ]only|do not (?:edit|modify|implement|execute)|don't (?:edit|modify|implement|execute))\b/i.test(text);
+  const mode = readOnly || has('审阅', '审计', '复查', 'review', 'audit') ? 'review'
+    : has('规划', '商讨', '先计划', 'plan', 'brainstorm') ? 'plan'
+    : has('解释', '讲述', '盘点', '讲解', '讨论', '找找', 'explain', 'overview', 'catalog') ? 'explain'
+    : 'implement';
+  const decision = {
+    schemaVersion: '2.0', mode, domain: 'none', confidence: 'none', candidates: [],
+    active_recipe: { name: '', skills: [] }, action: 'handoff', side_effects: 'none',
+    must_not: ['initReverseCase', 'create_work_dir'], reasons: []
+  };
+  if (mode !== 'implement') decision.must_not.push('modify_files', 'install_tools', 'execute_target');
+  if (!text.trim()) {
+    decision.reasons.push('empty_hint');
+    return decision;
+  }
+  if (manifest?.version !== '2.0.0' || !isRecord(manifest.domains) || !isRecord(manifest.recipes) || !isRecord(manifest.availability)) {
+    decision.reasons.push('invalid_manifest');
+    return decision;
+  }
+
+  const { domains, recipes, availability } = manifest;
+  for (const recipe of Object.values(recipes)) {
+    if (!isRecord(recipe) || !domains[recipe.domain] || !isStringArray(recipe.skills) || !recipe.skills.every(isSkillName)) {
+      decision.reasons.push('invalid_recipe_definition');
+      return decision;
+    }
+  }
+  const clauses = text.split(/[，,。；;\n!?？！]|\bbut\b|但是|而是/);
+  const negated = clause => /不(?:要|用|使用|加载|启用|运行)|禁止|排除|无需|\b(?:do not|don't|without|exclude|not using)\b/.test(clause);
+  const activeText = clauses.filter(clause => !negated(clause)).join(' ');
+  const activeHas = (...terms) => terms.some(term => matches(activeText, term));
+  const excluded = new Set();
+  const explicit = new Map();
+  const scores = {};
+  const candidatesByDomain = {};
+
+  for (const [name, info] of Object.entries(domains)) {
+    if (!isRecord(info) || !isStringArray(info.skills) || !info.skills.every(isSkillName)
+      || !isStringArray(info.triggers) || !isStringArray(info.negatives)
+      || (info.skillTriggers !== undefined && (!isRecord(info.skillTriggers)
+        || !Object.entries(info.skillTriggers).every(([skill, terms]) => isSkillName(skill) && isStringArray(terms))))) {
+      decision.reasons.push('invalid_domain_definition');
+      return decision;
+    }
+    for (const skill of info.skills) {
+      if (clauses.some(clause => negated(clause) && matches(clause, skill))) excluded.add(skill);
+      if (matches(activeText, skill)) explicit.set(skill, name);
+    }
+    scores[name] = info.triggers.filter(term => term !== 'hook' && matches(activeText, term)).length;
+  }
+  for (const skill of excluded) explicit.delete(skill);
+  for (const [name, info] of Object.entries(domains)) {
+    candidatesByDomain[name] = info.skills.filter(skill => availability[skill] === 'ready' && !excluded.has(skill));
+  }
+  for (const [skill, domain] of explicit) {
+    if (availability[skill] !== 'ready') {
+      decision.action = 'ask';
+      decision.reasons.push(`skill_unavailable: ${skill}`);
+      return decision;
+    }
+    scores[domain] = (scores[domain] || 0) + 2;
+    decision.reasons.push(`explicit_skill_hit: ${skill}`);
+  }
+
+  const positive = name => (scores[name] || 0) > 0;
+  const conflicting = positive('reverse') && (positive('testing') || positive('ui')) && !positive('protocol');
+  if (conflicting) {
+    decision.domain = 'mixed';
+    decision.confidence = 'medium';
+    decision.action = 'ask';
+    decision.candidates = [...new Set(['testing', 'reverse', 'ui', 'engineering']
+      .filter(positive).flatMap(name => candidatesByDomain[name] || []))];
+    decision.reasons.push('incompatible_primary_domains');
+    return decision;
+  }
+
+  const domain = ['testing', 'protocol', 'reverse', 'ui', 'engineering'].find(positive);
+  if (!domain) {
+    decision.reasons.push('no_domain_triggers_matched');
+    return decision;
+  }
+  decision.domain = domain;
+  decision.confidence = scores[domain] >= 2 ? 'high' : 'medium';
+  decision.candidates = [...new Set([
+    ...(candidatesByDomain[domain] || []),
+    ...(positive('engineering') ? candidatesByDomain.engineering || [] : [])
+  ])];
+
+  let recipeKey = domains[domain].defaultRecipe;
+  const named = [...explicit.keys()];
+  let targetSkills = named.filter(skill => explicit.get(skill) === domain);
+  if (domain === 'testing') {
+    const catalog = activeHas('盘点', '讲述', '找找', '覆盖设计', '规范族', '体系', 'overview', 'catalog');
+    const brownfield = activeHas('表征', '锁定', '遗留', 'characterization', 'characterize', 'brownfield', 'golden master');
+    const cli = activeHas('cli', '脚本', '退出码', '命令行', 'command-line');
+    const ffi = activeHas('ffi', 'v8', 'pyo3', '跨语言', '嵌入');
+    const pipeline = activeHas('爬虫', '采集', 'scraper', '清洗', 'pipeline');
+    recipeKey = mode === 'review' || mode === 'plan' ? 'testing-review'
+      : catalog ? 'testing-overview-catalog'
+      : brownfield ? (cli ? 'cli-tool-characterize' : 'characterization-brownfield')
+      : cli ? 'cli-tool-spec' : ffi ? 'embed-ffi-greenfield'
+      : pipeline ? 'scraper-pipeline' : 'spec-driven-greenfield';
+    if (!targetSkills.length) targetSkills = [...(recipes[recipeKey]?.skills || [])];
+    if (!targetSkills.includes('testing-core-oracle')) targetSkills.unshift('testing-core-oracle');
+    if (cli) targetSkills.push('testing-scenario-cli');
+    if (ffi) targetSkills.push('testing-scenario-embed-ffi');
+    if (pipeline) targetSkills.push('testing-scenario-scraper');
+    for (const [language, terms] of Object.entries({
+      rust: ['rust', 'cargo', 'miri', 'proptest'],
+      python: ['python', 'pytest', 'hypothesis'],
+      js: ['js', 'ts', 'javascript', 'typescript', 'node', 'node.js', 'react', 'vitest', 'jest'],
+      go: ['go', 'golang']
+    })) {
+      if (activeHas(...terms)) targetSkills.push(`testing-${language}-idiom`);
+    }
+    if (activeHas('性质测试', '变异', 'hypothesis', 'proptest', 'property-based', 'mutation', 'fuzz')) {
+      targetSkills.push('testing-property-mutation');
+    }
+    if (mode === 'review' || mode === 'plan' || (mode === 'explain' && !catalog)) {
+      targetSkills = targetSkills.filter(skill => !skill.startsWith('testing-workflow-') || explicit.has(skill));
+    }
+    if (mode === 'implement' && targetSkills.filter(skill => skill.startsWith('testing-workflow-')).length > 1) {
+      decision.action = 'ask';
+      decision.reasons.push('conflicting_workflow_drivers');
+      return decision;
+    }
+  } else if (!targetSkills.length) {
+    targetSkills = domain === 'engineering' ? [] : [...(recipes[recipeKey]?.skills || [])];
+  }
+
+  if (domain === 'engineering' || positive('engineering')) {
+    for (const [skill, terms] of Object.entries(domains.engineering?.skillTriggers || {})) {
+      if (explicit.has(skill) || terms.some(term => matches(activeText, term))) targetSkills.push(skill);
+    }
+    targetSkills.push(...named.filter(skill => explicit.get(skill) === 'engineering'));
+    if (!targetSkills.length) targetSkills = [...(recipes[recipeKey]?.skills || [])];
+  }
+  targetSkills = [...new Set(targetSkills)].filter(skill => !excluded.has(skill));
+  if (domain === 'testing' && !targetSkills.includes('testing-core-oracle')) {
+    decision.action = 'ask';
+    decision.reasons.push('required_oracle_excluded');
+    return decision;
+  }
+  const unavailable = targetSkills.filter(skill => availability[skill] !== 'ready');
+  if (unavailable.length || !targetSkills.length || !recipes[recipeKey]) {
+    decision.action = 'ask';
+    decision.reasons.push(unavailable.length ? `recipe_unavailable: ${unavailable.join(', ')}` : 'missing_recipe');
+    return decision;
+  }
+  decision.candidates = [...new Set([...decision.candidates, ...targetSkills])];
+  decision.active_recipe = { name: recipeKey, skills: targetSkills };
+  decision.action = 'dispatch';
+  decision.reasons.push(`domain_selected: ${domain}`);
+  return decision;
 }
 
-/**
- * 通用适配层转换函数: 将 RouteDecision 翻译为具体 Harness 执行参数
- * @param {object} decision RouteDecision 结构体
- * @returns {object} 适配结果对象
- */
 export function adapt(decision) {
-  if (!decision || typeof decision !== 'object') {
-    return {
-      injectedCandidates: [],
-      loadSkills: [],
-      allowCaseInit: false,
-      promptAction: 'handoff'
-    };
-  }
+  const fallback = {
+    injectedCandidates: [], loadSkills: [], allowCaseInit: false, promptAction: 'handoff',
+    mustNot: ['initReverseCase', 'create_work_dir', 'modify_files', 'install_tools', 'execute_target']
+  };
+  if (decision?.schemaVersion !== '2.0' || decision.side_effects !== 'none'
+    || !['testing', 'reverse', 'protocol', 'ui', 'engineering', 'mixed', 'none'].includes(decision.domain)
+    || !['high', 'medium', 'low', 'none'].includes(decision.confidence)
+    || !['review', 'explain', 'plan', 'implement'].includes(decision.mode)
+    || !['dispatch', 'ask', 'handoff'].includes(decision.action)
+    || !isStringArray(decision.candidates) || !decision.candidates.every(isSkillName)
+    || !isStringArray(decision.must_not) || !isStringArray(decision.reasons)
+    || typeof decision.active_recipe?.name !== 'string'
+    || !isStringArray(decision.active_recipe.skills) || !decision.active_recipe.skills.every(isSkillName)
+    || decision.active_recipe.skills.some(skill => !decision.candidates.includes(skill))
+    || (decision.action === 'dispatch' && (['none', 'mixed'].includes(decision.domain)
+      || !decision.active_recipe.name || !decision.active_recipe.skills.length))
+    || (decision.mode === 'implement' && decision.must_not.includes('modify_files'))) return fallback;
 
-  const injectedCandidates = decision.candidates || [];
-  const loadSkills = decision.active_recipe?.skills || [];
-  const allowCaseInit = decision.domain === 'reverse' && decision.confidence === 'high' && !decision.must_not?.includes('initReverseCase');
-
-  let promptAction = 'implement';
-  if (decision.action === 'handoff') {
-    promptAction = 'handoff';
-  } else if (decision.action === 'ask') {
-    promptAction = 'ask_clarification';
-  } else if (decision.active_recipe?.name === 'testing-overview-catalog') {
-    promptAction = 'overview_explain';
-  }
-
+  const promptAction = decision.action === 'handoff' ? 'handoff'
+    : decision.action === 'ask' ? 'ask_clarification'
+    : decision.mode === 'explain' ? 'overview_explain' : decision.mode;
   return {
-    injectedCandidates,
-    loadSkills,
-    allowCaseInit,
-    promptAction
+    injectedCandidates: [...decision.candidates],
+    loadSkills: decision.action === 'dispatch' ? [...decision.active_recipe.skills] : [],
+    allowCaseInit: false,
+    promptAction,
+    mustNot: [...new Set([...decision.must_not, 'initReverseCase', 'create_work_dir',
+      ...(decision.mode !== 'implement' ? ['modify_files', 'install_tools', 'execute_target'] : [])])]
   };
 }
 
-// 辅助函数: 便捷 CLI 调试
 export function route(hint) {
   const root = path.resolve(import.meta.dirname, '..');
-  let manifestPath = path.join(root, 'config/router-manifest.json');
-  if (!fs.existsSync(manifestPath)) {
-    // 降级回退检查仓库根目录
-    const repoFallback = path.resolve(root, '../../config/router-manifest.json');
-    if (fs.existsSync(repoFallback)) {
-      manifestPath = repoFallback;
-    } else {
-      throw new Error(`router-manifest.json 不存在，请先运行 scripts/build-router-manifest.mjs 编译`);
-    }
-  }
+  const manifestPath = path.join(root, 'config/router-manifest.json');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   return Decide(hint, manifest);
 }
 
-import { fileURLToPath } from 'node:url';
-
 function isEntryScript() {
   if (!process.argv[1]) return false;
   try {
-    const currentPath = fileURLToPath(import.meta.url);
-    if (path.resolve(process.argv[1]) === path.resolve(currentPath)) return true;
-    if (fs.realpathSync(process.argv[1]) === fs.realpathSync(currentPath)) return true;
+    return fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url));
   } catch {
     return false;
   }
-  return false;
 }
 
-// CLI 执行入口
 if (isEntryScript()) {
-  const hintArg = process.argv.slice(2).join(' ');
-  const decision = route(hintArg);
-  console.log(JSON.stringify(decision, null, 2));
+  try {
+    console.log(JSON.stringify(route(process.argv.slice(2).join(' ')), null, 2));
+  } catch (error) {
+    console.error(`route_failed: ${error.message}`);
+    process.exitCode = 1;
+  }
 }
