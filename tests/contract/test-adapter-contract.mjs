@@ -45,13 +45,13 @@ export function run() {
     assert.ok(adapted.loadSkills.includes('testing-scenario-cli'));
   }
 
-  // 契约 3: 纯逆向高置信用例 -> 允许按需开启工单权限
+  // 契约 3: 高置信只表示分类，不授予工单权限
   {
     const d = Decide('使用 jadx 与 frida 分析 APK 登录加密逻辑', manifest);
     const adapted = adapt(d);
 
     assert.equal(d.domain, 'reverse');
-    assert.equal(adapted.allowCaseInit, true, '高置信逆向任务允许开启建单权限');
+    assert.equal(adapted.allowCaseInit, false, '分类不得授予建单权限');
     assert.equal(adapted.promptAction, 'implement');
   }
 

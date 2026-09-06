@@ -2,12 +2,11 @@
 // ming-skills 提交前暂存区全项门禁检查器 (pre-commit hook 驱动)
 // 包含: 大文件防御 / 乱码拦截 / 敏感密钥扫描 / Emoji 扫描 / lint.ps1 完整性验证
 
-import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { loadHookConfig, hasEmoji, hasMojibake } from './validate.mjs';
 
-const ROOT_DIR = path.resolve(new URL('..', import.meta.url).pathname.replace(/^\/([a-zA-Z]:)/, '$1'), '..');
+const ROOT_DIR = path.resolve(import.meta.dirname, '../..');
 
 // 高危生产凭据匹配正则 (排除已知测试桩或通用词)
 const DANGEROUS_SECRET_PATTERNS = [
@@ -18,15 +17,11 @@ const DANGEROUS_SECRET_PATTERNS = [
 ];
 
 function getStagedFiles() {
-  try {
-    const output = execSync('git diff --cached --name-only --diff-filter=ACMR', {
+    const output = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'], {
       cwd: ROOT_DIR,
       encoding: 'utf8'
     });
-    return output.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-  } catch (e) {
-    return [];
-  }
+    return output.split('\0').filter(Boolean);
 }
 
 function runPreCommitChecks() {
@@ -41,26 +36,21 @@ function runPreCommitChecks() {
   let hasError = false;
 
   for (const relPath of staged) {
-    const fullPath = path.join(ROOT_DIR, relPath);
-    if (!fs.existsSync(fullPath)) continue;
-
-    const stat = fs.statSync(fullPath);
+    const options = { cwd: ROOT_DIR, encoding: 'utf8' };
+    if (execFileSync('git', ['cat-file', '-t', `:${relPath}`], options).trim() !== 'blob') continue;
+    const size = Number(execFileSync('git', ['cat-file', '-s', `:${relPath}`], options).trim());
 
     // 1. 大文件防御门禁 (> 50MB 严禁提交)
-    if (stat.size > 50 * 1024 * 1024) {
-      console.error(`[ERROR] 拦截到超大文件: ${relPath} (${(stat.size / 1024 / 1024).toFixed(2)} MB > 50MB 阈值)`);
+    if (size > 50 * 1024 * 1024) {
+      console.error(`[ERROR] 拦截到超大文件: ${relPath} (${(size / 1024 / 1024).toFixed(2)} MB > 50MB 阈值)`);
       console.error('        请将其加入 .gitignore 或使用 Git LFS 管理！');
       hasError = true;
+      continue;
     }
 
     // 只对文本与规范文件进行内容深度检测
     if (/\.(md|yaml|yml|json|ps1|js|mjs|ts)$/i.test(relPath)) {
-      let content = '';
-      try {
-        content = fs.readFileSync(fullPath, 'utf8');
-      } catch (e) {
-        continue;
-      }
+      const content = execFileSync('git', ['cat-file', 'blob', `:${relPath}`], { ...options, maxBuffer: 50 * 1024 * 1024 });
 
       // 2. 编码防污染检查 (Mojibake)
       if (config.mojibakeLevel !== 'off' && !relPath.startsWith('scripts/hooks/') && hasMojibake(content)) {
@@ -107,7 +97,7 @@ function runPreCommitChecks() {
   if (config.lintLevel !== 'off' && !hasError) {
     console.log('[pre-commit] 运行自动化测试套件 (tests/run.mjs)...');
     try {
-      execSync('node tests/run.mjs', {
+      execFileSync(process.execPath, ['tests/run.mjs', '--require-all'], {
         cwd: ROOT_DIR,
         stdio: 'inherit'
       });

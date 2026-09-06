@@ -2,5 +2,5 @@
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path $PSScriptRoot -Parent
 
-node (Join-Path $repoRoot 'tests/run.mjs')
+node (Join-Path $repoRoot 'tests/run.mjs') @args
 exit $LASTEXITCODE

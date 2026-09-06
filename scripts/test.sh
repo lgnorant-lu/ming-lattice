@@ -8,7 +8,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
 if ! command -v node >/dev/null 2>&1; then
-    echo "[ERROR] 未找到 node 运行时，请先安装 Node.js (v18+)" >&2
+    echo "[ERROR] 未找到 node 运行时，请先安装 Node.js (v22+)" >&2
     exit 1
 fi
 
