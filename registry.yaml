@@ -30,7 +30,7 @@ base:
   - name: reverse-skill
     repo: https://github.com/zhaoxuya520/reverse-skill.git
     path: base/reverse-skill
-    pin: v1.0.1
+    pin: 9c28c6ca1062a1a076e28baf40f241dbb4cf5dc2
     acquiredAt: 2026-08-18
     enabled: true
     modules:
@@ -492,7 +492,7 @@ vertical:
   - name: iv8
     repo: https://github.com/HanZzzzz000/iv8.git
     path: vertical/iv8
-    pin: v0.1.4
+    pin: 950c9b937a510bb4c33909723ad3596807a44546
     acquiredAt: 2026-08-18
     enabled: true
     domain: js

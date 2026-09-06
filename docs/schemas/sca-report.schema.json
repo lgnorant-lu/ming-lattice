@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MingSkillsScaReport",
+  "description": "离线 npm audit 聚合报告；complete 且 findings_status=none 才表示本次扫描没有发现。",
+  "type": "object",
+  "required": ["schema_version", "scanner", "mode", "network", "status", "findings_status", "lockfiles_total", "lockfiles_scanned", "lockfiles_failed", "summary", "findings", "failures"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "scanner": { "const": "npm audit" },
+    "mode": { "const": "offline" },
+    "network": { "const": "not_used" },
+    "status": { "enum": ["complete", "partial"] },
+    "findings_status": { "enum": ["none", "present"] },
+    "lockfiles_total": { "type": "integer", "minimum": 0 },
+    "lockfiles_scanned": { "type": "integer", "minimum": 0 },
+    "lockfiles_failed": { "type": "integer", "minimum": 0 },
+    "summary": {
+      "type": "object",
+      "required": ["info", "low", "moderate", "high", "critical"],
+      "properties": {
+        "info": { "type": "integer", "minimum": 0 },
+        "low": { "type": "integer", "minimum": 0 },
+        "moderate": { "type": "integer", "minimum": 0 },
+        "high": { "type": "integer", "minimum": 0 },
+        "critical": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "name", "severity", "is_direct", "range", "via"],
+        "properties": {
+          "source": { "type": "string" },
+          "name": { "type": "string" },
+          "severity": { "type": "string" },
+          "is_direct": { "type": "boolean" },
+          "range": { "type": ["string", "null"] },
+          "via": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "failures": { "type": "array", "items": { "type": "object" } }
+  },
+  "additionalProperties": false
+}

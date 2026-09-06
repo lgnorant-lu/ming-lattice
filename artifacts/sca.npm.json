@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "scanner": "npm audit",
+  "mode": "offline",
+  "network": "not_used",
+  "status": "complete",
+  "findings_status": "none",
+  "lockfiles_total": 38,
+  "lockfiles_scanned": 38,
+  "lockfiles_failed": 0,
+  "summary": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0
+  },
+  "findings": [],
+  "failures": []
+}

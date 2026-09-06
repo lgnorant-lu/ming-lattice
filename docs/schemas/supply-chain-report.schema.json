@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MingSkillsSupplyChainReport",
+  "description": "离线 registry provenance、部署入口和依赖锁文件门禁报告。",
+  "type": "object",
+  "required": ["schema_version", "network", "counts", "ok", "issues"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "network": { "const": "not_used" },
+    "counts": {
+      "type": "object",
+      "required": ["errors", "warnings", "info"],
+      "properties": {
+        "errors": { "type": "integer", "minimum": 0 },
+        "warnings": { "type": "integer", "minimum": 0 },
+        "info": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "ok": { "type": "boolean" },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["level", "code", "section", "name", "message"],
+        "properties": {
+          "level": { "enum": ["E", "W", "I"] },
+          "code": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+          "section": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "message": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
