@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { createOperationalEvent, emitEvent } from '../private/ming-skills-router/scripts/observability.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const CONFIG_DIR = path.join(ROOT_DIR, 'config');
@@ -243,6 +244,10 @@ export function buildRouterManifest({ repoRoot = ROOT_DIR, registry, write = fal
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const startedAt = process.hrtime.bigint();
+  const emit = (spec) => {
+    try { emitEvent(createOperationalEvent({ ...spec, duration: Number(process.hrtime.bigint() - startedAt) / 1e6 })); } catch { /* optional diagnostics must not change the build result */ }
+  };
   try {
     const check = process.argv[2] === '--check';
     if (process.argv.length > 3 || (process.argv[2] && !check)) throw new Error('usage: build-router-manifest.mjs [--check]');
@@ -255,8 +260,19 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
         }
       }
     }
+    emit({
+      event: 'manifest.built',
+      fields: {
+        domains_count: Object.keys(manifest.domains).length,
+        recipes_count: Object.keys(manifest.recipes).length,
+        ready_skill_count: Object.values(manifest.availability).filter(value => value === 'ready').length,
+        output_path: check ? null : 'config/router-manifest.json',
+        check_only: check
+      }
+    });
     console.log(check ? 'manifest_checked' : 'manifest_built');
   } catch (error) {
+    emit({ event: 'manifest.failed', ok: false, errorCode: 'manifest_failed', fields: { error_type: error?.constructor?.name } });
     console.error(error.message);
     process.exitCode = 1;
   }

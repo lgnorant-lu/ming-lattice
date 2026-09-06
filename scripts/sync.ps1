@@ -21,6 +21,7 @@ param(
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 . (Join-Path $PSScriptRoot 'lib/registry.ps1')
+$startedAt = [Diagnostics.Stopwatch]::StartNew()
 
 if (-not (Test-Path $RegistryPath)) { throw "registry 不存在: $RegistryPath" }
 $reg = Read-SkillRegistry -RegistryPath $RegistryPath
@@ -85,7 +86,12 @@ foreach ($u in $units) {
         }
     }
 }
-if ($units.Count -eq 0) { Write-Host "[sync] 无部署单元（registry 为空或全部未启用）"; exit 0 }
+if ($units.Count -eq 0) {
+    Write-Host "[sync] 无部署单元（registry 为空或全部未启用）"
+    $eventSpec = [ordered]@{ event = 'sync.completed'; duration = $startedAt.Elapsed.TotalMilliseconds; fields = [ordered]@{ linked_count = 0; copy_count = 0; skipped_count = 0; backup_count = 0; is_dry_run = [bool]$WhatIf; module_filter_count = $Module.Count } }
+    try { $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>$null | Out-Null } catch { }
+    exit 0
+}
 
 # ---------- 部署 ----------
 $modeStat = @{ link = 0; copy = 0; skip = 0; backup = 0 }
@@ -157,4 +163,10 @@ Write-Host "[sync] 完成: 链接=$($modeStat.link) 复制=$($modeStat.copy) 跳
 if ((Get-ChildItem $trash -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0) {
     Write-Host "[sync] 提示: .trash 中有备份, 确认无误后可手动删除 (Remove-Item .trash -Recurse)"
 }
+$eventSpec = [ordered]@{
+    event = 'sync.completed'
+    duration = $startedAt.Elapsed.TotalMilliseconds
+    fields = [ordered]@{ linked_count = $modeStat.link; copy_count = $modeStat.copy; skipped_count = $modeStat.skip; backup_count = $modeStat.backup; is_dry_run = [bool]$WhatIf; module_filter_count = $Module.Count }
+}
+try { $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>$null | Out-Null } catch { }
 exit 0

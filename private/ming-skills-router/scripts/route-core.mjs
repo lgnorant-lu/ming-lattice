@@ -1,6 +1,21 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  createRouteDecidedEvent,
+  createRouteFailedEvent,
+  emitEvent,
+  hashHint,
+  resolveWorkUnitId
+} from './observability.mjs';
+
+export {
+  createRouteDecidedEvent,
+  createRouteFailedEvent,
+  emitEvent,
+  hashHint,
+  resolveWorkUnitId
+} from './observability.mjs';
 
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const isStringArray = value => Array.isArray(value) && value.every(item => typeof item === 'string');
@@ -213,6 +228,74 @@ export function route(hint) {
   return Decide(hint, manifest);
 }
 
+function parseCliArgs(args) {
+  const hint = [];
+  let eventFile = process.env.MING_SKILLS_EVENT_FILE;
+  let workUnitId = process.env.MING_SKILLS_WORK_UNIT_ID;
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index];
+    if (arg === '--event-file') {
+      if (!args[index + 1]) throw new Error('usage: --event-file requires a path');
+      eventFile = args[++index];
+    } else if (arg.startsWith('--event-file=')) {
+      eventFile = arg.slice('--event-file='.length);
+      if (!eventFile) throw new Error('usage: --event-file requires a path');
+    } else if (arg === '--work-unit-id') {
+      if (!args[index + 1]) throw new Error('usage: --work-unit-id requires a value');
+      workUnitId = args[++index];
+    } else if (arg.startsWith('--work-unit-id=')) {
+      workUnitId = arg.slice('--work-unit-id='.length);
+      if (!workUnitId) throw new Error('usage: --work-unit-id requires a value');
+    } else {
+      hint.push(arg);
+    }
+  }
+  return { hint: hint.join(' '), eventFile, workUnitId };
+}
+
+function elapsedMs(startedAt) {
+  return Number(process.hrtime.bigint() - startedAt) / 1e6;
+}
+
+export function runRouteCli(args = process.argv.slice(2)) {
+  const startedAt = process.hrtime.bigint();
+  let options;
+  try {
+    options = parseCliArgs(args);
+    const decision = route(options.hint);
+    console.log(JSON.stringify(decision, null, 2));
+    if (options.eventFile) {
+      try {
+        emitEvent(createRouteDecidedEvent({
+          hint: options.hint,
+          decision,
+          duration: elapsedMs(startedAt),
+          workUnitId: options.workUnitId
+        }), options.eventFile);
+      } catch {
+        console.error('route_observability_failed: event output unavailable');
+      }
+    }
+    return 0;
+  } catch (error) {
+    const hint = options?.hint ?? args.filter(arg => !arg.startsWith('--')).join(' ');
+    if (options?.eventFile) {
+      try {
+        emitEvent(createRouteFailedEvent({
+          hint,
+          duration: elapsedMs(startedAt),
+          workUnitId: options.workUnitId,
+          error
+        }), options.eventFile);
+      } catch {
+        console.error('route_observability_failed: event output unavailable');
+      }
+    }
+    console.error(`route_failed: ${error.message}`);
+    return 1;
+  }
+}
+
 function isEntryScript() {
   if (!process.argv[1]) return false;
   try {
@@ -223,10 +306,5 @@ function isEntryScript() {
 }
 
 if (isEntryScript()) {
-  try {
-    console.log(JSON.stringify(route(process.argv.slice(2).join(' ')), null, 2));
-  } catch (error) {
-    console.error(`route_failed: ${error.message}`);
-    process.exitCode = 1;
-  }
+  process.exitCode = runRouteCli();
 }

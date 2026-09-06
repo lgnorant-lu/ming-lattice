@@ -3,12 +3,10 @@
 // 确保自包含架构下根目录 CLI 与测试金字塔完全透明兼容
 
 export * from '../private/ming-skills-router/scripts/route-core.mjs';
-import { route } from '../private/ming-skills-router/scripts/route-core.mjs';
+import { runRouteCli } from '../private/ming-skills-router/scripts/route-core.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const hintArg = process.argv.slice(2).join(' ');
-  const decision = route(hintArg);
-  console.log(JSON.stringify(decision, null, 2));
+  process.exitCode = runRouteCli();
 }

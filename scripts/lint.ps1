@@ -18,6 +18,7 @@ param(
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 . (Join-Path $PSScriptRoot 'lib/registry.ps1')
+$startedAt = [Diagnostics.Stopwatch]::StartNew()
 
 try {
     $reg = Read-SkillRegistry -RegistryPath $RegistryPath
@@ -143,10 +144,11 @@ foreach ($s in $sources) {
 
 # ---------- 输出 ----------
 $e = @($issues | Where-Object { $_.level -eq 'E' }).Count
+$w = @($issues | Where-Object { $_.level -eq 'W' }).Count
+$i = @($issues | Where-Object { $_.level -eq 'I' }).Count
 if ($Json) {
     ConvertTo-Json -InputObject @($issues) -Depth 4
 } else {
-    $e = 0; $w = 0; $i = 0
     foreach ($iss in $issues) {
         switch ($iss.level) { 'E' { $e++; Write-Host "[E] $($iss.name): $($iss.msg)" -ForegroundColor Red }
                               'W' { $w++; Write-Host "[W] $($iss.name): $($iss.msg)" -ForegroundColor Yellow }
@@ -155,4 +157,12 @@ if ($Json) {
     Write-Host ""
     Write-Host "[lint] 检查 $($sources.Count) 个源 → ERROR=$e WARN=$w INFO=$i"
 }
+$eventSpec = [ordered]@{
+    event = 'lint.checked'
+    duration = $startedAt.Elapsed.TotalMilliseconds
+    ok = ($e -eq 0)
+    errorCode = if ($e -gt 0) { 'lint_failed' } else { $null }
+    fields = [ordered]@{ sources_checked = $sources.Count; error_count = $e; warn_count = $w; info_count = $i }
+}
+try { $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>$null | Out-Null } catch { }
 if ($e -gt 0) { exit 1 } else { exit 0 }

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MingSkillsObservabilityEvent",
+  "description": "可选的工具链 NDJSON 事件；不替代各工具原有 stdout。",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "event",
+    "timestamp",
+    "work_unit_id",
+    "duration_ms",
+    "ok",
+    "error_code"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "event": { "enum": ["route.decided", "route.failed", "manifest.built", "manifest.failed", "test.suite_finished", "lint.checked", "sync.completed", "sync.failed"] },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "work_unit_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "duration_ms": { "type": "number", "minimum": 0 },
+    "ok": { "type": "boolean" },
+    "error_code": { "type": ["string", "null"], "enum": [null, "route_failed", "manifest_failed", "test_failed", "lint_failed", "sync_failed"] },
+    "hint_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "mode": { "enum": ["review", "explain", "plan", "implement"] },
+    "domain": { "enum": ["testing", "reverse", "ui", "protocol", "engineering", "mixed", "none"] },
+    "confidence": { "enum": ["high", "medium", "low", "none"] },
+    "action": { "enum": ["dispatch", "handoff", "ask"] },
+    "recipe": { "type": ["string", "null"] },
+    "candidate_count": { "type": "integer", "minimum": 0 },
+    "loaded_skill_count": { "type": "integer", "minimum": 0 },
+    "reason_codes": { "type": "array", "items": { "type": "string" } },
+    "error_type": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$" },
+    "domains_count": { "type": "integer", "minimum": 0 },
+    "recipes_count": { "type": "integer", "minimum": 0 },
+    "ready_skill_count": { "type": "integer", "minimum": 0 },
+    "output_path": { "type": ["string", "null"] },
+    "check_only": { "type": "boolean" },
+    "passed_suites": { "type": "integer", "minimum": 0 },
+    "failed_suites": { "type": "integer", "minimum": 0 },
+    "skipped_suites": { "type": "integer", "minimum": 0 },
+    "total_suites": { "type": "integer", "minimum": 0 },
+    "sources_checked": { "type": "integer", "minimum": 0 },
+    "error_count": { "type": "integer", "minimum": 0 },
+    "warn_count": { "type": "integer", "minimum": 0 },
+    "info_count": { "type": "integer", "minimum": 0 },
+    "linked_count": { "type": "integer", "minimum": 0 },
+    "copy_count": { "type": "integer", "minimum": 0 },
+    "skipped_count": { "type": "integer", "minimum": 0 },
+    "backup_count": { "type": "integer", "minimum": 0 },
+    "is_dry_run": { "type": "boolean" },
+    "module_filter_count": { "type": "integer", "minimum": 0 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "event": { "const": "route.decided" } } },
+      "then": {
+        "required": ["mode", "domain", "confidence", "action", "recipe", "candidate_count", "loaded_skill_count", "reason_codes", "hint_hash"],
+        "properties": { "ok": { "const": true }, "error_code": { "const": null } }
+      }
+    },
+    {
+      "if": { "properties": { "event": { "const": "route.failed" } } },
+      "then": {
+        "required": ["error_type", "hint_hash"],
+        "properties": { "ok": { "const": false }, "error_code": { "const": "route_failed" } }
+      }
+    },
+    {
+      "if": { "properties": { "event": { "const": "manifest.failed" } } },
+      "then": { "required": ["error_type"], "properties": { "ok": { "const": false }, "error_code": { "const": "manifest_failed" } } }
+    },
+    {
+      "if": { "properties": { "event": { "const": "sync.failed" } } },
+      "then": { "required": ["error_type"], "properties": { "ok": { "const": false }, "error_code": { "const": "sync_failed" } } }
+    },
+    {
+      "if": { "properties": { "event": { "const": "manifest.built" } } },
+      "then": { "required": ["domains_count", "recipes_count", "ready_skill_count", "check_only"], "properties": { "ok": { "const": true }, "error_code": { "const": null } } }
+    },
+    {
+      "if": { "properties": { "event": { "const": "test.suite_finished" } } },
+      "then": { "required": ["passed_suites", "failed_suites", "skipped_suites", "total_suites"], "properties": { "error_code": { "enum": [null, "test_failed"] } } }
+    },
+    {
+      "if": { "properties": { "event": { "const": "lint.checked" } } },
+      "then": { "required": ["sources_checked", "error_count", "warn_count", "info_count"], "properties": { "error_code": { "enum": [null, "lint_failed"] } } }
+    },
+    {
+      "if": { "properties": { "event": { "const": "sync.completed" } } },
+      "then": { "required": ["linked_count", "copy_count", "skipped_count", "backup_count", "is_dry_run", "module_filter_count"], "properties": { "ok": { "const": true }, "error_code": { "const": null } } }
+    }
+  ],
+  "additionalProperties": true
+}
