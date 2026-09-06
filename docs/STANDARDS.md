@@ -135,7 +135,7 @@ pwsh scripts/sync.ps1
 
 ## 6. 宽结构化事件名规范（OTel 语义对齐）
 
-以下是拟议的宽结构化事件命名，不代表当前脚本已经接入 OpenTelemetry。实施时需保留已有的人读文本和 stdout 契约，并对事件值、关联 ID 和脱敏单独测试：
+以下是仓库级宽结构化事件命名。当前路由 CLI 已通过独立 NDJSON 文件旁路接入 `route.decided` / `route.failed`；这不是 OpenTelemetry exporter。实施时需保留已有的人读文本和 stdout 契约，并对事件值、关联 ID 和脱敏单独测试：
 
 | 规范事件名 (event.name) | 触发场景 | 核心必填字段 |
 |---|---|---|
@@ -144,3 +144,7 @@ pwsh scripts/sync.ps1
 | `sync.completed` | `sync.ps1` 软链部署或演练完成 | `timestamp`, `linked_count`, `skipped_count`, `is_dry_run` |
 | `lint.checked` | `lint.ps1` 全量静态门禁检查完成 | `timestamp`, `sources_checked`, `error_count`, `warn_count` |
 | `test.suite_finished` | `tests/run.mjs` 测试套件运行完毕 | `timestamp`, `passed_suites`, `total_suites`, `duration_ms` |
+
+路由事件的机读字段见 [observability-event.schema.json](schemas/observability-event.schema.json)。启用方式为 `node scripts/route-core.mjs --event-file <path> [--work-unit-id <opaque-id>] <hint>`；不提供 `--event-file` 时不产生事件文件。事件只保留 `hint_hash`，并将失败原因收敛为稳定 `error_code`，不序列化异常消息。
+
+工具链事件使用环境变量 `MING_SKILLS_EVENT_FILE` 作为旁路目标，`MING_SKILLS_WORK_UNIT_ID` 作为可选关联 ID；未设置事件文件时，`build-router-manifest.mjs`、`tests/run.mjs`、`lint.ps1` 和 `sync.ps1` 不增加输出或写盘。事件只记录计数、布尔状态、仓库相对路径和稳定错误类型，旁路写入失败不改变主命令退出码。

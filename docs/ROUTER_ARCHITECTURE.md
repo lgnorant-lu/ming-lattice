@@ -12,6 +12,7 @@ registry + 本地 SKILL.md 身份 -> 构建时 availability
                            -> RouteDecision v2
                            -> adapt（纯映射）
                            -> 宿主另行检查权限、资源与加载限制
+可选 --event-file       -> route.decided / route.failed NDJSON（不进入 stdout）
 ```
 
 领域与配方仍在 [build-router-manifest.mjs](../scripts/build-router-manifest.mjs) 策划维护，尚未从任意 Skill description 自动推导。registry 决定条目与部署启用，构建检查入口身份并记录可用性；`compose.yaml` 是测试方法组合参考，当前不作为编译输入。不能把三者说成已经自动统一。
@@ -29,8 +30,11 @@ registry + 本地 SKILL.md 身份 -> 构建时 availability
 - [RouteDecision schema](schemas/route-decision.schema.json) 是生产者字段定义；v2 增加模式和显式版本，支持 engineering 领域。
 - [RouterManifest schema](schemas/router-manifest.schema.json) 定义构建快照。`ready` 仅表示构建时可引用入口，不代表全部依赖、MCP、私有 kit 或实际权限就绪。
 - `adapt()` 将未知/v1 控制契约安全退回 handoff，不实施未经验证的兼容推断。消费端可忽略额外数据键，但不能把未知命令或模式当成功。
+- 兼容矩阵见 [route-decision-compatibility.json](../tests/contract/route-decision-compatibility.json)：v2 同主版本额外数据可读，v1/未知主版本、未知控制值和缺失必填字段安全退回。
 - `allowCaseInit` 恒为 false。输出限制由宿主继续落实，纯函数和一份禁止列表不是安全沙箱。
 - 候选名称与正文加载分离；ask/handoff 不加载执行配方，review/plan/explain 的限制必须传给下游。
+- 可观测事件是 CLI 外层的可选旁路；事件只记录 `hint_hash`，不记录完整 prompt、密钥或错误文本。使用 `--event-file` 和可选 `--work-unit-id` 开启。
+- registry 供应链门禁通过 `scripts/check-supply-chain.mjs` 离线检查来源 provenance、pin、锁文件和部署入口；它不替代 SBOM/SCA，未配置时必须显式报告。
 
 与 v1 的变更理由见 [ADR-0005](adr/ADR-0005-review-safe-routing.md)。
 
