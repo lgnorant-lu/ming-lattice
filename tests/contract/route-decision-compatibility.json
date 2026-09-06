@@ -1,0 +1,118 @@
+[
+  {
+    "id": "v2-additive-fields",
+    "kind": "spec",
+    "source": "docs/STANDARDS.md section 5: same-major additive fields",
+    "patch": {
+      "trace_id": "trace-fixture",
+      "diagnostics": { "source": "compatibility-fixture" },
+      "future_field": null
+    },
+    "expected": {
+      "accepted": true,
+      "promptAction": "implement",
+      "loadSkills": [
+        "testing-core-oracle",
+        "testing-workflow-spec",
+        "testing-rust-idiom",
+        "testing-property-mutation"
+      ]
+    }
+  },
+  {
+    "id": "v2-additive-restriction",
+    "kind": "spec",
+    "source": "docs/STANDARDS.md section 5: unknown data is not a command",
+    "mustNotAppend": ["future_restriction"],
+    "expected": {
+      "accepted": true,
+      "promptAction": "implement",
+      "loadSkills": [
+        "testing-core-oracle",
+        "testing-workflow-spec",
+        "testing-rust-idiom",
+        "testing-property-mutation"
+      ],
+      "mustNotIncludes": ["future_restriction"]
+    }
+  },
+  {
+    "id": "legacy-v1-safe-fallback",
+    "kind": "spec",
+    "source": "docs/adr/ADR-0005-review-safe-routing.md: explicit v1 rejection",
+    "replace": { "schemaVersion": "1.0" },
+    "expected": {
+      "accepted": false,
+      "promptAction": "handoff",
+      "loadSkills": []
+    }
+  },
+  {
+    "id": "unknown-major-safe-fallback",
+    "kind": "spec",
+    "source": "docs/STANDARDS.md section 5: breaking changes require a major version",
+    "replace": { "schemaVersion": "3.0" },
+    "expected": {
+      "accepted": false,
+      "promptAction": "handoff",
+      "loadSkills": []
+    }
+  },
+  {
+    "id": "unknown-mode-safe-fallback",
+    "kind": "spec",
+    "source": "docs/STANDARDS.md section 5: unknown control values fail closed",
+    "replace": { "mode": "execute" },
+    "expected": {
+      "accepted": false,
+      "promptAction": "handoff",
+      "loadSkills": []
+    }
+  },
+  {
+    "id": "unknown-domain-safe-fallback",
+    "kind": "spec",
+    "source": "docs/STANDARDS.md section 5: unknown control values fail closed",
+    "replace": { "domain": "admin" },
+    "expected": {
+      "accepted": false,
+      "promptAction": "handoff",
+      "loadSkills": []
+    }
+  },
+  {
+    "id": "unknown-action-safe-fallback",
+    "kind": "spec",
+    "source": "docs/STANDARDS.md section 5: unknown control values fail closed",
+    "replace": { "action": "execute" },
+    "expected": {
+      "accepted": false,
+      "promptAction": "handoff",
+      "loadSkills": []
+    }
+  },
+  {
+    "id": "missing-recipe-safe-fallback",
+    "kind": "spec",
+    "source": "docs/STANDARDS.md section 5: required producer fields remain required",
+    "omit": ["active_recipe"],
+    "expected": {
+      "accepted": false,
+      "promptAction": "handoff",
+      "loadSkills": []
+    }
+  },
+  {
+    "id": "path-like-skill-safe-fallback",
+    "kind": "spec",
+    "source": "docs/ROUTER_ARCHITECTURE.md: adapter rejects non-skill paths",
+    "replace": {
+      "active_recipe": { "name": "fixture", "skills": ["../private"] }
+    },
+    "expected": {
+      "accepted": false,
+      "promptAction": "handoff",
+      "loadSkills": []
+    }
+  }
+]
