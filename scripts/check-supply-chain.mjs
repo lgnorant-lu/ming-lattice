@@ -76,18 +76,55 @@ function checkPackageLock(fullPath, section, name, issues, { referenceOnly = fal
   }
 }
 
+function validateSbomArtifact(fullPath) {
+  if (!fileOrEmpty(fullPath)) return { valid: false, code: 'sbom_empty', message: 'SBOM artifact is empty' };
+  try {
+    const report = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+    if (report.bomFormat !== 'CycloneDX' || report.specVersion !== '1.5') {
+      return { valid: false, code: 'sbom_schema_invalid', message: `unsupported bomFormat (${report.bomFormat}) or specVersion (${report.specVersion})` };
+    }
+    if (!Array.isArray(report.components) || report.components.length === 0) {
+      return { valid: false, code: 'sbom_components_missing', message: 'SBOM contains no components' };
+    }
+    const props = report.metadata?.properties || [];
+    const completeness = props.find(item => item.name === 'ming.completeness')?.value;
+    const partial = completeness === 'partial';
+    return { valid: true, partial, componentCount: report.components.length, report };
+  } catch (err) {
+    return { valid: false, code: 'sbom_json_invalid', message: `SBOM is not valid JSON: ${err.message}` };
+  }
+}
+
+function validateScaArtifact(fullPath) {
+  if (!fileOrEmpty(fullPath)) return { valid: false, code: 'sca_empty', message: 'SCA report artifact is empty' };
+  try {
+    const report = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+    const required = ['schema_version', 'scanner', 'mode', 'network', 'status', 'findings_status', 'lockfiles_total', 'lockfiles_scanned', 'lockfiles_failed', 'summary', 'findings', 'failures'];
+    for (const field of required) {
+      if (!Object.hasOwn(report, field)) return { valid: false, code: 'sca_schema_invalid', message: `missing required field ${field}` };
+    }
+    if (report.schema_version !== '1.0' || report.scanner !== 'npm audit' || report.mode !== 'offline' || report.network !== 'not_used') {
+      return { valid: false, code: 'sca_metadata_invalid', message: `invalid sca metadata schema_version=${report.schema_version} scanner=${report.scanner} mode=${report.mode} network=${report.network}` };
+    }
+    const partial = report.status === 'partial' || report.lockfiles_failed > 0;
+    const findings = report.findings_status === 'present' || (Array.isArray(report.findings) && report.findings.length > 0);
+    return { valid: true, partial, findings, report };
+  } catch (err) {
+    return { valid: false, code: 'sca_json_invalid', message: `SCA report is not valid JSON: ${err.message}` };
+  }
+}
+
+function fileOrEmpty(fullPath) {
+  return fs.existsSync(fullPath) && fs.statSync(fullPath).size > 0;
+}
+
 function findSbom(repoRoot) {
   for (const file of SBOM_FILES) {
     const fullPath = path.join(repoRoot, file);
     if (!fs.existsSync(fullPath)) continue;
-    if (!file.endsWith('.json')) return { file, partial: false };
-    try {
-      const report = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
-      const partial = report.metadata?.properties?.some(item => item.name === 'ming.completeness' && item.value === 'partial') === true;
-      return { file, partial };
-    } catch {
-      return { file, partial: true };
-    }
+    if (!file.endsWith('.json')) return { file, valid: true, partial: false };
+    const validated = validateSbomArtifact(fullPath);
+    return { file, fullPath, ...validated };
   }
   return null;
 }
@@ -96,17 +133,9 @@ function findSca(repoRoot) {
   for (const file of SCA_FILES) {
     const fullPath = path.join(repoRoot, file);
     if (!fs.existsSync(fullPath)) continue;
-    if (!file.endsWith('.json')) return { file, partial: false, findings: true };
-    try {
-      const report = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
-      return {
-        file,
-        partial: report.status === 'partial',
-        findings: report.findings_status === 'present'
-      };
-    } catch {
-      return { file, partial: true, findings: false };
-    }
+    if (!file.endsWith('.json')) return { file, valid: true, partial: false, findings: true };
+    const validated = validateScaArtifact(fullPath);
+    return { file, fullPath, ...validated };
   }
   return null;
 }
@@ -188,13 +217,27 @@ export function checkSupplyChain({ registry, repoRoot = ROOT_DIR } = {}) {
 
   const sbom = findSbom(repoRoot);
   const sca = findSca(repoRoot);
-  if (!sbom) issues.push(issue('I', 'sbom_not_configured', 'repository', 'sbom', 'no root SBOM artifact detected; run an approved generator before release'));
-  else if (sbom.partial) issues.push(issue('W', 'sbom_partial', 'repository', 'sbom', `detected incomplete SBOM artifact: ${sbom.file}`));
-  else issues.push(issue('I', 'sbom_present', 'repository', 'sbom', `detected ${sbom.file}`));
-  if (!sca) issues.push(issue('I', 'sca_not_configured', 'repository', 'sca', 'no root SCA report detected; run an approved scanner before release'));
-  else if (sca.partial) issues.push(issue('W', 'sca_partial', 'repository', 'sca', `detected incomplete SCA report: ${sca.file}`));
-  else if (sca.findings) issues.push(issue('W', 'sca_findings_present', 'repository', 'sca', `SCA report contains findings: ${sca.file}`));
-  else issues.push(issue('I', 'sca_report_present', 'repository', 'sca', `detected ${sca.file}`));
+  if (!sbom) {
+    issues.push(issue('I', 'sbom_not_configured', 'repository', 'sbom', 'no root SBOM artifact detected; run an approved generator before release'));
+  } else if (!sbom.valid) {
+    issues.push(issue('E', sbom.code || 'sbom_invalid', 'repository', 'sbom', sbom.message || 'invalid SBOM artifact'));
+  } else if (sbom.partial) {
+    issues.push(issue('W', 'sbom_partial', 'repository', 'sbom', `detected incomplete SBOM artifact: ${sbom.file}`));
+  } else {
+    issues.push(issue('I', 'sbom_present', 'repository', 'sbom', `detected ${sbom.file} (${sbom.componentCount} components)`));
+  }
+
+  if (!sca) {
+    issues.push(issue('I', 'sca_not_configured', 'repository', 'sca', 'no root SCA report detected; run an approved scanner before release'));
+  } else if (!sca.valid) {
+    issues.push(issue('E', sca.code || 'sca_invalid', 'repository', 'sca', sca.message || 'invalid SCA report artifact'));
+  } else if (sca.partial) {
+    issues.push(issue('W', 'sca_partial', 'repository', 'sca', `detected incomplete SCA report: ${sca.file}`));
+  } else if (sca.findings) {
+    issues.push(issue('W', 'sca_findings_present', 'repository', 'sca', `SCA report contains findings: ${sca.file}`));
+  } else {
+    issues.push(issue('I', 'sca_report_present', 'repository', 'sca', `detected ${sca.file}`));
+  }
 
   const errors = issues.filter(item => item.level === 'E').length;
   const warnings = issues.filter(item => item.level === 'W').length;

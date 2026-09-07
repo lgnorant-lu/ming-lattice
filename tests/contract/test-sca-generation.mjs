@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { isScaReportFresh } from '../../scripts/generate-supply-chain-sca.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const schema = JSON.parse(fs.readFileSync(path.join(root, 'docs/schemas/sca-report.schema.json'), 'utf8'));
 
-export function run() {
+export async function run() {
   console.log('[TEST CONTRACT] offline SCA report artifact...');
   const reportPath = path.join(root, 'artifacts/sca.npm.json');
   assert.equal(fs.existsSync(reportPath), true, 'SCA artifact must be generated before strict tests');
@@ -23,6 +24,15 @@ export function run() {
   assert.equal(report.summary.high, 0);
   assert.equal(report.summary.critical, 0);
   console.log(`  -> ${report.lockfiles_scanned} lockfiles scanned, no cached advisory findings`);
+
+  assert.equal(isScaReportFresh(report, report), true, 'identical sca report must be fresh');
+  const tampered = structuredClone(report);
+  tampered.summary.high = 1;
+  assert.equal(isScaReportFresh(report, tampered), false, 'severity change must be detected as stale');
+  const tamperedFindings = structuredClone(report);
+  tamperedFindings.findings = [{ source: 'vertical/fake', name: 'evil', severity: 'critical' }];
+  assert.equal(isScaReportFresh(report, tamperedFindings), false, 'finding injection must be detected as stale');
+  console.log('  -> sca freshness deep equality and tampering detection verified');
 }
 
 if (process.argv[1]?.endsWith('test-sca-generation.mjs')) run();

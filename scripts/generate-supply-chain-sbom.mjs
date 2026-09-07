@@ -287,6 +287,21 @@ function parseArgs(args) {
   return { output, generatedAt, allowFailures, check };
 }
 
+export function normalizeCycloneDx(report) {
+  if (!report || typeof report !== 'object') return {};
+  const copy = structuredClone(report);
+  if (copy.metadata) {
+    delete copy.metadata.timestamp;
+  }
+  return copy;
+}
+
+export function isCycloneDxFresh(existing, fresh) {
+  const normExisting = normalizeCycloneDx(existing);
+  const normFresh = normalizeCycloneDx(fresh);
+  return JSON.stringify(normExisting) === JSON.stringify(normFresh);
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const options = parseArgs(process.argv.slice(2));
@@ -304,10 +319,12 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
         generatedAt: existing.metadata?.timestamp || '2026-01-01T00:00:00.000Z',
         allowFailures: options.allowFailures
       });
-      const generatedCompCount = result.report.components?.length || 0;
-      const existingCompCount = existing.components?.length || 0;
-      if (generatedCompCount !== existingCompCount || result.failures.length > 0) {
-        console.error(`sbom_stale: component count changed (existing=${existingCompCount}, generated=${generatedCompCount})`);
+      if (result.failures.length > 0) {
+        console.error(`sbom_check_failed: generation failed with ${result.failures.length} errors`);
+        process.exit(1);
+      }
+      if (!isCycloneDxFresh(existing, result.report)) {
+        console.error(`sbom_stale: artifacts/sbom.cdx.json content does not match current lockfiles`);
         process.exit(1);
       }
       console.log('sbom_checked: artifacts/sbom.cdx.json is fresh');

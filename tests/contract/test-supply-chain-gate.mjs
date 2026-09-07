@@ -92,18 +92,42 @@ export function run() {
     assert.equal(checkSupplyChain({ repoRoot: root, registry: { private: [{ name: 'local-skill', path: 'private/local-skill', enabled: true, deploy: {} }] } }).ok, true);
 
     fs.mkdirSync(path.join(root, 'artifacts'), { recursive: true });
-    fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({ status: 'complete', findings_status: 'none' }), 'utf8');
+    fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({
+      schema_version: '1.0', scanner: 'npm audit', mode: 'offline', network: 'not_used',
+      status: 'complete', findings_status: 'none', lockfiles_total: 1, lockfiles_scanned: 1, lockfiles_failed: 0,
+      summary: { info: 0, low: 0, moderate: 0, high: 0, critical: 0 }, findings: [], failures: []
+    }), 'utf8');
     const cleanSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
     assert.ok(cleanSca.issues.some(item => item.code === 'sca_report_present'));
     assert.equal(supplyChainExitCode(cleanSca, { strict: true }), 0);
-    fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({ status: 'partial', findings_status: 'none' }), 'utf8');
+
+    fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({
+      schema_version: '1.0', scanner: 'npm audit', mode: 'offline', network: 'not_used',
+      status: 'partial', findings_status: 'none', lockfiles_total: 1, lockfiles_scanned: 0, lockfiles_failed: 1,
+      summary: { info: 0, low: 0, moderate: 0, high: 0, critical: 0 }, findings: [], failures: []
+    }), 'utf8');
     const partialSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
     assert.ok(partialSca.issues.some(item => item.code === 'sca_partial'));
     assert.equal(supplyChainExitCode(partialSca, { strict: true }), 1);
-    fs.writeFileSync(path.join(root, 'artifacts', 'sbom.cdx.json'), JSON.stringify({ metadata: { properties: [{ name: 'ming.completeness', value: 'partial' }] } }), 'utf8');
+
+    fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({ status: 'complete' }), 'utf8');
+    const invalidSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
+    assert.ok(invalidSca.issues.some(item => item.code === 'sca_schema_invalid'));
+    assert.equal(supplyChainExitCode(invalidSca), 1);
+
+    fs.writeFileSync(path.join(root, 'artifacts', 'sbom.cdx.json'), JSON.stringify({
+      bomFormat: 'CycloneDX', specVersion: '1.5', components: [{ 'bom-ref': 'a@1.0.0' }],
+      metadata: { properties: [{ name: 'ming.completeness', value: 'partial' }] }
+    }), 'utf8');
     const partialSbom = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
     assert.ok(partialSbom.issues.some(item => item.code === 'sbom_partial'));
     assert.equal(supplyChainExitCode(partialSbom, { strict: true }), 1);
+
+    fs.writeFileSync(path.join(root, 'artifacts', 'sbom.cdx.json'), JSON.stringify({ bomFormat: 'SPDX' }), 'utf8');
+    const invalidSbom = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
+    assert.ok(invalidSbom.issues.some(item => item.code === 'sbom_schema_invalid'));
+    assert.equal(supplyChainExitCode(invalidSbom), 1);
+
     console.log('  -> external pins, provenance, local entries, lockfiles and explicit SBOM/SCA status passed');
   } finally {
     fs.rmSync(root, { recursive: true, force: true });

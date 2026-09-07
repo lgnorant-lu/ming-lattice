@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { createCycloneDxFromLockfile, mergeCycloneDxReports } from '../../scripts/generate-supply-chain-sbom.mjs';
+import { createCycloneDxFromLockfile, mergeCycloneDxReports, isCycloneDxFresh } from '../../scripts/generate-supply-chain-sbom.mjs';
 
-export function run() {
+export async function run() {
   console.log('[TEST CONTRACT] offline CycloneDX SBOM aggregation...');
   const input = [
     {
@@ -57,7 +57,16 @@ export function run() {
   assert.equal(artifact.specVersion, '1.5');
   assert.ok(Array.isArray(artifact.components) && artifact.components.length > 0);
   console.log(`  -> artifacts/sbom.cdx.json schema and component count verified (${artifact.components.length} components)`);
+
+  const tampered = structuredClone(artifact);
+  tampered.components[0].version = '999.999.999';
+  assert.equal(isCycloneDxFresh(artifact, artifact), true, 'identical sbom must be fresh');
+  assert.equal(isCycloneDxFresh(artifact, tampered), false, 'tampered version must be detected as stale');
+  const timestampChanged = structuredClone(artifact);
+  timestampChanged.metadata = timestampChanged.metadata || {};
+  timestampChanged.metadata.timestamp = '2099-01-01T00:00:00.000Z';
+  assert.equal(isCycloneDxFresh(artifact, timestampChanged), true, 'timestamp update alone must not invalidate freshness');
+  console.log('  -> sbom freshness deep equality and tampering detection verified');
 }
 
 if (process.argv[1]?.endsWith('test-sbom-generation.mjs')) run();
-

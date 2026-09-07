@@ -121,6 +121,20 @@ function loadRegistry(repoRoot) {
   }));
 }
 
+export function normalizeScaReport(report) {
+  if (!report || typeof report !== 'object') return {};
+  const copy = structuredClone(report);
+  delete copy.generated_at;
+  delete copy.timestamp;
+  return copy;
+}
+
+export function isScaReportFresh(existing, fresh) {
+  const normExisting = normalizeScaReport(existing);
+  const normFresh = normalizeScaReport(fresh);
+  return JSON.stringify(normExisting) === JSON.stringify(normFresh);
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const options = parseArgs(process.argv.slice(2));
@@ -133,13 +147,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       }
       const existing = JSON.parse(fs.readFileSync(targetFile, 'utf8'));
       const report = generateSupplyChainSca({ registry: loadRegistry(ROOT_DIR), repoRoot: ROOT_DIR });
-      if (
-        report.lockfiles_total !== existing.lockfiles_total ||
-        report.lockfiles_scanned !== existing.lockfiles_scanned ||
-        report.findings.length !== existing.findings.length ||
-        report.status !== existing.status
-      ) {
-        console.error(`sca_stale: scan results changed (existing_lockfiles=${existing.lockfiles_total}, current=${report.lockfiles_total})`);
+      if (!isScaReportFresh(existing, report)) {
+        console.error(`sca_stale: artifacts/sca.npm.json content does not match current lockfiles or audit results`);
         process.exit(1);
       }
       console.log('sca_checked: artifacts/sca.npm.json is fresh');
