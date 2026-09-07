@@ -42,7 +42,18 @@
         "additionalProperties": false
       }
     },
-    "failures": { "type": "array", "items": { "type": "object" } }
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "error"],
+        "properties": {
+          "source": { "type": "string" },
+          "error": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
   },
   "additionalProperties": false
 }

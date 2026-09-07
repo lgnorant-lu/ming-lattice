@@ -182,8 +182,17 @@ function validateScaArtifact(fullPath) {
         return { valid: false, code: 'sca_schema_invalid', message: 'finding item via must be an array of strings' };
       }
     }
+    const allowedFailureProps = new Set(['source', 'error']);
     for (const fail of report.failures) {
-      if (!fail || typeof fail !== 'object' || Array.isArray(fail) || typeof fail.source !== 'string' || typeof fail.error !== 'string') {
+      if (!fail || typeof fail !== 'object' || Array.isArray(fail)) {
+        return { valid: false, code: 'sca_schema_invalid', message: 'failure item must be an object' };
+      }
+      for (const key of Object.keys(fail)) {
+        if (!allowedFailureProps.has(key)) {
+          return { valid: false, code: 'sca_schema_invalid', message: `unexpected property in failure item: ${key}` };
+        }
+      }
+      if (typeof fail.source !== 'string' || typeof fail.error !== 'string') {
         return { valid: false, code: 'sca_schema_invalid', message: 'failure item must have string source and error' };
       }
     }

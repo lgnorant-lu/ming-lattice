@@ -180,6 +180,14 @@ export function run() {
     const extraFindingSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
     assert.ok(extraFindingSca.issues.some(item => item.code === 'sca_schema_invalid' && item.message.includes('unexpected property in finding item')), 'must reject additional property in finding item');
 
+    // Negative test: additional property in failure item
+    fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({
+      ...baseValidSca,
+      failures: [{ source: 'repo', error: 'failed', extra_fail_prop: 1 }]
+    }), 'utf8');
+    const extraFailureSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
+    assert.ok(extraFailureSca.issues.some(item => item.code === 'sca_schema_invalid' && item.message.includes('unexpected property in failure item')), 'must reject additional property in failure item');
+
     // Positive test: valid finding item with null range and string severity
     fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({
       ...baseValidSca,

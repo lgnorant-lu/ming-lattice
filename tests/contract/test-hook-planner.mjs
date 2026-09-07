@@ -105,7 +105,7 @@ refs/heads/feat 3333333333333333333333333333333333333333 refs/heads/feat 0000000
 
   // 11. 测试运行器 CLI 契约 (tests/run.mjs 非法参数、非法 profile、空 suite 校验)
   const runnerScript = path.join(root, 'tests/run.mjs');
-  
+
   // 非法 profile
   const badProfileRes = spawnSync(process.execPath, [runnerScript, '--profile', 'nonsense', '--suites', 'hook-validation'], { encoding: 'utf8' });
   assert.equal(badProfileRes.status, 2, 'invalid --profile must exit with code 2');
