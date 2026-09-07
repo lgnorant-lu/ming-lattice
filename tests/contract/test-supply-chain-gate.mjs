@@ -156,6 +156,30 @@ export function run() {
     const invalidViaSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
     assert.ok(invalidViaSca.issues.some(item => item.code === 'sca_schema_invalid' && item.message.includes('via must be an array of strings')), 'must reject via with non-string elements');
 
+    // Negative test: additional property in root
+    fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({
+      ...baseValidSca,
+      extra_root_field: 'disallowed'
+    }), 'utf8');
+    const extraRootSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
+    assert.ok(extraRootSca.issues.some(item => item.code === 'sca_schema_invalid' && item.message.includes('unexpected additional property in root')), 'must reject additional property in root');
+
+    // Negative test: additional property in summary
+    fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({
+      ...baseValidSca,
+      summary: { ...baseValidSca.summary, unknown_severity: 0 }
+    }), 'utf8');
+    const extraSummarySca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
+    assert.ok(extraSummarySca.issues.some(item => item.code === 'sca_schema_invalid' && item.message.includes('unexpected property in summary')), 'must reject additional property in summary');
+
+    // Negative test: additional property in finding item
+    fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({
+      ...baseValidSca,
+      findings: [{ source: 'repo', name: 'dep', severity: 'high', is_direct: true, range: null, via: [], extra_prop: 1 }]
+    }), 'utf8');
+    const extraFindingSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
+    assert.ok(extraFindingSca.issues.some(item => item.code === 'sca_schema_invalid' && item.message.includes('unexpected property in finding item')), 'must reject additional property in finding item');
+
     // Positive test: valid finding item with null range and string severity
     fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({
       ...baseValidSca,

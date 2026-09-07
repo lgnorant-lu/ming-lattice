@@ -103,6 +103,24 @@ refs/heads/feat 3333333333333333333333333333333333333333 refs/heads/feat 0000000
   assert.equal(ops[1].isNewBranch, true);
   assert.equal(ops[2].isDelete, true);
 
+  // 11. 测试运行器 CLI 契约 (tests/run.mjs 非法参数、非法 profile、空 suite 校验)
+  const runnerScript = path.join(root, 'tests/run.mjs');
+  
+  // 非法 profile
+  const badProfileRes = spawnSync(process.execPath, [runnerScript, '--profile', 'nonsense', '--suites', 'hook-validation'], { encoding: 'utf8' });
+  assert.equal(badProfileRes.status, 2, 'invalid --profile must exit with code 2');
+  assert.match(badProfileRes.stderr, /unknown profile: nonsense/);
+
+  // 缺失 --suites 参数值
+  const missingSuitesValRes = spawnSync(process.execPath, [runnerScript, '--profile', 'quick', '--suites'], { encoding: 'utf8' });
+  assert.equal(missingSuitesValRes.status, 2, 'missing --suites value must exit with code 2');
+  assert.match(missingSuitesValRes.stderr, /missing required value for --suites/);
+
+  // 未知 suite 名称
+  const unknownSuiteRes = spawnSync(process.execPath, [runnerScript, '--suites', 'nonexistent-suite-xyz'], { encoding: 'utf8' });
+  assert.equal(unknownSuiteRes.status, 2, 'unknown suite must exit with code 2');
+  assert.match(unknownSuiteRes.stderr, /unknown suite: nonexistent-suite-xyz/);
+
   console.log('  -> plan schema, fail-closed, monotonicity, categories, pre-push parsing and CLI contract passed');
 }
 

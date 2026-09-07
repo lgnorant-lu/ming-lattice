@@ -116,6 +116,12 @@ function validateScaArtifact(fullPath) {
     for (const field of required) {
       if (!Object.hasOwn(report, field)) return { valid: false, code: 'sca_schema_invalid', message: `missing required field ${field}` };
     }
+    const allowedRootProps = new Set(required);
+    for (const key of Object.keys(report)) {
+      if (!allowedRootProps.has(key)) {
+        return { valid: false, code: 'sca_schema_invalid', message: `unexpected additional property in root: ${key}` };
+      }
+    }
     if (report.schema_version !== '1.0' || report.scanner !== 'npm audit' || report.mode !== 'offline' || report.network !== 'not_used') {
       return { valid: false, code: 'sca_metadata_invalid', message: `invalid sca metadata schema_version=${report.schema_version} scanner=${report.scanner} mode=${report.mode} network=${report.network}` };
     }
@@ -136,7 +142,13 @@ function validateScaArtifact(fullPath) {
     if (!report.summary || typeof report.summary !== 'object' || Array.isArray(report.summary)) {
       return { valid: false, code: 'sca_schema_invalid', message: 'summary must be a non-empty object' };
     }
-    for (const sev of ['info', 'low', 'moderate', 'high', 'critical']) {
+    const allowedSeverities = new Set(['info', 'low', 'moderate', 'high', 'critical']);
+    for (const key of Object.keys(report.summary)) {
+      if (!allowedSeverities.has(key)) {
+        return { valid: false, code: 'sca_schema_invalid', message: `unexpected property in summary: ${key}` };
+      }
+    }
+    for (const sev of allowedSeverities) {
       if (typeof report.summary[sev] !== 'number' || !Number.isInteger(report.summary[sev]) || report.summary[sev] < 0) {
         return { valid: false, code: 'sca_schema_invalid', message: `summary.${sev} must be non-negative integer` };
       }
@@ -144,9 +156,15 @@ function validateScaArtifact(fullPath) {
     if (!Array.isArray(report.findings) || !Array.isArray(report.failures)) {
       return { valid: false, code: 'sca_schema_invalid', message: 'findings and failures must be arrays' };
     }
+    const allowedFindingProps = new Set(['source', 'name', 'severity', 'is_direct', 'range', 'via']);
     for (const item of report.findings) {
       if (!item || typeof item !== 'object' || Array.isArray(item)) {
         return { valid: false, code: 'sca_schema_invalid', message: 'finding item must be an object' };
+      }
+      for (const key of Object.keys(item)) {
+        if (!allowedFindingProps.has(key)) {
+          return { valid: false, code: 'sca_schema_invalid', message: `unexpected property in finding item: ${key}` };
+        }
       }
       if (typeof item.source !== 'string' || typeof item.name !== 'string') {
         return { valid: false, code: 'sca_schema_invalid', message: 'finding item must have string source and name' };
