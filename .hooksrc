@@ -13,5 +13,5 @@ mojibakeLevel=error
 # 4. 真实敏感密钥拦截（拦截 sk-, ghp_, AKIA, RSA/EC 私钥等真实生产凭据）
 secretLevel=error
 
-# 5. 全量完整性门禁（提交前自动执行 scripts/lint.ps1 校验，ERROR 必须为 0）
+# 5. 自动化测试金字塔门禁（提交前自动执行 tests/run.mjs --require-all 校验）
 lintLevel=error
