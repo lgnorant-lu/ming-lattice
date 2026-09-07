@@ -23,8 +23,26 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'lib/registry.ps1')
 $startedAt = [Diagnostics.Stopwatch]::StartNew()
 
-if (-not (Test-Path $RegistryPath)) { throw "registry 不存在: $RegistryPath" }
-$reg = Read-SkillRegistry -RegistryPath $RegistryPath
+function Emit-SyncFailed {
+    param([string]$ErrorType)
+    $eventSpec = [ordered]@{
+        event = 'sync.failed'
+        duration = $startedAt.Elapsed.TotalMilliseconds
+        ok = $false
+        errorCode = 'sync_failed'
+        fields = [ordered]@{ error_type = $ErrorType }
+    }
+    try { $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>$null | Out-Null } catch { }
+}
+
+try {
+    if (-not (Test-Path $RegistryPath)) { throw "registry 不存在: $RegistryPath" }
+    $reg = Read-SkillRegistry -RegistryPath $RegistryPath
+} catch {
+    Emit-SyncFailed -ErrorType $_.Exception.GetType().Name
+    [Console]::Error.WriteLine($_.Exception.Message)
+    exit 1
+}
 $targets = $reg.targets
 $trash = Join-Path $RepoRoot '.trash'
 
@@ -146,11 +164,16 @@ foreach ($u in $units) {
             Write-Host "        (链接) symlink -> $($u.src)" -ForegroundColor Green
             $modeStat.link++
         } else {
-            if ($IsWindows) {
-                robocopy $u.src $dst /E /NFL /NDL /NJH /NJS /NP | Out-Null
-                if ($LASTEXITCODE -ge 8) { throw "sync_copy_failed: $($u.name) code=$LASTEXITCODE" }
-            } else {
-                Copy-Item -LiteralPath $u.src -Destination $dst -Recurse -ErrorAction Stop
+            try {
+                if ($IsWindows) {
+                    robocopy $u.src $dst /E /NFL /NDL /NJH /NJS /NP | Out-Null
+                    if ($LASTEXITCODE -ge 8) { throw "sync_copy_failed: $($u.name) code=$LASTEXITCODE" }
+                } else {
+                    Copy-Item -LiteralPath $u.src -Destination $dst -Recurse -ErrorAction Stop
+                }
+            } catch {
+                Emit-SyncFailed -ErrorType $_.Exception.GetType().Name
+                throw
             }
             Write-Host "        (复制) 完成" -ForegroundColor Green
             $modeStat.copy++

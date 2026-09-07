@@ -23,6 +23,14 @@ $startedAt = [Diagnostics.Stopwatch]::StartNew()
 try {
     $reg = Read-SkillRegistry -RegistryPath $RegistryPath
 } catch {
+    $eventSpec = [ordered]@{
+        event = 'lint.checked'
+        duration = $startedAt.Elapsed.TotalMilliseconds
+        ok = $false
+        errorCode = 'lint_failed'
+        fields = [ordered]@{ sources_checked = 0; error_count = 1; warn_count = 0; info_count = 0 }
+    }
+    try { $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>$null | Out-Null } catch { }
     if ($Json) {
         ConvertTo-Json -InputObject @([ordered]@{ level = 'E'; name = 'registry'; msg = $_.Exception.Message; file = $RegistryPath })
     } else {
