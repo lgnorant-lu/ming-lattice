@@ -9,11 +9,27 @@
 | Hook | 触发阶段 | 检查核心内容 | 拦截策略 |
 |---|---|---|---|
 | `commit-msg` | 提交信息录入 | Conventional Commits 主题格式、type 白名单、Emoji 禁令、乱码防御 | 格式/type 恒为 `error` 级；Emoji / 乱码按 `.hooksrc` 分级 |
-| `pre-commit` | 提交前暂存区 | 暂存 blob 的大文件、乱码、凭据和 Emoji 扫描；严格隔离测试 | 命中 error 或完整测试失败即阻断提交 |
+| `pre-commit` | 提交前暂存区 | 暂存 blob 批量大文件、乱码、凭据和 Emoji 静态扫描；基于 `plan.mjs` 影响面受限测试 | 命中静态违规或受影响测试失败即阻断提交；纯文档改动免测秒级放行 |
+| `pre-push` | 推送前远端同步 | 解析 push ref 范围，过滤删除操作；执行全量本地质量门禁 (`verify.mjs --profile full`) | 自动化测试或离线供应链门禁失败即阻断推送 |
 
 ---
 
-## 2. 详细检查项
+## 2. 详细检查项与分层架构（A+B+C）
+
+门禁体系采用分层递进架构，兼顾日常提交极速响应与远端代码质量底线：
+
+```
+[git commit] -> pre-commit -> 暂存区静态批量扫描 (cat-file --batch-check)
+                           -> 影响面计划器 plan.mjs (单调性、fail-closed)
+                           -> 受影响测试套件 (纯文档 < 2s; 受限代码 < 5s)
+
+[git push]   -> pre-push   -> 解析 push stdin (过滤删除分支操作)
+                           -> 统一质量门禁 verify.mjs --profile full
+                           -> 全量 17 个测试套件 + 严格离线供应链检查
+
+[CI / 发布]  -> CI 门禁    -> 干净 checkout
+                           -> verify.mjs --profile release (含新鲜度比对 + benchmark 性能硬阈值)
+```
 
 ### 2.1 `commit-msg` 检查项
 1. **主题格式**：`<type>(<scope>): <中文描述>`
@@ -34,14 +50,20 @@
 
 ### 2.2 `pre-commit` 检查项
 1. **大文件防御门禁（50MB 阈值）**：
-   - 扫描暂存区（Staged Files）文件大小，凡超过 `50MB` 立即阻断提交，防止大归档（如 `*.tar.gz`, `*.mp4`）污染 Git 历史。
+   - 使用 `git cat-file --batch-check` 单进程批量扫描暂存区（Staged Files）对象大小，凡超过 `50MB` 立即阻断提交，防止大归档污染 Git 历史。
 2. **编码防污染扫描（0 Mojibake）**：
    - 对暂存的 `.md`, `.yaml`, `.ps1`, `.json`, `.js` 进行字符扫描，拦截 GBK 转义乱码。
 3. **真实生产敏感密钥防泄漏（Secret Prevention）**：
    - 拦截包含 `ghp_` (GitHub Token), `sk-` (OpenAI Key), `AKIA` (AWS Key), `BEGIN PRIVATE KEY` 等真实生产私钥。
-4. **严格测试门禁**：执行 `node tests/run.mjs --require-all`，包含隔离部署、路由与 manifest 新鲜度。全仓内容 lint 单独运行，参见 [TESTING](TESTING.md)。静态扫描范围有限，不证明没有凭据或恶意指令。
+4. **显式影响面受限测试**：
+   - 由 `scripts/hooks/plan.mjs` 分析暂存快照：纯文档变动直接跳过运行期测试；特定域变动（如路由、CLI、供应链）仅执行对应受影响套件；关键全局配置（`registry.yaml`、`tests/run.mjs` 等）或未知路径则 fail-closed 自动升级全量。
 
-文件名由 Git 的 NUL 分隔输出读取，内容来自 index blob，不读取同名工作区文件冒充待提交内容。测试仍运行工作树代码，部分暂存时需要审阅两份 diff。
+> [!NOTE]
+> **测试快照语义说明**：静态扫描严格基于暂存区 index blob 校验；而自动化测试套件在当前工作树环境执行。若检测到工作树存在未暂存的修改，`check.mjs` 会输出黄色警告提示开发者仔细核对提交差异。
+
+### 2.3 `pre-push` 检查项
+1. **推送引用分析**：读取 `stdin` 中的 `<local-ref> <local-sha> <remote-ref> <remote-sha>`，过滤远端分支删除等无代码推送行为。
+2. **全量本地门禁**：调用 `node scripts/verify.mjs --profile full`，执行全部 17 个测试套件及严格模式离线供应链门禁。由于 Git hooks 可被客户端绕过，最终安全底线由远端 CI 和主干分支保护规则把关。
 
 ---
 

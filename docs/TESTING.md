@@ -4,9 +4,16 @@
 
 ```bash
 node tests/run.mjs --require-all
+node scripts/verify.mjs --profile <quick|affected|full|release>
 ```
 
 也可通过 `pwsh scripts/test.ps1 --require-all` 或 `sh scripts/test.sh --require-all` 透传。省略 `--require-all` 时，缺少工具的套件单列为 skipped，不计入 passed；严格模式下任何跳过也使退出码非零。
+
+`scripts/verify.mjs` 提供分级门禁编排：
+- `--profile quick`：仅运行纯 Node 逻辑测试（跳过外部 pwsh 进程池，秒级响应）；
+- `--profile affected`：基于 `scripts/hooks/plan.mjs` 仅运行暂存区改动受影响的测试套件；
+- `--profile full`：全量 17 个测试套件 + 严格离线供应链门禁；
+- `--profile release`：full 门禁 + SBOM/SCA 新鲜度就地深度比对 + Benchmark 性能硬阈值检查。
 
 ## 验证范围
 
@@ -20,12 +27,17 @@ node tests/run.mjs --require-all
 | 适配器契约 | 模式映射、候选与正文分离；分类永不授予 case-init 权限 |
 | 可观测事件契约 | 独立 NDJSON 通道、事件字段、相关 ID、非负耗时及 prompt/密钥脱敏；stdout JSON 不变 |
 | RouteDecision 兼容矩阵 | 同主版本加字段、旧版本显式退回、未知控制值拒绝、必填字段缺失及路径型技能名拒绝 |
+| 供应链来源门禁 | 外部来源 pins、provenance 协议、本地源有效性、锁文件存在性及 schema 强类型校验 |
+| SBOM 生成与新鲜度 | CycloneDX 1.5 组件去重、依赖并集、来源 provenance 及组件版本变更防篡改比对 |
+| SCA 报告与新鲜度 | 离线 advisory cache 扫描、漏洞状态及严重级别防篡改比对 |
+| Lint 契约 | 验证 lint.ps1 文本模式、-Json 模式及 lint.checked 结构化运行事件断言 |
+| Hook 影响面计划器 | 显式路径规则、未知路径 fail-closed、任务并集、单调性保证及 pre-push ref 解析 |
 | YAML/registry | 标量、列表和真实 registry 可解析；隔离集成另验证重复键及部署结构 |
-| CLI 隔离集成 | 临时仓库中真实部署内容、DryRun 状态不变、无效配置拒绝、包装重建不覆盖正文 |
+| CLI 隔离集成 | 临时仓库中真实部署内容、DryRun 状态不变、无效配置拒绝、包装重建不覆盖正文（有界并发池调度） |
 | Hook 暂存区集成 | 临时 Git 仓库的 staged/unstaged 分离、工作文件已删、Unicode 和空格路径；不提交 |
 | Manifest 新鲜度 | `--check` 比较两份清单，忽略生成时间；只读，不自动修复 |
 
-测试定义在 [tests/run.mjs](../tests/run.mjs)，计数以运行结果为准。测试使用临时目录并在 finally 清理；可用 `SKILLS_TEST_TMPDIR` 指定已存在的测试临时父目录。
+测试定义在 [tests/run.mjs](../tests/run.mjs)，计数以运行结果为准（全量共 17 个套件）。测试使用临时目录并在 finally 清理；可用 `SKILLS_TEST_TMPDIR` 指定已存在的测试临时父目录。CLI 隔离测试采用有界异步进程池（并发上限 4）调度以提升执行效率。
 
 ## 内容与部署检查
 
