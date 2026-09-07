@@ -158,9 +158,9 @@ if ($Json) {
     ConvertTo-Json -InputObject @($issues) -Depth 4
 } else {
     foreach ($iss in $issues) {
-        switch ($iss.level) { 'E' { $e++; Write-Host "[E] $($iss.name): $($iss.msg)" -ForegroundColor Red }
-                              'W' { $w++; Write-Host "[W] $($iss.name): $($iss.msg)" -ForegroundColor Yellow }
-                              'I' { $i++; Write-Host "[I] $($iss.name): $($iss.msg)" -ForegroundColor Cyan } }
+        switch ($iss.level) { 'E' { Write-Host "[E] $($iss.name): $($iss.msg)" -ForegroundColor Red }
+                              'W' { Write-Host "[W] $($iss.name): $($iss.msg)" -ForegroundColor Yellow }
+                              'I' { Write-Host "[I] $($iss.name): $($iss.msg)" -ForegroundColor Cyan } }
     }
     Write-Host ""
     Write-Host "[lint] 检查 $($sources.Count) 个源 → ERROR=$e WARN=$w INFO=$i"
