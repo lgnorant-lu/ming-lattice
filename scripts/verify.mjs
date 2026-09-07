@@ -32,10 +32,19 @@ export function runVerification({ profile = 'full', json = false } = {}) {
   log(`==================== [ming-skills 质量门禁: profile=${profile}] ====================`);
 
   let ok = true;
+  const steps = [];
+  const runVerifiedStep = (cmd, args, options = {}) => {
+    const stepStartedAt = Date.now();
+    const stepOk = runStep(cmd, args, options, json);
+    const step = { command: cmd, args: [...args], ok: stepOk, durationMs: Date.now() - stepStartedAt };
+    steps.push(step);
+    log(`[VERIFY STEP] ${stepOk ? 'SUCCESS' : 'FAILED'} duration=${step.durationMs}ms ${cmd} ${args.join(' ')}`);
+    return stepOk;
+  };
 
   if (profile === 'quick') {
     // 快速档: 仅执行快速测试套件 (不启动外部 pwsh 进程池)
-    ok = runStep(process.execPath, ['tests/run.mjs', '--profile', 'quick'], {}, json);
+    ok = runVerifiedStep(process.execPath, ['tests/run.mjs', '--profile', 'quick']);
   } else if (profile === 'affected') {
     // 增量档: 由计划器确定受影响套件
     const staged = getStagedFiles(ROOT);
@@ -48,22 +57,22 @@ export function runVerification({ profile = 'full', json = false } = {}) {
       if (!plan.fallback && plan.jobs.length > 0) {
         args.push('--suites', plan.jobs.join(','));
       }
-      ok = runStep(process.execPath, args, {}, json);
+      ok = runVerifiedStep(process.execPath, args);
     }
   } else if (profile === 'full') {
     // 全量档: 17 个测试套件 + 严格离线供应链静态门禁
-    ok = runStep(process.execPath, ['tests/run.mjs', '--require-all'], {}, json);
+    ok = runVerifiedStep(process.execPath, ['tests/run.mjs', '--require-all']);
     if (ok) {
-      ok = runStep(process.execPath, ['scripts/check-supply-chain.mjs', '--strict'], {}, json);
+      ok = runVerifiedStep(process.execPath, ['scripts/check-supply-chain.mjs', '--strict']);
     }
   } else if (profile === 'release') {
     // 发布档: 全量测试 + 严格供应链门禁 (含新鲜度比对) + 性能硬阈值 Benchmark
-    ok = runStep(process.execPath, ['tests/run.mjs', '--require-all'], {}, json);
+    ok = runVerifiedStep(process.execPath, ['tests/run.mjs', '--require-all']);
     if (ok) {
-      ok = runStep(process.execPath, ['scripts/check-supply-chain.mjs', '--strict', '--check-freshness'], {}, json);
+      ok = runVerifiedStep(process.execPath, ['scripts/check-supply-chain.mjs', '--strict', '--check-freshness']);
     }
     if (ok) {
-      ok = runStep(process.execPath, ['tests/benchmarks/route-performance.mjs', '--strict'], {}, json);
+      ok = runVerifiedStep(process.execPath, ['tests/benchmarks/route-performance.mjs', '--strict']);
     }
   }
 
@@ -72,7 +81,7 @@ export function runVerification({ profile = 'full', json = false } = {}) {
   log(`[VERIFY RESULT] profile=${profile} status=${ok ? 'SUCCESS' : 'FAILED'} duration=${durationMs}ms`);
   log(`=============================================================================\n`);
 
-  return { ok, profile, durationMs };
+  return { ok, profile, durationMs, steps };
 }
 
 export function runCli() {

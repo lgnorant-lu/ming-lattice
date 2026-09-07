@@ -46,12 +46,12 @@ export function run() {
   assert.match(invalidRun.stderr, /usage:/);
 
   // 1. --strict alone (text mode)
-  const validStrictRun = spawnSync(process.execPath, [benchScript, '--strict'], { cwd: root, encoding: 'utf8', timeout: 30000 });
+  const validStrictRun = spawnSync(process.execPath, [benchScript, '--strict', '--contract'], { cwd: root, encoding: 'utf8', timeout: 30000 });
   assert.equal(validStrictRun.status, 0, `route-performance --strict failed: ${validStrictRun.stderr}`);
   assert.match(validStrictRun.stdout, /router-performance: strict performance ceiling mode/);
 
   // 2. --json alone
-  const validJsonOnlyRun = spawnSync(process.execPath, [benchScript, '--json'], { cwd: root, encoding: 'utf8', timeout: 30000 });
+  const validJsonOnlyRun = spawnSync(process.execPath, [benchScript, '--json', '--contract'], { cwd: root, encoding: 'utf8', timeout: 30000 });
   assert.equal(validJsonOnlyRun.status, 0, `route-performance --json failed: ${validJsonOnlyRun.stderr}`);
   const jsonOnlyReport = JSON.parse(validJsonOnlyRun.stdout.trim());
   assert.equal(jsonOnlyReport.schema_version, '1.0');

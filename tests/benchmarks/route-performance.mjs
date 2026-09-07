@@ -12,6 +12,7 @@ const ROUTE_SCALES = [0, 32, 128, 512, 1024];
 const REGISTRY_SCALES = [0, 32, 128, 512, 1024];
 const ROUTE_ITERATIONS = 500;
 const MANIFEST_ITERATIONS = 30;
+const CONTRACT_ITERATIONS = 1;
 
 function percentile(values, fraction) {
   const sorted = [...values].sort((left, right) => left - right);
@@ -70,19 +71,21 @@ function syntheticRegistry(rootPath, extraCount) {
   return { private: privateEntries };
 }
 
-function run({ strict = false } = {}) {
+function run({ strict = false, contract = false } = {}) {
   const baseDecision = Decide('为 Rust 项目编写性质测试', realManifest);
   assert.equal(baseDecision.domain, 'testing');
   assert.equal(baseDecision.action, 'dispatch');
   assert.equal(new Set(baseDecision.candidates).size, baseDecision.candidates.length);
 
   const routeResults = [];
+  const routeIterations = contract ? CONTRACT_ITERATIONS : ROUTE_ITERATIONS;
+  const manifestIterations = contract ? CONTRACT_ITERATIONS : MANIFEST_ITERATIONS;
   for (const scale of ROUTE_SCALES) {
     const { manifest, names } = routeManifest(scale);
     let lastDecision;
     const timing = measure(() => {
       lastDecision = Decide('为 Rust 项目编写性质测试', manifest);
-    }, ROUTE_ITERATIONS);
+    }, routeIterations);
     assert.equal(lastDecision.domain, 'testing');
     assert.equal(lastDecision.action, 'dispatch');
     assert.equal(new Set(lastDecision.candidates).size, lastDecision.candidates.length, `route dedupe scale=${scale}`);
@@ -97,7 +100,7 @@ function run({ strict = false } = {}) {
   let duplicateDecision;
   const duplicateTiming = measure(() => {
     duplicateDecision = Decide('为 Rust 项目编写性质测试', duplicateManifest);
-  }, ROUTE_ITERATIONS);
+  }, routeIterations);
   assert.equal(duplicateDecision.candidates.length, baseDecision.candidates.length);
   assert.equal(new Set(duplicateDecision.candidates).size, duplicateDecision.candidates.length);
   if (strict) {
@@ -118,7 +121,7 @@ function run({ strict = false } = {}) {
       let manifest;
       const timing = measure(() => {
         manifest = buildRouterManifest({ registry, repoRoot: temp, generatedAt: '2026-01-01T00:00:00.000Z' });
-      }, MANIFEST_ITERATIONS);
+      }, manifestIterations);
       assert.equal(manifest.version, '2.0.0');
       assert.equal(manifest.availability['testing-core-oracle'], 'ready');
       if (scale > 0) assert.equal(Object.hasOwn(manifest.availability, `registry-fixture-${scale - 1}`), false);
@@ -136,7 +139,9 @@ function run({ strict = false } = {}) {
     schema_version: '1.0',
     benchmark: 'router-performance',
     node: process.version,
-    note: strict ? 'Strict mode: assertions cover result correctness, dedupe, growth, read-only build behavior, and performance ceilings.' : 'Timing is informational; assertions cover result correctness, dedupe, growth and read-only build behavior.',
+    note: contract
+      ? 'Contract mode: CLI shape and correctness assertions use a minimal sample; strict performance validation requires the default benchmark.'
+      : strict ? 'Strict mode: assertions cover result correctness, dedupe, growth, read-only build behavior, and performance ceilings.' : 'Timing is informational; assertions cover result correctness, dedupe, growth and read-only build behavior.',
     results: [...routeResults, ...manifestResults]
   };
 }
@@ -144,13 +149,14 @@ function run({ strict = false } = {}) {
 const args = process.argv.slice(2);
 const json = args.includes('--json');
 const strict = args.includes('--strict');
-if (args.some(arg => !['--json', '--strict'].includes(arg))) {
-  console.error('usage: node tests/benchmarks/route-performance.mjs [--json] [--strict]');
+const contract = args.includes('--contract');
+if (args.some(arg => !['--json', '--strict', '--contract'].includes(arg))) {
+  console.error('usage: node tests/benchmarks/route-performance.mjs [--json] [--strict] [--contract]');
   process.exit(2);
 }
 
 try {
-  const report = run({ strict });
+  const report = run({ strict, contract });
   if (json) {
     console.log(JSON.stringify(report, null, 2));
   } else {

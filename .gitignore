@@ -4,6 +4,7 @@
 # 本地运行与临时产物
 *.log
 work/
+/.cache/
 __pycache__/
 *.py[cod]
 

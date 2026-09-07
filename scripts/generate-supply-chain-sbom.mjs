@@ -1,11 +1,16 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const NPM_COMMAND = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const SBOM_ARGS = ['sbom', '--sbom-format', 'cyclonedx', '--package-lock-only', '--omit=dev', '--omit=optional', '--offline'];
+const DEFAULT_CONCURRENCY = 8;
+const MAX_CONCURRENCY = 8;
+const MAX_SBOM_OUTPUT = 32 * 1024 * 1024;
+const CACHE_VERSION = '1';
 
 function property(name, value) {
   return { name, value: String(value) };
@@ -42,6 +47,62 @@ function packageNameFromPath(packagePath) {
 
 function packageRef(name, version) {
   return `${name}@${version}`;
+}
+
+function npmCommand(args) {
+  if (process.platform === 'win32') return { executable: process.env.ComSpec, args: ['/d', '/s', '/c', [NPM_COMMAND, ...args].join(' ')] };
+  return { executable: NPM_COMMAND, args };
+}
+
+function hashText(value) {
+  return crypto.createHash('sha256').update(value).digest('hex');
+}
+
+function cacheLockfileHash(lockfile) {
+  return hashText(fs.readFileSync(lockfile));
+}
+
+function readCacheContext() {
+  try {
+    const command = npmCommand(['--version']);
+    const npmVersion = String(execFileSync(command.executable, command.args, {
+      encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024
+    })).trim();
+    return { node_version: process.version, npm_version: npmVersion, sbom_args: SBOM_ARGS };
+  } catch {
+    return null;
+  }
+}
+
+function cacheKey(lockfile, context) {
+  return hashText(JSON.stringify({ version: CACHE_VERSION, lockfile: cacheLockfileHash(lockfile), context }));
+}
+
+function readCachedSbom(cachePath, key, lockfileDigest, context) {
+  try {
+    if (!fs.existsSync(cachePath) || fs.statSync(cachePath).size > MAX_SBOM_OUTPUT) return null;
+    const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+    if (cached.version !== CACHE_VERSION || cached.key !== key || cached.lockfile_sha256 !== lockfileDigest
+      || JSON.stringify(cached.context) !== JSON.stringify(context)
+      || cached.report?.bomFormat !== 'CycloneDX' || cached.report?.specVersion !== '1.5') return null;
+    return { report: cached.report, fallback: cached.fallback === true };
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedSbom(cachePath, key, lockfileDigest, context, result) {
+  let temporary;
+  try {
+    fs.mkdirSync(path.dirname(cachePath), { recursive: true });
+    temporary = `${cachePath}.${process.pid}.${Date.now()}.tmp`;
+    fs.writeFileSync(temporary, `${JSON.stringify({ version: CACHE_VERSION, key, lockfile_sha256: lockfileDigest, context, report: result.report, fallback: result.fallback === true })}\n`, 'utf8');
+    fs.renameSync(temporary, cachePath);
+  } catch {
+    if (temporary) {
+      try { fs.rmSync(temporary, { force: true }); } catch { }
+    }
+  }
 }
 
 function resolvePackagePath(packagePath, dependencyName, packageEntries) {
@@ -204,22 +265,9 @@ function loadRegistry(repoRoot) {
 }
 
 function readNpmSbom(lockfile) {
-  const npmArgs = [
-    'sbom',
-    '--sbom-format',
-    'cyclonedx',
-    '--package-lock-only',
-    '--omit=dev',
-    '--omit=optional',
-    '--offline'
-  ];
-  const command = process.platform === 'win32'
-    ? [NPM_COMMAND, ...npmArgs].join(' ')
-    : null;
-  const executable = process.platform === 'win32' ? process.env.ComSpec : NPM_COMMAND;
-  const args = process.platform === 'win32' ? ['/d', '/s', '/c', command] : npmArgs;
+  const command = npmCommand(SBOM_ARGS);
   try {
-    const raw = execFileSync(executable, args, {
+    const raw = execFileSync(command.executable, command.args, {
       cwd: path.dirname(lockfile),
       encoding: 'utf8',
       timeout: 120000,
@@ -232,6 +280,56 @@ function readNpmSbom(lockfile) {
   } catch {
     return { report: createCycloneDxFromLockfile(JSON.parse(fs.readFileSync(lockfile, 'utf8'))), fallback: true };
   }
+}
+
+function fallbackSbom(lockfile) {
+  try {
+    return { report: createCycloneDxFromLockfile(JSON.parse(fs.readFileSync(lockfile, 'utf8'))), fallback: true };
+  } catch (error) {
+    return { error };
+  }
+}
+
+function readNpmSbomAsync(lockfile) {
+  const command = npmCommand(SBOM_ARGS);
+  return new Promise(resolve => {
+    const child = spawn(command.executable, command.args, {
+      cwd: path.dirname(lockfile),
+      stdio: ['ignore', 'pipe', 'ignore']
+    });
+    let stdout = '';
+    let stdoutBytes = 0;
+    let settled = false;
+    const finish = result => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(result);
+    };
+    const timer = setTimeout(() => {
+      child.kill();
+      finish(fallbackSbom(lockfile));
+    }, 120000);
+    child.stdout.on('data', chunk => {
+      stdoutBytes += chunk.length;
+      if (stdoutBytes > MAX_SBOM_OUTPUT) {
+        child.kill();
+        finish(fallbackSbom(lockfile));
+        return;
+      }
+      stdout += chunk.toString('utf8');
+    });
+    child.once('error', () => finish(fallbackSbom(lockfile)));
+    child.once('close', code => {
+      try {
+        const report = JSON.parse(stdout);
+        if (code === 0 && report.bomFormat === 'CycloneDX' && report.specVersion === '1.5') finish({ report, fallback: false });
+        else finish(fallbackSbom(lockfile));
+      } catch {
+        finish(fallbackSbom(lockfile));
+      }
+    });
+  });
 }
 
 export function generateSupplyChainSbom({ registry, repoRoot = ROOT_DIR, generatedAt, allowFailures = false } = {}) {
@@ -260,6 +358,74 @@ export function generateSupplyChainSbom({ registry, repoRoot = ROOT_DIR, generat
       failedSources: failures.map(item => item.source),
       fallbackSources
     }),
+    processed: reports.length,
+    failures
+  };
+}
+
+export async function generateSupplyChainSbomAsync({
+  registry,
+  repoRoot = ROOT_DIR,
+  generatedAt,
+  allowFailures = false,
+  concurrency = DEFAULT_CONCURRENCY,
+  useCache = true,
+  refreshCache = false,
+  cacheDir,
+  onLockfile
+} = {}) {
+  const root = path.resolve(repoRoot);
+  const lockfiles = [...new Set(findRegistryPackageLockfiles(registry, root))].sort();
+  const results = new Array(lockfiles.length);
+  const limit = Math.min(MAX_CONCURRENCY, Number.isInteger(concurrency) && concurrency > 0 ? concurrency : DEFAULT_CONCURRENCY);
+  const cacheContext = (useCache || refreshCache) ? readCacheContext() : null;
+  const resolvedCacheDir = cacheDir || path.join(root, '.cache', 'supply-chain', 'sbom');
+  const lockfileObserver = typeof onLockfile === 'function' ? onLockfile : null;
+  let cursor = 0;
+
+  async function worker() {
+    while (cursor < lockfiles.length) {
+      const index = cursor++;
+      const lockfile = lockfiles[index];
+      const source = path.relative(root, lockfile).split(path.sep).join('/');
+      const startedAt = Date.now();
+      let cacheHit = false;
+      try {
+        const digest = cacheContext ? cacheLockfileHash(lockfile) : null;
+        const key = cacheContext ? cacheKey(lockfile, cacheContext) : null;
+        const cachePath = key ? path.join(resolvedCacheDir, `${key}.json`) : null;
+        let result = cachePath && useCache && !refreshCache
+          ? readCachedSbom(cachePath, key, digest, cacheContext)
+          : null;
+        if (result) {
+          cacheHit = true;
+          results[index] = { source, ...result };
+        } else {
+          result = await readNpmSbomAsync(lockfile);
+          results[index] = { source, ...result };
+          if (cachePath) writeCachedSbom(cachePath, key, digest, cacheContext, result);
+        }
+      } catch (error) {
+        results[index] = { source, error };
+      }
+      try { lockfileObserver?.({ kind: 'sbom', source, durationMs: Date.now() - startedAt, cacheHit, ok: !results[index].error }); } catch { }
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(limit, lockfiles.length) }, () => worker()));
+  const reports = [];
+  const failures = [];
+  const fallbackSources = [];
+  for (const result of results) {
+    if (result.error) failures.push({ source: result.source, error: String(result.error.message || result.error).slice(0, 240) });
+    else {
+      reports.push({ source: result.source, report: result.report });
+      if (result.fallback) fallbackSources.push(result.source);
+    }
+  }
+  if (failures.length > 0 && !allowFailures) throw new Error(`sbom_generation_failed: ${failures.map(item => item.source).join(', ')}`);
+  return {
+    report: mergeCycloneDxReports(reports, { generatedAt, partial: failures.length > 0, failedSources: failures.map(item => item.source), fallbackSources }),
     processed: reports.length,
     failures
   };

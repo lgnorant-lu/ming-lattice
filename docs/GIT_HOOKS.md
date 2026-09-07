@@ -65,6 +65,23 @@
 1. **推送引用分析**：读取 `stdin` 中的 `<local-ref> <local-sha> <remote-ref> <remote-sha>`，过滤远端分支删除等无代码推送行为。
 2. **全量本地门禁**：调用 `node scripts/verify.mjs --profile full`，执行全部 17 个测试套件及严格模式离线供应链门禁。由于 Git hooks 可被客户端绕过，最终安全底线由远端 CI 和主干分支保护规则把关。
 
+### 2.4 发布 freshness 与本地缓存
+
+`release` profile 的 freshness 会对 SBOM/SCA 的 lockfile 使用有界并发扫描，并将每个成功或 fallback 结果写入根目录 `.cache/supply-chain/`（该目录不入 Git）：
+
+```powershell
+# 查看 lockfile 级耗时与 cache 命中
+node scripts/check-supply-chain.mjs --strict --check-freshness --sca-timings
+
+# 调整并发，范围 1-8
+node scripts/check-supply-chain.mjs --strict --check-freshness --supply-chain-concurrency 8
+
+# 强制重新执行 npm sbom/audit，不读取已有本地缓存
+node scripts/check-supply-chain.mjs --strict --check-freshness --refresh-sca-cache
+```
+
+缓存键绑定 lockfile 内容、Node/npm 版本、scanner 参数和本地 npm audit 索引指纹；指纹不可取得时自动回退真实扫描。缓存用于重复 release 加速，不替代 `--refresh-sca-cache` 的干净发布验证。
+
 ---
 
 ## 3. Hook 分级机制（`.hooksrc`）

@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { generateSupplyChainSbom, isCycloneDxFresh } from './generate-supply-chain-sbom.mjs';
-import { generateSupplyChainSca, isScaReportFresh } from './generate-supply-chain-sca.mjs';
+import { generateSupplyChainSbom, generateSupplyChainSbomAsync, isCycloneDxFresh } from './generate-supply-chain-sbom.mjs';
+import { generateSupplyChainSca, generateSupplyChainScaAsync, isScaReportFresh } from './generate-supply-chain-sca.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const PIN_TOKEN = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,63}$/;
@@ -376,6 +376,71 @@ export function supplyChainExitCode(report, { strict = false } = {}) {
   return report.counts.errors > 0 || (strict && report.counts.warnings > 0) ? 1 : 0;
 }
 
+export async function checkSupplyChainAsync({
+  registry,
+  repoRoot = ROOT_DIR,
+  checkFreshness = false,
+  supplyChainConcurrency = 8,
+  useScaCache = true,
+  refreshScaCache = false,
+  onSupplyChainLockfile
+} = {}) {
+  if (!checkFreshness) return checkSupplyChain({ registry, repoRoot, checkFreshness: false });
+
+  const report = checkSupplyChain({ registry, repoRoot, checkFreshness: false });
+  const issues = [...report.issues];
+  const sbom = findSbom(repoRoot);
+  if (sbom?.valid && !sbom.partial && sbom.report && registry) {
+    try {
+      const freshSbom = await generateSupplyChainSbomAsync({
+        registry,
+        repoRoot,
+        generatedAt: sbom.report.metadata?.timestamp || '2026-01-01T00:00:00.000Z',
+        allowFailures: false,
+        concurrency: supplyChainConcurrency,
+        useCache: useScaCache,
+        refreshCache: refreshScaCache,
+        onLockfile: onSupplyChainLockfile
+      });
+      if (!isCycloneDxFresh(sbom.report, freshSbom.report)) {
+        issues.push(issue('E', 'sbom_stale', 'repository', 'sbom', 'committed SBOM artifact is stale; re-run generator'));
+      }
+    } catch (err) {
+      issues.push(issue('E', 'sbom_freshness_check_failed', 'repository', 'sbom', `failed to recompute SBOM: ${err.message}`));
+    }
+  }
+
+  const sca = findSca(repoRoot);
+  if (sca?.valid && !sca.partial && !sca.findings && sca.report && registry) {
+    try {
+      const freshSca = await generateSupplyChainScaAsync({
+        registry,
+        repoRoot,
+        concurrency: supplyChainConcurrency,
+        useCache: useScaCache,
+        refreshCache: refreshScaCache,
+        onLockfile: onSupplyChainLockfile
+      });
+      if (!isScaReportFresh(sca.report, freshSca)) {
+        issues.push(issue('E', 'sca_stale', 'repository', 'sca', 'committed SCA report is stale; re-run scanner'));
+      }
+    } catch (err) {
+      issues.push(issue('E', 'sca_freshness_check_failed', 'repository', 'sca', `failed to recompute SCA: ${err.message}`));
+    }
+  }
+
+  const errors = issues.filter(item => item.level === 'E').length;
+  const warnings = issues.filter(item => item.level === 'W').length;
+  const info = issues.filter(item => item.level === 'I').length;
+  return {
+    schema_version: '1.0',
+    network: 'not_used',
+    counts: { errors, warnings, info },
+    ok: errors === 0,
+    issues
+  };
+}
+
 function loadRegistry(registryPath) {
   return JSON.parse(execFileSync('pwsh', ['-NoProfile', '-File', path.join(ROOT_DIR, 'scripts/read-registry.ps1'), '-RegistryPath', registryPath], {
     cwd: ROOT_DIR,
@@ -390,27 +455,76 @@ function printText(report) {
   console.log(`[supply-chain] ERROR=${report.counts.errors} WARN=${report.counts.warnings} INFO=${report.counts.info} NETWORK=${report.network}`);
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2);
-  const json = args.includes('--json');
-  const strict = args.includes('--strict');
-  const checkFreshness = args.includes('--check-freshness');
-  if (args.some(arg => !['--json', '--strict', '--check-freshness'].includes(arg))) {
-    console.error('usage: node scripts/check-supply-chain.mjs [--json] [--strict] [--check-freshness]');
-    process.exitCode = 2;
-  } else {
-    try {
-      const report = checkSupplyChain({
-        registry: loadRegistry(path.join(ROOT_DIR, 'registry.yaml')),
-        repoRoot: ROOT_DIR,
-        checkFreshness
-      });
-      if (json) console.log(JSON.stringify(report, null, 2));
-      else printText(report);
-      process.exitCode = supplyChainExitCode(report, { strict });
-    } catch (error) {
-      console.error(`supply_chain_failed: ${error.message}`);
-      process.exitCode = 1;
+function parseCliArgs(args) {
+  const options = {
+    json: false,
+    strict: false,
+    checkFreshness: false,
+    supplyChainConcurrency: 8,
+    refreshScaCache: false,
+    scaTimings: false
+  };
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index];
+    if (arg === '--json') options.json = true;
+    else if (arg === '--strict') options.strict = true;
+    else if (arg === '--check-freshness') options.checkFreshness = true;
+    else if (arg === '--refresh-sca-cache') options.refreshScaCache = true;
+    else if (arg === '--sca-timings') options.scaTimings = true;
+    else if (arg === '--sca-concurrency' || arg === '--supply-chain-concurrency') {
+      const value = args[++index];
+      if (!value) throw new Error('usage: --sca-concurrency requires a value');
+      options.supplyChainConcurrency = Number(value);
+    } else if (arg.startsWith('--sca-concurrency=') || arg.startsWith('--supply-chain-concurrency=')) {
+      options.supplyChainConcurrency = Number(arg.slice(arg.indexOf('=') + 1));
+    } else {
+      throw new Error('usage: node scripts/check-supply-chain.mjs [--json] [--strict] [--check-freshness] [--sca-concurrency <1-8>] [--refresh-sca-cache] [--sca-timings]');
     }
+  }
+  if (!Number.isInteger(options.supplyChainConcurrency) || options.supplyChainConcurrency < 1 || options.supplyChainConcurrency > 8) {
+    throw new Error('usage: --supply-chain-concurrency must be an integer from 1 to 8');
+  }
+  return options;
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  let options;
+  try {
+    options = parseCliArgs(process.argv.slice(2));
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+  }
+  if (options) {
+    void (async () => {
+      try {
+        const registry = loadRegistry(path.join(ROOT_DIR, 'registry.yaml'));
+        const timings = [];
+        const report = options.checkFreshness
+          ? await checkSupplyChainAsync({
+            registry,
+            repoRoot: ROOT_DIR,
+            checkFreshness: true,
+            supplyChainConcurrency: options.supplyChainConcurrency,
+            useScaCache: true,
+            refreshScaCache: options.refreshScaCache,
+            onSupplyChainLockfile: options.scaTimings ? timing => timings.push(timing) : undefined
+          })
+          : checkSupplyChain({ registry, repoRoot: ROOT_DIR, checkFreshness: false });
+        if (options.scaTimings && options.checkFreshness) {
+          const slowest = [...timings].sort((left, right) => right.durationMs - left.durationMs)[0];
+          const hits = timings.filter(item => item.cacheHit).length;
+          const sbomCount = timings.filter(item => item.kind === 'sbom').length;
+          const scaCount = timings.filter(item => item.kind !== 'sbom').length;
+          console.error(`[supply-chain-timing] concurrency=${options.supplyChainConcurrency} sbom=${sbomCount} sca=${scaCount} cache_hits=${hits} slowest=${slowest?.kind || 'none'}:${slowest?.source || 'none'}:${slowest?.durationMs || 0}ms`);
+        }
+        if (options.json) console.log(JSON.stringify(report, null, 2));
+        else printText(report);
+        process.exitCode = supplyChainExitCode(report, { strict: options.strict });
+      } catch (error) {
+        console.error(`supply_chain_failed: ${error.message}`);
+        process.exitCode = 1;
+      }
+    })();
   }
 }

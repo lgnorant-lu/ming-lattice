@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { isScaReportFresh } from '../../scripts/generate-supply-chain-sca.mjs';
+import { generateSupplyChainScaAsync, isScaReportFresh } from '../../scripts/generate-supply-chain-sca.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const schema = JSON.parse(fs.readFileSync(path.join(root, 'docs/schemas/sca-report.schema.json'), 'utf8'));
@@ -33,6 +33,13 @@ export async function run() {
   tamperedFindings.findings = [{ source: 'vertical/fake', name: 'evil', severity: 'critical' }];
   assert.equal(isScaReportFresh(report, tamperedFindings), false, 'finding injection must be detected as stale');
   console.log('  -> sca freshness deep equality and tampering detection verified');
+
+  const asyncReport = await generateSupplyChainScaAsync({ registry: { private: [] }, repoRoot: root, concurrency: 2, useCache: false });
+  assert.equal(asyncReport.lockfiles_total, 0);
+  assert.equal(asyncReport.lockfiles_scanned, 0);
+  assert.equal(asyncReport.lockfiles_failed, 0);
+  assert.deepEqual(asyncReport.findings, []);
+  console.log('  -> bounded async SCA generation preserves empty-report contract');
 }
 
 if (process.argv[1]?.endsWith('test-sca-generation.mjs')) run();
