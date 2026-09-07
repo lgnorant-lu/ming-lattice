@@ -160,8 +160,8 @@ function validateScaArtifact(fullPath) {
       if (typeof item.range !== 'string' && item.range !== null) {
         return { valid: false, code: 'sca_schema_invalid', message: 'finding item range must be string or null' };
       }
-      if (!Array.isArray(item.via)) {
-        return { valid: false, code: 'sca_schema_invalid', message: 'finding item must have array via' };
+      if (!Array.isArray(item.via) || item.via.some(v => typeof v !== 'string')) {
+        return { valid: false, code: 'sca_schema_invalid', message: 'finding item via must be an array of strings' };
       }
     }
     for (const fail of report.failures) {

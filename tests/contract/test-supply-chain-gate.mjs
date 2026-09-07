@@ -148,6 +148,14 @@ export function run() {
     const invalidFailSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
     assert.ok(invalidFailSca.issues.some(item => item.code === 'sca_schema_invalid' && item.message.includes('failure item')), 'must reject invalid failure item');
 
+    // Invalid via item (non-string element in via array)
+    fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({
+      ...baseValidSca,
+      findings: [{ source: 'repo', name: 'dep', severity: 'high', is_direct: true, range: null, via: [123] }]
+    }), 'utf8');
+    const invalidViaSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
+    assert.ok(invalidViaSca.issues.some(item => item.code === 'sca_schema_invalid' && item.message.includes('via must be an array of strings')), 'must reject via with non-string elements');
+
     // Positive test: valid finding item with null range and string severity
     fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({
       ...baseValidSca,

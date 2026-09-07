@@ -65,6 +65,12 @@ export const allSuites = [
   { name: 'manifest-freshness', tier: 'contract', run: () => node('scripts/build-router-manifest.mjs', '--check') }
 ];
 
+const VALID_TEST_PROFILES = new Set(['quick', 'full']);
+if (selectedProfile && !VALID_TEST_PROFILES.has(selectedProfile)) {
+  console.error(`unknown profile: ${selectedProfile}. Valid choices: quick, full`);
+  process.exit(2);
+}
+
 let suites = allSuites;
 if (selectedProfile === 'quick') {
   suites = allSuites.filter(s => !s.pwsh);
