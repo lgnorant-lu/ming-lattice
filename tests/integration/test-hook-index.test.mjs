@@ -12,7 +12,7 @@ for (const scenario of ['staged-secret', 'unstaged-secret', 'deleted-working-fil
     try {
       const root = path.join(temp, 'repo with spaces');
       fs.mkdirSync(path.join(root, 'scripts/hooks'), { recursive: true });
-      for (const name of ['check.mjs', 'validate.mjs']) fs.copyFileSync(path.join(project, 'scripts/hooks', name), path.join(root, 'scripts/hooks', name));
+      for (const name of ['check.mjs', 'validate.mjs', 'plan.mjs']) fs.copyFileSync(path.join(project, 'scripts/hooks', name), path.join(root, 'scripts/hooks', name));
       fs.writeFileSync(path.join(root, '.hooksrc'), 'lintLevel=off\nsecretLevel=error\n');
       execFileSync('git', ['init', '-q', root], { timeout: 10000 });
       const file = scenario === 'unicode-path' ? '\u914d\u7f6e space.json' : 'config.json';

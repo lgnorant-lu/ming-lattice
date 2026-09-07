@@ -12,35 +12,62 @@ import { createOperationalEvent, emitEvent } from '../private/ming-skills-router
 import { run as runCliIntegration } from './integration/test-cli-tools.test.mjs';
 import { run as runRouteEffects } from './evals/test-route-effects.mjs';
 import { run as runLintContract } from './contract/test-lint-contract.mjs';
+import { run as runHookPlannerContract } from './contract/test-hook-planner.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const startedAt = process.hrtime.bigint();
 const requireAll = process.argv.includes('--require-all');
-if (process.argv.slice(2).some(arg => arg !== '--require-all')) {
-  console.error('usage: node tests/run.mjs [--require-all]');
-  process.exit(2);
+const suitesArgIndex = process.argv.indexOf('--suites');
+const selectedSuites = suitesArgIndex >= 0 && process.argv[suitesArgIndex + 1]
+  ? new Set(process.argv[suitesArgIndex + 1].split(',').map(s => s.trim()).filter(Boolean))
+  : null;
+const profileArgIndex = process.argv.indexOf('--profile');
+const selectedProfile = profileArgIndex >= 0 && process.argv[profileArgIndex + 1]
+  ? process.argv[profileArgIndex + 1].trim()
+  : null;
+
+const allowedArgs = new Set(['--require-all', '--suites', '--profile']);
+for (let i = 2; i < process.argv.length; i++) {
+  const arg = process.argv[i];
+  if (arg === '--suites' || arg === '--profile') {
+    i++; // skip value
+    continue;
+  }
+  if (!allowedArgs.has(arg)) {
+    console.error('usage: node tests/run.mjs [--require-all] [--suites <name1,name2>] [--profile <quick|full>]');
+    process.exit(2);
+  }
 }
 const hasPwsh = spawnSync('pwsh', ['-NoProfile', '-Command', '$PSVersionTable.PSVersion.Major'], { encoding: 'utf8', timeout: 10000 }).status === 0;
 const hasGit = spawnSync('git', ['--version'], { timeout: 10000 }).status === 0;
 const node = (...args) => execFileSync(process.execPath, args, { cwd: root, stdio: 'inherit', timeout: 120000 });
-const suites = [
-  { name: 'hook-validation', run: runValidateUnit },
-  { name: 'manifest-unit', run: runBuildManifestUnit },
-  { name: 'route-golden', run: () => node('tests/test-route-decision.mjs') },
-  { name: 'adapter-contract', run: runAdapterContract },
-  { name: 'observability-contract', run: runObservabilityContract },
-  { name: 'route-decision-compatibility', run: runRouteDecisionCompatibility },
-  { name: 'supply-chain-gate', run: runSupplyChainGate },
-  { name: 'sbom-generation', run: runSbomGeneration },
-  { name: 'sca-generation', run: runScaGeneration },
-  { name: 'lint-contract', pwsh: true, run: runLintContract },
-  { name: 'route-effects', run: runRouteEffects },
-  { name: 'route-safety', run: () => node('--test', 'tests/contract/test-route-safety.test.mjs') },
-  { name: 'hook-index', git: true, run: () => node('--test', 'tests/integration/test-hook-index.test.mjs') },
-  { name: 'yaml-contract', pwsh: true, run: () => execFileSync('pwsh', ['-NoProfile', '-File', 'tests/unit/test-yaml-lite.test.ps1'], { cwd: root, stdio: 'inherit', timeout: 30000 }) },
-  { name: 'cli-isolated', pwsh: true, run: runCliIntegration },
-  { name: 'manifest-freshness', pwsh: true, run: () => node('scripts/build-router-manifest.mjs', '--check') }
+export const allSuites = [
+  { name: 'hook-validation', tier: 'unit', run: runValidateUnit },
+  { name: 'manifest-unit', tier: 'unit', run: runBuildManifestUnit },
+  { name: 'route-golden', tier: 'contract', run: () => node('tests/test-route-decision.mjs') },
+  { name: 'adapter-contract', tier: 'contract', run: runAdapterContract },
+  { name: 'observability-contract', tier: 'contract', run: runObservabilityContract },
+  { name: 'route-decision-compatibility', tier: 'contract', run: runRouteDecisionCompatibility },
+  { name: 'supply-chain-gate', tier: 'contract', run: runSupplyChainGate },
+  { name: 'sbom-generation', tier: 'contract', run: runSbomGeneration },
+  { name: 'sca-generation', tier: 'contract', run: runScaGeneration },
+  { name: 'lint-contract', tier: 'contract', pwsh: true, run: runLintContract },
+  { name: 'hook-planner', tier: 'contract', run: runHookPlannerContract },
+  { name: 'route-effects', tier: 'eval', run: runRouteEffects },
+  { name: 'route-safety', tier: 'contract', run: () => node('--test', 'tests/contract/test-route-safety.test.mjs') },
+  { name: 'hook-index', tier: 'integration', git: true, run: () => node('--test', 'tests/integration/test-hook-index.test.mjs') },
+  { name: 'yaml-contract', tier: 'contract', pwsh: true, run: () => execFileSync('pwsh', ['-NoProfile', '-File', 'tests/unit/test-yaml-lite.test.ps1'], { cwd: root, stdio: 'inherit', timeout: 30000 }) },
+  { name: 'cli-isolated', tier: 'integration', pwsh: true, run: runCliIntegration },
+  { name: 'manifest-freshness', tier: 'contract', run: () => node('scripts/build-router-manifest.mjs', '--check') }
 ];
+
+let suites = allSuites;
+if (selectedProfile === 'quick') {
+  suites = allSuites.filter(s => !s.pwsh);
+}
+if (selectedSuites) {
+  suites = suites.filter(s => selectedSuites.has(s.name));
+}
 let passed = 0;
 let failed = 0;
 let skipped = 0;
