@@ -66,7 +66,17 @@ if (selectedProfile === 'quick') {
   suites = allSuites.filter(s => !s.pwsh);
 }
 if (selectedSuites) {
+  for (const name of selectedSuites) {
+    if (!allSuites.some(s => s.name === name)) {
+      console.error(`unknown suite: ${name}`);
+      process.exit(2);
+    }
+  }
   suites = suites.filter(s => selectedSuites.has(s.name));
+}
+if (suites.length === 0) {
+  console.error('no suites selected to run');
+  process.exit(2);
 }
 let passed = 0;
 let failed = 0;

@@ -39,6 +39,12 @@ export async function run() {
   assert.ok(routerPlan.jobs.includes('manifest-unit'));
   assert.ok(!routerPlan.jobs.includes('cli-isolated'));
 
+  // 5.1 技能 Markdown 单独变更 -> 技能分类 (不作为纯 docs 旁路)
+  const skillMdPlan = createPlan({ stage: 'pre-commit', files: ['private/example/SKILL.md'] });
+  assert.deepEqual(skillMdPlan.categories, ['skills']);
+  assert.deepEqual(skillMdPlan.jobs, ['lint-contract', 'manifest-freshness', 'manifest-unit']);
+  assert.equal(skillMdPlan.fallback, null);
+
   // 6. 多分类并集
   const multiPlan = createPlan({
     stage: 'pre-commit',

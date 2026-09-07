@@ -147,6 +147,43 @@ export function run() {
     assert.equal(syncMissingEvent.event, 'sync.failed');
     assert.equal(syncMissingEvent.ok, false);
 
+    // Preflight failure scenario 3: missing SKILL.md for a declared module
+    const brokenRegistryDir = path.join(temp, 'sync-broken-preflight');
+    fs.mkdirSync(brokenRegistryDir, { recursive: true });
+    const brokenRegistryFile = path.join(brokenRegistryDir, 'registry.yaml');
+    fs.writeFileSync(brokenRegistryFile, `version: 1
+targets:
+  claude: ${JSON.stringify(path.join(brokenRegistryDir, 'targets'))}
+base: []
+vertical: []
+deployable: []
+private:
+  - name: ghost-skill
+    path: private/nonexistent-ghost-skill
+    enabled: true
+    deploy:
+      claude: true
+`);
+    const syncGhostEventFile = path.join(temp, 'sync-ghost-events.ndjson');
+    const syncGhostResult = spawnSync('pwsh', [
+      '-NoProfile',
+      '-File', path.join(root, 'scripts/sync.ps1'),
+      '-RegistryPath', brokenRegistryFile,
+      '-RepoRoot', brokenRegistryDir
+    ], {
+      cwd: root,
+      encoding: 'utf8',
+      timeout: 15000,
+      env: { ...process.env, MING_SKILLS_EVENT_FILE: syncGhostEventFile, MING_SKILLS_WORK_UNIT_ID: 'sync-contract-ghost' }
+    });
+    assert.notEqual(syncGhostResult.status, 0);
+    assert.ok(fs.existsSync(syncGhostEventFile), 'sync.failed event must be written when SKILL.md missing');
+    const syncGhostEvent = JSON.parse(fs.readFileSync(syncGhostEventFile, 'utf8').trim());
+    assertBaseEvent(syncGhostEvent);
+    assert.equal(syncGhostEvent.event, 'sync.failed');
+    assert.equal(syncGhostEvent.ok, false);
+    assert.equal(syncGhostEvent.error_code, 'sync_failed');
+
     console.log('  -> event schema, independent channel, correlation ID and redaction checks passed');
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });

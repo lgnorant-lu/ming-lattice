@@ -22,8 +22,17 @@ export const GLOBAL_UPGRADE_PATTERNS = [
 export const CATEGORY_RULES = [
   {
     name: 'docs',
-    test: file => /^docs\/|^README\.md$|\.md$|^LICENSE$/i.test(file),
+    test: file => /^docs\/|^README\.md$|^LICENSE$/i.test(file),
     jobs: [] // 仅需暂存区静态防御扫描，0 个测试套件
+  },
+  {
+    name: 'skills',
+    test: file => /^(?:private|deployable|vertical|base)\//i.test(file),
+    jobs: [
+      'lint-contract',
+      'manifest-freshness',
+      'manifest-unit'
+    ]
   },
   {
     name: 'router',

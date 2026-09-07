@@ -45,6 +45,23 @@ export function run() {
   assert.equal(invalidRun.status, 2, 'invalid CLI flag must exit with code 2');
   assert.match(invalidRun.stderr, /usage:/);
 
+  const validJsonRun = spawnSync(process.execPath, [benchScript, '--strict', '--json'], { cwd: root, encoding: 'utf8', timeout: 30000 });
+  assert.equal(validJsonRun.status, 0, `route-performance --strict --json failed: ${validJsonRun.stderr}`);
+  const benchReport = JSON.parse(validJsonRun.stdout.trim());
+  assert.equal(benchReport.schema_version, '1.0');
+  assert.equal(benchReport.benchmark, 'router-performance');
+  assert.ok(Array.isArray(benchReport.results), 'results must be an array');
+  assert.ok(benchReport.results.length > 0, 'results must not be empty');
+  for (const res of benchReport.results) {
+    assert.ok(typeof res.median_ms === 'number');
+    assert.ok(typeof res.p95_ms === 'number');
+    if (res.scenario.startsWith('route.')) {
+      assert.ok(res.p95_ms < 50, `route p95 must be < 50ms, got ${res.p95_ms}`);
+    } else if (res.scenario.startsWith('manifest.')) {
+      assert.ok(res.p95_ms < 200, `manifest p95 must be < 200ms, got ${res.p95_ms}`);
+    }
+  }
+
   console.log(`  -> ${fixtures.length} version, additive-field, fail-closed fixtures and benchmark CLI contract passed`);
 }
 

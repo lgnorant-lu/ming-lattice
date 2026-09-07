@@ -144,6 +144,31 @@ function validateScaArtifact(fullPath) {
     if (!Array.isArray(report.findings) || !Array.isArray(report.failures)) {
       return { valid: false, code: 'sca_schema_invalid', message: 'findings and failures must be arrays' };
     }
+    for (const item of report.findings) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        return { valid: false, code: 'sca_schema_invalid', message: 'finding item must be an object' };
+      }
+      if (typeof item.source !== 'string' || typeof item.name !== 'string') {
+        return { valid: false, code: 'sca_schema_invalid', message: 'finding item must have string source and name' };
+      }
+      if (!['info', 'low', 'moderate', 'high', 'critical'].includes(item.severity)) {
+        return { valid: false, code: 'sca_schema_invalid', message: `invalid finding severity: ${item.severity}` };
+      }
+      if (typeof item.is_direct !== 'boolean') {
+        return { valid: false, code: 'sca_schema_invalid', message: 'finding item must have boolean is_direct' };
+      }
+      if (typeof item.range !== 'string') {
+        return { valid: false, code: 'sca_schema_invalid', message: 'finding item must have string range' };
+      }
+      if (!Array.isArray(item.via)) {
+        return { valid: false, code: 'sca_schema_invalid', message: 'finding item must have array via' };
+      }
+    }
+    for (const fail of report.failures) {
+      if (!fail || typeof fail !== 'object' || Array.isArray(fail) || typeof fail.source !== 'string' || typeof fail.error !== 'string') {
+        return { valid: false, code: 'sca_schema_invalid', message: 'failure item must have string source and error' };
+      }
+    }
     const partial = report.status === 'partial' || report.lockfiles_failed > 0;
     const findings = report.findings_status === 'present' || report.findings.length > 0;
     return { valid: true, partial, findings, report };
@@ -298,7 +323,8 @@ export function checkSupplyChain({ registry, repoRoot = ROOT_DIR, checkFreshness
           generatedAt: sca.report.generated_at || '2026-01-01T00:00:00.000Z',
           allowFailures: false
         });
-        if (!isScaReportFresh(sca.report, freshSca.report)) {
+        const freshReport = freshSca.report || freshSca;
+        if (!isScaReportFresh(sca.report, freshReport)) {
           issues.push(issue('E', 'sca_stale', 'repository', 'sca', 'committed SCA report is stale; re-run scanner'));
         }
       } catch (err) {

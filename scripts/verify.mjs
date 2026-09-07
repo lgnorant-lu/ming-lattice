@@ -10,12 +10,17 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 
 const VALID_PROFILES = ['quick', 'affected', 'full', 'release'];
 
-export function runStep(cmd, args, options = {}) {
+export function runStep(cmd, args, options = {}, json = false) {
   const display = `${cmd} ${args.join(' ')}`;
-  console.log(`\n>>> [VERIFY] ${display}`);
-  const result = spawnSync(cmd, args, { cwd: ROOT, stdio: 'inherit', ...options });
+  const log = json ? console.error : console.log;
+  log(`\n>>> [VERIFY] ${display}`);
+  const stdio = json ? ['inherit', 'pipe', 'inherit'] : 'inherit';
+  const result = spawnSync(cmd, args, { cwd: ROOT, stdio, ...options });
   if (result.status !== 0) {
     console.error(`\n[FAIL] 门禁步骤执行失败 (exit ${result.status}): ${display}`);
+    if (json && result.stdout) {
+      process.stderr.write(result.stdout);
+    }
     return false;
   }
   return true;
@@ -23,48 +28,49 @@ export function runStep(cmd, args, options = {}) {
 
 export function runVerification({ profile = 'full', json = false } = {}) {
   const startedAt = Date.now();
-  console.log(`==================== [ming-skills 质量门禁: profile=${profile}] ====================`);
+  const log = json ? console.error : console.log;
+  log(`==================== [ming-skills 质量门禁: profile=${profile}] ====================`);
 
   let ok = true;
 
   if (profile === 'quick') {
     // 快速档: 仅执行快速测试套件 (不启动外部 pwsh 进程池)
-    ok = runStep(process.execPath, ['tests/run.mjs', '--profile', 'quick']);
+    ok = runStep(process.execPath, ['tests/run.mjs', '--profile', 'quick'], {}, json);
   } else if (profile === 'affected') {
     // 增量档: 由计划器确定受影响套件
     const staged = getStagedFiles(ROOT);
     const plan = createPlan({ stage: 'pre-commit', files: staged });
-    console.log(`[verify:affected] 分类: [${plan.categories.join(', ')}], 任务: [${plan.jobs.join(', ')}]${plan.fallback ? ` (${plan.fallback})` : ''}`);
+    log(`[verify:affected] 分类: [${plan.categories.join(', ')}], 任务: [${plan.jobs.join(', ')}]${plan.fallback ? ` (${plan.fallback})` : ''}`);
     if (plan.jobs.length === 0) {
-      console.log('[verify:affected] 无受影响测试任务，直接放行。');
+      log('[verify:affected] 无受影响测试任务，直接放行。');
     } else {
       const args = ['tests/run.mjs', '--require-all'];
       if (!plan.fallback && plan.jobs.length > 0) {
         args.push('--suites', plan.jobs.join(','));
       }
-      ok = runStep(process.execPath, args);
+      ok = runStep(process.execPath, args, {}, json);
     }
   } else if (profile === 'full') {
     // 全量档: 17 个测试套件 + 严格离线供应链静态门禁
-    ok = runStep(process.execPath, ['tests/run.mjs', '--require-all']);
+    ok = runStep(process.execPath, ['tests/run.mjs', '--require-all'], {}, json);
     if (ok) {
-      ok = runStep(process.execPath, ['scripts/check-supply-chain.mjs', '--strict']);
+      ok = runStep(process.execPath, ['scripts/check-supply-chain.mjs', '--strict'], {}, json);
     }
   } else if (profile === 'release') {
     // 发布档: 全量测试 + 严格供应链门禁 (含新鲜度比对) + 性能硬阈值 Benchmark
-    ok = runStep(process.execPath, ['tests/run.mjs', '--require-all']);
+    ok = runStep(process.execPath, ['tests/run.mjs', '--require-all'], {}, json);
     if (ok) {
-      ok = runStep(process.execPath, ['scripts/check-supply-chain.mjs', '--strict', '--check-freshness']);
+      ok = runStep(process.execPath, ['scripts/check-supply-chain.mjs', '--strict', '--check-freshness'], {}, json);
     }
     if (ok) {
-      ok = runStep(process.execPath, ['tests/benchmarks/route-performance.mjs', '--strict']);
+      ok = runStep(process.execPath, ['tests/benchmarks/route-performance.mjs', '--strict'], {}, json);
     }
   }
 
   const durationMs = Date.now() - startedAt;
-  console.log(`\n=============================================================================`);
-  console.log(`[VERIFY RESULT] profile=${profile} status=${ok ? 'SUCCESS' : 'FAILED'} duration=${durationMs}ms`);
-  console.log(`=============================================================================\n`);
+  log(`\n=============================================================================`);
+  log(`[VERIFY RESULT] profile=${profile} status=${ok ? 'SUCCESS' : 'FAILED'} duration=${durationMs}ms`);
+  log(`=============================================================================\n`);
 
   return { ok, profile, durationMs };
 }

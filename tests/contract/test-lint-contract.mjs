@@ -45,12 +45,57 @@ export function run() {
     assert.equal(event.event, 'lint.checked');
     assert.equal(event.ok, textErrors === 0);
     assert.equal(typeof event.duration_ms, 'number');
-    assert.equal(event.sources_checked, 157, 'sources_checked must equal 157');
+    assert.ok(typeof event.sources_checked === 'number' && event.sources_checked > 0, 'sources_checked must be positive');
     assert.equal(event.error_count, textErrors);
     assert.equal(event.warn_count, textWarns);
     assert.equal(event.info_count, textInfos);
 
-    console.log(`  -> text, JSON and event modes verified (${event.sources_checked} sources, counts aligned)`);
+    // 4. Synthetic oracle fixture tests (valid vs invalid skills)
+    const fixtureDir = path.join(temp, 'fixture-repo');
+    const fixturePrivate = path.join(fixtureDir, 'private');
+    fs.mkdirSync(path.join(fixturePrivate, 'valid-skill', 'references'), { recursive: true });
+    fs.writeFileSync(path.join(fixturePrivate, 'valid-skill', 'references', 'guide.md'), '# Guide\n');
+    fs.writeFileSync(path.join(fixturePrivate, 'valid-skill', 'SKILL.md'),
+      '---\nname: valid-skill\ndescription: A perfectly valid synthetic skill with more than twenty characters.\n---\n[Guide](references/guide.md)\n');
+
+    fs.mkdirSync(path.join(fixturePrivate, 'broken-skill'), { recursive: true });
+    fs.writeFileSync(path.join(fixturePrivate, 'broken-skill', 'SKILL.md'),
+      '---\nname: broken-skill\ndescription: Too short\n---\n[missing](references/missing.md)\n');
+
+    const fixtureRegistry = path.join(fixtureDir, 'registry.yaml');
+    fs.writeFileSync(fixtureRegistry, `version: 1
+targets:
+  test_client: ${JSON.stringify(path.join(fixtureDir, 'targets'))}
+base: []
+vertical: []
+deployable: []
+private:
+  - name: valid-skill
+    path: private/valid-skill
+    enabled: true
+    deploy:
+      test_client: true
+  - name: broken-skill
+    path: private/broken-skill
+    enabled: true
+    deploy:
+      test_client: true
+`);
+
+    const fixtureRun = spawnSync('pwsh', [
+      '-NoProfile',
+      '-File', path.join(root, 'scripts/lint.ps1'),
+      '-RegistryPath', fixtureRegistry,
+      '-RepoRoot', fixtureDir,
+      '-Json'
+    ], { cwd: root, encoding: 'utf8', timeout: 30000 });
+    assert.equal(fixtureRun.status, 0, `fixture run failed: ${fixtureRun.stderr}`);
+    const fixtureIssues = JSON.parse(fixtureRun.stdout.trim());
+    assert.ok(fixtureIssues.some(i => i.name === 'broken-skill' && i.msg.includes('description 过短')), 'must detect short description');
+    assert.ok(fixtureIssues.some(i => i.name === 'broken-skill' && i.msg.includes('引用的文件不存在')), 'must detect missing reference');
+    assert.ok(!fixtureIssues.some(i => i.name === 'valid-skill' && (i.level === 'E' || i.level === 'W')), 'valid skill must produce no E or W');
+
+    console.log(`  -> text, JSON and event modes verified (${event.sources_checked} sources, synthetic fixtures passed)`);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
   }
