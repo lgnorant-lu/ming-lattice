@@ -271,6 +271,22 @@ const GOLDEN_CASES = [
       assert.equal(res.action, 'handoff');
       assert.equal(res.side_effects, 'none');
     }
+  },
+
+  // ── 8. 工程与文档自举 ──
+  {
+    category: '工程自举',
+    name: '8.1 真实仓库文档体系与 README 自举优化提示',
+    hint: '准备自举优化我们仓库的文档体系，各个文档，readme等等，审阅并规划方案',
+    must_include: ['docs-core-paradigm', 'docs-presentation-idiom'],
+    assert: (res, tc) => {
+      assert.equal(res.domain, 'engineering');
+      assert.equal(res.mode, 'review');
+      assertSubset(tc.must_include, res.candidates, tc.name);
+      assert.equal(res.action, 'dispatch');
+      assert.equal(res.side_effects, 'none');
+      assert.ok(res.must_not.includes('modify_files'), '审查规划模式下严禁修改文件！');
+    }
   }
 ];
 

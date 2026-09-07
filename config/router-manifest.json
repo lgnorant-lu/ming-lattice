@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-05T18:41:29.274Z",
+  "generatedAt": "2026-09-07T04:25:22.525Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -190,6 +190,10 @@
         "overlay-core-paradigm"
       ],
       "triggers": [
+        "文档",
+        "文档体系",
+        "仓库文档",
+        "readme",
         "文档体裁",
         "diataxis",
         "adr",

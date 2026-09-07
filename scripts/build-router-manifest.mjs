@@ -93,6 +93,7 @@ const DOMAIN_DEFS = {
       "overlay-core-paradigm"
     ],
     triggers: [
+      "文档", "文档体系", "仓库文档", "readme",
       "文档体裁", "diataxis", "adr", "docs-as-code", "架构决策记录",
       "文档排版", "readme排版", "去emoji", "去疲劳", "动线", "docs-presentation",
       "可观测", "日志", "observability", "structured logging", "wide events", "宽事件", "相关id",
