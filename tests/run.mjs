@@ -11,6 +11,7 @@ import { run as runScaGeneration } from './contract/test-sca-generation.mjs';
 import { createOperationalEvent, emitEvent } from '../private/ming-skills-router/scripts/observability.mjs';
 import { run as runCliIntegration } from './integration/test-cli-tools.test.mjs';
 import { run as runRouteEffects } from './evals/test-route-effects.mjs';
+import { run as runLintContract } from './contract/test-lint-contract.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const startedAt = process.hrtime.bigint();
@@ -32,6 +33,7 @@ const suites = [
   { name: 'supply-chain-gate', run: runSupplyChainGate },
   { name: 'sbom-generation', run: runSbomGeneration },
   { name: 'sca-generation', run: runScaGeneration },
+  { name: 'lint-contract', pwsh: true, run: runLintContract },
   { name: 'route-effects', run: runRouteEffects },
   { name: 'route-safety', run: () => node('--test', 'tests/contract/test-route-safety.test.mjs') },
   { name: 'hook-index', git: true, run: () => node('--test', 'tests/integration/test-hook-index.test.mjs') },
