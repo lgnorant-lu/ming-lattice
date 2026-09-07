@@ -142,17 +142,19 @@ function run({ strict = false } = {}) {
 }
 
 const args = process.argv.slice(2);
-if (args.some(arg => arg !== '--json')) {
-  console.error('usage: node tests/benchmarks/route-performance.mjs [--json]');
+const json = args.includes('--json');
+const strict = args.includes('--strict');
+if (args.some(arg => !['--json', '--strict'].includes(arg))) {
+  console.error('usage: node tests/benchmarks/route-performance.mjs [--json] [--strict]');
   process.exit(2);
 }
 
 try {
-  const report = run();
-  if (args.includes('--json')) {
+  const report = run({ strict });
+  if (json) {
     console.log(JSON.stringify(report, null, 2));
   } else {
-    console.log('router-performance: timing is informational; correctness assertions passed');
+    console.log(`router-performance: ${strict ? 'strict performance ceiling mode' : 'timing is informational'}; correctness assertions passed`);
     for (const result of report.results) {
       console.log(`${result.scenario} scale=${result.scale} median_ms=${result.median_ms} p95_ms=${result.p95_ms}`);
     }
