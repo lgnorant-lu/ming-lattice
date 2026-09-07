@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { createCycloneDxFromLockfile, mergeCycloneDxReports } from '../../scripts/generate-supply-chain-sbom.mjs';
 
 export function run() {
@@ -47,6 +49,15 @@ export function run() {
   assert.deepEqual(fallback.components.map(item => item['bom-ref']), ['nested@1.1.0', 'runtime@2.0.0']);
   assert.deepEqual(fallback.dependencies.find(item => item.ref === 'runtime@2.0.0').dependsOn, ['nested@1.1.0']);
   console.log('  -> deterministic dedupe, dependency union and source provenance passed');
+
+  const artifactPath = path.resolve(import.meta.dirname, '../../artifacts/sbom.cdx.json');
+  assert.ok(fs.existsSync(artifactPath), 'artifacts/sbom.cdx.json must exist');
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+  assert.equal(artifact.bomFormat, 'CycloneDX');
+  assert.equal(artifact.specVersion, '1.5');
+  assert.ok(Array.isArray(artifact.components) && artifact.components.length > 0);
+  console.log(`  -> artifacts/sbom.cdx.json schema and component count verified (${artifact.components.length} components)`);
 }
 
 if (process.argv[1]?.endsWith('test-sbom-generation.mjs')) run();
+

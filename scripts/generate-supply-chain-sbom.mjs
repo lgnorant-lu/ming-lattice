@@ -269,6 +269,7 @@ function parseArgs(args) {
   let output;
   let generatedAt;
   let allowFailures = false;
+  let check = false;
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
     if (arg === '--output') {
@@ -279,15 +280,40 @@ function parseArgs(args) {
     else if (arg === '--generated-at') generatedAt = args[++index];
     else if (arg.startsWith('--generated-at=')) generatedAt = arg.slice('--generated-at='.length);
     else if (arg === '--allow-failures') allowFailures = true;
-    else throw new Error('usage: node scripts/generate-supply-chain-sbom.mjs [--output <path>] [--generated-at <ISO>] [--allow-failures]');
+    else if (arg === '--check') check = true;
+    else throw new Error('usage: node scripts/generate-supply-chain-sbom.mjs [--output <path>] [--generated-at <ISO>] [--allow-failures] [--check]');
   }
   if (output === '') throw new Error('usage: --output requires a path');
-  return { output, generatedAt, allowFailures };
+  return { output, generatedAt, allowFailures, check };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const options = parseArgs(process.argv.slice(2));
+    const targetFile = options.output ? path.resolve(options.output) : path.join(ROOT_DIR, 'artifacts/sbom.cdx.json');
+
+    if (options.check) {
+      if (!fs.existsSync(targetFile)) {
+        console.error(`sbom_check_failed: ${targetFile} does not exist`);
+        process.exit(1);
+      }
+      const existing = JSON.parse(fs.readFileSync(targetFile, 'utf8'));
+      const result = generateSupplyChainSbom({
+        registry: loadRegistry(ROOT_DIR),
+        repoRoot: ROOT_DIR,
+        generatedAt: existing.metadata?.timestamp || '2026-01-01T00:00:00.000Z',
+        allowFailures: options.allowFailures
+      });
+      const generatedCompCount = result.report.components?.length || 0;
+      const existingCompCount = existing.components?.length || 0;
+      if (generatedCompCount !== existingCompCount || result.failures.length > 0) {
+        console.error(`sbom_stale: component count changed (existing=${existingCompCount}, generated=${generatedCompCount})`);
+        process.exit(1);
+      }
+      console.log('sbom_checked: artifacts/sbom.cdx.json is fresh');
+      process.exit(0);
+    }
+
     const result = generateSupplyChainSbom({
       registry: loadRegistry(ROOT_DIR),
       repoRoot: ROOT_DIR,

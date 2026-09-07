@@ -94,6 +94,7 @@ export function generateSupplyChainSca({ registry, repoRoot = ROOT_DIR } = {}) {
 
 function parseArgs(args) {
   let output;
+  let check = false;
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
     if (arg === '--output') {
@@ -102,11 +103,13 @@ function parseArgs(args) {
     } else if (arg.startsWith('--output=')) {
       output = arg.slice('--output='.length);
       if (!output) throw new Error('usage: --output requires a path');
+    } else if (arg === '--check') {
+      check = true;
     } else {
-      throw new Error('usage: node scripts/generate-supply-chain-sca.mjs [--output <path>]');
+      throw new Error('usage: node scripts/generate-supply-chain-sca.mjs [--output <path>] [--check]');
     }
   }
-  return { output };
+  return { output, check };
 }
 
 function loadRegistry(repoRoot) {
@@ -121,6 +124,28 @@ function loadRegistry(repoRoot) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const options = parseArgs(process.argv.slice(2));
+    const targetFile = options.output ? path.resolve(options.output) : path.join(ROOT_DIR, 'artifacts/sca.npm.json');
+
+    if (options.check) {
+      if (!fs.existsSync(targetFile)) {
+        console.error(`sca_check_failed: ${targetFile} does not exist`);
+        process.exit(1);
+      }
+      const existing = JSON.parse(fs.readFileSync(targetFile, 'utf8'));
+      const report = generateSupplyChainSca({ registry: loadRegistry(ROOT_DIR), repoRoot: ROOT_DIR });
+      if (
+        report.lockfiles_total !== existing.lockfiles_total ||
+        report.lockfiles_scanned !== existing.lockfiles_scanned ||
+        report.findings.length !== existing.findings.length ||
+        report.status !== existing.status
+      ) {
+        console.error(`sca_stale: scan results changed (existing_lockfiles=${existing.lockfiles_total}, current=${report.lockfiles_total})`);
+        process.exit(1);
+      }
+      console.log('sca_checked: artifacts/sca.npm.json is fresh');
+      process.exit(0);
+    }
+
     const report = generateSupplyChainSca({ registry: loadRegistry(ROOT_DIR), repoRoot: ROOT_DIR });
     const content = `${JSON.stringify(report, null, 2)}\n`;
     if (options.output) {
