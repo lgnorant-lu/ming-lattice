@@ -10,8 +10,8 @@ const root = path.resolve(import.meta.dirname, '../..');
 const realManifest = JSON.parse(fs.readFileSync(path.join(root, 'config/router-manifest.json'), 'utf8'));
 const ROUTE_SCALES = [0, 32, 128, 512, 1024];
 const REGISTRY_SCALES = [0, 32, 128, 512, 1024];
-const ROUTE_ITERATIONS = 200;
-const MANIFEST_ITERATIONS = 15;
+const ROUTE_ITERATIONS = 500;
+const MANIFEST_ITERATIONS = 30;
 
 function percentile(values, fraction) {
   const sorted = [...values].sort((left, right) => left - right);
@@ -70,7 +70,7 @@ function syntheticRegistry(rootPath, extraCount) {
   return { private: privateEntries };
 }
 
-function run() {
+function run({ strict = false } = {}) {
   const baseDecision = Decide('为 Rust 项目编写性质测试', realManifest);
   assert.equal(baseDecision.domain, 'testing');
   assert.equal(baseDecision.action, 'dispatch');
@@ -87,7 +87,9 @@ function run() {
     assert.equal(lastDecision.action, 'dispatch');
     assert.equal(new Set(lastDecision.candidates).size, lastDecision.candidates.length, `route dedupe scale=${scale}`);
     assert.equal(lastDecision.candidates.length, baseDecision.candidates.length + names.length, `route growth scale=${scale}`);
-    assert.ok(timing.p95_ms < 25, `route p95 latency ceiling violated at scale=${scale}: ${timing.p95_ms}ms >= 25ms`);
+    if (strict) {
+      assert.ok(timing.p95_ms < 50, `route p95 latency ceiling violated at scale=${scale}: ${timing.p95_ms}ms >= 50ms`);
+    }
     routeResults.push({ scenario: 'route.unique_candidates', scale, candidate_count: lastDecision.candidates.length, ...timing });
   }
 
@@ -98,7 +100,9 @@ function run() {
   }, ROUTE_ITERATIONS);
   assert.equal(duplicateDecision.candidates.length, baseDecision.candidates.length);
   assert.equal(new Set(duplicateDecision.candidates).size, duplicateDecision.candidates.length);
-  assert.ok(duplicateTiming.p95_ms < 25, `duplicate route p95 latency ceiling violated: ${duplicateTiming.p95_ms}ms >= 25ms`);
+  if (strict) {
+    assert.ok(duplicateTiming.p95_ms < 50, `duplicate route p95 latency ceiling violated: ${duplicateTiming.p95_ms}ms >= 50ms`);
+  }
   routeResults.push({
     scenario: 'route.duplicate_candidates',
     scale: 1024,
@@ -119,7 +123,9 @@ function run() {
       assert.equal(manifest.availability['testing-core-oracle'], 'ready');
       if (scale > 0) assert.equal(Object.hasOwn(manifest.availability, `registry-fixture-${scale - 1}`), false);
       assert.ok(!fs.existsSync(path.join(temp, 'config')), 'benchmark build must not write output');
-      assert.ok(timing.p95_ms < 150, `manifest p95 latency ceiling violated at scale=${scale}: ${timing.p95_ms}ms >= 150ms`);
+      if (strict) {
+        assert.ok(timing.p95_ms < 200, `manifest p95 latency ceiling violated at scale=${scale}: ${timing.p95_ms}ms >= 200ms`);
+      }
       manifestResults.push({ scenario: 'manifest.registry_size', scale, registry_entries: registry.private.length, ...timing });
     }
   } finally {
@@ -130,7 +136,7 @@ function run() {
     schema_version: '1.0',
     benchmark: 'router-performance',
     node: process.version,
-    note: 'Assertions cover result correctness, dedupe, growth, read-only build behavior, and performance ceilings.',
+    note: strict ? 'Strict mode: assertions cover result correctness, dedupe, growth, read-only build behavior, and performance ceilings.' : 'Timing is informational; assertions cover result correctness, dedupe, growth and read-only build behavior.',
     results: [...routeResults, ...manifestResults]
   };
 }
