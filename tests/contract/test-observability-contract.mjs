@@ -184,6 +184,45 @@ private:
     assert.equal(syncGhostEvent.ok, false);
     assert.equal(syncGhostEvent.error_code, 'sync_failed');
 
+    // Preflight failure scenario 4: unknown target client
+    const invalidTargetDir = path.join(temp, 'sync-invalid-target');
+    fs.mkdirSync(path.join(invalidTargetDir, 'private/test-skill'), { recursive: true });
+    fs.writeFileSync(path.join(invalidTargetDir, 'private/test-skill/SKILL.md'),
+      '---\nname: test-skill\ndescription: Test skill with unknown deployment target client.\n---\n');
+    const invalidTargetRegistry = path.join(invalidTargetDir, 'registry.yaml');
+    fs.writeFileSync(invalidTargetRegistry, `version: 1
+targets:
+  claude: ${JSON.stringify(path.join(invalidTargetDir, 'targets'))}
+base: []
+vertical: []
+deployable: []
+private:
+  - name: test-skill
+    path: private/test-skill
+    enabled: true
+    deploy:
+      unknown_client_target: true
+`);
+    const syncInvalidTargetEventFile = path.join(temp, 'sync-invalid-target-events.ndjson');
+    const syncInvalidTargetResult = spawnSync('pwsh', [
+      '-NoProfile',
+      '-File', path.join(root, 'scripts/sync.ps1'),
+      '-RegistryPath', invalidTargetRegistry,
+      '-RepoRoot', invalidTargetDir
+    ], {
+      cwd: root,
+      encoding: 'utf8',
+      timeout: 15000,
+      env: { ...process.env, MING_SKILLS_EVENT_FILE: syncInvalidTargetEventFile, MING_SKILLS_WORK_UNIT_ID: 'sync-contract-target' }
+    });
+    assert.notEqual(syncInvalidTargetResult.status, 0);
+    assert.ok(fs.existsSync(syncInvalidTargetEventFile), 'sync.failed event must be written on invalid target');
+    const syncInvalidTargetEvent = JSON.parse(fs.readFileSync(syncInvalidTargetEventFile, 'utf8').trim());
+    assertBaseEvent(syncInvalidTargetEvent);
+    assert.equal(syncInvalidTargetEvent.event, 'sync.failed');
+    assert.equal(syncInvalidTargetEvent.ok, false);
+    assert.equal(syncInvalidTargetEvent.error_code, 'sync_failed');
+
     console.log('  -> event schema, independent channel, correlation ID and redaction checks passed');
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });

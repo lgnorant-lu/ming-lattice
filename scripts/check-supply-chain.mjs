@@ -151,14 +151,14 @@ function validateScaArtifact(fullPath) {
       if (typeof item.source !== 'string' || typeof item.name !== 'string') {
         return { valid: false, code: 'sca_schema_invalid', message: 'finding item must have string source and name' };
       }
-      if (!['info', 'low', 'moderate', 'high', 'critical'].includes(item.severity)) {
-        return { valid: false, code: 'sca_schema_invalid', message: `invalid finding severity: ${item.severity}` };
+      if (typeof item.severity !== 'string') {
+        return { valid: false, code: 'sca_schema_invalid', message: 'finding item must have string severity' };
       }
       if (typeof item.is_direct !== 'boolean') {
         return { valid: false, code: 'sca_schema_invalid', message: 'finding item must have boolean is_direct' };
       }
-      if (typeof item.range !== 'string') {
-        return { valid: false, code: 'sca_schema_invalid', message: 'finding item must have string range' };
+      if (typeof item.range !== 'string' && item.range !== null) {
+        return { valid: false, code: 'sca_schema_invalid', message: 'finding item range must be string or null' };
       }
       if (!Array.isArray(item.via)) {
         return { valid: false, code: 'sca_schema_invalid', message: 'finding item must have array via' };

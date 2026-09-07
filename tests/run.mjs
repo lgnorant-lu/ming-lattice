@@ -29,13 +29,17 @@ const selectedProfile = profileArgIndex >= 0 && process.argv[profileArgIndex + 1
 const allowedArgs = new Set(['--require-all', '--suites', '--profile']);
 for (let i = 2; i < process.argv.length; i++) {
   const arg = process.argv[i];
-  if (arg === '--suites' || arg === '--profile') {
-    i++; // skip value
-    continue;
-  }
   if (!allowedArgs.has(arg)) {
     console.error('usage: node tests/run.mjs [--require-all] [--suites <name1,name2>] [--profile <quick|full>]');
     process.exit(2);
+  }
+  if (arg === '--suites' || arg === '--profile') {
+    const val = process.argv[i + 1];
+    if (!val || val.startsWith('--')) {
+      console.error(`missing required value for ${arg}`);
+      process.exit(2);
+    }
+    i++; // skip value
   }
 }
 const hasPwsh = spawnSync('pwsh', ['-NoProfile', '-Command', '$PSVersionTable.PSVersion.Major'], { encoding: 'utf8', timeout: 10000 }).status === 0;

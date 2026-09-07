@@ -125,6 +125,38 @@ export function run() {
     assert.ok(bogusSca.issues.some(item => item.code === 'sca_schema_invalid'));
     assert.equal(supplyChainExitCode(bogusSca), 1);
 
+    // Negative tests for finding item schema validation
+    const baseValidSca = {
+      schema_version: '1.0', scanner: 'npm audit', mode: 'offline', network: 'not_used',
+      status: 'complete', findings_status: 'none', lockfiles_total: 1, lockfiles_scanned: 1, lockfiles_failed: 0,
+      summary: { info: 0, low: 0, moderate: 0, high: 0, critical: 0 }, findings: [], failures: []
+    };
+
+    // Invalid range type (number instead of string/null)
+    fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({
+      ...baseValidSca,
+      findings: [{ source: 'repo', name: 'dep', severity: 'high', is_direct: true, range: 123, via: [] }]
+    }), 'utf8');
+    const invalidRangeSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
+    assert.ok(invalidRangeSca.issues.some(item => item.code === 'sca_schema_invalid' && item.message.includes('range')), 'must reject number range');
+
+    // Invalid failure item (non-string error)
+    fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({
+      ...baseValidSca,
+      failures: [{ source: 'repo', error: 404 }]
+    }), 'utf8');
+    const invalidFailSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
+    assert.ok(invalidFailSca.issues.some(item => item.code === 'sca_schema_invalid' && item.message.includes('failure item')), 'must reject invalid failure item');
+
+    // Positive test: valid finding item with null range and string severity
+    fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({
+      ...baseValidSca,
+      findings_status: 'present',
+      findings: [{ source: 'repo', name: 'dep', severity: 'high', is_direct: false, range: null, via: ['audit'] }]
+    }), 'utf8');
+    const validNullRangeSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
+    assert.ok(!validNullRangeSca.issues.some(item => item.code === 'sca_schema_invalid'), 'must accept finding item with null range and string severity');
+
     // Non-JSON unverified test
     fs.rmSync(path.join(root, 'artifacts', 'sca.npm.json'));
     fs.writeFileSync(path.join(root, 'artifacts', 'sca-results.sarif'), '<sarif></sarif>', 'utf8');

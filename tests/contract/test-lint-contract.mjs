@@ -91,9 +91,14 @@ private:
     ], { cwd: root, encoding: 'utf8', timeout: 30000 });
     assert.equal(fixtureRun.status, 0, `fixture run failed: ${fixtureRun.stderr}`);
     const fixtureIssues = JSON.parse(fixtureRun.stdout.trim());
+    assert.equal(fixtureIssues.length, 3, 'synthetic fixture must produce exactly 3 issues');
+    assert.equal(fixtureIssues.filter(i => i.level === 'E').length, 0, 'synthetic fixture must produce 0 errors');
+    assert.equal(fixtureIssues.filter(i => i.level === 'W').length, 2, 'synthetic fixture must produce exactly 2 warnings');
+    assert.equal(fixtureIssues.filter(i => i.level === 'I').length, 1, 'synthetic fixture must produce exactly 1 info');
     assert.ok(fixtureIssues.some(i => i.name === 'broken-skill' && i.msg.includes('description 过短')), 'must detect short description');
     assert.ok(fixtureIssues.some(i => i.name === 'broken-skill' && i.msg.includes('引用的文件不存在')), 'must detect missing reference');
-    assert.ok(!fixtureIssues.some(i => i.name === 'valid-skill' && (i.level === 'E' || i.level === 'W')), 'valid skill must produce no E or W');
+    assert.ok(fixtureIssues.some(i => i.name === 'broken-skill' && i.msg.includes('单文件 skill')), 'must detect single-file skill info');
+    assert.ok(!fixtureIssues.some(i => i.name === 'valid-skill'), 'valid skill must produce no issues at all');
 
     console.log(`  -> text, JSON and event modes verified (${event.sources_checked} sources, synthetic fixtures passed)`);
   } finally {

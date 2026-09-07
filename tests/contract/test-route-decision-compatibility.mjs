@@ -45,6 +45,19 @@ export function run() {
   assert.equal(invalidRun.status, 2, 'invalid CLI flag must exit with code 2');
   assert.match(invalidRun.stderr, /usage:/);
 
+  // 1. --strict alone (text mode)
+  const validStrictRun = spawnSync(process.execPath, [benchScript, '--strict'], { cwd: root, encoding: 'utf8', timeout: 30000 });
+  assert.equal(validStrictRun.status, 0, `route-performance --strict failed: ${validStrictRun.stderr}`);
+  assert.match(validStrictRun.stdout, /router-performance: strict performance ceiling mode/);
+
+  // 2. --json alone
+  const validJsonOnlyRun = spawnSync(process.execPath, [benchScript, '--json'], { cwd: root, encoding: 'utf8', timeout: 30000 });
+  assert.equal(validJsonOnlyRun.status, 0, `route-performance --json failed: ${validJsonOnlyRun.stderr}`);
+  const jsonOnlyReport = JSON.parse(validJsonOnlyRun.stdout.trim());
+  assert.equal(jsonOnlyReport.schema_version, '1.0');
+  assert.ok(jsonOnlyReport.results.length > 0);
+
+  // 3. --strict --json combined
   const validJsonRun = spawnSync(process.execPath, [benchScript, '--strict', '--json'], { cwd: root, encoding: 'utf8', timeout: 30000 });
   assert.equal(validJsonRun.status, 0, `route-performance --strict --json failed: ${validJsonRun.stderr}`);
   const benchReport = JSON.parse(validJsonRun.stdout.trim());
