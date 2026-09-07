@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { generateSupplyChainSbom, isCycloneDxFresh } from './generate-supply-chain-sbom.mjs';
+import { generateSupplyChainSca, isScaReportFresh } from './generate-supply-chain-sca.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
 const PIN_TOKEN = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,63}$/;
@@ -9,8 +11,8 @@ const COMMIT_PIN = /^[0-9a-f]{7,40}$/i;
 const GONE_PIN = /^gone-\d{4}-\d{2}-\d{2}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const LOCKFILES = ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lock', 'bun.lockb'];
-const SBOM_FILES = ['bom.json', 'sbom.json', 'sbom.spdx.json', 'bom.xml', 'sbom.cdx.json', 'artifacts/sbom.cdx.json'];
-const SCA_FILES = ['osv-results.json', 'osv-results.sarif', 'sca-results.json', 'sca-results.sarif', 'artifacts/sca.npm.json'];
+const SBOM_FILES = ['bom.json', 'sbom.json', 'sbom.spdx.json', 'bom.xml', 'sbom.cdx.json', 'artifacts/sbom.cdx.json', 'artifacts/bom.xml'];
+const SCA_FILES = ['osv-results.json', 'osv-results.sarif', 'sca-results.json', 'sca-results.sarif', 'artifacts/sca.npm.json', 'artifacts/sca-results.sarif'];
 
 function issue(level, code, section, name, message) {
   return { level, code, section, name, message };
@@ -80,14 +82,22 @@ function validateSbomArtifact(fullPath) {
   if (!fileOrEmpty(fullPath)) return { valid: false, code: 'sbom_empty', message: 'SBOM artifact is empty' };
   try {
     const report = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+    if (typeof report !== 'object' || report === null || Array.isArray(report)) {
+      return { valid: false, code: 'sbom_schema_invalid', message: 'SBOM root must be an object' };
+    }
     if (report.bomFormat !== 'CycloneDX' || report.specVersion !== '1.5') {
       return { valid: false, code: 'sbom_schema_invalid', message: `unsupported bomFormat (${report.bomFormat}) or specVersion (${report.specVersion})` };
     }
     if (!Array.isArray(report.components) || report.components.length === 0) {
       return { valid: false, code: 'sbom_components_missing', message: 'SBOM contains no components' };
     }
-    const props = report.metadata?.properties || [];
-    const completeness = props.find(item => item.name === 'ming.completeness')?.value;
+    for (const comp of report.components) {
+      if (!comp || typeof comp !== 'object' || !comp.name || typeof comp.version !== 'string') {
+        return { valid: false, code: 'sbom_components_invalid', message: 'SBOM component missing name or version' };
+      }
+    }
+    const props = Array.isArray(report.metadata?.properties) ? report.metadata.properties : [];
+    const completeness = props.find(item => item && item.name === 'ming.completeness')?.value;
     const partial = completeness === 'partial';
     return { valid: true, partial, componentCount: report.components.length, report };
   } catch (err) {
@@ -99,6 +109,9 @@ function validateScaArtifact(fullPath) {
   if (!fileOrEmpty(fullPath)) return { valid: false, code: 'sca_empty', message: 'SCA report artifact is empty' };
   try {
     const report = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+    if (typeof report !== 'object' || report === null || Array.isArray(report)) {
+      return { valid: false, code: 'sca_schema_invalid', message: 'SCA root must be an object' };
+    }
     const required = ['schema_version', 'scanner', 'mode', 'network', 'status', 'findings_status', 'lockfiles_total', 'lockfiles_scanned', 'lockfiles_failed', 'summary', 'findings', 'failures'];
     for (const field of required) {
       if (!Object.hasOwn(report, field)) return { valid: false, code: 'sca_schema_invalid', message: `missing required field ${field}` };
@@ -106,8 +119,33 @@ function validateScaArtifact(fullPath) {
     if (report.schema_version !== '1.0' || report.scanner !== 'npm audit' || report.mode !== 'offline' || report.network !== 'not_used') {
       return { valid: false, code: 'sca_metadata_invalid', message: `invalid sca metadata schema_version=${report.schema_version} scanner=${report.scanner} mode=${report.mode} network=${report.network}` };
     }
+    if (!['complete', 'partial'].includes(report.status)) {
+      return { valid: false, code: 'sca_schema_invalid', message: `invalid status: ${report.status}` };
+    }
+    if (!['none', 'present'].includes(report.findings_status)) {
+      return { valid: false, code: 'sca_schema_invalid', message: `invalid findings_status: ${report.findings_status}` };
+    }
+    for (const numField of ['lockfiles_total', 'lockfiles_scanned', 'lockfiles_failed']) {
+      if (typeof report[numField] !== 'number' || !Number.isInteger(report[numField]) || report[numField] < 0) {
+        return { valid: false, code: 'sca_schema_invalid', message: `field ${numField} must be non-negative integer` };
+      }
+    }
+    if (report.lockfiles_scanned + report.lockfiles_failed > report.lockfiles_total) {
+      return { valid: false, code: 'sca_schema_invalid', message: 'scanned + failed exceeds lockfiles_total' };
+    }
+    if (!report.summary || typeof report.summary !== 'object' || Array.isArray(report.summary)) {
+      return { valid: false, code: 'sca_schema_invalid', message: 'summary must be a non-empty object' };
+    }
+    for (const sev of ['info', 'low', 'moderate', 'high', 'critical']) {
+      if (typeof report.summary[sev] !== 'number' || !Number.isInteger(report.summary[sev]) || report.summary[sev] < 0) {
+        return { valid: false, code: 'sca_schema_invalid', message: `summary.${sev} must be non-negative integer` };
+      }
+    }
+    if (!Array.isArray(report.findings) || !Array.isArray(report.failures)) {
+      return { valid: false, code: 'sca_schema_invalid', message: 'findings and failures must be arrays' };
+    }
     const partial = report.status === 'partial' || report.lockfiles_failed > 0;
-    const findings = report.findings_status === 'present' || (Array.isArray(report.findings) && report.findings.length > 0);
+    const findings = report.findings_status === 'present' || report.findings.length > 0;
     return { valid: true, partial, findings, report };
   } catch (err) {
     return { valid: false, code: 'sca_json_invalid', message: `SCA report is not valid JSON: ${err.message}` };
@@ -122,7 +160,7 @@ function findSbom(repoRoot) {
   for (const file of SBOM_FILES) {
     const fullPath = path.join(repoRoot, file);
     if (!fs.existsSync(fullPath)) continue;
-    if (!file.endsWith('.json')) return { file, valid: true, partial: false };
+    if (!file.endsWith('.json')) return { file, valid: false, unverified: true, code: 'sbom_format_unverified', message: `non-JSON SBOM (${file}) format is unverified without specialized parser` };
     const validated = validateSbomArtifact(fullPath);
     return { file, fullPath, ...validated };
   }
@@ -133,7 +171,7 @@ function findSca(repoRoot) {
   for (const file of SCA_FILES) {
     const fullPath = path.join(repoRoot, file);
     if (!fs.existsSync(fullPath)) continue;
-    if (!file.endsWith('.json')) return { file, valid: true, partial: false, findings: true };
+    if (!file.endsWith('.json')) return { file, valid: false, unverified: true, code: 'sca_format_unverified', message: `non-JSON SCA (${file}) format is unverified without specialized parser` };
     const validated = validateScaArtifact(fullPath);
     return { file, fullPath, ...validated };
   }
@@ -208,7 +246,7 @@ function checkBase(base, repoRoot, issues) {
   checkExternalSource(base, 'base', repoRoot, issues);
 }
 
-export function checkSupplyChain({ registry, repoRoot = ROOT_DIR } = {}) {
+export function checkSupplyChain({ registry, repoRoot = ROOT_DIR, checkFreshness = false } = {}) {
   const issues = [];
   for (const base of registry?.base || []) if (base) checkBase(base, repoRoot, issues);
   for (const item of registry?.vertical || []) if (item) checkExternalSource(item, 'vertical', repoRoot, issues);
@@ -225,6 +263,21 @@ export function checkSupplyChain({ registry, repoRoot = ROOT_DIR } = {}) {
     issues.push(issue('W', 'sbom_partial', 'repository', 'sbom', `detected incomplete SBOM artifact: ${sbom.file}`));
   } else {
     issues.push(issue('I', 'sbom_present', 'repository', 'sbom', `detected ${sbom.file} (${sbom.componentCount} components)`));
+    if (checkFreshness && sbom.report && registry) {
+      try {
+        const freshSbom = generateSupplyChainSbom({
+          registry,
+          repoRoot,
+          generatedAt: sbom.report.metadata?.timestamp || '2026-01-01T00:00:00.000Z',
+          allowFailures: false
+        });
+        if (!isCycloneDxFresh(sbom.report, freshSbom.report)) {
+          issues.push(issue('E', 'sbom_stale', 'repository', 'sbom', 'committed SBOM artifact is stale; re-run generator'));
+        }
+      } catch (err) {
+        issues.push(issue('E', 'sbom_freshness_check_failed', 'repository', 'sbom', `failed to recompute SBOM: ${err.message}`));
+      }
+    }
   }
 
   if (!sca) {
@@ -237,6 +290,21 @@ export function checkSupplyChain({ registry, repoRoot = ROOT_DIR } = {}) {
     issues.push(issue('W', 'sca_findings_present', 'repository', 'sca', `SCA report contains findings: ${sca.file}`));
   } else {
     issues.push(issue('I', 'sca_report_present', 'repository', 'sca', `detected ${sca.file}`));
+    if (checkFreshness && sca.report && registry) {
+      try {
+        const freshSca = generateSupplyChainSca({
+          registry,
+          repoRoot,
+          generatedAt: sca.report.generated_at || '2026-01-01T00:00:00.000Z',
+          allowFailures: false
+        });
+        if (!isScaReportFresh(sca.report, freshSca.report)) {
+          issues.push(issue('E', 'sca_stale', 'repository', 'sca', 'committed SCA report is stale; re-run scanner'));
+        }
+      } catch (err) {
+        issues.push(issue('E', 'sca_freshness_check_failed', 'repository', 'sca', `failed to recompute SCA: ${err.message}`));
+      }
+    }
   }
 
   const errors = issues.filter(item => item.level === 'E').length;
@@ -273,14 +341,16 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const args = process.argv.slice(2);
   const json = args.includes('--json');
   const strict = args.includes('--strict');
-  if (args.some(arg => !['--json', '--strict'].includes(arg))) {
-    console.error('usage: node scripts/check-supply-chain.mjs [--json] [--strict]');
+  const checkFreshness = args.includes('--check-freshness');
+  if (args.some(arg => !['--json', '--strict', '--check-freshness'].includes(arg))) {
+    console.error('usage: node scripts/check-supply-chain.mjs [--json] [--strict] [--check-freshness]');
     process.exitCode = 2;
   } else {
     try {
       const report = checkSupplyChain({
         registry: loadRegistry(path.join(ROOT_DIR, 'registry.yaml')),
-        repoRoot: ROOT_DIR
+        repoRoot: ROOT_DIR,
+        checkFreshness
       });
       if (json) console.log(JSON.stringify(report, null, 2));
       else printText(report);

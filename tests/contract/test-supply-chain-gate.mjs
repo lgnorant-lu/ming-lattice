@@ -115,8 +115,25 @@ export function run() {
     assert.ok(invalidSca.issues.some(item => item.code === 'sca_schema_invalid'));
     assert.equal(supplyChainExitCode(invalidSca), 1);
 
+    // Negative tests for bogus status, non-integer count, empty summary
+    fs.writeFileSync(path.join(root, 'artifacts', 'sca.npm.json'), JSON.stringify({
+      schema_version: '1.0', scanner: 'npm audit', mode: 'offline', network: 'not_used',
+      status: 'bogus', findings_status: 'none', lockfiles_total: 'x', lockfiles_scanned: 1, lockfiles_failed: 0,
+      summary: {}, findings: [], failures: []
+    }), 'utf8');
+    const bogusSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
+    assert.ok(bogusSca.issues.some(item => item.code === 'sca_schema_invalid'));
+    assert.equal(supplyChainExitCode(bogusSca), 1);
+
+    // Non-JSON unverified test
+    fs.rmSync(path.join(root, 'artifacts', 'sca.npm.json'));
+    fs.writeFileSync(path.join(root, 'artifacts', 'sca-results.sarif'), '<sarif></sarif>', 'utf8');
+    const unverifiedSca = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
+    assert.ok(unverifiedSca.issues.some(item => item.code === 'sca_format_unverified'));
+    fs.rmSync(path.join(root, 'artifacts', 'sca-results.sarif'));
+
     fs.writeFileSync(path.join(root, 'artifacts', 'sbom.cdx.json'), JSON.stringify({
-      bomFormat: 'CycloneDX', specVersion: '1.5', components: [{ 'bom-ref': 'a@1.0.0' }],
+      bomFormat: 'CycloneDX', specVersion: '1.5', components: [{ 'bom-ref': 'a@1.0.0', name: 'a', version: '1.0.0' }],
       metadata: { properties: [{ name: 'ming.completeness', value: 'partial' }] }
     }), 'utf8');
     const partialSbom = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
@@ -128,7 +145,30 @@ export function run() {
     assert.ok(invalidSbom.issues.some(item => item.code === 'sbom_schema_invalid'));
     assert.equal(supplyChainExitCode(invalidSbom), 1);
 
-    console.log('  -> external pins, provenance, local entries, lockfiles and explicit SBOM/SCA status passed');
+    // Non-JSON unverified SBOM test
+    fs.rmSync(path.join(root, 'artifacts', 'sbom.cdx.json'));
+    fs.writeFileSync(path.join(root, 'artifacts', 'bom.xml'), '<bom></bom>', 'utf8');
+    const unverifiedSbom = checkSupplyChain({ repoRoot: root, registry: { private: [] } });
+    assert.ok(unverifiedSbom.issues.some(item => item.code === 'sbom_format_unverified'));
+    fs.rmSync(path.join(root, 'artifacts', 'bom.xml'));
+
+    // Freshness check validation with checkFreshness: true
+    const realRoot = path.resolve(import.meta.dirname, '../..');
+    const realRegistry = JSON.parse(fs.readFileSync(path.join(realRoot, 'config/router-manifest.json'), 'utf8')); // just dummy
+    // Tamper artifacts in a temporary mock
+    fs.writeFileSync(path.join(root, 'artifacts', 'sbom.cdx.json'), JSON.stringify({
+      bomFormat: 'CycloneDX', specVersion: '1.5',
+      components: [{ 'bom-ref': 'fake@9.9.9', name: 'fake', version: '9.9.9' }],
+      metadata: { properties: [{ name: 'ming.completeness', value: 'complete' }] }
+    }), 'utf8');
+    const staleCheck = checkSupplyChain({
+      repoRoot: root,
+      registry: { vertical: [], deployable: [], private: [] },
+      checkFreshness: true
+    });
+    assert.ok(staleCheck.issues.some(item => item.code === 'sbom_stale'), 'stale SBOM must be detected when checkFreshness is true');
+
+    console.log('  -> external pins, provenance, local entries, lockfiles, schema validation and freshness gate passed');
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
