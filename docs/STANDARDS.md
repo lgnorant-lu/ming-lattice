@@ -144,7 +144,25 @@ pwsh scripts/sync.ps1
 | `sync.completed` | `sync.ps1` 软链部署或演练完成 | `timestamp`, `linked_count`, `skipped_count`, `is_dry_run` |
 | `lint.checked` | `lint.ps1` 全量静态门禁检查完成 | `timestamp`, `sources_checked`, `error_count`, `warn_count` |
 | `test.suite_finished` | `tests/run.mjs` 测试套件运行完毕 | `timestamp`, `passed_suites`, `total_suites`, `duration_ms` |
+| `sync.failed` | `sync.ps1` 遭遇致命读取或复制异常早退 | `timestamp`, `error_type`, `duration_ms` |
 
 路由事件的机读字段见 [observability-event.schema.json](schemas/observability-event.schema.json)。启用方式为 `node scripts/route-core.mjs --event-file <path> [--work-unit-id <opaque-id>] <hint>`；不提供 `--event-file` 时不产生事件文件。事件只保留 `hint_hash`，并将失败原因收敛为稳定 `error_code`，不序列化异常消息。
 
 工具链事件使用环境变量 `MING_SKILLS_EVENT_FILE` 作为旁路目标，`MING_SKILLS_WORK_UNIT_ID` 作为可选关联 ID；未设置事件文件时，`build-router-manifest.mjs`、`tests/run.mjs`、`lint.ps1` 和 `sync.ps1` 不增加输出或写盘。事件只记录计数、布尔状态、仓库相对路径和稳定错误类型，旁路写入失败不改变主命令退出码。
+
+---
+
+## 7. 供应链门禁与制品治理规范 (Supply-Chain & Artifact Governance)
+
+为了防范恶意投毒与依赖漂移，仓库执行离线供应链溯源门禁与 CycloneDX / SCA 制品协同机制：
+
+1. **制品生成与新鲜度门禁（Artifact Freshness Gate）**：
+   - `artifacts/sbom.cdx.json`（CycloneDX 1.5 SBOM）与 `artifacts/sca.npm.json`（离线 SCA 审计报告）作为版本跟踪制品纳入受控管理；
+   - 本地与 CI 门禁通过 `--check` 选项进行无损新鲜度校验（`node scripts/generate-supply-chain-sbom.mjs --check` 与 `node scripts/generate-supply-chain-sca.mjs --check`），只有 lockfile 产生实质变更时才触发重写。
+2. **纯参考源例外准则（Reference-Only Exception Policy）**：
+   - `vertical/` 中声明 `deploy: {}` 的条目（如 `js-reverse-ops`、`wire-mcp` 等）仅作离线代码与知识参考，不向任何 Agent 客户端直接挂载；
+   - 此类包内若包含未提供 lockfile 的 `package.json`，供应链门禁将其识别为 `reference-only` 并降级为 `INFO` 提示，不阻断自动化测试与发布流程。
+3. **离线隔离与网络零依赖（Offline Hermetic Verification）**：
+   - 常规门禁和 CI 执行均强制 `network=not_used`，严禁在常规流水线中发起无受控的动态网络拉取；
+   - 依赖更新与漏洞库比对采用定期受控任务，经由 `scripts/update.ps1` 与联网 SCA 扫描后受控提交流水线。
+
