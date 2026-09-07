@@ -128,6 +128,25 @@ export function run() {
     assert.equal(syncFailedEvent.error_code, 'sync_failed');
     assert.ok(syncFailedEvent.error_type);
 
+    // Preflight failure scenario 2: unavailable module requested
+    const syncMissingModuleEventFile = path.join(temp, 'sync-missing-module-events.ndjson');
+    const syncMissingModuleResult = spawnSync('pwsh', [
+      '-NoProfile',
+      '-File', path.join(root, 'scripts/sync.ps1'),
+      '-Module', 'nonexistent-module-foo'
+    ], {
+      cwd: root,
+      encoding: 'utf8',
+      timeout: 15000,
+      env: { ...process.env, MING_SKILLS_EVENT_FILE: syncMissingModuleEventFile, MING_SKILLS_WORK_UNIT_ID: 'sync-contract-missing' }
+    });
+    assert.notEqual(syncMissingModuleResult.status, 0);
+    assert.ok(fs.existsSync(syncMissingModuleEventFile), 'sync.failed event must be written on unavailable module');
+    const syncMissingEvent = JSON.parse(fs.readFileSync(syncMissingModuleEventFile, 'utf8').trim());
+    assertBaseEvent(syncMissingEvent);
+    assert.equal(syncMissingEvent.event, 'sync.failed');
+    assert.equal(syncMissingEvent.ok, false);
+
     console.log('  -> event schema, independent channel, correlation ID and redaction checks passed');
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
