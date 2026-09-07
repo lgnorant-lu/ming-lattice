@@ -108,6 +108,26 @@ export function run() {
     assertBaseEvent(testEvent);
     assert.equal(testEvent.total_suites, 13);
     assert.equal(Object.hasOwn(testEvent, 'hint_hash'), false);
+    const syncFailedEventFile = path.join(temp, 'sync-failed-events.ndjson');
+    const syncFailedResult = spawnSync('pwsh', [
+      '-NoProfile',
+      '-File', path.join(root, 'scripts/sync.ps1'),
+      '-RegistryPath', path.join(temp, 'nonexistent-registry.yaml')
+    ], {
+      cwd: root,
+      encoding: 'utf8',
+      timeout: 15000,
+      env: { ...process.env, MING_SKILLS_EVENT_FILE: syncFailedEventFile, MING_SKILLS_WORK_UNIT_ID: 'sync-contract-fail' }
+    });
+    assert.notEqual(syncFailedResult.status, 0);
+    assert.ok(fs.existsSync(syncFailedEventFile), 'sync.failed event file must be written');
+    const syncFailedEvent = JSON.parse(fs.readFileSync(syncFailedEventFile, 'utf8').trim());
+    assertBaseEvent(syncFailedEvent);
+    assert.equal(syncFailedEvent.event, 'sync.failed');
+    assert.equal(syncFailedEvent.ok, false);
+    assert.equal(syncFailedEvent.error_code, 'sync_failed');
+    assert.ok(syncFailedEvent.error_type);
+
     console.log('  -> event schema, independent channel, correlation ID and redaction checks passed');
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
