@@ -27,7 +27,7 @@ registry + 本地 SKILL.md 身份 -> 构建时 availability
 
 ## 契约与权限
 
-- [RouteDecision schema](schemas/route-decision.schema.json) 是生产者字段定义；v2 增加模式和显式版本，支持 engineering 领域。当前编排 37 个受控技能，分布于 testing、reverse、ui、engineering、protocol 5 大领域及 12 条可执行配方。
+- [RouteDecision schema](schemas/route-decision.schema.json) 是生产者字段定义；v2 增加模式和显式版本，支持 engineering 领域。当前编排 37 个受控技能，分布于 testing、reverse、ui、engineering、protocol 5 大领域及 13 条可执行配方，其中 `quality-gate-governance` 专用于门禁、runner、制品契约与供应链治理。
 - [RouterManifest schema](schemas/router-manifest.schema.json) 定义构建快照。`ready` 仅表示构建时可引用入口，不代表全部依赖、MCP、私有 kit 或实际权限就绪。
 - `adapt()` 将未知/v1 控制契约安全退回 handoff，不实施未经验证的兼容推断。消费端可忽略额外数据键，但不能把未知命令或模式当成功。
 - 兼容矩阵见 [route-decision-compatibility.json](../tests/contract/route-decision-compatibility.json)：涵盖 9 种跨版本兼容夹具，v2 同主版本额外数据可读，v1/未知主版本、未知控制值和缺失必填字段安全退回。

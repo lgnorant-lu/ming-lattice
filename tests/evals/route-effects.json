@@ -39,6 +39,29 @@
     }
   },
   {
+    "id": "quality-gate-governance",
+    "kind": "spec",
+    "source": "repository quality-gate review request",
+    "hint": "审阅 Git Hooks 质量门禁、SCA freshness、pre-commit runner 与 sync.failed，不修改",
+    "expected": {
+      "mode": "review",
+      "domain": "engineering",
+      "action": "dispatch",
+      "recipe": "quality-gate-governance",
+      "promptAction": "review",
+      "loadSkills": [
+        "testing-core-oracle",
+        "testing-scenario-cli",
+        "contract-core-paradigm",
+        "obs-core-paradigm",
+        "sec-core-paradigm",
+        "overlay-core-paradigm"
+      ],
+      "mustNotIncludes": ["modify_files", "install_tools", "execute_target"],
+      "allowCaseInit": false
+    }
+  },
+  {
     "id": "rust-property-implementation",
     "kind": "spec",
     "source": "language plus deep-verification request",

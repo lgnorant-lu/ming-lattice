@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-07T04:25:22.525Z",
+  "generatedAt": "2026-09-07T08:25:43.558Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -180,7 +180,7 @@
       "defaultRecipe": "ui-oracle-trace"
     },
     "engineering": {
-      "description": "软件工程质量属性与元规范族 (文档四体裁, 视觉排版动线, 宽结构化事件, 安全供应链, 数据演进契约, B级质量Overlay)",
+      "description": "软件工程质量属性与元规范族 (文档四体裁, 视觉排版动线, 质量门禁, 宽结构化事件, 安全供应链, 数据演进契约, B级质量Overlay)",
       "skills": [
         "docs-core-paradigm",
         "docs-presentation-idiom",
@@ -229,6 +229,22 @@
         "上下文成本",
         "可移植",
         "overlay"
+      ],
+      "qualityGateTriggers": [
+        "质量门禁",
+        "门禁",
+        "git hooks",
+        "pre-commit",
+        "pre-push",
+        "ci",
+        "ci/cd",
+        "runner",
+        "影响面",
+        "affected",
+        "sbom",
+        "sca",
+        "freshness",
+        "制品门禁"
       ],
       "negatives": [
         "脱壳",
@@ -314,6 +330,18 @@
         "obs-core-paradigm",
         "sec-core-paradigm",
         "contract-core-paradigm",
+        "overlay-core-paradigm"
+      ]
+    },
+    "quality-gate-governance": {
+      "domain": "engineering",
+      "description": "质量门禁治理配方 (测试 Oracle + CLI Runner + 制品契约 + 失败事件 + 供应链与质量 Overlay)",
+      "skills": [
+        "testing-core-oracle",
+        "testing-scenario-cli",
+        "contract-core-paradigm",
+        "obs-core-paradigm",
+        "sec-core-paradigm",
         "overlay-core-paradigm"
       ]
     },

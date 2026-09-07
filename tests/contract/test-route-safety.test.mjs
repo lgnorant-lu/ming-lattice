@@ -122,6 +122,7 @@ test('invalid manifest collections return a diagnostic, not a crash', () => {
   for (const damage of [
     value => { value.recipes['spec-driven-greenfield'].skills = 42; },
     value => { value.domains.engineering.skillTriggers['obs-core-paradigm'] = null; },
+    value => { value.domains.engineering.qualityGateTriggers = null; },
     value => { value.domains.testing.skills = [null]; }
   ]) {
     const input = structuredClone(manifest);

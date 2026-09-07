@@ -30,6 +30,10 @@
             "type": "array",
             "items": { "type": "string" }
           },
+          "qualityGateTriggers": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
           "defaultRecipe": { "type": "string" },
           "skillTriggers": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } } }
         }

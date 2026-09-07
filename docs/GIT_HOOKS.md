@@ -115,3 +115,16 @@ lintLevel=error         # error | warn | off（默认 error: lint 失败阻断�
   git commit --no-verify -m "..."
   ```
 - **临时调整等级**：修改本地 `.hooksrc` 中的某项配置为 `warn` 或 `off`（请勿随代码提交）。
+
+## 6. 可迁移方法论与仓库实现边界
+
+本文件描述本仓库的 Hook 拓扑和命令；可迁移的判断规则分别维护在现有技能中，避免把仓库路径和脚本细节复制进通用规范：
+
+| 问题 | 方法论入口 | 本仓库实现 |
+|---|---|---|
+| 参数、退出码、stdout/stderr 与 runner 选择 | [testing-scenario-cli](../private/engineering/testing/testing-scenario-cli/SKILL.md) | `tests/run.mjs`、`scripts/verify.mjs` |
+| schema、制品、finding 与 freshness | [contract-core-paradigm](../private/engineering/contract-core-paradigm/SKILL.md) | `docs/schemas/`、`scripts/check-supply-chain.mjs` |
+| 失败、预检与独立事件通道 | [obs-core-paradigm](../private/engineering/obs-core-paradigm/SKILL.md) | `scripts/emit-operational-event.mjs`、`scripts/sync.ps1` |
+| provenance、pin、离线和 fail-closed | [sec-core-paradigm](../private/engineering/sec-core-paradigm/SKILL.md) | `registry.yaml`、`artifacts/`、供应链脚本 |
+
+新增仓库若复用这些规则，应引用 skill 并替换实现映射；只有形成第二个真实仓库的相同门禁拓扑后，才考虑抽取独立编排 skill。

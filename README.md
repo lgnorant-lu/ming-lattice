@@ -16,7 +16,7 @@ Ming 的 Agent 技能集散与工程中枢（Skills Hub & Monorepo）：统一�
 | **Private（自研层）** | `private/` | **22 个核心自研技能**<br>测试规范体系族、UI 设计范式、路由内核 | 核心自研资产；深度受控部署与规则锁定 |
 
 - **Lint 校验源基线**：全仓由 `scripts/lint.ps1` 校验 **157 处入口源**（$20 + 91 + 24 + 22 = 157$），保证 frontmatter、相对引用与入口脚本完整性。
-- **路由编排技能**：由 `config/router-manifest.json` 策划并受控编排 **37 个唯一技能**，分布于 5 大核心领域及 12 条可执行配方。
+- **路由编排技能**：由 `config/router-manifest.json` 策划并受控编排 **37 个唯一技能**，分布于 5 大核心领域及 13 条可执行配方。
 - **供应链依赖基线**：离线 CycloneDX 1.5 SBOM 聚合 **1083 个依赖组件**；SCA 扫描覆盖 **38 个 lockfile**（离线缓存 0 advisory findings）。
 - **自动化质量门禁**：测试套件矩阵包含 **17 个独立测试套件**，覆盖单元、契约、隔离集成、效果评估与性能基准。
 
@@ -39,7 +39,7 @@ Ming 的 Agent 技能集散与工程中枢（Skills Hub & Monorepo）：统一�
   ▼
 [RouteDecision v2.0.0]
   ├─ allowCaseInit: false (fail-closed 恒定关闭，严禁越权创建工单)
-  ├─ active_recipe: 对应 12 条工程级配方，装配唯一技能清单
+  ├─ active_recipe: 对应 13 条工程级配方，装配唯一技能清单
   └─ adapt() 适配层: 纯映射至宿主 Harness，安全拒绝未知协议
 ```
 

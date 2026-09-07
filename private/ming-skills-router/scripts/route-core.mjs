@@ -72,6 +72,7 @@ export function Decide(hint, manifest) {
   for (const [name, info] of Object.entries(domains)) {
     if (!isRecord(info) || !isStringArray(info.skills) || !info.skills.every(isSkillName)
       || !isStringArray(info.triggers) || !isStringArray(info.negatives)
+      || (info.qualityGateTriggers !== undefined && !isStringArray(info.qualityGateTriggers))
       || (info.skillTriggers !== undefined && (!isRecord(info.skillTriggers)
         || !Object.entries(info.skillTriggers).every(([skill, terms]) => isSkillName(skill) && isStringArray(terms))))) {
       decision.reasons.push('invalid_domain_definition');
@@ -81,7 +82,8 @@ export function Decide(hint, manifest) {
       if (clauses.some(clause => negated(clause) && matches(clause, skill))) excluded.add(skill);
       if (matches(activeText, skill)) explicit.set(skill, name);
     }
-    scores[name] = info.triggers.filter(term => term !== 'hook' && matches(activeText, term)).length;
+    const triggerTerms = [...info.triggers, ...(info.qualityGateTriggers || [])];
+    scores[name] = triggerTerms.filter(term => term !== 'hook' && matches(activeText, term)).length;
   }
   for (const skill of excluded) explicit.delete(skill);
   for (const [name, info] of Object.entries(domains)) {
@@ -98,6 +100,7 @@ export function Decide(hint, manifest) {
   }
 
   const positive = name => (scores[name] || 0) > 0;
+  const qualityGate = (domains.engineering?.qualityGateTriggers || []).some(term => matches(activeText, term));
   const conflicting = positive('reverse') && (positive('testing') || positive('ui')) && !positive('protocol');
   if (conflicting) {
     decision.domain = 'mixed';
@@ -109,7 +112,8 @@ export function Decide(hint, manifest) {
     return decision;
   }
 
-  const domain = ['testing', 'protocol', 'reverse', 'ui', 'engineering'].find(positive);
+  const domain = qualityGate && positive('engineering') ? 'engineering'
+    : ['testing', 'protocol', 'reverse', 'ui', 'engineering'].find(positive);
   if (!domain) {
     decision.reasons.push('no_domain_triggers_matched');
     return decision;
@@ -122,6 +126,7 @@ export function Decide(hint, manifest) {
   ])];
 
   let recipeKey = domains[domain].defaultRecipe;
+  if (domain === 'engineering' && qualityGate) recipeKey = 'quality-gate-governance';
   const named = [...explicit.keys()];
   let targetSkills = named.filter(skill => explicit.get(skill) === domain);
   if (domain === 'testing') {

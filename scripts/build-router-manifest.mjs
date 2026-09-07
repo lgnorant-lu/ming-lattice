@@ -83,7 +83,7 @@ const DOMAIN_DEFS = {
     defaultRecipe: "ui-oracle-trace"
   },
   engineering: {
-    description: "软件工程质量属性与元规范族 (文档四体裁, 视觉排版动线, 宽结构化事件, 安全供应链, 数据演进契约, B级质量Overlay)",
+    description: "软件工程质量属性与元规范族 (文档四体裁, 视觉排版动线, 质量门禁, 宽结构化事件, 安全供应链, 数据演进契约, B级质量Overlay)",
     skills: [
       "docs-core-paradigm",
       "docs-presentation-idiom",
@@ -100,6 +100,10 @@ const DOMAIN_DEFS = {
       "安全元规则", "ast10", "agentic-skills", "supply-chain", "最小权限",
       "数据契约", "schema-evolution", "tolerant-reader", "data-contract", "字段演进",
       "性能", "安全", "隐私", "韧性", "上下文成本", "可移植", "overlay"
+    ],
+    qualityGateTriggers: [
+      "质量门禁", "门禁", "git hooks", "pre-commit", "pre-push", "ci", "ci/cd", "runner",
+      "影响面", "affected", "sbom", "sca", "freshness", "制品门禁"
     ],
     negatives: [
       "脱壳", "反编译", "ida pro", "gdb", "rop", "pwn"
@@ -137,6 +141,18 @@ const RECIPES = {
       "obs-core-paradigm",
       "sec-core-paradigm",
       "contract-core-paradigm",
+      "overlay-core-paradigm"
+    ]
+  },
+  "quality-gate-governance": {
+    domain: "engineering",
+    description: "质量门禁治理配方 (测试 Oracle + CLI Runner + 制品契约 + 失败事件 + 供应链与质量 Overlay)",
+    skills: [
+      "testing-core-oracle",
+      "testing-scenario-cli",
+      "contract-core-paradigm",
+      "obs-core-paradigm",
+      "sec-core-paradigm",
       "overlay-core-paradigm"
     ]
   },
