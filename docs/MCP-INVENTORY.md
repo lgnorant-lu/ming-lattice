@@ -1,5 +1,8 @@
 # MCP 对照清单 (本地 vs 生态索引)
 
+> [!NOTE]
+> 本文档为 2026-08-18 的 MCP 本地注册表与外部生态索引对照快照，保留用于生态补充与背景审计。
+
 > 用途：本地 9 个已注册 MCP 与 awesome-re-mcp 生态索引（2026-08-18 采集）的对照，找缺失可补项。
 > 本地注册表: ~/.claude.json mcpServers（9 个用户级）
 
@@ -7,23 +10,23 @@
 
 | MCP | 类型 | 对应索引分类 | 说明 |
 |---|---|---|---|
-| js-reverse | npm js-reverse-mcp | ❌ 索引未收录（JS 逆向 MCP, 索引偏二进制/桌面） | **本地独有** |
-| reqable | 本地 exe（Reqable 抓包） | ❌ 索引未收录（HTTP 抓包工具） | **本地独有**, 与 mitmproxy/Fiddler 同类但索引标注缺失 |
-| fast-context | npm + 私有 WINDSURF key | ❌ 非 RE 生态（上下文压缩） | 本地独有（通用工具） |
-| serper | npm + key | ❌ 非 RE（搜索） | 通用 |
-| exa | sse 云 | ❌ 非 RE（搜索） | 通用 |
-| context7 | npm @upstash + key | ❌ 非 RE（文档检索） | 通用 |
-| fetch | uvx 官方 | ❌ 非 RE（网页抓取） | 通用 |
-| duckduckgo | uvx 官方（断开） | ❌ 非 RE（搜索） | 通用 |
-| sequential-thinking | npx 官方 | ❌ 非 RE（推理） | 通用 |
+| js-reverse | npm js-reverse-mcp | [未收录] 索引未收录（JS 逆向 MCP, 索引偏二进制/桌面） | **本地独有** |
+| reqable | 本地 exe（Reqable 抓包） | [未收录] 索引未收录（HTTP 抓包工具） | **本地独有**, 与 mitmproxy/Fiddler 同类但索引标注缺失 |
+| fast-context | npm + 私有 WINDSURF key | [非RE] 非 RE 生态（上下文压缩） | 本地独有（通用工具） |
+| serper | npm + key | [非RE] 非 RE（搜索） | 通用 |
+| exa | sse 云 | [非RE] 非 RE（搜索） | 通用 |
+| context7 | npm @upstash + key | [非RE] 非 RE（文档检索） | 通用 |
+| fetch | uvx 官方 | [非RE] 非 RE（网页抓取） | 通用 |
+| duckduckgo | uvx 官方（断开） | [非RE] 非 RE（搜索） | 通用 |
+| sequential-thinking | npx 官方 | [非RE] 非 RE（推理） | 通用 |
 
 ## 二、索引有、本地无（接入候选, 按价值排序）
 
 | 候选 MCP | 来源 | 价值 | 建议 |
 |---|---|---|---|
-| frida-mcp (dnakov) | https://github.com/dnakov/frida-mcp | 移动动态插桩, 基座 apk-reverse 场景高度相关 | ⭐ 优先评估 |
-| ida-pro-mcp (mrexodia) | https://github.com/mrexodia/ida-pro-mcp | **基座 ida-reverse 已在用其生态**（服务器名 idapro） | ✅ 已隐含使用, 确认版本 |
-| Burp Suite MCP (PortSwigger 官方) | https://github.com/PortSwigger/mcp-server | 抓包/代理官方集成 | ⭐ 优先评估 |
+| frida-mcp (dnakov) | https://github.com/dnakov/frida-mcp | 移动动态插桩, 基座 apk-reverse 场景高度相关 | [高优] 优先评估 |
+| ida-pro-mcp (mrexodia) | https://github.com/mrexodia/ida-pro-mcp | **基座 ida-reverse 已在用其生态**（服务器名 idapro） | [已接入] 确认版本 |
+| Burp Suite MCP (PortSwigger 官方) | https://github.com/PortSwigger/mcp-server | 抓包/代理官方集成 | [高优] 优先评估 |
 | Jadx-MCP-Plugin (mobilehackinglab) | https://github.com/mobilehackinglab/Jadx-MCP-Plugin | jadx 反编译 + AI | 评估（本地已有 jadx-mcp-server 备选） |
 | apktool-mcp-server (zinja-coder) | https://github.com/zinja-coder/apktool-mcp-server | APK 操作 | 评估 |
 | radare2-mcp (radareorg 官方) | https://github.com/radareorg/radare2-mcp | radare2 26+ 工具 | 评估（基座 radare2 模块 CLI 已够用） |

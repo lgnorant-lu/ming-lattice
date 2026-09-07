@@ -1,5 +1,8 @@
 # Skill 采集清单 (INVENTORY)
 
+> [!NOTE]
+> 本文档为 2026-08-18 的历史采集与盘点快照，保留用于溯源与背景审计。当前仓库真实结构、最新资产规模（157 处校验源）及路由配置请以根目录 [README.md](../README.md) 与 [registry.yaml](../registry.yaml) 为准。
+
 > 用途：当前集散仓库已采集/待核查的全部 skill 来源清单。可交由外部 LLM（如 Grok）核查仓库真伪、活跃度、补充遗漏。
 > 生成日期：2026-08-18（实时验证：git ls-remote + GitHub API）
 

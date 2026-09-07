@@ -1,5 +1,8 @@
 # 筛选报告 (SCREENING) — 27 个 vertical 审阅结论
 
+> [!NOTE]
+> 本文档为 2026-08-18 对早期 27 个 vertical 仓库的审阅评估结论快照，保留用于背景审计与决策溯源。当前仓库已演进至 91 个 vertical 参考库并建立了完整包装层（deployable: 24）与自研层（private: 22），最新治理现状以根目录 [README.md](../README.md) 为准。
+
 > 生成：2026-08-18 · 5 个子代理并行审阅（JS×9 / 二进制×5 / 移动+恶意×5 / KB+CTF+杂项×7），逐仓读取 SKILL.md/README/脚本并与基座对比。
 > 结论分级：deploy（部署给 AI） / deploy-子集（只取部分） / reference（吸收进基座或按需查阅） / watch（观察） / drop（删除）
 

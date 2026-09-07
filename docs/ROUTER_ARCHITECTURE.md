@@ -27,14 +27,15 @@ registry + 本地 SKILL.md 身份 -> 构建时 availability
 
 ## 契约与权限
 
-- [RouteDecision schema](schemas/route-decision.schema.json) 是生产者字段定义；v2 增加模式和显式版本，支持 engineering 领域。
+- [RouteDecision schema](schemas/route-decision.schema.json) 是生产者字段定义；v2 增加模式和显式版本，支持 engineering 领域。当前编排 37 个受控技能，分布于 testing、reverse、ui、engineering、protocol 5 大领域及 12 条可执行配方。
 - [RouterManifest schema](schemas/router-manifest.schema.json) 定义构建快照。`ready` 仅表示构建时可引用入口，不代表全部依赖、MCP、私有 kit 或实际权限就绪。
 - `adapt()` 将未知/v1 控制契约安全退回 handoff，不实施未经验证的兼容推断。消费端可忽略额外数据键，但不能把未知命令或模式当成功。
-- 兼容矩阵见 [route-decision-compatibility.json](../tests/contract/route-decision-compatibility.json)：v2 同主版本额外数据可读，v1/未知主版本、未知控制值和缺失必填字段安全退回。
+- 兼容矩阵见 [route-decision-compatibility.json](../tests/contract/route-decision-compatibility.json)：涵盖 9 种跨版本兼容夹具，v2 同主版本额外数据可读，v1/未知主版本、未知控制值和缺失必填字段安全退回。
+- 性能门禁见 [route-performance.mjs](../tests/benchmarks/route-performance.mjs)：在 `--strict` 模式下断言单次路由决策 P95 < 10ms（千级候选重复场景 P95 < 50ms），千级 registry 构建 manifest P95 < 200ms。
 - `allowCaseInit` 恒为 false。输出限制由宿主继续落实，纯函数和一份禁止列表不是安全沙箱。
 - 候选名称与正文加载分离；ask/handoff 不加载执行配方，review/plan/explain 的限制必须传给下游。
 - 可观测事件是 CLI 外层的可选旁路；事件只记录 `hint_hash`，不记录完整 prompt、密钥或错误文本。使用 `--event-file` 和可选 `--work-unit-id` 开启。
-- registry 供应链门禁通过 `scripts/check-supply-chain.mjs` 离线检查来源 provenance、pin、锁文件和部署入口；它不替代 SBOM/SCA，未配置时必须显式报告。
+- registry 供应链门禁通过 `scripts/check-supply-chain.mjs` 离线检查来源 provenance、pin、锁文件和部署入口；结合 `--check-freshness` 提供 SBOM 与 SCA 深度比对防篡改。
 
 与 v1 的变更理由见 [ADR-0005](adr/ADR-0005-review-safe-routing.md)。
 
