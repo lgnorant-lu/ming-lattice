@@ -62,6 +62,33 @@
     }
   },
   {
+    "id": "runtime-ffi-quality-gate",
+    "kind": "spec",
+    "source": "IV8 runtime quality-gate routing requirement",
+    "hint": "审阅 IV8 Rust V8 PyO3 FFI JavaScript 质量门禁、事件 oracle、日志和性能资源约束，不修改",
+    "expected": {
+      "mode": "review",
+      "domain": "engineering",
+      "action": "dispatch",
+      "recipe": "runtime-ffi-quality-gate",
+      "promptAction": "review",
+      "loadSkills": [
+        "testing-core-oracle",
+        "testing-scenario-cli",
+        "testing-scenario-embed-ffi",
+        "testing-rust-idiom",
+        "testing-python-idiom",
+        "testing-js-idiom",
+        "contract-core-paradigm",
+        "obs-core-paradigm",
+        "sec-core-paradigm",
+        "overlay-core-paradigm"
+      ],
+      "mustNotIncludes": ["modify_files", "install_tools", "execute_target"],
+      "allowCaseInit": false
+    }
+  },
+  {
     "id": "rust-property-implementation",
     "kind": "spec",
     "source": "language plus deep-verification request",

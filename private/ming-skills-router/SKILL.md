@@ -43,6 +43,14 @@ node "$SKILL_ROOT/scripts/route-core.mjs" "只审阅测试体系，同时检查�
 
 本批仍采用维护者策划的领域与配方，尚不是完整的语义检索或执行调度器。编译器通过 registry 与入口文件生成 `availability`：`ready` 只表示构建时条目启用、入口身份有效，不代表私有运行时、MCP、权限或全部依赖就绪。宿主加载前还应检查当前可用技能与资源；失效时停止，不静默换包。
 
+### Runtime/FFI quality gate
+
+当质量门禁请求同时涉及 V8、PyO3、FFI、跨语言或 isolate 时，路由器选择
+`runtime-ffi-quality-gate`：保留 Oracle、CLI、契约、可观测、安全和质量
+Overlay 基线，并按输入词追加 Rust、Python 或 JavaScript 地道测试参考。
+它只扩展当前任务所需的场景包，不把整个测试技能族加载进上下文；未出现
+运行时/FFI 语义时仍使用普通 `quality-gate-governance` 配方。
+
 ## 降级与维护
 
 没有 Node 或工具受限时，用宿主提供的技能描述进行只读筛选，保留模式与限制，明确标记未运行路由脚本。不复制另一份触发词表或凭空声称高置信。

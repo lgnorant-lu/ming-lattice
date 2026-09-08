@@ -81,6 +81,46 @@ test('engineering and protocol domains have executable routing definitions', () 
   assert.equal(adapt(decision).allowCaseInit, false);
 });
 
+test('runtime quality gates preserve governance and select FFI references', () => {
+  const decision = Decide(
+    '审阅 IV8 Rust V8 PyO3 FFI JavaScript 质量门禁、事件 oracle、日志和性能资源约束，不修改',
+    manifest
+  );
+  assert.equal(decision.domain, 'engineering');
+  assert.equal(decision.active_recipe.name, 'runtime-ffi-quality-gate');
+  for (const skill of [
+    'testing-core-oracle',
+    'testing-scenario-cli',
+    'testing-scenario-embed-ffi',
+    'testing-rust-idiom',
+    'testing-python-idiom',
+    'testing-js-idiom',
+    'contract-core-paradigm',
+    'obs-core-paradigm',
+    'overlay-core-paradigm'
+  ]) {
+    assert.ok(decision.active_recipe.skills.includes(skill), skill);
+  }
+  assert.ok(!decision.active_recipe.skills.includes('testing-workflow-spec'));
+  assert.equal(adapt(decision).promptAction, 'review');
+});
+
+test('quality gates fail closed when required evidence skills are excluded', () => {
+  const oracleExcluded = Decide(
+    '不使用 testing-core-oracle；审阅质量门禁和结构化日志，不修改',
+    manifest
+  );
+  assert.equal(oracleExcluded.action, 'ask');
+  assert.deepEqual(adapt(oracleExcluded).loadSkills, []);
+
+  const ffiExcluded = Decide(
+    '不使用 testing-scenario-embed-ffi；审阅 V8 PyO3 FFI 质量门禁，不修改',
+    manifest
+  );
+  assert.equal(ffiExcluded.action, 'ask');
+  assert.deepEqual(adapt(ffiExcluded).loadSkills, []);
+});
+
 test('router confidence never grants case creation permission', () => {
   const decision = Decide('使用 jadx 与 frida 分析 APK', manifest);
   assert.equal(decision.domain, 'reverse');

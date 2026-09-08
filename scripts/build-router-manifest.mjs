@@ -115,7 +115,11 @@ const DOMAIN_DEFS = {
       "obs-core-paradigm": ["日志", "可观测", "observability", "logging", "telemetry", "宽事件", "相关id"],
       "sec-core-paradigm": ["安全", "security", "供应链", "supply-chain", "最小权限", "ast10"],
       "contract-core-paradigm": ["数据契约", "字段演进", "schema-evolution", "schemaVersion", "tolerant-reader", "data-contract"],
-      "overlay-core-paradigm": ["性能", "performance", "隐私", "privacy", "韧性", "可移植", "上下文成本", "overlay"]
+      "overlay-core-paradigm": ["性能", "performance", "隐私", "privacy", "韧性", "可移植", "上下文成本", "overlay"],
+      "testing-scenario-embed-ffi": ["v8", "v8-isolate", "pyo3", "ffi", "跨语言", "嵌入", "isolate"],
+      "testing-rust-idiom": ["rust", "rustc", "cargo", "miri", "proptest"],
+      "testing-python-idiom": ["python", "pytest", "pyo3", "hypothesis"],
+      "testing-js-idiom": ["javascript", "typescript", "node.js", "event loop", "页面事件"]
     }
   }
 };
@@ -150,6 +154,19 @@ const RECIPES = {
     skills: [
       "testing-core-oracle",
       "testing-scenario-cli",
+      "contract-core-paradigm",
+      "obs-core-paradigm",
+      "sec-core-paradigm",
+      "overlay-core-paradigm"
+    ]
+  },
+  "runtime-ffi-quality-gate": {
+    domain: "engineering",
+    description: "V8/PyO3/FFI runtime quality gates with the standard governance baseline",
+    skills: [
+      "testing-core-oracle",
+      "testing-scenario-cli",
+      "testing-scenario-embed-ffi",
       "contract-core-paradigm",
       "obs-core-paradigm",
       "sec-core-paradigm",

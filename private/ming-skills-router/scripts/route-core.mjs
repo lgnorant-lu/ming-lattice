@@ -126,7 +126,12 @@ export function Decide(hint, manifest) {
   ])];
 
   let recipeKey = domains[domain].defaultRecipe;
-  if (domain === 'engineering' && qualityGate) recipeKey = 'quality-gate-governance';
+  const ffiQualityGate = domain === 'engineering' && qualityGate
+    && (domains.engineering?.skillTriggers?.['testing-scenario-embed-ffi'] || [])
+      .some(term => matches(activeText, term));
+  if (domain === 'engineering' && qualityGate) {
+    recipeKey = ffiQualityGate ? 'runtime-ffi-quality-gate' : 'quality-gate-governance';
+  }
   const named = [...explicit.keys()];
   let targetSkills = named.filter(skill => explicit.get(skill) === domain);
   if (domain === 'testing') {
@@ -169,6 +174,7 @@ export function Decide(hint, manifest) {
   }
 
   if (domain === 'engineering' || positive('engineering')) {
+    if (qualityGate) targetSkills.push(...(recipes[recipeKey]?.skills || []));
     for (const [skill, terms] of Object.entries(domains.engineering?.skillTriggers || {})) {
       if (explicit.has(skill) || terms.some(term => matches(activeText, term))) targetSkills.push(skill);
     }
@@ -176,9 +182,14 @@ export function Decide(hint, manifest) {
     if (!targetSkills.length) targetSkills = [...(recipes[recipeKey]?.skills || [])];
   }
   targetSkills = [...new Set(targetSkills)].filter(skill => !excluded.has(skill));
-  if (domain === 'testing' && !targetSkills.includes('testing-core-oracle')) {
+  const requiredQualitySkills = qualityGate
+    ? ['testing-core-oracle', ...(ffiQualityGate ? ['testing-scenario-embed-ffi'] : [])]
+    : [];
+  if ((domain === 'testing' || qualityGate)
+    && (domain === 'testing' ? !targetSkills.includes('testing-core-oracle')
+      : requiredQualitySkills.some(skill => !targetSkills.includes(skill)))) {
     decision.action = 'ask';
-    decision.reasons.push('required_oracle_excluded');
+    decision.reasons.push('required_quality_skill_excluded');
     return decision;
   }
   const unavailable = targetSkills.filter(skill => availability[skill] !== 'ready');

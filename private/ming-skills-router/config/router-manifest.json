@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-07T08:25:43.558Z",
+  "generatedAt": "2026-09-08T14:35:31.674Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -301,6 +301,35 @@
           "可移植",
           "上下文成本",
           "overlay"
+        ],
+        "testing-scenario-embed-ffi": [
+          "v8",
+          "v8-isolate",
+          "pyo3",
+          "ffi",
+          "跨语言",
+          "嵌入",
+          "isolate"
+        ],
+        "testing-rust-idiom": [
+          "rust",
+          "rustc",
+          "cargo",
+          "miri",
+          "proptest"
+        ],
+        "testing-python-idiom": [
+          "python",
+          "pytest",
+          "pyo3",
+          "hypothesis"
+        ],
+        "testing-js-idiom": [
+          "javascript",
+          "typescript",
+          "node.js",
+          "event loop",
+          "页面事件"
         ]
       }
     }
@@ -339,6 +368,19 @@
       "skills": [
         "testing-core-oracle",
         "testing-scenario-cli",
+        "contract-core-paradigm",
+        "obs-core-paradigm",
+        "sec-core-paradigm",
+        "overlay-core-paradigm"
+      ]
+    },
+    "runtime-ffi-quality-gate": {
+      "domain": "engineering",
+      "description": "V8/PyO3/FFI runtime quality gates with the standard governance baseline",
+      "skills": [
+        "testing-core-oracle",
+        "testing-scenario-cli",
+        "testing-scenario-embed-ffi",
         "contract-core-paradigm",
         "obs-core-paradigm",
         "sec-core-paradigm",
