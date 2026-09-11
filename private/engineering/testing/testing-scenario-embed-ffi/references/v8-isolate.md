@@ -44,3 +44,17 @@ V8 内部对时间（`Date.now()`）和随机数（`Math.random()`）的默认�
 ### [禁止] 严禁反模式：
 - **严禁**只测「脚本加载没有崩溃」（无断言测试）。
 - **严禁**写成百上千个类似 `eval("1 + 1") == 2` 的空转测试，V8 自身的语法正确性不需要你在业务层重复验证。
+
+---
+
+## 4. 全局单例生命周期与 EventTarget 路由纪律（Global Singleton & Navigation Lifecycle）
+
+在具有页面加载/导航（如 `page_load`）能力的嵌入式环境中，宿主对象（如 `Window`、`Document`）的生命周期与内部底层 AST/DOM 节点有不同步特征：
+
+1. **JS 单例引用稳定性 vs 底层底层状态重置**：
+   - JS 层的全局暴露引用（如 `window.document`）在多次 `page_load` 间可能保持单例 Proxy/LegacyUnforgeable 契约；
+   - 但 Rust 端支撑它的实际底层树（如 `DocRc` / `StreamingHtmlParser`）会随页面重新解析而新建，`root_id` / `NodeId` 会发生变化。
+2. **事件目标注册路由分离（EventTarget Routing Key）**：
+   - 严禁将附着在全局生命周期单例上的事件监听器（如 `document.addEventListener('DOMContentLoaded', ...)`）直接绑定到容易在导航中失效的瞬态 `NodeId`；
+   - 必须通过稳定的语义目标（如类似 `EventTargetKey::Document` 或在 document 替换/派发时正确映射当前根节点）来保证生命周期事件在跨页面加载后的派发完整性。
+

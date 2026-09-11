@@ -43,8 +43,6 @@ description: Rust 地道测试机制规范（Testing Rust Idiomatic）：定义 
       let v = vec![1, 2];
       let _ = v[5];
   }
-  ```
-
 ---
 
 ## 3. 深度质检工具链
@@ -65,3 +63,32 @@ description: Rust 地道测试机制规范（Testing Rust Idiomatic）：定义 
   });
   ```
   断言对于任何变异字节流均不会发生 Panic 或内存破坏。
+
+---
+
+## 4. 微观借用生命周期与所有权纪律（Borrow Scope & RefCell Discipline）
+
+在复杂状态机与嵌入式环境（如 V8 回调、事件总线、DOM 树）中，粗暴借用与无节制克隆是运行时 Panic、死锁与性能劣化的主要诱因：
+
+### 1. 微观借用（Micro-borrow Scope）
+- **核心原则**：`RefCell::borrow()` / `borrow_mut()` 的生命周期必须缩到最小作用域，**绝对禁止跨越外部系统调用、动态回调或 JS 执行上下文**。
+- **模式**：使用显式代码块 `{ let ... = cell.borrow(); ... }` 或临时变量完成快速取值/状态判定后立即释放借用。
+- **示例**：
+  ```rust
+  // [正例] 闭包内按需微观借用，作用域即刻随语句结束释放
+  let root_id = {
+      let state = RuntimeState::get(scope);
+      state.document_root_id()
+  }; // 借用在此完全释放，后续调用 JS 或触发回调安全无虞
+  ```
+
+### 2. 杜绝跨层传递内部可变性容器（No Leaky RefCell Passing）
+- **核心原则**：深层辅助函数与派发流程中，严禁层层透传 `&RefCell<T>` 或 `Rc<RefCell<T>>`。
+- **重构手法**：让下层仅接收具体不可变或可变引用的数据切片/结构体（如 `&T` / `&mut T`），或者在统一的外层宿主状态访问点按需微观借用，剥离冗余的中间借用层级。
+
+### 3. 严禁防御性暴力克隆（No Mindless Defensive Clones）
+- **核心原则**：不以消除编译期借用报错为借口进行无节制 `.clone()`。
+- **区分**：
+  - 允许在确需脱离锁/借用保护而产生**快照**时克隆（如派发前捕获当前的 listeners 列表快照）；
+  - 严禁在普通读取、临时参数传递或可以通过 `&` / 重新索引用小开销完成的地方进行全量深拷贝。
+
