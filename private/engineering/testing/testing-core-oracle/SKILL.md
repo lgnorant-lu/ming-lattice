@@ -10,7 +10,7 @@ description: 测试元规则与判定中枢（Core Testing Oracle & Meta-Rules�
 
 ## 使用边界
 
-先区分审阅、解释、规划与实施。用户只要求审阅时，按 [审阅流程](references/review.md) 输出证据与适配矩阵，不因加载了工作流就修改业务代码、更新 Golden、安装工具或提交。检查已有测试命令的副作用后，才在允许的范围内运行。
+先区分审阅、解释、规划与实施。用户只要求审阅时，按 [审阅流程](references/review.md) 输出证据与适配矩阵，不因加载了工作流就修改业务代码、更新 Golden、安装工具或提交。检查已有测试命令的副作用后，才在允许的范围内运行。预言机形态选型、范式缩写消歧（MT/PBT/DbC/CDC）与正交选型清单参见 [预言机形状与范式消歧](references/oracle-shapes-and-disambiguation.md)。
 
 ---
 
@@ -161,13 +161,12 @@ description: 测试元规则与判定中枢（Core Testing Oracle & Meta-Rules�
 
 ---
 
-## 7. 权威标准与参考文献索引
+## 7. 参考文献索引
 
-1. **Google**: *Software Engineering at Google* (O'Reilly, Ch 11–14: Beyoncé Rule, Size vs. Scope, Unchanging Tests).
-2. **ISTQB**: *Certified Tester Foundation Level Syllabus* (Seven Testing Principles: Defect clustering, Pesticide paradox, Absence-of-errors fallacy).
-3. **Kent Beck**: *Test-Driven Development: By Example* (Addison-Wesley), *Canon TDD* (2023), *Augmented Coding: Beyond the Vibes* (2025).
-4. **Ian Cooper**: *TDD, Where Did It All Go Wrong* (DevTernity Keynote: Testing modules over classes, Refactoring resilience).
-5. **John Hughes & Koen Claessen**: *QuickCheck: A Lightweight Tool for Random Testing of Haskell Programs* (ACM SIGPLAN Notices).
-6. **Martin Fowler**: *The Practical Test Pyramid*, *Mocks Aren't Stubs*.
-7. **Brian Marick, Lisa Crispin, Janet Gregory**: *Agile Testing: A Practical Guide for Testers and Agile Teams* (Agile Testing Quadrants).
-8. **Cem Kaner**: *The Impossibility of Complete Testing* (Coverage is not quality).
+完整学术条目、行业规范与明确不纳入正文的清单详见 [测试引用与文献边界](references/sources.md)。
+
+主要理论源流：
+- **TDD 与行为契约**：Kent Beck (*Canon TDD*), Ian Cooper (*Seam Testing*), Martin Fowler (*Test Pyramid*)
+- **性质测试与蜕变验证**：Claessen & Hughes (*QuickCheck*), T.Y. Chen et al. (*Metamorphic Testing*, CSUR 2018)
+- **边界规约与语言安全**：Bertrand Meyer (*DbC*), Ian Robinson (*CDC*), Alexis King (*Parse, don't validate*), IAB RFC 9413 (*Robustness Principle Critique*)
+

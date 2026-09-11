@@ -31,3 +31,10 @@
          + 1 个工作流驱动包 (spec | characterize)
          [+ 可选: testing-property-mutation 变异加深]
 ```
+
+---
+
+## 3. 基础参考与选型指南
+
+- [`预言机形状与范式消歧 (Oracle Shapes & Disambiguation)`](./testing-core-oracle/references/oracle-shapes-and-disambiguation.md)：定义 MT (蜕变测试)、PBT (基于性质的测试)、DbC (契约设计)、CDC (消费者驱动契约) 的学术与行业标准消歧，梳理预言机形状与正交选型清单。
+

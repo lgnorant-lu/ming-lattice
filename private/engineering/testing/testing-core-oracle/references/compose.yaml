@@ -2,6 +2,12 @@
 schemaVersion: "1.0"
 description: "定义 11 个 testing-* 技能的分层 (layer)、互斥 (mutex) 与推荐组合"
 
+reference_guides:
+  oracle_shapes_and_disambiguation:
+    path: "references/oracle-shapes-and-disambiguation.md"
+    note: "选形状与范式消歧时查阅；写测试仍走主入口，本参考页不可单独作为测试教程加载"
+
+
 layers:
   oracle:
     required: true
