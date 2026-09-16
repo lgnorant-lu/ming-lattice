@@ -1,6 +1,6 @@
 # 软件工程质量与规范总族 (Engineering Meta-Paradigms)
 
-本目录收录跨场景可携带的**软件工程元规范与质量属性体系**（包含 A 列 4 大元规范包、B 列质量 Overlay 单包，以及测试子规范族）。
+本目录收录跨场景可携带的**软件工程元规范与质量属性体系**（包含 A 列 6 大元规范包、B 列质量 Overlay 单包，以及测试子规范族）。
 
 ---
 
@@ -32,8 +32,8 @@ private/engineering/
 
 ```
 Project Stack = 1 个开发工作流 (spec / characterize)
-              + 1 套测试组合 (oracle + 场景 + 语言)
-              + [按需] A 列工程元包 (docs | obs | sec | contract)
+              + 1 套测试组合 (oracle + 语言 + [按需] 场景)
+              + [按需] A 列工程元包 (docs | docs-presentation | obs | sec | contract | arch)
               + [按需] B 列质量横切包 (overlay-core-paradigm)
               + 该层 scenes/<scene>.md 场景形态差
 ```

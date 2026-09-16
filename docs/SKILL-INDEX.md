@@ -2,6 +2,7 @@
 
 > 用途：第一层路由参考——AI/用户在任务开始时按此表选 skill。description 才是外层触发依据（Claude Code 按 frontmatter description 惰性加载）；本表是人工可读的精要版。
 > 生成：2026-08-18 · 覆盖：基座 20 部署模块 + 垂直 27 参考 + 私有 1
+> 后续增补：2026-09-16 指纹专项（vertical fingerprintjs/ja4/creepjs + private antibot-fingerprint-paradigm/arch-core-paradigm）
 
 ## 一、基座模块（已部署, 20 个）
 

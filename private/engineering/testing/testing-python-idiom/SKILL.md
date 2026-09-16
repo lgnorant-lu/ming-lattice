@@ -65,8 +65,7 @@ import pytest
 def test_invalid_signature_raises():
     with pytest.raises(ValueError) as exc_info:
         verify_signature(bad_token="abc")
-    assert exc_info.type is ValueError
-    # 断言结构化契约字段，而非自然语言消息字符串
+    # raises 已保证类型；此处断言结构化契约字段，而非自然语言消息字符串
     assert getattr(exc_info.value, "code", None) == "ERR_INVALID_SIGNATURE"
 ```
 

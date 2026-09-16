@@ -4,8 +4,8 @@
 
 - **Metamorphic Testing (蜕变测试)**:
   - T.Y. Chen, S.C. Cheung, S.M. Yiu: *Metamorphic Testing: A New Approach for Generating Next Test Cases* (HKUST TR, 1998)
-  - T.Y. Chen et al.: *A Survey on Metamorphic Testing* (ACM Computing Surveys, 51(1), 2018)
-  - H. Liu, X. Liu, J. Chen: *How Effectively Does Metamorphic Testing Alleviate the Oracle Problem?* (IEEE TSE, 40(1), 2014)
+  - T.Y. Chen, F.-C. Kuo, H. Liu, P.-L. Poon, D. Towey, T.H. Tse, Z.Q. Zhou: *Metamorphic Testing: A Review of Challenges and Opportunities* (ACM Computing Surveys, 51(1), 2018)
+  - H. Liu, F.-C. Kuo, D. Towey, T.Y. Chen: *How Effectively Does Metamorphic Testing Alleviate the Oracle Problem?* (IEEE TSE, 40(1), 2014)
 - **Property-Based Testing (基于性质的测试)**:
   - Koen Claessen & John Hughes: *QuickCheck: A Lightweight Tool for Random Testing of Haskell Programs* (ACM SIGPLAN ICFP, 2000)
 - **Design by Contract (契约式设计)**:

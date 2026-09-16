@@ -20,15 +20,17 @@ claude mcp add appium-mcp -- npx -y appium-mcp@latest
 
 # 3. mitmproxy 时间戳脚本（scripts/timestamper.py）
 mitmdump -s scripts/timestamper.py -p 8080
+# 注意：该脚本会向请求/响应注入 X-Oracle-TS 头（对目标服务端可见），
+# 仅限回放/研究链路使用；时间戳为 epoch 毫秒（单调时钟外推，与 frida 端可统一）。
 
 # 4. frida unpinning spawn 目标 App（现有 xfqtrace-kit 或 frida 栈）
 ```
 
 ## 工作流（8 步）
 
-1. **环境自检与时间基准**：`adb devices` → appium-mcp `select_device` + 创建 android session → mitmproxy 时间戳脚本启动（每个 flow 打单调递增时间戳）→ frida unpinning spawn App。记录 `t0`。
+1. **环境自检与时间基准**：`adb devices` → appium-mcp `select_device` + 创建 android session → mitmproxy 时间戳脚本启动（每个 flow 打 epoch 毫秒时间戳）→ frida unpinning spawn App。记录 `t0`。
 2. **基线采集**：冷启动 → 等网络静默（1-2s 无新 flow），记录启动期请求集合为**基线**；后续操作触发的判定都对基线做差集——避免定时器/启动上报误判为操作结果。
-3. **单步语义化操作**：每个 oracle 动作 = 一次 `appium_find_element`（accessibility id 优先）+ 一次 `appium_gesture`（tap / `set_value` 输入 / `scroll_to_element`）。操作前记录当前最新 flow 时间戳为窗口起点，操作描述（如"点击登录按钮"）作动作 ID。
+3. **单步语义化操作**：每个 oracle 动作 = 一次 `appium_find_element`（accessibility id 优先）+ 一次 `appium_gesture`（tap / `appium_set_value` 输入 / `scroll_to_element`）。操作前记录当前最新 flow 时间戳为窗口起点，操作描述（如"点击登录按钮"）作动作 ID。
 4. **流量窗口切片**：操作后等静默，切出 `(窗口起点, 静默点]` 内的新 flow → 生成**操作→请求映射表**（动作 ID → URL/方法/参数/响应码），写 JSON。滚动用 `scroll_to_element` 天然分页，逐页切窗。
 5. **生成时机还原**：对带签名/加密字段的请求，Frida hook 参数构造入口（OkHttp Interceptor / 加密工具类 / JNI 桥）打调用栈——判定参数是"操作时动态生成"（每次点击值变）还是"登录态持久"（会话内不变）。**这是 oracle 对"生成时机"问题的基准答案**。
 6. **猜测验证（交叉证据）**：对可疑参数给假设（如"sig = md5(params+盐)"）→ 静态剧本（jadx 定位字段）→ hook 按快门（打印值）→ 抓包留遗照（过滤关键字）——三点值对齐即证实调用链。

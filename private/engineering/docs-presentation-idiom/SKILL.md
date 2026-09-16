@@ -1,6 +1,6 @@
 ---
 name: docs-presentation-idiom
-description: Cross-scene GitHub Markdown presentation and typography rules. Eliminates AI aesthetic fatigue, emoji soup, and duplicated marketing fluff. Enforces block-type visual flow, strict symbol budgets, Chinese-English spacing, persona-based entry diversion, and volume limits (<= 200 lines for root README). Use when reviewing, writing, or refactoring GitHub READMEs, project docs, or release notes.
+description: Cross-scene GitHub Markdown presentation and typography rules. Eliminates AI aesthetic fatigue, emoji soup, and duplicated marketing fluff. Enforces block-type visual flow, strict symbol budgets, Chinese-English spacing, persona-based entry diversion, and volume limits (<= 200 lines for root README). Use when reviewing, writing, or refactoring GitHub READMEs, project docs, or release notes. 触发词：文档排版、README 美化、去疲劳、动线、中英混排、release notes。
 metadata:
   layer: documentation
   compose: overlay-on-docs-core
@@ -86,5 +86,5 @@ README 是分流地图，不是百科全书。各角色读者必须在指定阶�
 ```
 docs-presentation-idiom (排版动线与去疲劳规则)
 + docs-core-paradigm (Diataxis 四象限与事实源契约)
-+ references/scenes/<scene>.md (场景骨架: marketplace | cli | library)
++ references/scenes/<scene>.md (场景骨架: marketplace | cli)
 ```

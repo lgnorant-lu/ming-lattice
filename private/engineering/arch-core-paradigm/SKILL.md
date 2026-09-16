@@ -13,7 +13,7 @@ metadata:
 
 ## 1. 六个核心概念（正典即全部）
 
-源自 Alistair Cockburn《Hexagonal Architecture》2005（原名 Configurable Dependency；六边形只是"五边形七边形画不出来"的图形选择）：
+源自 Alistair Cockburn《Hexagonal Architecture》2005（其底层性质 Cockburn 后认为更应名为 Configurable Dependency——Gerard Meszaros 命名；六边形只是"五边形七边形画不出来"的图形选择）：
 
 1. **内核（inside）**：业务逻辑，不知任何外部技术。
 2. **Driving port（驱动端口）**：别人调我，我实现它（应用提供的 API）。
@@ -51,7 +51,7 @@ metadata:
 **已知批评**（采纳为约束）：
 - Fowler 对称性批评：图上 controller 调核心与核心调 DB 画得对称，本质不对称（PoEAA p.21）；
 - Port explosion：端口按"对话"分（persist things / tell time / draw randomness），不按用例/类型分；
-- 反射性仓储接口（永远只有一个实现的 XxxRepository = shadow codebase，Dan North 语）；
+- 反射性仓储接口（永远只有一个实现的 XxxRepository——社区惯称 shadow codebase）；
 - 样板税：每层 DTO+mapper 链，anemic use case 是典型失败模式；
 - YAGNI：动态语言里接口声明本身不是必需（Cockburn 原书即演示 Ruby 无声明版）。
 
@@ -79,11 +79,18 @@ main.py = 组装根做装配，无 DI 框架
 
 **不要做的**：不给一次性脚本套 ports/adapters 目录；不为假想变化建单实现接口；不在层间搞 DTO 链。
 
-## 7. 对当前问题的直接回答
+## 7. 复杂度评估
 
-**"架构涉及的东西是不是有点多？"——不多。** 模式本体只有 §1 六个概念 + 一条依赖规则。市面上让人望而却步的内容（per-use-case port、UseCase 类层级、RequestDTO/ResponseDTO 对、DI 容器）全是可选惯例，且多数被原作者和社区明确批评为过度设计。判断标准极简：**内核能不能不装数据库不连网络地跑测试**——能，就是六边形了。
+模式本体只有 §1 六个概念 + 一条依赖规则。市面上让人望而却步的内容（per-use-case port、UseCase 类层级、RequestDTO/ResponseDTO 对、DI 容器）全是可选惯例，且多数被原作者和社区明确批评为过度设计。Cockburn：多数应用 2 个端口就够。判断标准极简：**内核能不能不装数据库不连网络地跑测试**——能，就是六边形了。
 
-## 8. Compose
+## 8. 禁令
+
+1. **[禁止] 端口泄漏外部技术**：driven port 签名出现 SQL/HTTP/文件路径等具体技术语义即破坏强实现。
+2. **[禁止] 按用例建端口**：一个用例一对 in/out port 是 port explosion；按"对话"分组。
+3. **[禁止] 为假想变化建单实现接口**：不存在第二个适配器的端口是投机抽象。
+4. **[禁止] 内核 import 外部技术库**：内核代码出现 `requests`/ORM/文件 IO 即边界已破。
+
+## 9. Compose
 
 ```
 arch-core-paradigm（本包：边界判定 + 最小形态）

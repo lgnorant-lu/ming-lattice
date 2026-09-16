@@ -61,7 +61,7 @@ ASVS 5.0 当产品需求索引，不把条款抄进正文。Web Top 10 只做意
 - Skill 安装物可列出 name、版本、来源。
 - 测试：fuzz / 路径穿越负例 / 注入负例；不断言内部私有 helper。
 
-## 5. Compose
+## 6. Compose
 
 ```
 sec-core-paradigm

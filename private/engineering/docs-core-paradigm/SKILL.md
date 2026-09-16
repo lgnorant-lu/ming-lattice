@@ -42,7 +42,7 @@ README 允许极短混合（是什么 + 链到四象限）。细节不得堆在 
 - Decision（选了什么、没选什么）
 - Consequences（得与失、何时重开）
 
-Accepted 后不改写历史；要改就 Supercede。仓库私有分叉用 ADR；跨仓库仍成立的方法论进本 Skill，不进 ADR。
+Accepted 后不改写历史；要改就 Supersede。仓库私有分叉用 ADR；跨仓库仍成立的方法论进本 Skill，不进 ADR。
 
 ## 4. Oracle
 

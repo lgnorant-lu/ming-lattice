@@ -508,7 +508,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
-    note: iv8 补环境全链 skill(v9.6) —— 经 deployable 部署
+    note: iv8 补环境全链 skill(内容实至 v9.33, frontmatter 滞留 v9.6 为上游标注漂移) —— 经 deployable 部署
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -1225,7 +1225,7 @@ deployable:
     path: deployable/rs-js-reverse
     enabled: true
     domain: js
-    note: 瑞数/RS 专项(基座覆盖为零), 4 份专项 references
+    note: 瑞数/RS 专项(基座覆盖为零), 5 份专项 references
     deploy:
       claude: true
   - name: ctf-pwn
@@ -1326,7 +1326,7 @@ deployable:
     path: deployable/web-reverse-iv8
     enabled: true
     domain: js
-    note: iv8 补环境全链 skill(v9.6, HAR追踪→定位→反混淆→iv8环境→本地验证, 阶段门硬阻断)
+    note: iv8 补环境全链 skill(v9.33, HAR追踪→定位→反混淆→iv8环境→本地验证, 阶段门硬阻断; frontmatter 元数据滞留 v9.6)
     deploy:
       claude: true
 

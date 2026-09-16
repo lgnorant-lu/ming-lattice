@@ -73,7 +73,7 @@ metadata:
 - timezone vs IP geo；`navigator.languages` vs `Accept-Language` 头；`Etc/Unknown` 是已知代理标记；
 - `screen.*` vs `avail*` vs `outer/inner*` 算术一致（hasLiedResolution 原型）；
 - **CDP 痕迹**（2026 现状）：`Runtime.enable` console.debug getter 泄漏**已于 2025-05 V8 value-mirror.cc 修复后失效**（rebrowser 披露）→ 行业转向 `Input.dispatch*` 坐标泄漏（crbug#1477537，`screenX==pageX`、无 CoalescedEvents；Chrome v142+ 已修）、sourceURL 泄漏、`cdc_*`/自动化全局变量、webdriver 属性语义（打 false 反而更糟——真浏览器是 undefined）；
-- headless 老信号（plugins 空表、hairline、Notification.permission 矛盾）基本全死——new headless 指纹"近乎完美"（Vastel 2023，时任 DataDome VP Research），检测已转到运行时侧信道。
+- headless 老信号（plugins 空表、hairline、Notification.permission 矛盾）基本全死——new headless 指纹"近乎完美"（Vastel 2023，DataDome 研究负责人），检测已转到运行时侧信道。
 
 ### 4.3 经验法则
 - 注入式伪装（JS shim/stealth 补丁）天生在 CreepJS lies 检测面下有暴露风险：能下沉到引擎/宿主层就不在页面层打补丁；必须页面层打时，补丁形态要对齐原生（descriptor 位置、toString、错误类型）。

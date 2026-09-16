@@ -15,7 +15,9 @@ description: Go 地道测试机制规范（Testing Go Idiomatic）：定义 Go �
 - **同包单元测试**：`foo.go` 与 `foo_test.go` 同属 `package foo`，用于测试内部纯逻辑；
 - **跨包黑盒集成测试**：使用 `package foo_test`，仅通过导出的公共接口（Public API）进行测试，防止测试渗入私有实现；
 - **`testdata/` 目录**：Go 工具链默认忽略 `testdata` 目录的编译，专门用于存放测试 Fixtures；
-- **内部测试 Seam**：若必须暴露测试钩子而不扩大 Public API，可通过 `internal/` 包或导出受限变量实现。
+- **内部测试 Seam**：若必须暴露测试钩子而不扩大 Public API，可通过 `internal/` 包或导出受限变量实现；
+- **`export_test.go` 惯例**：同包内 `export_test.go` 文件仅向外部 `foo_test` 黑盒包导出测试钩子（stdlib 大量使用），是比 `internal/` 更地道的 seam；
+- **竞态检测**：并发相关用例必须可经 `go test -race` 复跑；`t.Parallel()` 与 `t.Setenv()` 互斥（parallel 用例中 Setenv 直接 panic）。
 
 ---
 

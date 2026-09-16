@@ -9,7 +9,7 @@
 | fingerprintjs/fingerprintjs | `vertical/fingerprintjs`（pin 6006ce5, MIT） | `src/sources/` 检测项目录；`hasLied*` 谎言检测原型（注意其误报有官方 issue 记录，作"检测下限"读） |
 | FoxIO-LLC/ja4 | `vertical/ja4`（pin d3dedaf） | JA4+ 族参考实现（python/wireshark/zeek）。许可证：JA4 BSD-3，其余 JA4+ FoxIO License 1.1 商用需 OEM |
 | abrahamjuliot/creepjs | `vertical/creepjs`（pin 10aa672） | `src/lies/` 原型谎言检测最完备公开实现；worker 隔离指纹、跨源一致性 |
-| kaliiiiiiiiii/brotector | `vertical/brotector`（pin 98b3309，既有） | webdriver/自动化框架反测页 |
+| kaliiiiiiiiii/brotector | `vertical/brotector`（LoseNine fork，pin 98b3309，既有；上游 kaliiiiiiiiii/brotector） | webdriver/自动化框架反测页，在线演示 kaliiiiiiiiii.github.io/brotector |
 | daijro/camoufox 系 | `vertical/camoufox-cli`（既有） | Firefox C++/Juggler 层指纹注入范式 |
 | LoseNine/FingerPrintJSBrowser | `vertical/FingerPrintJSBrowser`（既有） | JS 改网页环境指纹，与 pjstealth 互补 |
 | LoseNine/pjstealth | `vertical/pjstealth`（既有） | stealth 注入侧参照 |

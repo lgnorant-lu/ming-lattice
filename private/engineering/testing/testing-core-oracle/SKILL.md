@@ -10,7 +10,7 @@ description: 测试元规则与判定中枢（Core Testing Oracle & Meta-Rules�
 
 ## 使用边界
 
-先区分审阅、解释、规划与实施。用户只要求审阅时，按 [审阅流程](references/review.md) 输出证据与适配矩阵，不因加载了工作流就修改业务代码、更新 Golden、安装工具或提交。检查已有测试命令的副作用后，才在允许的范围内运行。预言机形态选型、范式缩写消歧（MT/PBT/DbC/CDC）与正交选型清单参见 [预言机形状与范式消歧](references/oracle-shapes-and-disambiguation.md)。
+先区分审阅、解释、规划与实施。用户只要求审阅时，按 [审阅流程](references/review.md) 输出证据与适配矩阵，不因加载了工作流就修改业务代码、更新 Golden、安装工具或提交。检查已有测试命令的副作用后，才在允许的范围内运行。预言机形态选型、范式缩写消歧（MT/PBT/DbC/CDC）与正交选型清单参见 [预言机形状与范式消歧](references/oracle-shapes-and-disambiguation.md)。B 级质量属性（性能/隐私/韧性等）在测试族的横切落点见 [overlays](references/overlays.md)；组合规范机读源见 [compose.yaml](references/compose.yaml)。
 
 ---
 

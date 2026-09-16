@@ -78,7 +78,10 @@ const DOMAIN_DEFS = {
     description: "私有协议与自动化 UI Oracle 逆向方案",
     skills: ["ui-oracle-protocol", "xfqtrace-kit"],
     triggers: [
-      "ui-oracle", "timestamper", "xfqtrace", "流量窗口切片", "重放判官", "无痕hook"
+      "ui-oracle", "timestamper", "xfqtrace", "流量窗口切片", "重放判官", "无痕hook",
+      "appium", "操作到请求", "操作→请求", "请求映射", "生成时机", "参数生成时机",
+      "点击触发", "ui自动化", "重放对比", "窗口切片", "操作验证",
+      "什么时候生成", "何时生成"
     ],
     negatives: [
       "单元测试规范", "覆盖设计"

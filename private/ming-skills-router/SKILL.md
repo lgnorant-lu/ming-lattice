@@ -25,7 +25,7 @@ compatibility: Node.js 22+ for the bundled CLI; reads its local manifest without
 node "$SKILL_ROOT/scripts/route-core.mjs" "只审阅测试体系，同时检查日志与数据契约，不修改"
 ```
 
-`Decide(hint, manifest)` 是纯函数；CLI 会读取同包 `config/router-manifest.json`，因此不是零文件读取，但不写盘、不联网、不创建工单。加载或 JSON 解析失败时 CLI 非零退出，不当作正常无匹配。
+`Decide(hint, manifest)` 是纯函数；CLI 会读取同包 `config/router-manifest.json`，因此不是零文件读取。路由决策本身不联网、不创建工单；唯一写盘面是可选的可观测事件——设置 `MING_SKILLS_EVENT_FILE` 环境变量后，路由结果以 JSONL 追加写入该文件（见 `scripts/observability.mjs` 的 `emitEvent`），未设置时零写盘。加载或 JSON 解析失败时 CLI 非零退出，不当作正常无匹配。
 
 ## 消费结果
 

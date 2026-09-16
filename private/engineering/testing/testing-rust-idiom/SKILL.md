@@ -43,6 +43,7 @@ description: Rust 地道测试机制规范（Testing Rust Idiomatic）：定义 
       let v = vec![1, 2];
       let _ = v[5];
   }
+  ```
 ---
 
 ## 3. 深度质检工具链

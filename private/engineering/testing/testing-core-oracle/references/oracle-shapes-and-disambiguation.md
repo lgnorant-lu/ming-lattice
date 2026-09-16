@@ -96,8 +96,8 @@
 ## 4. 参考文献 (Bibliography)
 
 1. **T.Y. Chen, S.C. Cheung, S.M. Yiu**: *Metamorphic Testing: A New Approach for Generating Next Test Cases* (HKUST Technical Report TR-98-01, 1998).
-2. **T.Y. Chen, F.-C. Kuo, R. Huang et al.**: *A Survey on Metamorphic Testing* (ACM Computing Surveys, 51(1): 1–27, 2018).
-3. **H. Liu, X. Liu, J. Chen**: *How Effectively Does Metamorphic Testing Alleviate the Oracle Problem?* (IEEE Transactions on Software Engineering, 40(1): 4–22, 2014).
+2. **T.Y. Chen, F.-C. Kuo, H. Liu, P.-L. Poon, D. Towey, T.H. Tse, Z.Q. Zhou**: *Metamorphic Testing: A Review of Challenges and Opportunities* (ACM Computing Surveys, 51(1): 1–27, 2018).（注：*A Survey on Metamorphic Testing* 是 Segura et al. 的 IEEE TSE 42(9) 2016，勿混淆。）
+3. **H. Liu, F.-C. Kuo, D. Towey, T.Y. Chen**: *How Effectively Does Metamorphic Testing Alleviate the Oracle Problem?* (IEEE Transactions on Software Engineering, 40(1): 4–22, 2014).
 4. **Koen Claessen & John Hughes**: *QuickCheck: A Lightweight Tool for Random Testing of Haskell Programs* (ACM SIGPLAN ICFP, 2000).
 5. **Bertrand Meyer**: *Design by Contract* (Advances in Object-Oriented Software Engineering, Prentice Hall, 1991).
 6. **Ian Robinson**: *Consumer-Driven Contracts: A Service Evolution Pattern* (Martin Fowler's Bliki, 2006).

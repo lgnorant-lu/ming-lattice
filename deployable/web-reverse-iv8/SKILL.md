@@ -3,7 +3,7 @@ name: web-reverse-iv8
 description: 'Use this skill when analyzing web JS encryption parameters (e.g. "这个 sign 怎么生成的"/"这个 w 参数怎么破"/"定位加密函数"), handling obfuscation (OB shell/eval-Function shell), identifying JSVMP/Worker/WASM carriers, choosing deobfuscation/reuse schemes, or patching iv8 environment to run target JS locally. Covers the full chain: HAR parameter tracing, encryption point localization via `_initiator.stack`, local deobfuscation, Python rewrite vs iv8 env-patching scheme selection, and local verification against HAR real values. Do NOT use for general web development, crawler engineering, frida-based runtime hooking, binary protocol reverse engineering (non-web-JS), or RPC/browser automation (Puppeteer/Playwright/Selenium — explicitly prohibited).'
 compatibility: 'Python 3.8–3.14、Windows x64、Linux x64(manylinux 标准,支持 CentOS/Ubuntu/Debian/Fedora);macOS arm64 实验版经 GitHub Releases 分发不上 PyPI;核心依赖 iv8 社区版(`pip install iv8`)、httpx;可选依赖 curl_cffi(TLS 指纹)、wasmtime/pywasm(WASM 场景)、Node.js(Webpack bootstrap 拆解等纯计算备选);HAR 与 trace 文件由用户提供'
 metadata:
-  version: "v9.6"
+  version: "v9.33"
 ---
 
 # web 逆向实战指南

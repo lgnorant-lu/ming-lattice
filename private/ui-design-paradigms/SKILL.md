@@ -1,6 +1,6 @@
 ---
 name: ui-design-paradigms
-description: 现代数字产品与跨端 UI/UX 设计范式知识库与决策路由。包含 Google Material 3 (M3/Material You)、shadcn/ui 极客工程风、Apple HIG 毛玻璃、Microsoft Fluent 2、Bento Grid 便当盒美学、Swiss Style 瑞士国际排版、Neubrutalism 新野兽派、Editorial 杂志风等全球主流 UI 范式的核心哲学、Design Tokens 规范、网格韵律、组件层级与选型决策。当需要进行界面重构、设计规范对齐、组件库选型、制定设计系统或美化前端交互时使用。
+description: 现代数字产品与跨端 UI/UX 设计范式知识库与决策路由。包含 Google Material 3 (M3/Material You)、shadcn/ui 极客工程风、Apple HIG 毛玻璃、Bento Grid 便当盒美学、Swiss Style 瑞士国际排版、Neubrutalism 新野兽派、Editorial 杂志风等全球主流 UI 范式的核心哲学、Design Tokens 规范、网格韵律、组件层级与选型决策。当需要进行界面重构、设计规范对齐、组件库选型、制定设计系统或美化前端交互时使用。
 ---
 
 # UI Design Paradigms — 现代数字产品与跨端 UI/UX 设计范式知识库
@@ -15,13 +15,13 @@ description: 现代数字产品与跨端 UI/UX 设计范式知识库与决策路
 ```
 需求场景类型                               推荐设计范式                      核心特征与关键字
 ───────────────────────────────────────────────────────────────────────────────────────────────────
-B端控制台 / 开发者工具 / 极客数据面板   ─▶  shadcn / Linear 极客工程风     单色灰阶(Zinc), 1px细线, 等宽字符, Ghost按钮
-跨端通用 / Android 生态 / 消费级应用   ─▶  Google Material 3 (M3)         Tonal Surface 色阶容器, 9999px胶囊, 动态色彩
-苹果生态 / 创意多媒体 / 高端工具应用   ─▶  Apple HIG (Liquid Glass)      高斯毛玻璃, 晶体微光边框, SF Pro 字阶
-SaaS 营销页 / 特性展示 / 聚合控制台    ─▶  Bento Grid (便当盒美学)        非对称模块化, 空间仪表槽, 光标环境聚光灯
-专业设计工具 / 极简排版 / 高端后台     ─▶  Swiss Style (瑞士平面排版)     严格数学栅格, 巨幅无衬线字阶, 包豪斯纯色块
-创作者平台 / 独立开发 / 潮流社区      ─▶  Neubrutalism (新野兽派)        粗黑硬描边(2px), 纯色撞色, 零模糊硬阴影
-内容出版 / 深度阅读 / 知识归档平台     ─▶  Editorial Magazine (杂志风)    衬线/无衬线混排, 首字下沉, 纸张暖底色
+B端控制台 / 开发者工具 / 极客数据面板   →  shadcn / Linear 极客工程风     单色灰阶(Zinc), 1px细线, 等宽字符, Ghost按钮
+跨端通用 / Android 生态 / 消费级应用   →  Google Material 3 (M3)         Tonal Surface 色阶容器, 9999px胶囊, 动态色彩
+苹果生态 / 创意多媒体 / 高端工具应用   →  Apple HIG (Liquid Glass)      高斯毛玻璃, 晶体微光边框, SF Pro 字阶
+SaaS 营销页 / 特性展示 / 聚合控制台    →  Bento Grid (便当盒美学)        非对称模块化, 空间仪表槽, 光标环境聚光灯
+专业设计工具 / 极简排版 / 高端后台     →  Swiss Style (瑞士平面排版)     严格数学栅格, 巨幅无衬线字阶, 包豪斯纯色块
+创作者平台 / 独立开发 / 潮流社区      →  Neubrutalism (新野兽派)        粗黑硬描边(2px), 纯色撞色, 零模糊硬阴影
+内容出版 / 深度阅读 / 知识归档平台     →  Editorial Magazine (杂志风)    衬线/无衬线混排, 首字下沉, 纸张暖底色
 ───────────────────────────────────────────────────────────────────────────────────────────────────
 ```
 

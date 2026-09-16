@@ -11,11 +11,11 @@ Ming 的 Agent 技能集散与工程中枢（Skills Hub & Monorepo）：统一�
 | 资产层次 | 目录路径 | 规模与构成 | 治理与部署策略 |
 |---|---|---|---|
 | **Base（底座层）** | `base/reverse-skill/` | **1 个基座（20 个已启用模块）**<br>submodule 跟踪 upstream 逆向体系 | 按需通过 `base[].modules` 声明并分发至客户端 |
-| **Vertical（参考层）** | `vertical/` | **91 个垂直参考库**<br>涵盖前端混淆、二进制、移动端与爬虫案例 | 离线 vendored 归档；`deploy:{}` 仅作只读参考 |
+| **Vertical（参考层）** | `vertical/` | **94 个垂直参考库**<br>涵盖前端混淆、二进制、移动端与爬虫案例 | 离线 vendored 归档；`deploy:{}` 仅作只读参考 |
 | **Deployable（包装层）** | `deployable/` | **24 个包装技能**<br>本地封装门面、去重清洗与定制包装 | 映射包装并分发至目标客户端环境 |
-| **Private（自研层）** | `private/` | **22 个核心自研技能**<br>测试规范体系族、UI 设计范式、路由内核 | 核心自研资产；深度受控部署与规则锁定 |
+| **Private（自研层）** | `private/` | **24 个核心自研技能**<br>测试规范体系族、UI 设计范式、路由内核 | 核心自研资产；深度受控部署与规则锁定 |
 
-- **Lint 校验源基线**：全仓由 `scripts/lint.ps1` 校验 **157 处入口源**（$20 + 91 + 24 + 22 = 157$），保证 frontmatter、相对引用与入口脚本完整性。
+- **Lint 校验源基线**：全仓由 `scripts/lint.ps1` 校验 **162 处入口源**（$20 + 94 + 24 + 24 = 162$），保证 frontmatter、相对引用与入口脚本完整性。
 - **路由编排技能**：由 `config/router-manifest.json` 策划并受控编排 **37 个唯一技能**，分布于 5 大核心领域及 13 条可执行配方。
 - **供应链依赖基线**：离线 CycloneDX 1.5 SBOM 聚合 **1083 个依赖组件**；SCA 扫描覆盖 **38 个 lockfile**（离线缓存 0 advisory findings）。
 - **自动化质量门禁**：测试套件矩阵包含 **17 个独立测试套件**，覆盖单元、契约、隔离集成、效果评估与性能基准。
@@ -125,7 +125,7 @@ node scripts/verify.mjs --profile release
 | 命令 | 用途 |
 |---|---|
 | `node tests/run.mjs --require-all` | 执行全套 17 个自动化测试套件 |
-| `pwsh -File scripts/lint.ps1` | 全仓 157 处校验源静态规范与完整性检查 |
+| `pwsh -File scripts/lint.ps1` | 全仓 162 处校验源静态规范与完整性检查 |
 | `pwsh -File scripts/sync.ps1 -DryRun` | 预览技能部署分发情况（只读无副作用） |
 | `pwsh -File scripts/sync.ps1` | 部署已启用的技能到客户端（Windows 优先使用 symlink） |
 | `node scripts/check-supply-chain.mjs --strict` | 运行离线严格模式供应链来源与制品校验 |
