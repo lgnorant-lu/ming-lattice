@@ -154,6 +154,14 @@
 | claude-code-pentest | 6 阶段 pentest 生命周期 + 43 纯 stdlib 脚本 | reference（MITRE 映射） | 无 |
 | awesome-re-mcp | RE MCP 生态索引（过时） | **drop** | 无 |
 
+### 指纹/反检测专项（2026-09-16 采集）
+
+| 仓库 | 一句话定位 | 筛选结论 | 前置依赖 |
+|---|---|---|---|
+| fingerprintjs | FingerprintJS 开源版本体：src/sources 检测项目录 + hasLied* 谎言检测 | reference（配套 antibot-fingerprint-paradigm） | 无 |
+| ja4 | FoxIO JA4+ 族参考实现（python/wireshark/zeek） | reference（JA4 本体 BSD-3；JA4+ 商用须 OEM） | 无 |
+| creepjs | 谎言检测最强公开参照：prototype lies + worker 隔离 + 跨源一致性 | reference | 无 |
+
 ## 二点五、三方向专项采集（2026-08-18, 三份调研报告决策）
 
 ### 安卓控件 oracle（自研方案）
@@ -202,6 +210,8 @@
 | skill | 一句话定位 | 状态 |
 |---|---|---|
 | blog-content | 博客创作与发布全流程规范 | 已部署 |
+| antibot-fingerprint-paradigm | 反爬指纹对抗分层知识库：JA3/JA4+h2+TCP/IP+JS 一致性+判定引擎形态+组件选型 | 已部署 |
+| arch-core-paradigm | 架构边界元规则：六边形/Ports-Adapters 最小形态 + FFI 迁移接缝 | 已部署 |
 | ui-oracle-protocol | 自研：安卓 UI 控件自动化作为协议逆向 oracle（见二点五） | 已部署 |
 | ui-design-paradigms | 全球数字产品主流 UI/UX 设计范式知识库 (Material 3 / shadcn / Apple HIG / Bento / Swiss / Neubrutalism) | 已部署 |
 | xfqtrace-kit | 私有无痕 hook 框架与逆向 recipe 库 | 已部署 |

@@ -20,7 +20,8 @@ private/engineering/
 ├── obs-core-paradigm/                 # [A列-可观测] 宽结构化事件、相关 ID 穿透、脱敏红线
 ├── sec-core-paradigm/                 # [A列-安全] 不可信输入、最小权限、OWASP AST01~10 供应链
 ├── contract-core-paradigm/            # [A列-契约] 演进五条（只加不改义）、破坏升版本、宽容读取
-└── overlay-core-paradigm/             # [B列-横切] 性能、隐私、韧性、成本、兼容、无障碍
+├── overlay-core-paradigm/             # [B列-横切] 性能、隐私、韧性、成本、兼容、无障碍
+└── arch-core-paradigm/                # [A列-架构] 六边形/Ports-Adapters 最小形态、迁移接缝
 ```
 
 ---

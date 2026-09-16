@@ -46,12 +46,15 @@ const DOMAIN_DEFS = {
       "reverse-skill-router", "apk-reverse", "ida-reverse", "radare2", "js-reverse",
       "mobile-reverse", "dotnet-reverse", "malware-analysis", "reverse-engineering",
       "protocol-reverse", "firmware-pentest", "ghidra-reverse", "pwn-chain",
-      "patch-diff-exploit", "binary-diff", "go-rust-reverse", "macos-reverse"
+      "patch-diff-exploit", "binary-diff", "go-rust-reverse", "macos-reverse",
+      "antibot-fingerprint-paradigm"
     ],
     triggers: [
       "逆向", "反编译", "脱壳", "frida", "ida", "ghidra", "radare2", "jadx",
       "smali", "apk逆向", "jsvmp", "补环境", "混淆还原", "ast解混淆", "抓包分析",
-      "协议分析", "私有协议", "签名算法", "sign算法", "so逆向", "rop", "pwn", "固件提取"
+      "协议分析", "私有协议", "签名算法", "sign算法", "so逆向", "rop", "pwn", "固件提取",
+      "指纹", "ja3", "ja4", "风控", "反爬", "指纹浏览器", "webdriver检测", "tls指纹",
+      "headless检测", "bot detection", "fingerprint"
     ],
     negatives: [
       "单元测试", "测试覆盖", "pytest", "cargo test", "tdd", "bdd", "覆盖设计",
@@ -90,7 +93,8 @@ const DOMAIN_DEFS = {
       "obs-core-paradigm",
       "sec-core-paradigm",
       "contract-core-paradigm",
-      "overlay-core-paradigm"
+      "overlay-core-paradigm",
+      "arch-core-paradigm"
     ],
     triggers: [
       "文档", "文档体系", "仓库文档", "readme",
@@ -116,6 +120,7 @@ const DOMAIN_DEFS = {
       "sec-core-paradigm": ["安全", "security", "供应链", "supply-chain", "最小权限", "ast10"],
       "contract-core-paradigm": ["数据契约", "字段演进", "schema-evolution", "schemaVersion", "tolerant-reader", "data-contract"],
       "overlay-core-paradigm": ["性能", "performance", "隐私", "privacy", "韧性", "可移植", "上下文成本", "overlay"],
+      "arch-core-paradigm": ["六边形架构", "hexagonal", "ports and adapters", "端口适配器", "依赖倒置", "clean architecture", "洋葱架构", "架构边界", "ffi边界", "strangler"],
       "testing-scenario-embed-ffi": ["v8", "v8-isolate", "pyo3", "ffi", "跨语言", "嵌入", "isolate"],
       "testing-rust-idiom": ["rust", "rustc", "cargo", "miri", "proptest"],
       "testing-python-idiom": ["python", "pytest", "pyo3", "hypothesis"],

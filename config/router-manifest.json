@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-08T14:35:31.674Z",
+  "generatedAt": "2026-09-16T11:35:24.107Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -83,7 +83,8 @@
         "patch-diff-exploit",
         "binary-diff",
         "go-rust-reverse",
-        "macos-reverse"
+        "macos-reverse",
+        "antibot-fingerprint-paradigm"
       ],
       "triggers": [
         "逆向",
@@ -108,7 +109,18 @@
         "so逆向",
         "rop",
         "pwn",
-        "固件提取"
+        "固件提取",
+        "指纹",
+        "ja3",
+        "ja4",
+        "风控",
+        "反爬",
+        "指纹浏览器",
+        "webdriver检测",
+        "tls指纹",
+        "headless检测",
+        "bot detection",
+        "fingerprint"
       ],
       "negatives": [
         "单元测试",
@@ -187,7 +199,8 @@
         "obs-core-paradigm",
         "sec-core-paradigm",
         "contract-core-paradigm",
-        "overlay-core-paradigm"
+        "overlay-core-paradigm",
+        "arch-core-paradigm"
       ],
       "triggers": [
         "文档",
@@ -301,6 +314,18 @@
           "可移植",
           "上下文成本",
           "overlay"
+        ],
+        "arch-core-paradigm": [
+          "六边形架构",
+          "hexagonal",
+          "ports and adapters",
+          "端口适配器",
+          "依赖倒置",
+          "clean architecture",
+          "洋葱架构",
+          "架构边界",
+          "ffi边界",
+          "strangler"
         ],
         "testing-scenario-embed-ffi": [
           "v8",
@@ -465,7 +490,9 @@
     }
   },
   "availability": {
+    "antibot-fingerprint-paradigm": "ready",
     "apk-reverse": "ready",
+    "arch-core-paradigm": "ready",
     "binary-diff": "ready",
     "contract-core-paradigm": "ready",
     "docs-core-paradigm": "ready",

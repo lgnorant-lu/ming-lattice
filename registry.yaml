@@ -1153,6 +1153,44 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 3da93ec
+
+  # ── 指纹/反检测专项 2026-09-16(传输层 JA4 参考实现 + JS 检测项目录 + 谎言检测参照) ──
+  - name: fingerprintjs
+    repo: https://github.com/fingerprintjs/fingerprintjs.git
+    path: vertical/fingerprintjs
+    pin: 6006ce5
+    acquiredAt: 2026-09-16
+    enabled: true
+    domain: web
+    note: FingerprintJS 开源版本体(src/sources 即检测项目录, hasLied* 谎言检测实现, MIT)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-09-16
+      lastRemoteHead: 6006ce5
+  - name: ja4
+    repo: https://github.com/FoxIO-LLC/ja4.git
+    path: vertical/ja4
+    pin: d3dedaf
+    acquiredAt: 2026-09-16
+    enabled: true
+    domain: web
+    note: FoxIO JA4+ 族参考实现(python/wireshark/zeek), JA4 本体 BSD-3, JA4+ 族 FoxIO License 商用需 OEM
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-09-16
+      lastRemoteHead: d3dedaf
+  - name: creepjs
+    repo: https://github.com/abrahamjuliot/creepjs.git
+    path: vertical/creepjs
+    pin: 10aa672
+    acquiredAt: 2026-09-16
+    enabled: true
+    domain: web
+    note: CreepJS 谎言检测最强公开参照(src/lies 原型谎言检测+worker 隔离指纹+跨源一致性)
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-09-16
+      lastRemoteHead: 10aa672
 deployable:
   # 部署包装层 (SKILL.md 改写件: 改名/描述精要/路径修复), 内容 symlink 指向 vertical 源
   - name: hello-js-reverse
@@ -1355,6 +1393,18 @@ private:
     path: private/engineering/overlay-core-paradigm
     enabled: true
     note: "跨场景B级质量属性横切不变量 (性能/隐私/韧性/成本/兼容/无障碍)"
+    deploy:
+      claude: true
+  - name: arch-core-paradigm
+    path: private/engineering/arch-core-paradigm
+    enabled: true
+    note: "跨场景架构边界元规则 (六边形/Ports-Adapters 最小形态 + 迁移接缝)"
+    deploy:
+      claude: true
+  - name: antibot-fingerprint-paradigm
+    path: private/antibot-fingerprint-paradigm
+    enabled: true
+    note: "反爬指纹对抗分层知识库 (JA3/JA4+h2+TCP/IP+JS一致性+判定引擎形态+组件选型)"
     deploy:
       claude: true
   - name: blog-content

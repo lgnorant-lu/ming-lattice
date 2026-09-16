@@ -19,8 +19,10 @@ private/
 │   ├── obs-core-paradigm/             # A列: 跨场景可观测元规则 (宽事件 + 脱敏)
 │   ├── sec-core-paradigm/             # A列: 跨场景安全元规则 (运行时 + AST10)
 │   ├── contract-core-paradigm/        # A列: 跨场景数据契约元规则 (演进五条)
-│   └── overlay-core-paradigm/         # B列: 质量属性横切不变量单包
+│   ├── overlay-core-paradigm/         # B列: 质量属性横切不变量单包
+│   └── arch-core-paradigm/            # A列: 架构边界元规则 (六边形/Ports-Adapters 最小形态)
 │
+├── antibot-fingerprint-paradigm/      # 反爬指纹对抗分层知识库 (JA3/JA4/h2/JS一致性/判定引擎)
 ├── ui-design-paradigms/               # 全局 UI/UX 设计范式与 Design Tokens
 ├── ui-oracle-protocol/                # UI 控件自动化作为协议逆向 Oracle (timestamper)
 ├── xfqtrace-kit/                      # xfqtrace 无痕 hook 与 30+ 站点逆向 Recipe
