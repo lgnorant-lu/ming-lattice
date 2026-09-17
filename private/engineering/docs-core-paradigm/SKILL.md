@@ -3,7 +3,7 @@ name: docs-core-paradigm
 description: Cross-scene documentation meta-rules using Diataxis four quadrants, Nygard ADRs, and a single source of truth for reference. Use when writing, splitting, or reviewing docs, READMEs, ADRs, schemas-as-docs, CLI help, pipeline field dictionaries, or FFI ABI notes. Triggers include documentation, diataxis, ADR, docs-as-code, how-to, reference-docs, explanation, tutorial, 文档体裁, 架构决策记录.
 metadata:
   layer: documentation
-  compose: overlay-on-testing
+  compose: cross-scene
 ---
 
 # Docs Core Paradigm — 跨场景文档元规则
@@ -24,6 +24,8 @@ metadata:
 ADR 不是第五个体裁。它记录「已做选择」，给决策者与 Agent 防翻案，体裁上接近短 Explanation。
 
 README 允许极短混合（是什么 + 链到四象限）。细节不得堆在 README。
+
+AGENTS.md / CLAUDE.md 类根级文件是 agent 行为契约（工作规则、门禁、入口索引），不是文档体裁——不计象限、不按 Diátaxis 审；web 侧 llms.txt 同理，只是机器可读导航索引。
 
 ## 2. 跨场景禁令
 
@@ -58,6 +60,6 @@ docs-core-paradigm
 + 本场景差页（references/scenes/<scene>.md，无实践则跳过）
 + 若文档即契约或测试 Oracle — 再加载 testing-core-oracle 与对应场景测试包
 + 本仓已选答案 — docs/adr/，不是本包的替代
-```
 
-不要为每个场景复制一套文档元包。游戏与逆向无实践时不要编造。
+不要为每个场景复制一套文档元包；游戏与逆向无实践时不要编造差页。
+```

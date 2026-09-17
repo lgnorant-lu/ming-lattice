@@ -21,6 +21,11 @@
 - Write the Docs, docs-as-code — https://www.writethedocs.org
 - Google SWE Book, documentation chapter（过期比缺失更坏）
 
+## Agent 面向文件（体裁边界）
+
+- AGENTS.md — https://agents.md（repo 级 agent 行为契约；vendor-neutral，2025 起替代 CLAUDE.md/.cursorrules 碎片化）
+- llms.txt — https://llmstxt.org（web 侧机器可读文档索引；与本仓 distill/INDEX.yaml 同属"索引先行"模式）
+
 ## 明确不纳入正文
 
 - 站点生成器与主题
