@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-17T05:55:31.714Z",
+  "generatedAt": "2026-09-17T06:13:18.068Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -215,7 +215,8 @@
         "overlay-core-paradigm",
         "arch-core-paradigm",
         "ming-l-paradigm",
-        "ming-skill-forge"
+        "ming-skill-forge",
+        "ming-distiller"
       ],
       "triggers": [
         "文档",
@@ -267,7 +268,15 @@
         "技能包",
         "skill包",
         "skill authoring",
-        "frontmatter"
+        "frontmatter",
+        "沉淀",
+        "蒸馏",
+        "复盘",
+        "distill",
+        "retrospective",
+        "经验回收",
+        "查沉淀",
+        "项目复盘"
       ],
       "qualityGateTriggers": [
         "质量门禁",
@@ -400,6 +409,16 @@
           "node.js",
           "event loop",
           "页面事件"
+        ],
+        "ming-distiller": [
+          "沉淀",
+          "蒸馏",
+          "distill",
+          "复盘",
+          "retrospective",
+          "经验回收",
+          "查沉淀",
+          "项目复盘"
         ]
       }
     }
@@ -550,6 +569,7 @@
     "js-reverse": "ready",
     "macos-reverse": "ready",
     "malware-analysis": "ready",
+    "ming-distiller": "ready",
     "ming-l-paradigm": "ready",
     "ming-skill-forge": "ready",
     "mobile-reverse": "ready",

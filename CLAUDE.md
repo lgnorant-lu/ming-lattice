@@ -12,6 +12,7 @@ base/reverse-skill/      路由基座 (上游 submodule, 只读; 其 skills/ 下
 vertical/                vendored 仓库 (参考/源码, 带 .git metadata, 默认不部署)
 deployable/              部署包装 (SKILL.md 改写 + symlink 指向 vertical/base 源)
 private/                 私有与自研内容 (路由、质量规范、UI/协议工具及个人资产)
+distill/                 项目级经验沉淀库 (INDEX.yaml 机读索引 + <project>/ 条目 + _proposals 晋升staging)
 scripts/                 sync/update/lint/test + route-core/build-router-manifest + hooks/(validate/check) + install-hooks
 tests/                   run.mjs 统一驱动 + unit/ + integration/ + test-route-decision.mjs
 docs/                    STANDARDS(工程总纲)/ROUTER_ARCHITECTURE(路由契约)/TESTING(测试自举)/GIT_HOOKS(门禁)/SKILL-INDEX

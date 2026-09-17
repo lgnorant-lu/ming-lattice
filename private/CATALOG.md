@@ -10,6 +10,7 @@
 private/
 ├── CATALOG.md                         # 本导引目录
 ├── ming-skills-router/                # 全局无副作用领域分流与配方装配总控中枢
+├── ming-distiller/                    # 项目级经验沉淀与检索双模态入口 (写 distill/ 库, 晋升走 _proposals staging)
 │
 ├── engineering/                       # 软件工程质量属性与元规范总族
 │   ├── README.md                      # 工程总族导引与 Universal Compose 公式

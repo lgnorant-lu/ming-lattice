@@ -1508,3 +1508,9 @@ private:
     note: "数据采集与管道清洗测试场景规范 (Testing Scraper Scenario)"
     deploy:
       claude: true
+  - name: ming-distiller
+    path: private/ming-distiller
+    enabled: true
+    note: "项目级经验沉淀与检索双模态入口 (distill/ 索引+懒加载, skill库晋升走 _proposals staging)"
+    deploy:
+      claude: true

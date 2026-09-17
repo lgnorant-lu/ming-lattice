@@ -215,6 +215,7 @@
 | arch-core-paradigm | 架构边界元规则：六边形/Ports-Adapters 最小形态 + FFI 迁移接缝 | 已部署 |
 | ming-l-paradigm | 项目结构域分层元规则：Ming-L 九域全景 + 域准入判据 + 粒度分级 + 候审档机制 | 已部署 |
 | ming-skill-forge | 技能包创作元规则：渐进披露预算 + 触发面工艺 + 注册路由接线 + check-skill.mjs 硬门控 | 已部署 |
+| ming-distiller | 项目级经验沉淀与检索双模态入口：distill/ 库 INDEX.yaml 索引 + 懒加载正文 + _proposals 晋升 staging | 已部署 |
 | ui-oracle-protocol | 自研：安卓 UI 控件自动化作为协议逆向 oracle（见二点五） | 已部署 |
 | ui-design-paradigms | 全球数字产品主流 UI/UX 设计范式知识库 (Material 3 / shadcn / Apple HIG / Bento / Swiss / Neubrutalism) | 已部署 |
 | xfqtrace-kit | 私有无痕 hook 框架与逆向 recipe 库 | 已部署 |

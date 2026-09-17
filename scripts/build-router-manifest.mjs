@@ -99,7 +99,8 @@ const DOMAIN_DEFS = {
       "overlay-core-paradigm",
       "arch-core-paradigm",
       "ming-l-paradigm",
-      "ming-skill-forge"
+      "ming-skill-forge",
+      "ming-distiller"
     ],
     triggers: [
       "文档", "文档体系", "仓库文档", "readme",
@@ -110,7 +111,8 @@ const DOMAIN_DEFS = {
       "数据契约", "schema-evolution", "tolerant-reader", "data-contract", "字段演进",
       "性能", "安全", "隐私", "韧性", "上下文成本", "可移植", "overlay",
       "规范体系", "项目分层", "治理文档", "候审档", "ming-l",
-      "新技能", "写技能", "技能包", "skill包", "skill authoring", "frontmatter"
+      "新技能", "写技能", "技能包", "skill包", "skill authoring", "frontmatter",
+      "沉淀", "蒸馏", "复盘", "distill", "retrospective", "经验回收", "查沉淀", "项目复盘"
     ],
     qualityGateTriggers: [
       "质量门禁", "门禁", "git hooks", "pre-commit", "pre-push", "ci", "ci/cd", "runner",
@@ -133,7 +135,8 @@ const DOMAIN_DEFS = {
       "testing-scenario-embed-ffi": ["v8", "v8-isolate", "pyo3", "ffi", "跨语言", "嵌入", "isolate"],
       "testing-rust-idiom": ["rust", "rustc", "cargo", "miri", "proptest"],
       "testing-python-idiom": ["python", "pytest", "pyo3", "hypothesis"],
-      "testing-js-idiom": ["javascript", "typescript", "node.js", "event loop", "页面事件"]
+      "testing-js-idiom": ["javascript", "typescript", "node.js", "event loop", "页面事件"],
+      "ming-distiller": ["沉淀", "蒸馏", "distill", "复盘", "retrospective", "经验回收", "查沉淀", "项目复盘"]
     }
   }
 };
