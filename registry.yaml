@@ -157,7 +157,7 @@ vertical:
     domain: js
     note: 站点实战样本库(60+ 案例, 已过滤 mp4/xlsx/exe 噪声 210M→16M)
     deploy: {}
-  # 鈹€鈹€ 浜岃繘鍒?/ 鎭舵剰杞欢 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+  # ── 二进制 / 恶意软件 ──────────────────────────────────────────────────
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 4e34565
@@ -213,7 +213,7 @@ vertical:
     enabled: true
     domain: mw
     deploy: {}
-  # 鈹€鈹€ 绉诲姩绔?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+  # ── 移动端 ─────────────────────────────────────────────────────────
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 5e67564
@@ -388,7 +388,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: mobilehackinglab jadx MCP 鎻掍欢
+    note: mobilehackinglab jadx MCP 插件
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -412,7 +412,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: Burp 瀹樻柟 MCP 鈥斺€?宸茬‘璁や笉鐢?Burp 闈炲綋鍓嶅伐浣滄祦), 淇濈暀婧愮爜澶囨煡
+    note: Burp 官方 MCP —— 已确认不用(Burp 非当前工作流), 保留源码备查
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -436,7 +436,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: SQLMap/FFUF/NMAP/Masscan 闆嗗悎(199 鏂囦欢)
+    note: SQLMap/FFUF/NMAP/Masscan 集合(199 文件)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -448,7 +448,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: x64dbg 40+ SDK 宸ュ叿 MCP(Windows 璋冭瘯)
+    note: x64dbg 40+ SDK 工具 MCP(Windows 调试)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -573,7 +573,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
-    note: RE 宸ュ叿 MCP 鐢熸€佺储寮?宸茶繃鏃? drop 鍊欓€? 淇濈暀瀵圭収)
+    note: RE 工具 MCP 生态索引(已过时 drop 候选, 保留对照)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-20
@@ -585,7 +585,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
-    note: radare2 鐨?Garlic DEX/Dalvik 鎻掍欢
+    note: radare2 的 Garlic DEX/Dalvik 插件
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -659,7 +659,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
-    note: AI 椹卞姩 Frida Hook 鐢熸垚(Android 鍔ㄦ€佸垎鏋? Frida CLI 鑰岄潪 python API)
+    note: AI 驱动 Frida Hook 生成(Android 动态分析, Frida CLI 而非 python API)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -677,7 +677,7 @@ vertical:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: d3f7350
 
-  # 鈹€鈹€ Frida Gadget 宸ュ叿閾撅紙2026-08-18锛?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+  # ── Frida Gadget 工具链 (2026-08-18) ───────────────────────────────
   - name: frida-gadget-helper
     repo: https://github.com/LunFengChen/frida-gadget-helper.git
     path: vertical/frida-gadget-helper
@@ -685,7 +685,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
-    note: 鍌荤摐寮?gadget 娉ㄥ叆(鍚缂栬瘧 libgadget-rusda.so 25M + xfinjectd + PDF 鏁欑▼)
+    note: 傻瓜式 gadget 注入(含预编译 libgadget-rusda.so 25M + xfinjectd + PDF 教程)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -697,7 +697,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
-    note: Frida patch(榄旀敼 server/gadget, 寮€婧愮増)
+    note: Frida patch(魔改 server/gadget, 开源版)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -716,7 +716,7 @@ vertical:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 25c9ae9
 
-  # 鈹€鈹€ Ruyi(濡傛剰)鐢熸€?2026-08-18 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+  # ── Ruyi(如意)生态 2026-08-18 ───────────────────────────────────────
   - name: ruyipage
     repo: https://github.com/LoseNine/ruyipage.git
     path: vertical/ruyipage
@@ -724,7 +724,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: ruyi/web
-    note: ruyiPage 鑷姩鍖栨鏋?鈽?744 娲昏穬), BiDi 杩囨娴?Firefox 鍐呮牳
+    note: ruyiPage 自动化框架(★744 活跃), BiDi 过检测 Firefox 内核
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
