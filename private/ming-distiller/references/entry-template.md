@@ -10,8 +10,9 @@ axis: [testing]                 # 闭集: testing docs docs-presentation obs sec
 tags: [<自由词>]                # 检索提示，可多个
 revision: 1                     # 同 topic 再蒸馏 +1
 updatedAt: 2026-09-17
-status: active                  # active | superseded（被同 topic 新 revision 取代时标 superseded）
+status: active                  # active | superseded（仅"换文件名重建"场景标于旧条目；同 topic 默认原地更新同文件）
 scope: project-only             # project-only | general（general 才有晋升资格）
+# supersedes: <旧id>            # 可选：仅新文件取代旧文件时填写，指回被取代条目 id
 ---
 
 # <标题：一句话说清这条经验是什么>

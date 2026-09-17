@@ -18,14 +18,14 @@ HUB_ROOT = realpath(本 SKILL 目录) 上溯两级      # private/ming-distiller
 fallback = 环境变量 MING_SKILLS_HOME -> 仍无则问用户，不猜路径
 ```
 
-realpath 落不进仓（拷贝分发场景）时走 fallback 链。确认 HUB_ROOT 后，沉淀库即 `<HUB_ROOT>/distill/`。
+realpath 落不进仓（拷贝分发场景）时走 fallback 链。工作目录即仓根（`registry.yaml` 在场）时可直接跳过 realpath。确认 HUB_ROOT 后，沉淀库即 `<HUB_ROOT>/distill/`。
 
 ## 1. 写沉淀（复盘触发）
 
 1. **收证**：提取本轮关键决策、踩坑、判据。证据锚点必须可复查（文件/命令/输出/链接），不收"印象流"。
 2. **定轴**：`axis` 用闭集（`testing docs docs-presentation obs sec contract overlay arch reverse ui antibot protocol other`）；`tags` 自由词。`project` = 项目目录名 slug，重名加限定词。
 3. **写条目**：`distill/<project>/<YYYY-MM-DD>-<topic>.md`，骨架见 [references/entry-template.md](references/entry-template.md)。
-4. **更新 `distill/INDEX.yaml`**：追加一行元数据。同 topic 再蒸馏 = 更新原条目 + `revision+1`；被取代条目标 `status: superseded`。
+4. **更新 `distill/INDEX.yaml`**：追加一行元数据。同 topic 再蒸馏 = **原地更新同文件**（`revision+1`、`updatedAt` 刷新，git 即版本层，INDEX 永远指单一路径）；仅当换文件名重建时才用新文件，此时旧条目标 `status: superseded`、新条目 frontmatter 挂 `supersedes: <旧id>` 指回。
 5. **不自动 commit**：写完报告待提交文件清单，由用户决定是否 `docs(distill):` 提交。
 
 ## 2. 查沉淀（检索触发）
