@@ -8,6 +8,7 @@
 //   4. 双真相: `canonical:` 事实键跨文档重复声明 = E
 //   5. frozen 不可变: `status: frozen` 文档改动拦截（--staged 模式接 git 暂存区）
 //   6. proposed 超期: `status: proposed` + `since:` 超 --proposed-days = W（"省"动力学复审提醒）
+//   7. 标识分配律: 标号唯一性(E) / 悬空引用(W) / 命名空间格式(W)
 // 退出码: 0=无E级  1=存在E级
 
 import fs from 'node:fs';
@@ -127,6 +128,77 @@ for (const f of mdFiles) {
 
 for (const [key, files] of canonical) {
   if (files.length > 1) add('E', `双真相: canonical 键 "${key}" 被 ${files.length} 处声明（${files.join(', ')}）`);
+}
+
+// ---------- 7. 标识分配律 ----------
+// 定义位: 标题 ID（### A5. / # L3 — / ## D5.）+ adr/NNNN-*.md 文件名 + 候审档字母区内编号项
+// 引用位: 正文独立标号 token（含反引号）；未定义 = 悬空
+const LABEL_REF = /\b(ADR-\d{4}|L-[a-z-]+|L\d+m?|CL\d+m?|[ABCDQMTE]\d+)\b/g;
+const BOLD_DEF = /\*\*(ADR-\d{4}|L-[a-z-]+|CL\d+m?|[A-Z]{1,5}\d+)\b/; // 表内/行内粗体定义位（**T0 x**、**CL0 x**）
+const LABEL_FORMATS = [
+  /^ADR-\d{4}$/, /^L(\d+|-[a-z-]+)$/, /^M\d+$/, /^CL\d+m?$/,
+  /^[ABCQ]\d+$/, /^D\d+$/, /^T\d+$/,
+];
+const defined = new Map();    // id -> [file:line]
+const refs = [];              // {id, rel, line}
+const statusByFile = new Map(); // rel -> fm.status
+
+for (const f of mdFiles) {
+  const rel = path.relative(target, f).replace(/\\/g, '/');
+  const content = fs.readFileSync(f, 'utf8');
+  const lines = content.split(/\r?\n/);
+  const fm = parseFm(content);
+  statusByFile.set(rel, fm && fm.status);
+
+  // ADR 文件名定义
+  const adm = rel.match(/(?:^|\/)adr\/(\d{4})-[^/]+\.md$/);
+  if (adm) {
+    const id = `ADR-${adm[1]}`;
+    if (!defined.has(id)) defined.set(id, []);
+    defined.get(id).push(`${rel}:1`);
+  }
+
+  // 候审档字母区：## Q. 标题下的 "N. xxx" 列表项 = 定义 Q<N>
+  let sectionLetter = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const secM = line.match(/^## ([A-Z])\.\s/);
+    if (secM) sectionLetter = secM[1];
+    if (/^## /.test(line) && !secM) sectionLetter = null;
+    const itemM = sectionLetter && line.match(/^(\d+)\.\s/);
+    if (itemM) {
+      const id = `${sectionLetter}${itemM[1]}`;
+      if (!defined.has(id)) defined.set(id, []);
+      defined.get(id).push(`${rel}:${i + 1}`);
+    }
+    const headM = line.match(/^#{1,6}\s+(ADR-\d+|L-[a-z-]+|CL\d+m?|[A-Z]{1,5}\d+)\s*[.．:：—\- ]/);
+    if (headM) {
+      const id = headM[1];
+      if (!defined.has(id)) defined.set(id, []);
+      defined.get(id).push(`${rel}:${i + 1}`);
+      continue; // 标题行是定义不是引用
+    }
+    for (const bm of line.matchAll(new RegExp(BOLD_DEF.source, 'g'))) {
+      const id = bm[1];
+      if (!defined.has(id)) defined.set(id, []);
+      defined.get(id).push(`${rel}:${i + 1}`);
+    }
+    for (const rm of line.matchAll(LABEL_REF)) refs.push({ id: rm[1], rel, line: i + 1 });
+  }
+}
+// 引用检查豁免：候审档（只增不隐）+ descriptive/frozen 史档——旧名是冻结史不是悬空
+const refsLive = refs.filter(r =>
+  !/findings/i.test(r.rel) && !['descriptive', 'frozen'].includes(statusByFile.get(r.rel)));
+
+for (const [id, sites] of defined) {
+  const files = [...new Set(sites.map(s => s.split(':')[0]))];
+  if (files.length > 1) add('E', `标号撞名: ${id} 定义于多处（${sites.join(', ')}）——前缀=有界上下文，跨空间不撞名`);
+}
+for (const { id, rel, line } of refsLive) {
+  if (!defined.has(id)) add('W', `悬空引用: ${id} 无定义位（${rel}:${line}）`);
+}
+for (const [id] of defined) {
+  if (!LABEL_FORMATS.some(r => r.test(id))) add('W', `标号 ${id} 不匹配已登记命名空间格式（META 标号表）`);
 }
 
 // ---------- 3. 域 x 动词矩阵 ----------

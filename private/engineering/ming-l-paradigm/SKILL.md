@@ -1,6 +1,6 @@
 ---
 name: ming-l-paradigm
-description: 项目结构域分层元规则——Ming-L-* 九域全景（Meta立法/Spec协议/Dev开发/Plan规划/Gov治理/Exp实验/Verify验证/Ops运行/Know知识）x 七动力学（立用守省改增废）+ 规则属性系统（效力阶梯/模态状态机/作用域代数/构成-规制分类），域粒度分级，域间契约闭环，"新规则进哪个域"判定表，候审档机制。当项目立项搭规范体系、文档域规划、判断规则归属、审查规范是否过度设计时使用。触发词：项目分层、规范体系、治理文档、开发规范、设计域、domain layers、Ming-L、规范草案、候审档。
+description: 项目结构域分层元规则——Ming-L-* 九域全景（Meta立法/Spec协议/Dev开发/Plan规划/Gov治理/Exp实验/Verify验证/Ops运行/Know知识）x 七动力学（立用守省改增废）+ 规则属性系统（效力阶梯/模态状态机/作用域代数/构成-规制分类）+ 标识分配律（标号命名空间/只增不复用/格式即schema），域粒度分级，域间契约闭环，"新规则进哪个域"判定表，候审档机制。当项目立项搭规范体系、文档域规划、判断规则归属、审查规范是否过度设计时使用。触发词：项目分层、规范体系、治理文档、开发规范、设计域、domain layers、Ming-L、规范草案、候审档。
 metadata:
   layer: methodology
   compose: overlay-on-engineering
@@ -8,7 +8,7 @@ metadata:
 
 # Ming-L Paradigm — 项目结构域分层元规则
 
-> 沉淀于 DenoiseStudio 全量重写的协议层设计实践（2026-02），外源参照见 §5。
+> 沉淀于 DenoiseStudio 全量重写的协议层设计实践（2026-02），外源参照见"参考系"节与 references/。
 > 核心结论：**文档规范不是一堆 markdown，是分域的系统**——每个域回答一个不同的 concern，
 > 域与域之间靠显式契约闭环。九个域，粒度分级，按需从薄到厚。
 
@@ -99,7 +99,7 @@ metadata:
 
 **矩阵纪律**：`域 x 动词` 画矩阵，**每个空格必须是有意的零**——空格即病灶检查器。活体先例全覆盖见 [references/precedents.md](references/precedents.md)（K8s feature gates=增、deprecation policy=废、Rust crater run=省……）。
 
-**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点/双真相/frozen 拦截/proposed 计龄六查；平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。
+**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点/双真相/frozen 拦截/proposed 计龄/标号三检（唯一性·悬空引用·格式）七面；平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。
 
 ## 6. 规则属性系统（Rule Attribute Systems）
 
@@ -160,7 +160,25 @@ proposed --promote--> normative --relax--> descriptive
 - Meta 第四条裁决条款：Hart 次级规则三腿（承认/变更/**裁决**）中我们缺裁决——"机器可判归门禁终裁，机器不可判归人工审查+ADR"；
 - 残余问题：ceiling 是否入 frontmatter；proposed→normative 晋升判据是否与效力晋升共用零违例期；豁免是否仅限 scope 维度；scope 字段的谓词语法尚未定（当前机器只校验存在性）。
 
-## 7. 判定：新规则/新概念进哪个域
+## 7. 标识分配律（Identifier Allocation）
+
+标号是规则与实体的身份证——**可被引用才可被裁决、落地、追溯**。它是横切机制：每个域都发标号（spec 发 `L*`、plan 发 `M*`、meta 发 `ADR-*`、候审档发 `A/B/C/Q*`、dev 发 `D*`/`CL*`、错误面发 `E_*`），故不属任何一域，与属性系统同层单列。
+
+五律：
+
+1. **前缀 = 有界上下文**：标号前缀声明归属命名空间，跨空间不撞名、不解释；
+2. **语义序 vs 分配序分清**：`M<N>` 语义序、`L<N>` 栈位序、`ADR-<N>` 纯分配序、`A/B/C/Q<N>` 类别×序号复合——序性写进登记表，不混用；
+3. **只增不复用**：作废号 = 墓碑（ADR 废案号不重发、`removed` 算子 type 保留）——标号是引用锚点，复用即断链；
+4. **标号不可变**：内容可改号不改；改号 = 新号 + 旧号墓碑。超替走**双向链**（adr-tools `-s` 先例：新件标 supersedes、旧件回填 superseded-by——候审档 `[landed]` 指针同构）；
+5. **格式即 schema**：每命名空间一条正则，进 Meta 域"标号命名空间登记表"（前缀/归属/格式/序性四列），机器可查。
+
+**实证**：DenoiseStudio 落地轮机械扫描抓到两个活撞车——候审档 D 区 vs dev `D1~D6` 章（候审区更名 `Q`）；契约四层 `L0~L3` vs 文档层 `L0~L3`（契约层更名 `CL<N>`）。另 `C2` 双用于生命周期机与候审注记（机器更名 `C-2`）。无登记表时这些全部裸奔。
+
+**机械执行面**：`audit-domains.mjs` §7 三查——**唯一性**（同 ID 多定义位 = E）、**悬空引用**（正文标号无定义位 = W；候审档与 descriptive/frozen 史档豁免——冻结史旧名非悬空）、**格式合规**（W）。
+
+**分配器裁决**：单作者低并发 → 人工分配 + 机器查重足够（PEP/RFC 编辑分配先例）；并发发号（多分支/多 Agent）才建取号器——adr-tools issue#102 是已录实坑，counter lockfile 可以合并冲突为检测器。**文件系统本身即 registry**（`adr/NNNN-*.md` 文件名=号码簿），不另建 labels.json 双真相。
+
+## 8. 判定：新规则/新概念进哪个域
 
 ```
 这条内容是"系统必须做到什么"的？      → Req（薄处理时并入 Spec §0）
@@ -176,7 +194,7 @@ proposed --promote--> normative --relax--> descriptive
 都不像？先问：它值得一个域吗？——多数答案是不值得，进相邻域的一节。
 ```
 
-## 8. 候审档机制（OPEN-FINDINGS）
+## 9. 候审档机制（OPEN-FINDINGS）
 
 域审查发现的问题**记录不动手**：
 
@@ -184,7 +202,7 @@ proposed --promote--> normative --relax--> descriptive
 - 已落盘的标 `[landed]` 并指落点，**不删除**（Know 域纪律：只增不隐）；
 - 候审档在 Verify 轮统一处理——逐条商确，避免"发现即改"造成的规范抖动。
 
-## 9. 域健康与启动序列
+## 10. 域健康与启动序列
 
 **失能信号（域死了的表现）**：
 
@@ -199,7 +217,7 @@ proposed --promote--> normative --relax--> descriptive
 
 **自指验证**：本范式应能描述它的容器——skills-collection 仓库即实例：registry.yaml=Spec（单一事实源）、STANDARDS.md=Gov、tests/=Verify、PLAYBOOK.md=Know、CLAUDE.md=Meta（"registry 是单一事实源"即立法条款）。范式能无损描述自身所在仓库，是自洽性证据；不能自指的元规则值得怀疑。
 
-## 10. 参考系（诚实交代）
+## 11. 参考系（诚实交代）
 
 | 成分 | 出处 |
 |---|---|
@@ -208,13 +226,14 @@ proposed --promote--> normative --relax--> descriptive
 | Meta 域 | IETF RFC / Python PEP 立法流程（先立"规则怎么改"再立规则）+ Nygard ADR；H.L.A. Hart《The Concept of Law》——次级规则三腿（承认/变更/裁决）锚定 Meta 条款结构 |
 | 七动力学 | 政策周期（Lasswell/Anderson；Geva-May termination 研究——终止是被普遍遗忘的阶段）；ILM 信息生命周期（create→…→archive→destroy） |
 | 规则属性系统 | 道义逻辑（normative/assertoric 模态）；Searle constitutive/regulative 规则二分；Spectral severity（效力分级先例）、OWNERS（作用域先例） |
+| 标识分配律 | adr-tools（`adr new` 单调取号 + `-s` 超替双向链；issue#102 并发撞号实坑）、MADR `NNNN-slug` 文件名制、PEP/RFC 编辑分配、DOORS PUID 三段复合前缀 |
 | 学科定位声明 | **以上学科作覆盖校验器（coverage oracle），非推导地基**——设计先自工程痛点长出，学科用于查漏；映射若只描述不预测即为强套 |
 | 各域内容范式 | 本仓库 engineering/ 元规范族（arch/contract/obs/sec/docs/testing 六包） |
 | 层间闭环 | 项目实证驱动（口径漂移→资产域、基线当真理→Verify 的 spec/characterize 分离） |
 
 *完整文献索引与实证事件清单见 [references/sources.md](references/sources.md)；明确不纳入正文的反例亦在其中。*
 
-## 11. 禁令
+## 12. 禁令
 
 1. **[禁止] 域不分层级一视同仁**：Meta 写三百行细则 = 立法臃肿；Dev 只有"写干净代码"= 规范失能；
 2. **[禁止] 同一事实两域表述**：Spec 已有的字段面，Dev/Gov 引用之，不手抄；
@@ -222,9 +241,10 @@ proposed --promote--> normative --relax--> descriptive
 4. **[禁止] 口头规则**：任何被遵守的规则必须在某个域的文档里，否则不成立；
 5. **[禁止] 候审档即改**：发现缺陷先记录，集中处理——边发现边改会产生规范振荡；
 6. **[禁止] 矩阵空格无意留白**：域 x 动词矩阵的空格必须是有意的零并标注理由；
-7. **[禁止] 效力跃进**：规则不得从 convention 直跳 error+——沿阶梯迁移，未达天花板前保留降级通道。
+7. **[禁止] 效力跃进**：规则不得从 convention 直跳 error+——沿阶梯迁移，未达天花板前保留降级通道；
+8. **[禁止] 标号裸奔**：新标号族先登记命名空间（前缀/格式/序性）再使用；号码不回收、不改名（改名=新号+旧号墓碑）。
 
-## 12. Compose
+## 13. Compose
 
 ```
 ming-l-paradigm（本包：域分层 + 动力学 + 属性系统 + 判定 + 候审档 + audit-domains 体检器）
