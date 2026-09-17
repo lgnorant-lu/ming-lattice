@@ -3,7 +3,7 @@ name: sec-core-paradigm
 description: Cross-scene security meta-rules for untrusted input, least privilege, credential hygiene, and agent-skill supply chain. Use when reviewing authz, path traversal, injection, skill install trust, registry pinning, or sandbox side effects. Triggers include application-security, OWASP, ASVS, AST10, agentic-skills, supply-chain, 安全, 最小权限, 供应链, 不可信输入.
 metadata:
   layer: security
-  compose: overlay-on-testing
+  compose: cross-scene
 ---
 
 # Sec Core Paradigm — 跨场景安全元规则

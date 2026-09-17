@@ -3,7 +3,7 @@ name: overlay-core-paradigm
 description: Cross-scene quality overlays for performance, privacy, resilience, cost/context, portability, and accessibility. Use when a feature is correct but slow, leaky, brittle, expensive to load, or unusable across OS/harness. Triggers include performance-overlay, privacy, resilience, idempotence, context-economy, portability, accessibility, 性能横切, 隐私, 韧性, 上下文成本, 可移植.
 metadata:
   layer: quality-overlay
-  compose: overlay-on-testing
+  compose: cross-scene
 ---
 
 # Overlay Core Paradigm — B 级横切不变量

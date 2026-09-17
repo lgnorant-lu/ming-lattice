@@ -3,7 +3,7 @@ name: arch-core-paradigm
 description: 跨场景架构边界元规则——六边形架构（Ports & Adapters）的最小形态：内核/端口/适配器/依赖倒置/组装根六概念，适用边界判定，与 DDD/Clean/Onion 的关系，端口作为 FFI/语言迁移接缝。当讨论架构边界、模块解耦、外部系统适配、语言迁移预备、插件化 vs 端口化抉择时使用。触发词：六边形架构、hexagonal、ports and adapters、端口适配器、依赖倒置、clean architecture、洋葱架构、架构边界、FFI 边界、strangler fig、内核解耦。
 metadata:
   layer: architecture
-  compose: overlay-on-engineering
+  compose: cross-scene
 ---
 
 # Arch Core Paradigm — 架构边界元规则（六边形/Ports & Adapters 最小形态）

@@ -3,7 +3,7 @@ name: obs-core-paradigm
 description: Cross-scene observability meta-rules for wide structured events, correlation IDs, and telemetry that is queryable without joining prose logs. Use when adding logging, tracing, metrics, audit journals, CLI machine events, or pipeline batch telemetry. Triggers include observability, structured logging, wide events, correlation-id, OpenTelemetry, telemetry, 可观测, 结构化日志, 宽事件.
 metadata:
   layer: observability
-  compose: overlay-on-testing
+  compose: cross-scene
 ---
 
 # Obs Core Paradigm — 跨场景可观测元规则
@@ -54,8 +54,9 @@ obs-core-paradigm
 + 本场景差页
 + testing-core-oracle（断言事件存在、不断言散文）
 + contract-core-paradigm（error_code 与 schema 枚举同源）
-```
 
-人读文本可以并存。先核实已有 stdout/stderr 契约，再用显式机读模式或独立通道增加结构化事件，不能粗暴替换现有人读输出，也不能污染 stdout 上的 JSON。纯决策函数返回数据，由外层在获准的通道记录日志。
+人读文本可以并存：先核实已有 stdout/stderr 契约，再用显式机读模式或独立通道增加结构化事件；
+不粗暴替换现有人读输出，不污染 stdout 上的 JSON。纯决策函数返回数据，由外层在获准通道记录日志。
 
 游戏每 sprite 打点、逆向 journal 的法律边界见场景差；无实践则跳过。
+```
