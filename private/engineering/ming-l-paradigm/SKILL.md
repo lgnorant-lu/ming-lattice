@@ -1,6 +1,6 @@
 ---
 name: ming-l-paradigm
-description: 项目结构域分层元规则——Ming-L-* 九域全景（Meta立法/Spec协议/Dev开发/Plan规划/Gov治理/Exp实验/Verify验证/Ops运行/Know知识），域粒度分级，域间契约闭环，"新规则进哪个域"判定表，候审档机制。当项目立项搭规范体系、文档域规划、判断规则归属、审查规范是否过度设计时使用。触发词：项目分层、规范体系、治理文档、开发规范、设计域、domain layers、Ming-L、规范草案、候审档。
+description: 项目结构域分层元规则——Ming-L-* 九域全景（Meta立法/Spec协议/Dev开发/Plan规划/Gov治理/Exp实验/Verify验证/Ops运行/Know知识）x 七动力学（立用守省改增废）+ 规则属性系统（效力阶梯/模态状态机/作用域代数/构成-规制分类），域粒度分级，域间契约闭环，"新规则进哪个域"判定表，候审档机制。当项目立项搭规范体系、文档域规划、判断规则归属、审查规范是否过度设计时使用。触发词：项目分层、规范体系、治理文档、开发规范、设计域、domain layers、Ming-L、规范草案、候审档。
 metadata:
   layer: methodology
   compose: overlay-on-engineering
@@ -83,7 +83,82 @@ metadata:
 | Ops | 事故记录、运行观测 | Know（归档）、Verify（回归素材） |
 | Gov | 协作裁决 | 全域执行面 |
 
-## 5. 判定：新规则/新概念进哪个域
+## 5. 七动力学——域的动词面（域 x 动词矩阵）
+
+九域是**名词**（规则住哪），动力学是**动词**（规则怎么变状态）。政策周期正典（Lasswell 1956 → Anderson 1974 → Geva-May termination 研究）阶段模型的正交化：**动力学不是流程，是对任何域在任意时刻可施加的算子**——规避阶段模型"过度线性化"的学术批评。
+
+| 动词 | 英文 | 语义 | 典型物 |
+|---|---|---|---|
+| **立** | Genesis | 域/规则诞生、模板实例化 | 脚手架、域升格 |
+| **用** | Access | 读/写/查触达面 | 索引、懒加载、ADR 提案 |
+| **守** | Enforce | 机器强制（文档→法律的分界） | lint/钩子/schema 校验 |
+| **省** | Evaluate | 健康评审（产出判决而非信息） | 失能信号巡检、候审档处理、审查节奏 |
+| **改** | Evolve | 修订既有（歧义裁决亦归此） | ADR 修正、升格降级 |
+| **增** | Extend | 新内容准入 | 域准入判据、`ming_` 孵化 |
+| **废** | Retire | 日落/降级/撤销 | `deprecated→removed`、域萎缩回节 |
+
+**矩阵纪律**：`域 x 动词` 画矩阵，**每个空格必须是有意的零**——空格即病灶检查器。活体先例全覆盖见 [references/precedents.md](references/precedents.md)（K8s feature gates=增、deprecation policy=废、Rust crater run=省……）。
+
+## 6. 规则属性系统（Rule Attribute Systems）
+
+每条规则除归属域外带四个属性。**注意位阶**：四属性不是与"域/动词"平权的维度，是**字段级小系统**——且各怀不同内部结构（两个状态机、一个代数、一个分类器），不平权也不合并。
+
+### 6.1 效力阶梯（binding）——拦截深度 x 保证强度
+
+| 级 | 形态 | 保证强度 |
+|---|---|---|
+| 0 convention | 文档惯例 | 无 |
+| 1 warn | lint 警告 | 弱——可见但可发货 |
+| 2 error | lint/钩子/CI 拦截 | 强——但流水线必须跑到 |
+| 3 runtime | schema/契约运行时校验 | 强——但路径必须执行到 |
+| 4 structural | 能力不注入/类型不可表达 | **绝对——违规无法被表达** |
+
+- **ceiling（天花板）**：规则效力上限 = 可表达性。"算子不读文件"可达 4（不注入 FsGuard 即结构性不可达）；"命名清晰"天花板为 0；
+- **迁移力学**：新规则默认 ≤1 起步（安全边界除外直达 ≥2）；晋升条件 = 零违例持续 N 周期 + 机器检查就位；降级条件 = 误报频发 → 降级修 checker。
+
+### 6.2 模态状态机（status）——规则的真理方向
+
+```
+proposed --promote--> normative --relax--> descriptive
+   |                     |                     |
+   +----reject------+   supersede          archive
+                    v      v                  v
+                    frozen（吸收态：永不复活，新版=新规则）
+```
+
+- **模态决定测试种类**：normative→spec 测试（断言应然）；descriptive→characterization（锁定实然）；proposed→契约草案验证；frozen→无测试（纯史）；
+- `proposed` 即 `ming_` 孵化字段与候审档条目的正式态名；
+- 对应道义逻辑 normative/assertoric 区分（Hume is-ought：从实然推导应然是非法推理——"基线当真理"型 bug 的哲学原型）。
+
+### 6.3 作用域代数（scope）——谓词合取 + 单调加强
+
+- 作用域 = 谓词合取：`dir ∈ X AND actor ∈ Y AND phase ∈ Z`，未写维度 = 全集；
+- **单调加强**（类 Liskov）：子作用域只可加严、不可放宽；
+- **声明式豁免**：放宽必须写在父规则本体（`exempt: [tests/]`）——子作用域不得私自放松（实证：测试目录的纯度豁免是父规则自开的口子）。
+
+### 6.4 类型分类器（type）——Searle 构成/规制二分
+
+| | constitutive | regulative |
+|---|---|---|
+| 语法 | `X counts as Y in C` | `Do/Don't X` |
+| 违规形态 | type error（不可表达） | 违规报告（可表达但禁止） |
+| 校验器 | schema validator | lint/property test |
+| 效力天花板 | 可达 4 | 一般 ≤3 |
+
+写法推论：Spec 域规则多为 constitutive（schema/定义体），Dev/Gov 规则多为 regulative（祈使/禁令体）——两域规则语法气质不同的根源。
+
+### 6.5 两个统一性发现
+
+- **效力阶梯顶端 = 类型转换**：regulative 规则推到第 4 级 = 改写成 constitutive（"禁 import os" → "算子签名无 fs 参数"——违规从可表达变不可表达）。**提升效力的终极手段是重设计接口，不是加强检查**；
+- **七动词 = 属性状态机的转移函数**：增→创建 proposed，改→promote/relax 转移，废→frozen 转移，省→巡检各状态机。域级与规则级动力学同一动词组分形复用——属性系统不是动力学之外的东西，是动词在规则粒度上的作用对象。
+
+### 6.6 候审条款（provisional，未验证）
+
+- 规则 frontmatter 机查面（`binding/ceiling/scope/status/type`）——先例存在（Spectral severity 分级、OWNERS scope），本项目未验证；
+- Meta 第四条裁决条款：Hart 次级规则三腿（承认/变更/**裁决**）中我们缺裁决——"机器可判归门禁终裁，机器不可判归人工审查+ADR"；
+- 残余问题：ceiling 是否入 frontmatter；proposed→normative 晋升判据是否与效力晋升共用零违例期；豁免是否仅限 scope 维度。
+
+## 7. 判定：新规则/新概念进哪个域
 
 ```
 这条内容是"系统必须做到什么"的？      → Req（薄处理时并入 Spec §0）
@@ -99,7 +174,7 @@ metadata:
 都不像？先问：它值得一个域吗？——多数答案是不值得，进相邻域的一节。
 ```
 
-## 6. 候审档机制（OPEN-FINDINGS）
+## 8. 候审档机制（OPEN-FINDINGS）
 
 域审查发现的问题**记录不动手**：
 
@@ -107,7 +182,7 @@ metadata:
 - 已落盘的标 `[landed]` 并指落点，**不删除**（Know 域纪律：只增不隐）；
 - 候审档在 Verify 轮统一处理——逐条商确，避免"发现即改"造成的规范抖动。
 
-## 7. 域健康与启动序列
+## 9. 域健康与启动序列
 
 **失能信号（域死了的表现）**：
 
@@ -122,30 +197,35 @@ metadata:
 
 **自指验证**：本范式应能描述它的容器——skills-collection 仓库即实例：registry.yaml=Spec（单一事实源）、STANDARDS.md=Gov、tests/=Verify、PLAYBOOK.md=Know、CLAUDE.md=Meta（"registry 是单一事实源"即立法条款）。范式能无损描述自身所在仓库，是自洽性证据；不能自指的元规则值得怀疑。
 
-## 8. 参考系（诚实交代）
+## 10. 参考系（诚实交代）
 
 | 成分 | 出处 |
 |---|---|
 | 域分治骨架 | ISO/IEC/IEEE 42010（架构描述：stakeholder/concern/viewpoint 分离；2022 版 Stakeholder Perspectives/Aspects） |
 | 完备性对照 | ISO/IEC/IEEE 12207 过程组（agreement/organizational/technical-management/technical）+ SWEBOK V4 18 KA——对照结论：九域覆盖其软件项目子集，缺口仅 Req（可选域）与多组织 agreement（不适用单作者项目） |
-| Meta 域 | IETF RFC / Python PEP 立法流程（先立"规则怎么改"再立规则）+ Nygard ADR |
+| Meta 域 | IETF RFC / Python PEP 立法流程（先立"规则怎么改"再立规则）+ Nygard ADR；H.L.A. Hart《The Concept of Law》——次级规则三腿（承认/变更/裁决）锚定 Meta 条款结构 |
+| 七动力学 | 政策周期（Lasswell/Anderson；Geva-May termination 研究——终止是被普遍遗忘的阶段）；ILM 信息生命周期（create→…→archive→destroy） |
+| 规则属性系统 | 道义逻辑（normative/assertoric 模态）；Searle constitutive/regulative 规则二分；Spectral severity（效力分级先例）、OWNERS（作用域先例） |
+| 学科定位声明 | **以上学科作覆盖校验器（coverage oracle），非推导地基**——设计先自工程痛点长出，学科用于查漏；映射若只描述不预测即为强套 |
 | 各域内容范式 | 本仓库 engineering/ 元规范族（arch/contract/obs/sec/docs/testing 六包） |
 | 层间闭环 | 项目实证驱动（口径漂移→资产域、基线当真理→Verify 的 spec/characterize 分离） |
 
 *完整文献索引与实证事件清单见 [references/sources.md](references/sources.md)；明确不纳入正文的反例亦在其中。*
 
-## 9. 禁令
+## 11. 禁令
 
 1. **[禁止] 域不分层级一视同仁**：Meta 写三百行细则 = 立法臃肿；Dev 只有"写干净代码"= 规范失能；
 2. **[禁止] 同一事实两域表述**：Spec 已有的字段面，Dev/Gov 引用之，不手抄；
 3. **[禁止] 为扩充而扩充**：新域准入以 §2 正式判据为准（新 concern 集或新 stakeholder 视角），"≥一节"只是厚度下限；
 4. **[禁止] 口头规则**：任何被遵守的规则必须在某个域的文档里，否则不成立；
-5. **[禁止] 候审档即改**：发现缺陷先记录，集中处理——边发现边改会产生规范振荡。
+5. **[禁止] 候审档即改**：发现缺陷先记录，集中处理——边发现边改会产生规范振荡；
+6. **[禁止] 矩阵空格无意留白**：域 x 动词矩阵的空格必须是有意的零并标注理由；
+7. **[禁止] 效力跃进**：规则不得从 convention 直跳 error+——沿阶梯迁移，未达天花板前保留降级通道。
 
-## 10. Compose
+## 12. Compose
 
 ```
-ming-l-paradigm（本包：域分层 + 判定 + 候审档）
+ming-l-paradigm（本包：域分层 + 动力学 + 属性系统 + 判定 + 候审档）
 + arch-core-paradigm（Spec 域内部架构边界）
 + contract-core-paradigm（Spec/Dev 字段演进纪律）
 + docs-core-paradigm（各域文档体裁 + ADR）

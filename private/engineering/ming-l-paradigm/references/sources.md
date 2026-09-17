@@ -25,6 +25,13 @@
   - Koen Claessen & John Hughes: *QuickCheck*（2000）——PBT 源；
   - Michael Feathers: *Working Effectively with Legacy Code*——characterize 测试与 seam；
   - Ian Cooper: *TDD, Where Did It All Go Wrong*——测公共缝不测私有实现。
+- **规范系统理论（动力学与属性系统的学科锚）**:
+  - H.L.A. Hart: *The Concept of Law*（1961）——primary/secondary rules 联合；次级规则三腿 recognition/change/adjudication 直接锚定 Meta 条款（并暴露出我们缺"裁决"条款——候审 §6.6）；internal/external point of view 对应模态轴。
+  - John R. Searle: constitutive vs regulative rules——"X counts as Y in C" vs "Do X"；规则类型分类器的来源；构成性规则创造活动本身（Spec 气质）vs 规制性规则约束已存在行为（Dev/Gov 气质）。
+  - van der Torre & Tan: *An Architecture of a Normative System*（AAMAS'06）——normative systems / NorMAS 文献，多智能体系统领域的规范架构先例。
+  - 道义逻辑（deontic logic）：obligation/permission/prohibition 模态——属性系统模态轴的严格化来源。
+  - 政策周期：Lasswell（1956）/ Anderson（1974）阶段模型 + Geva-May *Riding the Wave of Opportunity: Termination in Public Policy*（2004）——termination 是被普遍遗忘的阶段，佐证"废"动词独立性。
+  - ILM/DLM 信息生命周期（Splunk/IBM/TechTarget 综述）——create→store→use→share→archive→destroy，佐证"省/废"相独立。
 - **文档**:
   - Daniele Procida: Diátaxis 四体裁——各域文档体裁规范的上游。
 

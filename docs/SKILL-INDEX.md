@@ -213,7 +213,7 @@
 | blog-content | 博客创作与发布全流程规范 | 已部署 |
 | antibot-fingerprint-paradigm | 反爬指纹对抗分层知识库：JA3/JA4+h2+TCP/IP+JS 一致性+判定引擎形态+组件选型 | 已部署 |
 | arch-core-paradigm | 架构边界元规则：六边形/Ports-Adapters 最小形态 + FFI 迁移接缝 | 已部署 |
-| ming-l-paradigm | 项目结构域分层元规则：Ming-L 九域全景 + 域准入判据 + 粒度分级 + 候审档机制 | 已部署 |
+| ming-l-paradigm | 项目结构域分层元规则：Ming-L 九域全景 x 七动力学 + 规则属性系统 + 域准入判据 + 候审档机制 | 已部署 |
 | ming-skill-forge | 技能包创作元规则：渐进披露预算 + 触发面工艺 + 注册路由接线 + check-skill.mjs 硬门控 | 已部署 |
 | ming-distiller | 项目级经验沉淀与检索双模态入口：distill/ 库 INDEX.yaml 索引 + 懒加载正文 + _proposals 晋升 staging | 已部署 |
 | ui-oracle-protocol | 自研：安卓 UI 控件自动化作为协议逆向 oracle（见二点五） | 已部署 |
