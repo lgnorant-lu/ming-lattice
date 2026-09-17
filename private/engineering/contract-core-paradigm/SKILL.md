@@ -3,7 +3,7 @@ name: contract-core-paradigm
 description: Cross-scene data-contract meta-rules for additive schema evolution, semantic compatibility, and a single source of truth shared with tests and docs. Use when changing JSON schemas, testdata, API payloads, flags, exit codes, or cross-language fixtures. Triggers include schema-evolution, backwards-compatibility, tolerant-reader, data-contract, protobuf-compat, 数据契约, 字段演进, schemaVersion.
 metadata:
   layer: data-contract
-  compose: overlay-on-testing
+  compose: cross-scene
 ---
 
 # Contract Core Paradigm — 跨场景数据契约元规则
@@ -55,7 +55,7 @@ Postel「接收宽容」只适用于可预见扩展，不是把畸形当成功�
 - **正负夹具**：每个可空/可选字段至少有一个有效样本；缺字段、错类型、未知枚举、数组元素错误和额外字段各有负向样本。
 - **严格边界**：持久化制品可以严格拒绝未知字段；运行时消费者是否宽容读取是另一份契约，不能用“读取端宽容”掩盖制品污染。
 - **新鲜度判定**：只忽略明确声明的生成时间等非语义字段；来源、计数、依赖、finding、失败项的变化都必须能让 freshness 检查失败。
-- **失败闭合**：partial、扫描失败、未知来源或 schema 不完整不能被表现为成功制品；错误应进入稳定的结构化 code。
+- **失败闭合**：partial、扫描失败、未知来源或 schema 不完整不能被表现为成功制品；错误应进入稳定的结构化输出。
 
 ## 5. Compose
 
