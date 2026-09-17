@@ -99,6 +99,8 @@ metadata:
 
 **矩阵纪律**：`域 x 动词` 画矩阵，**每个空格必须是有意的零**——空格即病灶检查器。活体先例全覆盖见 [references/precedents.md](references/precedents.md)（K8s feature gates=增、deprecation policy=废、Rust crater run=省……）。
 
+**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点/双真相/frozen 拦截/proposed 计龄六查；平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。
+
 ## 6. 规则属性系统（Rule Attribute Systems）
 
 每条规则除归属域外带四个属性。**注意位阶**：四属性不是与"域/动词"平权的维度，是**字段级小系统**——且各怀不同内部结构（两个状态机、一个代数、一个分类器），不平权也不合并。
@@ -154,9 +156,9 @@ proposed --promote--> normative --relax--> descriptive
 
 ### 6.6 候审条款（provisional，未验证）
 
-- 规则 frontmatter 机查面（`binding/ceiling/scope/status/type`）——先例存在（Spectral severity 分级、OWNERS scope），本项目未验证；
+- 规则 frontmatter 机查面（`domain/status/type/binding/dynamics/canonical/since`）——`audit-domains.mjs` 已实现词表校验与双真相/frozen/计龄检查，字段语义在本项目实例化中验证中；
 - Meta 第四条裁决条款：Hart 次级规则三腿（承认/变更/**裁决**）中我们缺裁决——"机器可判归门禁终裁，机器不可判归人工审查+ADR"；
-- 残余问题：ceiling 是否入 frontmatter；proposed→normative 晋升判据是否与效力晋升共用零违例期；豁免是否仅限 scope 维度。
+- 残余问题：ceiling 是否入 frontmatter；proposed→normative 晋升判据是否与效力晋升共用零违例期；豁免是否仅限 scope 维度；scope 字段的谓词语法尚未定（当前机器只校验存在性）。
 
 ## 7. 判定：新规则/新概念进哪个域
 
@@ -225,7 +227,7 @@ proposed --promote--> normative --relax--> descriptive
 ## 12. Compose
 
 ```
-ming-l-paradigm（本包：域分层 + 动力学 + 属性系统 + 判定 + 候审档）
+ming-l-paradigm（本包：域分层 + 动力学 + 属性系统 + 判定 + 候审档 + audit-domains 体检器）
 + arch-core-paradigm（Spec 域内部架构边界）
 + contract-core-paradigm（Spec/Dev 字段演进纪律）
 + docs-core-paradigm（各域文档体裁 + ADR）
