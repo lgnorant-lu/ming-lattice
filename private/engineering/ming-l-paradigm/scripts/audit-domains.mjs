@@ -50,7 +50,7 @@ function parseFm(content) {
   const m = content.match(/^---\s*\n([\s\S]*?)\n---/);
   if (!m) return null;
   const fm = {};
-  for (const line of m[1].split('\n')) {
+  for (const line of m[1].split(/\r?\n/)) {
     const kv = line.match(/^(\w+)\s*:\s*(.*)$/);
     if (!kv) continue;
     let v = kv[2].trim();
