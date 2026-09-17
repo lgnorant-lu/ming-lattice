@@ -1,0 +1,37 @@
+---
+domain: meta
+status: normative
+---
+
+# {{project}} Meta — 立法域
+
+> 位阶：本项目一切域文档之上的"规则的规则"。体量刻意小——立法臃肿是失能信号。
+
+## 三条款
+
+1. **一切规则进文档**：不进口头约定——未被任何域文档记载的规则不成立。
+2. **规则修改走 ADR**：Accepted 文档不改写，变更 = 新 ADR 或 Supersede 标记。
+   - *豁免*：不改变语义的编辑性修正（typo/排版/死链修复）不过 ADR。
+3. **ADR 流程自身的修改也走 ADR**（自指闭环）。
+
+## 标号命名空间登记
+
+机读事实源：`namespaces.json`（audit-domains 校验本表与其一致——双真相互锁）。
+
+| 前缀 | 归属 | 格式 | 序性 |
+|---|---|---|---|
+| （与 namespaces.json 同步维护） | | | |
+
+## 域清单
+
+| 域 | 文档 |
+|---|---|
+| Meta | 本文件 |
+| Spec | `spec/` |
+| Dev | `dev/CONTRACT.md` |
+| Plan | 待建 |
+| Gov | 待建 |
+| Exp | 待升格 |
+| Verify | `spec/OPEN-FINDINGS.md` 起步 |
+| Ops | 待建 |
+| Know | 冻结史归档 |

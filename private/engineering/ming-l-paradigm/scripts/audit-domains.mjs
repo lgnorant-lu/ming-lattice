@@ -14,13 +14,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
+const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const target = path.resolve(args.find(a => !a.startsWith('--')) || 'docs');
 const asJson = args.includes('--json');
 const strict = args.includes('--strict');
 const staged = args.includes('--staged');
 const provDays = Number(args[args.indexOf('--proposed-days') + 1]) || 30;
+const labelsArg = args.indexOf('--labels') >= 0 ? args[args.indexOf('--labels') + 1] : null;
 
 const DOMAINS = new Set(['meta', 'spec', 'dev', 'plan', 'gov', 'exp', 'verify', 'ops', 'know', 'req']);
 const STATUSES = new Set(['proposed', 'normative', 'descriptive', 'frozen']);
@@ -69,12 +72,14 @@ function parseFm(content) {
 const domainDocs = new Map(); // domain -> [files]
 const canonical = new Map();  // key -> [files]
 const frozenDocs = [];
+const allDocs = [];           // {rel, fm, text} — 供登记表互锁等跨文件检查
 const now = Date.now();
 
 for (const f of mdFiles) {
   const rel = path.relative(target, f).replace(/\\/g, '/');
   const content = fs.readFileSync(f, 'utf8');
   const fm = parseFm(content);
+  allDocs.push({ rel, fm, text: content });
 
   // 1. orphan
   if (!fm || !fm.domain) {
@@ -131,14 +136,25 @@ for (const [key, files] of canonical) {
 }
 
 // ---------- 7. 标识分配律 ----------
-// 定义位: 标题 ID（### A5. / # L3 — / ## D5.）+ adr/NNNN-*.md 文件名 + 候审档字母区内编号项
+// 定义位: 标题 ID（### A5. / # L3 — / ## D5.）+ adr/NNNN-*.md 文件名 + 候审档字母区内编号项 + 粗体定义位
 // 引用位: 正文独立标号 token（含反引号）；未定义 = 悬空
-const LABEL_REF = /\b(ADR-\d{4}|L-[a-z-]+|L\d+m?|CL\d+m?|[ABCDQMTE]\d+)\b/g;
-const BOLD_DEF = /\*\*(ADR-\d{4}|L-[a-z-]+|CL\d+m?|[A-Z]{1,5}\d+)\b/; // 表内/行内粗体定义位（**T0 x**、**CL0 x**）
-const LABEL_FORMATS = [
-  /^ADR-\d{4}$/, /^L(\d+|-[a-z-]+)$/, /^M\d+$/, /^CL\d+m?$/,
-  /^[ABCQ]\d+$/, /^D\d+$/, /^T\d+$/,
-];
+// 命名空间表外置（高度自定义化）：--labels <json> > <target>/namespaces.json > skill 内置默认
+let nsList = null, nsSource = null;
+const convNs = path.join(target, 'namespaces.json');
+const nsFile = labelsArg || (fs.existsSync(convNs) ? convNs : null);
+if (nsFile) {
+  try { nsList = JSON.parse(fs.readFileSync(nsFile, 'utf8')).namespaces; nsSource = nsFile; }
+  catch (e) { add('E', `命名空间登记表解析失败: ${nsFile} — ${e.message}`); }
+}
+if (!nsList) {
+  nsList = JSON.parse(fs.readFileSync(path.join(SKILL_DIR, 'assets/namespaces.default.json'), 'utf8')).namespaces;
+  nsSource = 'skill-default';
+}
+// role=id 的命名空间参与定义/引用扫描；role=value 仅为词表（错误码/版本号/算子 type，事实源各在自有 schema）
+const idAlt = nsList.filter(n => n.role !== 'value').map(n => n.pattern.replace(/^\^|\$$/g, '')).join('|');
+const LABEL_REF = new RegExp(`\\b(${idAlt})\\b`, 'g');
+const BOLD_DEF = new RegExp(`\\*\\*(${idAlt})\\b`);
+const LABEL_FORMATS = nsList.map(n => new RegExp(n.pattern));
 const defined = new Map();    // id -> [file:line]
 const refs = [];              // {id, rel, line}
 const statusByFile = new Map(); // rel -> fm.status
@@ -171,7 +187,7 @@ for (const f of mdFiles) {
       if (!defined.has(id)) defined.set(id, []);
       defined.get(id).push(`${rel}:${i + 1}`);
     }
-    const headM = line.match(/^#{1,6}\s+(ADR-\d+|L-[a-z-]+|CL\d+m?|[A-Z]{1,5}\d+)\s*[.．:：—\- ]/);
+    const headM = line.match(new RegExp(`^#{1,6}\\s+(${idAlt})\\s*[.．:：—\\- ]`));
     if (headM) {
       const id = headM[1];
       if (!defined.has(id)) defined.set(id, []);
@@ -198,7 +214,25 @@ for (const { id, rel, line } of refsLive) {
   if (!defined.has(id)) add('W', `悬空引用: ${id} 无定义位（${rel}:${line}）`);
 }
 for (const [id] of defined) {
-  if (!LABEL_FORMATS.some(r => r.test(id))) add('W', `标号 ${id} 不匹配已登记命名空间格式（META 标号表）`);
+  if (!LABEL_FORMATS.some(r => r.test(id))) add('W', `标号 ${id} 不匹配已登记命名空间格式（namespaces.json）`);
+}
+// 登记表双真相互锁: meta 域文档的"命名空间"表对照 namespaces.json（散文视图不得偏离机读源）
+if (nsFile) {
+  const jsonPrefixes = new Set(nsList.map(n => n.prefix));
+  for (const { rel, fm, text } of allDocs) {
+    if (!fm || fm.domain !== 'meta') continue;
+    const tablePrefixes = new Set();
+    let inNs = false;
+    for (const line of text.split('\n')) {
+      if (/^#{1,6}\s/.test(line)) inNs = /命名空间|namespace/i.test(line);
+      else if (inNs && /^\|/.test(line)) {
+        for (const m of (line.split('|')[1] || '').matchAll(/`([^`]+)`/g)) tablePrefixes.add(m[1].trim());
+      }
+    }
+    if (!tablePrefixes.size) continue; // 无命名空间表的 meta 文档不参与互锁
+    for (const p of tablePrefixes) if (!jsonPrefixes.has(p)) add('E', `登记漂移: meta 表前缀 ${p} 不在 namespaces.json（${rel}）`, rel);
+    for (const p of jsonPrefixes) if (!tablePrefixes.has(p)) add('E', `登记漂移: namespaces.json 前缀 ${p} 未在 meta 表登记（${rel}）`, rel);
+  }
 }
 
 // ---------- 3. 域 x 动词矩阵 ----------
@@ -234,6 +268,7 @@ if (asJson) {
   console.log(JSON.stringify({ issues, domains: [...domainDocs.keys()], frozen: frozenDocs }, null, 2));
 } else {
   console.log(`audit-domains: ${target}  (${mdFiles.length} docs, ${domainDocs.size} domains)`);
+  console.log(`命名空间表: ${nsSource}`);
   console.log(`域清单: ${[...domainDocs.keys()].join(', ') || '(无)'}`);
   for (const i of issues) console.log(`[${i.level}] ${i.file === target ? '' : i.file + ' '}${i.msg}`);
   const e = issues.filter(i => i.level === 'E').length;

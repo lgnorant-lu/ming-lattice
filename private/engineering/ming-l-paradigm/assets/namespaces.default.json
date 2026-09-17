@@ -1,0 +1,21 @@
+{
+  "version": "ming.1",
+  "comment": "标号命名空间登记表——标识分配律的机器可读事实源。role=id 的命名空间参与定义位/引用位扫描；role=value 仅为词表（如错误码、版本号、算子 type）。序性: stack=栈位序 semantic=语义序 alloc=分配序 enum=枚举 category+alloc=类别x序号 ns=命名空间 semver=版本。",
+  "namespaces": [
+    { "prefix": "L<N>",          "pattern": "^L\\d+$",              "domain": "spec",   "ordering": "stack",         "role": "id",    "note": "文档层栈位" },
+    { "prefix": "L-<word>",      "pattern": "^L-[a-z-]+$",          "domain": "spec",   "ordering": "floating",      "role": "id",    "note": "层栈外附属规约" },
+    { "prefix": "M<N>",          "pattern": "^M\\d+$",              "domain": "plan",   "ordering": "semantic",      "role": "id",    "note": "里程碑" },
+    { "prefix": "ADR-<NNNN>",    "pattern": "^ADR-\\d{4}$",         "domain": "meta",   "ordering": "alloc",         "role": "id",    "note": "决策记录" },
+    { "prefix": "A/B/C/Q<N>",    "pattern": "^[ABCQ]\\d+$",         "domain": "verify", "ordering": "category+alloc","role": "id",    "note": "候审档分级：真洞/细节/注记/待商确" },
+    { "prefix": "D<N>",          "pattern": "^D\\d+$",              "domain": "dev",    "ordering": "enum",          "role": "id",    "note": "dev 契约章节" },
+    { "prefix": "T<N>",          "pattern": "^T\\d+$",              "domain": "spec",   "ordering": "tier",          "role": "id",    "note": "归因分级" },
+    { "prefix": "CL<N>",         "pattern": "^CL\\d+m?$",           "domain": "spec",   "ordering": "stack",         "role": "id",    "note": "契约层（CL0/CL1/CL2/CL2m/CL3）" },
+    { "prefix": "E_<族>_<子码>", "pattern": "^E_[A-Z]+(_[A-Z]+)*$", "domain": "spec",   "ordering": "enum",          "role": "value", "note": "错误码词表（事实源 errors.schema.json）" },
+    { "prefix": "core.",         "pattern": "^core\\.[a-z_]+$",     "domain": "spec",   "ordering": "ns",            "role": "value", "note": "标准库算子 type" },
+    { "prefix": "ming.",         "pattern": "^ming\\.[a-z_]+$",     "domain": "spec",   "ordering": "ns",            "role": "value", "note": "孵化算子 type（区别于 ming. 版本号形态）" },
+    { "prefix": "<vendor>.",     "pattern": "^[a-z][a-z0-9_]*\\.[a-z_]+$", "domain": "spec", "ordering": "ns",       "role": "value", "note": "第三方算子各自命名空间（占位位，vendor 自取）" },
+    { "prefix": "ming_<name>",   "pattern": "^ming_[a-z_]+$",       "domain": "spec",   "ordering": "exempt",        "role": "value", "note": "孵化字段豁免位" },
+    { "prefix": "E_MING_*",      "pattern": "^E_MING_[A-Z]+$",      "domain": "spec",   "ordering": "exempt",        "role": "value", "note": "实验错误码豁免位" },
+    { "prefix": "ming.<a>.<b>",  "pattern": "^ming\\.\\d+(\\.\\d+)?$","domain": "spec", "ordering": "semver",        "role": "value", "note": "schema/协议/文档版本" }
+  ]
+}

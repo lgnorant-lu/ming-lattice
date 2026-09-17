@@ -99,7 +99,7 @@ metadata:
 
 **矩阵纪律**：`域 x 动词` 画矩阵，**每个空格必须是有意的零**——空格即病灶检查器。活体先例全覆盖见 [references/precedents.md](references/precedents.md)（K8s feature gates=增、deprecation policy=废、Rust crater run=省……）。
 
-**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点/双真相/frozen 拦截/proposed 计龄/标号三检（唯一性·悬空引用·格式）七面；平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。
+**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点/双真相/frozen 拦截/proposed 计龄/标号四检（唯一性·悬空引用·格式·登记表互锁）七面；平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。域骨架生成见 `scripts/scaffold-domains.mjs`（模板实例化 + namespaces.json 播种，生成物即过审计）。
 
 ## 6. 规则属性系统（Rule Attribute Systems）
 
@@ -174,9 +174,11 @@ proposed --promote--> normative --relax--> descriptive
 
 **实证**：DenoiseStudio 落地轮机械扫描抓到两个活撞车——候审档 D 区 vs dev `D1~D6` 章（候审区更名 `Q`）；契约四层 `L0~L3` vs 文档层 `L0~L3`（契约层更名 `CL<N>`）。另 `C2` 双用于生命周期机与候审注记（机器更名 `C-2`）。无登记表时这些全部裸奔。
 
-**机械执行面**：`audit-domains.mjs` §7 三查——**唯一性**（同 ID 多定义位 = E）、**悬空引用**（正文标号无定义位 = W；候审档与 descriptive/frozen 史档豁免——冻结史旧名非悬空）、**格式合规**（W）。
+**机械执行面**：`audit-domains.mjs` §7 四查——**唯一性**（同 ID 多定义位 = E）、**悬空引用**（正文标号无定义位 = W；候审档与 descriptive/frozen 史档豁免——冻结史旧名非悬空）、**格式合规**（W）、**登记表互锁**（meta 表与 namespaces.json 漂移 = E）。
 
-**分配器裁决**：单作者低并发 → 人工分配 + 机器查重足够（PEP/RFC 编辑分配先例）；并发发号（多分支/多 Agent）才建取号器——adr-tools issue#102 是已录实坑，counter lockfile 可以合并冲突为检测器。**文件系统本身即 registry**（`adr/NNNN-*.md` 文件名=号码簿），不另建 labels.json 双真相。
+**登记表外置（高度自定义化）**：命名空间声明是**数据不是脚本**——`namespaces.json`（prefix/pattern/domain/ordering/role/note）按项目私有，`role=id` 参与定义/引用扫描、`role=value` 仅为词表。audit-domains 三级回退：`--labels <json>` > `<target>/namespaces.json` > `assets/namespaces.default.json` 内置种子；`scaffold-domains.mjs` 播种项目副本，立即可裁剪扩展。
+
+**分配器裁决**：单作者低并发 → 人工分配 + 机器查重足够（PEP/RFC 编辑分配先例）；并发发号（多分支/多 Agent）才建取号器——adr-tools issue#102 是已录实坑，counter lockfile 可以合并冲突为检测器。**文件系统本身即已发号簿**（`adr/NNNN-*.md` 文件名=号码簿）；`namespaces.json` 登记的是**命名空间声明**（格式 schema），与号码簿不同位面，不构成双真相。
 
 ## 8. 判定：新规则/新概念进哪个域
 
@@ -247,7 +249,7 @@ proposed --promote--> normative --relax--> descriptive
 ## 13. Compose
 
 ```
-ming-l-paradigm（本包：域分层 + 动力学 + 属性系统 + 判定 + 候审档 + audit-domains 体检器）
+ming-l-paradigm（本包：域分层 + 动力学 + 属性系统 + 判定 + 候审档 + 标识分配律 + audit-domains 体检器 + scaffold-domains 脚手架 + namespaces 种子登记表/模板组）
 + arch-core-paradigm（Spec 域内部架构边界）
 + contract-core-paradigm（Spec/Dev 字段演进纪律）
 + docs-core-paradigm（各域文档体裁 + ADR）
