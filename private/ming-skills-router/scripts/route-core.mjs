@@ -82,8 +82,14 @@ export function Decide(hint, manifest) {
       if (clauses.some(clause => negated(clause) && matches(clause, skill))) excluded.add(skill);
       if (matches(activeText, skill)) explicit.set(skill, name);
     }
+    // 负词中和：被负词完整覆盖的正向命中不计分（"渗透测试"里的"测试"不给测试域投票），
+    // 不做整域扣分——复合意图仍归 conflicting 检测走 mixed/ask，防止逆向+测试双意图被负词静默吞掉。
+    let scoredText = activeText;
+    for (const neg of info.negatives) {
+      if (neg) scoredText = scoredText.split(neg).join('#'.repeat(neg.length));
+    }
     const triggerTerms = [...info.triggers, ...(info.qualityGateTriggers || [])];
-    scores[name] = triggerTerms.filter(term => term !== 'hook' && matches(activeText, term)).length;
+    scores[name] = triggerTerms.filter(term => term !== 'hook' && matches(scoredText, term)).length;
   }
   for (const skill of excluded) explicit.delete(skill);
   for (const [name, info] of Object.entries(domains)) {

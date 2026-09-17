@@ -287,6 +287,34 @@ const GOLDEN_CASES = [
       assert.equal(res.side_effects, 'none');
       assert.ok(res.must_not.includes('modify_files'), '审查规划模式下严禁修改文件！');
     }
+  },
+
+  // ── 9. 负词否决 (negatives 计分接线回归) ──
+  {
+    category: '负词否决',
+    name: '9.1 渗透测试审计不被"测试"子串劫持 (negatives 上线前实测 domain=testing)',
+    hint: '对渗透测试目标做安全审计',
+    must_include: ['reverse-skill-router'],
+    assert: (res, tc) => {
+      assert.equal(res.domain, 'reverse');
+      assert.notEqual(res.domain, 'testing');
+      assert.equal(res.mode, 'review');
+      assertSubset(tc.must_include, res.candidates, tc.name);
+      assert.equal(res.side_effects, 'none');
+    }
+  },
+  {
+    category: '负词否决',
+    name: '9.2 逆向+测试复合表面仍走 mixed/ask (中和语义不破坏复合检测)',
+    hint: '反编译这个测试工具的混淆代码并分析签名',
+    must_include: ['reverse-skill-router', 'testing-core-oracle'],
+    assert: (res, tc) => {
+      assert.equal(res.domain, 'mixed');
+      assert.equal(res.action, 'ask');
+      assertSubset(tc.must_include, res.candidates, tc.name);
+      assert.equal(res.side_effects, 'none');
+      assert.ok(res.must_not.includes('initReverseCase'), '复合任务未确认前绝对严禁建单！');
+    }
   }
 ];
 

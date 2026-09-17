@@ -36,7 +36,8 @@ const DOMAIN_DEFS = {
       "proptest", "test framework", "oracle", "golden test", "spec test", "unit test", "testing", "property-based", "mutation testing"
     ],
     negatives: [
-      "脱壳", "反编译", "ida pro", "gdb", "rop", "pwn", "hook_installed", "抓包", "绕过frida"
+      "脱壳", "反编译", "ida pro", "gdb", "rop", "pwn", "hook_installed", "抓包", "绕过frida",
+      "渗透测试", "安全测试", "pentest"
     ],
     defaultRecipe: "spec-driven-greenfield"
   },
@@ -54,7 +55,7 @@ const DOMAIN_DEFS = {
       "smali", "apk逆向", "jsvmp", "补环境", "混淆还原", "ast解混淆", "抓包分析",
       "协议分析", "私有协议", "签名算法", "sign算法", "so逆向", "rop", "pwn", "固件提取",
       "指纹", "ja3", "ja4", "风控", "反爬", "指纹浏览器", "webdriver检测", "tls指纹",
-      "headless检测", "bot detection", "fingerprint"
+      "headless检测", "bot detection", "fingerprint", "渗透测试", "安全测试", "pentest", "penetration"
     ],
     negatives: [
       "单元测试", "测试覆盖", "pytest", "cargo test", "tdd", "bdd", "覆盖设计",

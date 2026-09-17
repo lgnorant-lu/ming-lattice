@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-17T06:13:18.068Z",
+  "generatedAt": "2026-09-17T11:11:43.963Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -60,7 +60,10 @@
         "pwn",
         "hook_installed",
         "抓包",
-        "绕过frida"
+        "绕过frida",
+        "渗透测试",
+        "安全测试",
+        "pentest"
       ],
       "defaultRecipe": "spec-driven-greenfield"
     },
@@ -120,7 +123,11 @@
         "tls指纹",
         "headless检测",
         "bot detection",
-        "fingerprint"
+        "fingerprint",
+        "渗透测试",
+        "安全测试",
+        "pentest",
+        "penetration"
       ],
       "negatives": [
         "单元测试",
