@@ -41,6 +41,45 @@ description: 基于性质与变异测试规范（Testing Property & Mutation）�
 
 ---
 
+## 1.5 蜕变测试（Metamorphic Testing, MT）—— Oracle 缺失场景的正式解
+
+> 图像处理、ML、解析器等**无 oracle** 场景（无法知道任意输入的正确输出）时，断言"关系"而非"值"。
+> 起源：T.Y. Chen et al. (1998)；CV 域实证：形态学/边缘检测 MR 变异测试研究、MT4ImgRec 工具。
+
+### 模式
+
+```
+源输入 x ──transform──> follow-up x'
+SUT(x) 与 SUT(x') 之间断言 metamorphic relation（输出关系），而非断言输出值本身
+```
+
+### 常用蜕变关系目录（MR catalog）
+
+| MR | 公式 | 适用 |
+|---|---|---|
+| **等变性** | `f(t(x)) == t(f(x))` | 平移/旋转/亮度等变换与算子可交换（去噪、卷积） |
+| **幂等** | `f(f(x)) == f(x)` | 清洗、归一化、格式化 |
+| **单调/守恒** | 输入集合扩大 → 输出不减；过滤后 ⊆ 原集合 | 剪除类（输出墨 ⊆ 输入墨）、闭运算扩张 |
+| **排列无关** | 输入顺序打乱 → 输出不变 | 聚合、集合运算 |
+| **组合/结合** | `f(g(x))` 与 `h(x)` 等价 | 管线等价重构验证 |
+
+### CV 算子实例（DenoiseStudio 实证设计）
+
+```python
+denoise(translate(img, 3, 5)) ≈ translate(denoise(img), 3, 5)   # 平移等变
+denoise(denoise(x)) ≈ denoise(x)                                  # 幂等
+line_prune(x) ⊆ x                                                 # 剪除单调
+morph_close(x) ⊇ x                                                # 闭运算扩张
+```
+
+### 纪律
+
+- 断言来自**变换语义**而非实现——符合 oracle 独立律（不同义反复）；
+- MR 有效性用变异测试校准（MR 本身可被变异审计杀伤率评估）；
+- 随机生成的错误输出也可能碰巧满足 MR——MT 与结构测试并用，不可单独依赖。
+
+---
+
 ## 2. 跨语言性质测试工具栈
 
 | 语言 | 推荐工具库 | 核心用法与模式 |
