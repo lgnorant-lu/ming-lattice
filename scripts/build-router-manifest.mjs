@@ -97,7 +97,9 @@ const DOMAIN_DEFS = {
       "sec-core-paradigm",
       "contract-core-paradigm",
       "overlay-core-paradigm",
-      "arch-core-paradigm"
+      "arch-core-paradigm",
+      "ming-l-paradigm",
+      "ming-skill-forge"
     ],
     triggers: [
       "文档", "文档体系", "仓库文档", "readme",
@@ -106,7 +108,9 @@ const DOMAIN_DEFS = {
       "可观测", "日志", "observability", "structured logging", "wide events", "宽事件", "相关id",
       "安全元规则", "ast10", "agentic-skills", "supply-chain", "最小权限",
       "数据契约", "schema-evolution", "tolerant-reader", "data-contract", "字段演进",
-      "性能", "安全", "隐私", "韧性", "上下文成本", "可移植", "overlay"
+      "性能", "安全", "隐私", "韧性", "上下文成本", "可移植", "overlay",
+      "规范体系", "项目分层", "治理文档", "候审档", "ming-l",
+      "新技能", "写技能", "技能包", "skill包", "skill authoring", "frontmatter"
     ],
     qualityGateTriggers: [
       "质量门禁", "门禁", "git hooks", "pre-commit", "pre-push", "ci", "ci/cd", "runner",
@@ -124,6 +128,8 @@ const DOMAIN_DEFS = {
       "contract-core-paradigm": ["数据契约", "字段演进", "schema-evolution", "schemaVersion", "tolerant-reader", "data-contract"],
       "overlay-core-paradigm": ["性能", "performance", "隐私", "privacy", "韧性", "可移植", "上下文成本", "overlay"],
       "arch-core-paradigm": ["六边形架构", "hexagonal", "ports and adapters", "端口适配器", "依赖倒置", "clean architecture", "洋葱架构", "架构边界", "ffi边界", "strangler"],
+      "ming-l-paradigm": ["项目分层", "规范体系", "治理文档", "候审档", "ming-l", "domain", "设计域"],
+      "ming-skill-forge": ["新技能", "写技能", "技能包", "skill包", "skill authoring", "skill-creator", "frontmatter", "渐进披露"],
       "testing-scenario-embed-ffi": ["v8", "v8-isolate", "pyo3", "ffi", "跨语言", "嵌入", "isolate"],
       "testing-rust-idiom": ["rust", "rustc", "cargo", "miri", "proptest"],
       "testing-python-idiom": ["python", "pytest", "pyo3", "hypothesis"],

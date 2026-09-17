@@ -21,7 +21,9 @@ private/engineering/
 ├── sec-core-paradigm/                 # [A列-安全] 不可信输入、最小权限、OWASP AST01~10 供应链
 ├── contract-core-paradigm/            # [A列-契约] 演进五条（只加不改义）、破坏升版本、宽容读取
 ├── overlay-core-paradigm/             # [B列-横切] 性能、隐私、韧性、成本、兼容、无障碍
-└── arch-core-paradigm/                # [A列-架构] 六边形/Ports-Adapters 最小形态、迁移接缝
+├── arch-core-paradigm/                # [A列-架构] 六边形/Ports-Adapters 最小形态、迁移接缝
+├── ming-l-paradigm/                   # [A列-方法论] Ming-L 九域分层（项目结构规范总图）、粒度分级、候审档
+└── ming-skill-forge/                  # [A列-方法论] 技能包创作规程 + check-skill.mjs 硬门控
 ```
 
 ---
@@ -33,7 +35,7 @@ private/engineering/
 ```
 Project Stack = 1 个开发工作流 (spec / characterize)
               + 1 套测试组合 (oracle + 语言 + [按需] 场景)
-              + [按需] A 列工程元包 (docs | docs-presentation | obs | sec | contract | arch)
+              + [按需] A 列工程元包 (docs | docs-presentation | obs | sec | contract | arch | ming-l)
               + [按需] B 列质量横切包 (overlay-core-paradigm)
               + 该层 scenes/<scene>.md 场景形态差
 ```

@@ -1401,6 +1401,18 @@ private:
     note: "跨场景架构边界元规则 (六边形/Ports-Adapters 最小形态 + 迁移接缝)"
     deploy:
       claude: true
+  - name: ming-l-paradigm
+    path: private/engineering/ming-l-paradigm
+    enabled: true
+    note: "项目结构域分层元规则 (Ming-L 九域全景 + 粒度分级 + 候审档机制)"
+    deploy:
+      claude: true
+  - name: ming-skill-forge
+    path: private/engineering/ming-skill-forge
+    enabled: true
+    note: "技能包创作与修订元规则 (渐进披露预算 + 触发面工艺 + 注册路由接线 + check-skill 硬门控)"
+    deploy:
+      claude: true
   - name: antibot-fingerprint-paradigm
     path: private/antibot-fingerprint-paradigm
     enabled: true

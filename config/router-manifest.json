@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-16T12:12:56.811Z",
+  "generatedAt": "2026-09-17T05:55:31.714Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -213,7 +213,9 @@
         "sec-core-paradigm",
         "contract-core-paradigm",
         "overlay-core-paradigm",
-        "arch-core-paradigm"
+        "arch-core-paradigm",
+        "ming-l-paradigm",
+        "ming-skill-forge"
       ],
       "triggers": [
         "文档",
@@ -254,7 +256,18 @@
         "韧性",
         "上下文成本",
         "可移植",
-        "overlay"
+        "overlay",
+        "规范体系",
+        "项目分层",
+        "治理文档",
+        "候审档",
+        "ming-l",
+        "新技能",
+        "写技能",
+        "技能包",
+        "skill包",
+        "skill authoring",
+        "frontmatter"
       ],
       "qualityGateTriggers": [
         "质量门禁",
@@ -339,6 +352,25 @@
           "架构边界",
           "ffi边界",
           "strangler"
+        ],
+        "ming-l-paradigm": [
+          "项目分层",
+          "规范体系",
+          "治理文档",
+          "候审档",
+          "ming-l",
+          "domain",
+          "设计域"
+        ],
+        "ming-skill-forge": [
+          "新技能",
+          "写技能",
+          "技能包",
+          "skill包",
+          "skill authoring",
+          "skill-creator",
+          "frontmatter",
+          "渐进披露"
         ],
         "testing-scenario-embed-ffi": [
           "v8",
@@ -518,6 +550,8 @@
     "js-reverse": "ready",
     "macos-reverse": "ready",
     "malware-analysis": "ready",
+    "ming-l-paradigm": "ready",
+    "ming-skill-forge": "ready",
     "mobile-reverse": "ready",
     "obs-core-paradigm": "ready",
     "overlay-core-paradigm": "ready",
