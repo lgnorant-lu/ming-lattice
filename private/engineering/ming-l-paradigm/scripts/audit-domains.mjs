@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // audit-domains.mjs — Ming-L 域体检器（省+守动力学机械化）
 // 用法: node audit-domains.mjs [target-dir] [--staged] [--strict] [--json] [--proposed-days N]
-//        [--labels <namespaces.json>] [--emit-index <labels-index.json>]
+//        [--labels <namespaces.json>] [--emit-index <labels-index.json>] [--ming-schema <schema.json>]
 // 检查面:
 //   1. orphan 规则: docs 下每个 .md 须带 `domain:` frontmatter（口头规则禁令的机器投影，默认 W，--strict 升 E）
 //   2. landed 指针: OPEN-FINDINGS 类文件的 [landed] 标注须指向存在文件
@@ -13,7 +13,7 @@
 //   7. 标识分配律: 标号唯一性(E) / 悬空引用(W) / 命名空间格式(W) / 登记表互锁(E)
 //      7b. O1 倒挂检查: normative 引用 proposed 定义 = W（序律 O1 机器面）
 //      7c. 未登记命名空间族启发式: ID 形 token 成族出现但未登记 = W（提示性，不自动登记）
-//   8. ming.yaml 校验: tier/gates/domains 词表 + 声明域实例化提示（配置层）
+//   8. ming.yaml 校验: tier/gates/domains 词表（词表事实源=ming-config.schema.json，--ming-schema 可覆盖）+ 声明域实例化提示
 // 索引层: --emit-index 输出 labels-index.json（id→定义位/引用数/死定义 + 文档目录——派生视图非事实源）
 // 退出码: 0=无E级  1=存在E级
 
@@ -31,6 +31,36 @@ const staged = args.includes('--staged');
 const provDays = Number(args[args.indexOf('--proposed-days') + 1]) || 30;
 const labelsArg = args.indexOf('--labels') >= 0 ? args[args.indexOf('--labels') + 1] : null;
 const emitIdx = args.indexOf('--emit-index') >= 0 ? args[args.indexOf('--emit-index') + 1] : null;
+const mingSchemaArg = args.indexOf('--ming-schema') >= 0 ? args[args.indexOf('--ming-schema') + 1] : null;
+
+const issues = [];
+const add = (level, msg, file) => issues.push({ level, msg, file: file || target });
+
+// 词表事实源：ming-config.schema.json 的 enum 即合法词表（编辑器做结构校验，audit 消费枚举——一份事实源两个消费者）
+// --ming-schema 覆盖包内默认路径：项目本地扩展 schema 可声明自定义域（=自定义域机制的免费通道）
+const BUILTIN_VOCAB = {
+  domains: ['meta', 'spec', 'dev', 'plan', 'gov', 'exp', 'verify', 'ops', 'know', 'req'],
+  tier: ['minimal', 'standard', 'full'],
+  gates: ['off', 'soft', 'hard'],
+};
+let VOCAB = BUILTIN_VOCAB;
+{
+  const schemaPath = mingSchemaArg ? path.resolve(mingSchemaArg) : path.join(SKILL_DIR, 'assets/ming-config.schema.json');
+  try {
+    const props = JSON.parse(fs.readFileSync(schemaPath, 'utf8')).properties || {};
+    VOCAB = {
+      domains: props.domains?.enum || BUILTIN_VOCAB.domains,
+      tier: props.tier?.enum || BUILTIN_VOCAB.tier,
+      gates: props.gates?.enum || BUILTIN_VOCAB.gates,
+    };
+  } catch {
+    add(mingSchemaArg ? 'E' : 'W', `ming-config schema 未加载（${schemaPath}），回退内置词表`);
+  }
+}
+const DOMAINS = new Set(VOCAB.domains);
+const STATUSES = new Set(['proposed', 'provisional', 'normative', 'descriptive', 'frozen']);
+const TYPES = new Set(['constitutive', 'regulative']);
+const VERBS = ['立', '用', '守', '省', '改', '增', '废'];
 
 // ming.yaml（配置层）读取：<target>/ming.yaml > <target>/../ming.yaml；YAML-lite（键值+缩进列表）
 let mingCfg = null, mingCfgPath = null;
@@ -54,14 +84,6 @@ if (mingCfgPath) {
     }
   } catch (e) { add('E', `ming.yaml 解析失败: ${mingCfgPath} — ${e.message}`); }
 }
-
-const DOMAINS = new Set(['meta', 'spec', 'dev', 'plan', 'gov', 'exp', 'verify', 'ops', 'know', 'req']);
-const STATUSES = new Set(['proposed', 'provisional', 'normative', 'descriptive', 'frozen']);
-const TYPES = new Set(['constitutive', 'regulative']);
-const VERBS = ['立', '用', '守', '省', '改', '增', '废'];
-
-const issues = [];
-const add = (level, msg, file) => issues.push({ level, msg, file: file || target });
 
 if (!fs.existsSync(target)) {
   console.error(`目标目录不存在: ${target}`);
@@ -307,8 +329,8 @@ if (nsFile) {
 }
 // ming.yaml 校验（配置层）：词表 + 声明域实例化
 if (mingCfg) {
-  if (mingCfg.tier && !['minimal','standard','full'].includes(mingCfg.tier)) add('W', `ming.yaml tier 词表外: ${mingCfg.tier}（合法: minimal/standard/full）`);
-  if (mingCfg.gates && !['off','soft','hard'].includes(mingCfg.gates)) add('W', `ming.yaml gates 词表外: ${mingCfg.gates}（合法: off/soft/hard）`);
+  if (mingCfg.tier && !VOCAB.tier.includes(mingCfg.tier)) add('W', `ming.yaml tier 词表外: ${mingCfg.tier}（合法: ${VOCAB.tier.join('/')}）`);
+  if (mingCfg.gates && !VOCAB.gates.includes(mingCfg.gates)) add('W', `ming.yaml gates 词表外: ${mingCfg.gates}（合法: ${VOCAB.gates.join('/')}）`);
   for (const d of mingCfg.domains || []) {
     if (!DOMAINS.has(d)) add('W', `ming.yaml 声明未知域: ${d}`);
     else if (!domainDocs.has(d)) add('I', `ming.yaml 声明域 ${d} 未实例化（有意零请在 ming.yaml 移除或补文档）`);

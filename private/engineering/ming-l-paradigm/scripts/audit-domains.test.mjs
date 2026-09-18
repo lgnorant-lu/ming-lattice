@@ -211,6 +211,19 @@ const CASES = [
     expect: { msg: ['frozen 登记'] },
   },
   {
+    name: 'req 孵化位：词表已登记（不报未登记域）',
+    files: { 'R.md': fm({ domain: 'req', status: 'proposed', since: '2099-01-01' }) + '# R\n' },
+    expect: { E: 0, noMsg: ['未登记域'] },
+  },
+  {
+    name: 'req 声明后未实例化=I（词表合法）',
+    files: {
+      'ming.yaml': 'project: x\ntier: standard\ndomains:\n  - meta\n  - req\n',
+      'META.md': fm({ domain: 'meta', status: 'normative' }) + '# META\n',
+    },
+    expect: { msg: ['声明域 req 未实例化'], noMsg: ['声明未知域'] },
+  },
+  {
     name: 'gates:hard W 即拦截（exit 1）',
     files: {
       'ming.yaml': 'project: x\ngates: hard\n',
@@ -235,6 +248,38 @@ const CASES = [
       'namespaces.json': NS_MIN,
     },
     expect: { W: 1, exit: 0 },
+  },
+  {
+    name: '--ming-schema 扩展词表（自定义域通道）',
+    files: {
+      'my.schema.json': JSON.stringify({ properties: {
+        domains: { enum: ['meta', 'spec', 'xyz'] },
+        tier: { enum: ['lite', 'pro'] },
+        gates: { enum: ['off', 'on'] },
+      }}),
+      'ming.yaml': 'project: x\ntier: lite\ndomains:\n  - xyz\n',
+      'X.md': fm({ domain: 'xyz', status: 'normative' }) + '# X\n',
+    },
+    args: ['--ming-schema', '{dir}/my.schema.json'],
+    expect: { E: 0, noMsg: ['未登记域', '词表外', '未知域'] },
+  },
+  {
+    name: '--ming-schema 坏路径=E（显式指定须可加载）',
+    files: { 'P.md': fm({ domain: 'plan', status: 'normative' }) + '# P\n' },
+    args: ['--ming-schema', '{dir}/nonexistent.json'],
+    expect: { E: 1, msg: ['未加载'] },
+  },
+  {
+    name: 'schema 词表生效（扩展 tier 之外仍报词表外）',
+    files: {
+      'my.schema.json': JSON.stringify({ properties: {
+        domains: { enum: ['meta'] }, tier: { enum: ['lite'] }, gates: { enum: ['on'] },
+      }}),
+      'ming.yaml': 'project: x\ntier: minimal\n',
+      'META.md': fm({ domain: 'meta', status: 'normative' }) + '# META\n',
+    },
+    args: ['--ming-schema', '{dir}/my.schema.json'],
+    expect: { msg: ['tier 词表外'] },
   },
 ];
 
@@ -261,7 +306,7 @@ for (const c of CASES) {
     continue;
   }
   const dir = makeTree(c.files);
-  const res = runAudit(dir, c.args || []);
+  const res = runAudit(dir, (c.args || []).map(a => a.replaceAll('{dir}', dir)));
   const exp = c.expect || {};
   const problems = [];
   if (res.parseError) problems.push(`JSON 解析失败: ${res.stderr || res.stdout.slice(0, 200)}`);

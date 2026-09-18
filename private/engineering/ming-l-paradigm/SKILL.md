@@ -28,7 +28,7 @@ metadata:
 
 助记：**Meta 立法 → Spec 是什么 → Dev 怎么写 → Plan 何时做；Gov 协作 · Exp 实验 · Verify 证明 · Ops 运行 · Know 记忆。**
 
-**可选第 10 域 `Req`（需求域）**：ISO 12207 technical processes 首项、SWEBOK KA1 均为 Requirements——"系统必须做到什么"（concern 本身）与 Spec"系统是什么"（回答）不同源。小项目薄处理：需求写进 Spec §0 目的/concern 清单，不独立成域；多利益相关方项目升格。
+**孵化位 `Req`（需求域，可选第 10 域）**：ISO 12207 technical processes 首项、SWEBOK KA1 均为 Requirements——"系统必须做到什么"（concern 本身）与 Spec"系统是什么"（回答）不同源。机械态：**词表已登记**（`ming-config.schema.json` domains 枚举 + audit DOMAINS 均合法可声明、可实例化、矩阵正常生效），**模板与采纳档未立**——首个实际使用的项目决定其毕业（补模板/入档）或除名（移出词表）。小项目薄处理：需求写进 Spec §0 目的/concern 清单，不独立成域；多利益相关方项目升格。另：`--ming-schema` 指向项目本地扩展 schema 即可声明词表外自定义域——自定义域不另立机制，走 schema 覆盖通道。
 
 ## 2. 域的正式定义与准入（ISO 42010 锚定）
 
@@ -53,7 +53,7 @@ metadata:
 
 **框架元律（M3 位阶，MOF 四层映射）**：框架自身也须有极小立法，一节装下——
 - **机制准入**：新横切机制须回答一个现有机制答不了的**正交问题**（域=在哪 / 动词=什么动作 / 属性=什么性质 / 标识=叫什么 / 序律=什么先后——五轴覆盖已满，新增先过同一判据）；
-- **词表治理**：九域名、七动词、status/type/binding 是封闭枚举——扩展=显式修订本文件并 bump 版本；
+- **词表治理**：九域名+孵化位、七动词、status/type/binding 是封闭枚举——共享词表的扩展=显式修订本文件并 bump 版本；项目私有扩展走 `--ming-schema` 覆盖通道（事实源=`assets/ming-config.schema.json` 的 enum，audit 直接消费），不污染共享词表；
 - **自洽性**：M3 conforms to itself——本包文档与脚本应尽量符合自身规则（模板骨架可过 audit-domains 即自证）。
 
 ## 3. 域粒度分级——不是所有域都该写厚
@@ -104,7 +104,7 @@ metadata:
 
 **矩阵纪律**：`域 x 动词` 画矩阵，**每个空格必须是有意的零**——空格即病灶检查器。活体先例全覆盖见 [references/precedents.md](references/precedents.md)（K8s feature gates=增、deprecation policy=废、Rust crater run=省……）。
 
-**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点/双真相/frozen 拦截/proposed+provisional 计龄/标号四检（唯一性·悬空引用·格式·登记表互锁）/O1 倒挂/未登记命名空间族启发式/ming.yaml 校验/gates 退出轴/`--emit-index` 索引层；**自测套** `audit-domains.test.mjs` 26 fixture 树用例（守门员自洽，\r 末行丢键已固化回归）。域骨架生成见 `scripts/scaffold-domains.mjs`（模板实例化 + namespaces.json/ming.yaml 播种，生成物即过审计；九域+候审档模板齐备），配套 `scaffold-domains.test.mjs` 9 用例（档产物面/幂等/--force/--domains/生成物即审计）。平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。
+**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点/双真相/frozen 拦截/proposed+provisional 计龄/标号四检（唯一性·悬空引用·格式·登记表互锁）/O1 倒挂/未登记命名空间族启发式/ming.yaml 校验（词表事实源=ming-config.schema.json，`--ming-schema` 覆盖即项目私有扩展通道）/gates 退出轴/`--emit-index` 索引层；**自测套** `audit-domains.test.mjs` 31 fixture 树用例（守门员自洽，\r 末行丢键已固化回归）。域骨架生成见 `scripts/scaffold-domains.mjs`（模板实例化 + namespaces.json/ming.yaml 播种，生成物即过审计；九域+候审档模板齐备），配套 `scaffold-domains.test.mjs` 9 用例（档产物面/幂等/--force/--domains/生成物即审计）。平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。
 
 ## 6. 规则属性系统（Rule Attribute Systems）
 
