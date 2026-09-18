@@ -20,7 +20,7 @@ metadata:
 3. **Driven port（被驱端口）**：我调别人，别人实现它（应用需要的 SPI）。
 4. **Driving adapter**：把外部触发（CLI/测试/HTTP/定时器）翻译成 driving port 调用。
 5. **Driven adapter**：实现 driven port，对接 DB/文件/外部服务。
-6. **Configurator（组装根）**：启动处把适配器注入端口——这就是原名 "Configurable Dependency" 的本义。
+6. **Configurator（组装根）**：启动处把适配器注入端口——这就是 Cockburn 后认为更贴切的 "Configurable Dependency"（Meszaros 命名，非模式原名，见 sources.md）的本义。
 
 依赖规则：**所有源码依赖指向内部**。强实现判据（Cockburn 2025 书稿）：driven port 必须用纯领域语言表达，"app cannot know anything about the external technology"——用 SQL 写端口是技术合规但把手铐在 SQL 上。
 
