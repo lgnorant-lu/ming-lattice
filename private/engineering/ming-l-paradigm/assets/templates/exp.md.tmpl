@@ -1,0 +1,29 @@
+---
+domain: exp
+status: normative
+dynamics: [立, 用, 省, 改, 增, 废]
+---
+
+# EXPERIMENTS — 实验域（{{project}})
+
+> 定位：候选机制的孵化场。实验是**带证据链的探索**——不是 playground。结论分三档：`adopted`（升格进 spec/dev）/ `rejected`（归档留证）/ `inconclusive`（留观察）。
+
+## 实验条目格式
+
+每条实验一份小节（或一文件），必填字段：
+
+```
+### EXP-<NNN> <标题>
+- hypothesis:   要验证什么（一句话可证伪）
+- setup:        数据/环境/基线版本钉
+- result:       观测到什么（指标或现象）
+- verdict:      adopted | rejected | inconclusive
+- follow:       升格指针（候审档条目号）或归档理由
+```
+
+## 纪律
+
+- **可证伪**：hypothesis 必须能被结果推翻——"试试看"不是实验；
+- **证据链**：setup 里的版本钉让结果可复现；无钉的观测是轶事不是证据；
+- **升格走候审档**：adopted 结论不直接改 spec——记 `spec/OPEN-FINDINGS.md` 等集中裁决；
+- **rejected 不删**：失败的实验是 Know 域资产——只增不隐。

@@ -1,0 +1,36 @@
+---
+domain: verify
+status: normative
+dynamics: [立, 用, 守, 省, 增]
+---
+
+# VERIFY — 验证域（{{project}})
+
+> 定位：怎么证明东西是对的。测试体系、oracle 边界、评测纪律、spec 挑战协议。
+> 原则：oracle 独立于实现（自己证明自己=无效验证）。
+
+## 测试 kind 词表
+
+| kind | 语义 | 断言权威 |
+|---|---|---|
+| spec | 断言应然——规约说什么就该是什么 | spec 文档 |
+| characterize | 锁定实然——现有行为是什么就记什么 | 实测输出 |
+| property | 不变量——任意输入下恒真 | 性质声明 |
+| metamorphic | 蜕变——输入变换与输出变换的关系 | 蜕变关系四元组 |
+| mutation | 变异——人造缺陷必须被杀 | 击杀率 |
+
+## spec 挑战协议（协议先挨打的纪律）
+
+schema/协议定稿前先过三攻击面：
+
+1. **conformance 负例分类**：缺必填/类型错/词表外/引用悬空/版本非法/结构越界/**语义陷阱**——每类 ≥1 夹具，覆盖 = 约束面 × 1；
+2. **mutation kill rate**：对 valid 夹具做单点变异（删字段/改类型/加未知键/翻枚举）——约束相关变异击杀率 100%，存活的逐条分诊（schema 有洞 or 约束冗余）；
+3. **scenario-fixture**：真实负载回放成 spec 实例——schema 表达不了真实场景 = 表达力缺口。
+
+夹具形态：`tests/<subject>/{valid,invalid}/*.json`——加一个文件=加一个用例，表驱动不动代码。
+invalid 断言必须指到具体字段——"被挡"才是有意义的被挡（防假阴性门禁）。
+
+## oracle 边界
+
+- oracle 断言只来自 spec/不变量/变换语义——禁用实现重算期望值；
+- `oracle` 与 `end_to_end` 评测模式显式分离——oracle 泄漏/数据集污染是评测域第一红线。

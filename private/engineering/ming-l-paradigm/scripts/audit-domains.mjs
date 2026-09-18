@@ -360,11 +360,15 @@ if (emitIdx) {
 }
 
 // ---------- 输出 ----------
+// gates 轴（ming.yaml 声明）：off=纯报告永不 fail / soft=E 才 fail / hard=E+W 都 fail（fail-on-warn 先例）
+// 只改退出语义不改检查分级——--strict 管单查升档，gates 管全局出口
+const gates = (mingCfg && mingCfg.gates) || 'soft';
 if (asJson) {
-  console.log(JSON.stringify({ issues, domains: [...domainDocs.keys()], frozen: frozenDocs }, null, 2));
+  console.log(JSON.stringify({ issues, domains: [...domainDocs.keys()], frozen: frozenDocs, gates }, null, 2));
 } else {
   console.log(`audit-domains: ${target}  (${mdFiles.length} docs, ${domainDocs.size} domains)`);
   console.log(`命名空间表: ${nsSource}`);
+  console.log(`门控: ${gates}${mingCfgPath ? ` (${mingCfgPath})` : ' (默认 soft)'}`);
   console.log(`域清单: ${[...domainDocs.keys()].join(', ') || '(无)'}`);
   for (const i of issues) console.log(`[${i.level}] ${i.file === target ? '' : i.file + ' '}${i.msg}`);
   const e = issues.filter(i => i.level === 'E').length;
@@ -372,4 +376,5 @@ if (asJson) {
   const n = issues.filter(i => i.level === 'I').length;
   console.log(`\nE=${e} W=${w} I=${n}`);
 }
-process.exitCode = issues.some(i => i.level === 'E') ? 1 : 0;
+process.exitCode = gates === 'off' ? 0
+  : (issues.some(i => i.level === 'E') || (gates === 'hard' && issues.some(i => i.level === 'W'))) ? 1 : 0;

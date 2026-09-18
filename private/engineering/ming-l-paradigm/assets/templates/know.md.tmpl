@@ -1,0 +1,35 @@
+---
+domain: know
+status: normative
+dynamics: [增, 省]
+---
+
+# KNOWLEDGE — 知识域（{{project}}）
+
+> 定位：冻结史与教训的档案馆。**只增不隐**——旧文档不改写不删除（`status: descriptive|frozen`），过时靠新版替代不是靠编辑。
+> 本文件是索引不是内容——条目住 `know/` 下各自文件。
+
+## 收录类型
+
+| 类 | 说明 | 典型载体 |
+|---|---|---|
+| 基准报告 | 某时点实测成绩（不可重算的历史事实） | `report-<topic>-<date>.md` |
+| 事故复盘 | 已结题的 INC 深挖（链接 ops 条目） | `postmortem-<n>.md` |
+| 失败分析 | rejected 实验/方案的系统归因 | `failure-<topic>.md` |
+| 调研白皮书 | 外部调研的结论快照 | `survey-<topic>.md` |
+
+## 条目头约定
+
+```
+---
+domain: know
+status: descriptive   # 或 frozen（永不改史）
+since: YYYY-MM-DD
+---
+```
+
+## 纪律
+
+- **descriptive vs frozen**：descriptive=记录实然可补注；frozen=吸收态永不复活，新认识=新文件；
+- **旧术语不改写**：史档里的旧标号/旧名保留原貌（悬空引用检查自动豁免 descriptive/frozen）；
+- **索引即入口**：每收录一件在本文件登记一行（日期/类型/指针）——档案没有索引等于没有档案。

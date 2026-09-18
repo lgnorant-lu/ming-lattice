@@ -104,7 +104,7 @@ metadata:
 
 **矩阵纪律**：`域 x 动词` 画矩阵，**每个空格必须是有意的零**——空格即病灶检查器。活体先例全覆盖见 [references/precedents.md](references/precedents.md)（K8s feature gates=增、deprecation policy=废、Rust crater run=省……）。
 
-**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点/双真相/frozen 拦截/proposed 计龄/标号四检（唯一性·悬空引用·格式·登记表互锁）七面；平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。域骨架生成见 `scripts/scaffold-domains.mjs`（模板实例化 + namespaces.json 播种，生成物即过审计）。
+**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点/双真相/frozen 拦截/proposed+provisional 计龄/标号四检（唯一性·悬空引用·格式·登记表互锁）/O1 倒挂/未登记命名空间族启发式/ming.yaml 校验/gates 退出轴/`--emit-index` 索引层；**自测套** `audit-domains.test.mjs` 26 fixture 树用例（守门员自洽，\r 末行丢键已固化回归）。域骨架生成见 `scripts/scaffold-domains.mjs`（模板实例化 + namespaces.json/ming.yaml 播种，生成物即过审计；九域+候审档模板齐备）。平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。
 
 ## 6. 规则属性系统（Rule Attribute Systems）
 
@@ -259,7 +259,7 @@ proposed --promote--> normative --relax--> descriptive
 | `standard` | + dev/CONTRACT + spec 分层 + audit 软门 | 多数项目 |
 | `full` | 九域全景 + 全查 + 硬门接线 | 方法论级项目 |
 
-**两轴分离**：tier（内容多少）× gates（执行强弱 `off|soft|hard`）正交；推荐 minimal→soft、full→hard 默认不锁死——恰是效力阶梯的项目级应用。档声明进 `ming.yaml`（schema: `assets/ming-config.schema.json`），audit 按档豁免：未实例化域的矩阵空格静默（"有意的零"的档级推广）。
+**两轴分离**：tier（内容多少）× gates（执行强弱 `off|soft|hard`）正交；推荐 minimal→soft、full→hard 默认不锁死——恰是效力阶梯的项目级应用。档声明进 `ming.yaml`（schema: `assets/ming-config.schema.json`），audit 按档豁免：未实例化域的矩阵空格静默（"有意的零"的档级推广）。**gates 退出语义**（fail-on-warn 先例）：`off`=纯报告永不 fail、`soft`=E 才 fail、`hard`=E+W 都 fail——只改退出码不改检查分级（`--strict` 管单查升档，两轴各管一段）。
 
 **脚手架七层**：①配置层 `ming.yaml`（copier answers-file 先例——模型读一份配置即知项目形态）②模板层 `assets/templates/`（只装骨架不装内容）③数据层 `namespaces.default.json` 等机读种子 ④执行层 `scaffold-domains.mjs`→`audit-domains.mjs`→gate 接线 ⑤测试层 verify 域约定模板（不预设语言栈 tests/ 代码形态）⑥索引层 `audit --emit-index` 生成 labels-index.json（派生视图非事实源）⑦回授层（项目经验反哺种子/模板/precedents——约定非工具）。
 

@@ -1,0 +1,31 @@
+---
+domain: gov
+status: normative
+dynamics: [立, 用, 守, 省, 改, 增]
+---
+
+# GOVERNANCE — 治理域（{{project}}）
+
+> 定位：协作怎么管。分支/评审/读写边界/变更控制。裁决类规则走 ADR（`adr/NNNN-*.md`），本文件是协作纪律的总表不是决策本身。
+
+## 分支与评审
+
+| 项 | 约定 |
+|---|---|
+| 主干 | （填写：分支模型——trunk / gitflow-lite / 单线） |
+| 评审 | （填写：什么改动必须过评审、评审人要求） |
+| 合并 | （填写：squash / merge commit / rebase 约定） |
+
+## Agent 读写边界
+
+| 面 | 可读 | 可写 | 备注 |
+|---|---|---|---|
+| docs/ | | | |
+| src/ 或 backend/ | | | |
+| 密钥/环境 | 否 | 否 | 永远不可 |
+
+## 变更控制
+
+- spec/契约面改动走 ADR（`adr/` 序号单调取号，supersede 双向链）；
+- 文档域/frontmatter 词表改动先回 `META.md` 裁决；
+- 紧急修复走 `status: provisional` 插队轨，事后回候审档补裁决——可插队不可隐身。

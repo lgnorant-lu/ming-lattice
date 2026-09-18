@@ -30,6 +30,11 @@ const EMITS = {
   spec:     ['spec/README.md', 'assets/templates/spec-readme.md.tmpl'],
   dev:      ['dev/CONTRACT.md', 'assets/templates/dev-contract.md.tmpl'],
   plan:     [['plan/ORDERING.md', 'assets/templates/ordering.md.tmpl'], ['plan/PLAN.md', 'assets/templates/plan.md.tmpl']],
+  gov:      ['gov/GOVERNANCE.md', 'assets/templates/gov.md.tmpl'],
+  exp:      ['exp/EXPERIMENTS.md', 'assets/templates/exp.md.tmpl'],
+  verify:   ['verify/VERIFY.md', 'assets/templates/verify.md.tmpl'],
+  ops:      ['ops/RUNBOOK.md', 'assets/templates/ops.md.tmpl'],
+  know:     ['know/KNOWLEDGE.md', 'assets/templates/know.md.tmpl'],
   findings: ['spec/OPEN-FINDINGS.md', 'assets/templates/open-findings.md.tmpl'],
 };
 
