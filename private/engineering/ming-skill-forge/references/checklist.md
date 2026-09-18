@@ -39,12 +39,14 @@
 | `registry.yaml` 有条目且 path 相符 | E | registry 是单一事实源 |
 | 条目含 `note` 与 `deploy` 段 | W | 部署完整性 |
 | `build-router-manifest.mjs` DOMAIN_DEFS 引用该名 | W | 未接线=路由不可见；纯内部包可豁免（--no-router 标志） |
-| SKILL.md 内相对链接文件存在 | E | lint 同级（防死链） |
+| `skillTriggers` 词与 description 零交集 | I | 双触发面漂移提示（forge §3：两关键词集必须一致） |
+| SKILL.md 内相对链接文件存在 | E | lint 同级（防死链）；代码围栏与行内代码豁免——语法示例非真链接 |
 
 ## 用法
 
 ```bash
 node private/engineering/ming-skill-forge/scripts/check-skill.mjs <skill-dir>
-# 选项: --json 机器可读输出; --no-router 跳过 DOMAIN_DEFS 检查（内部未路由包）
+node private/engineering/ming-skill-forge/scripts/check-skill.mjs --all   # registry private 区全量（= skill-conformance 套件）
+# 选项: --json 机器可读输出; --no-router 跳过 DOMAIN_DEFS 检查（内部未路由包）; --no-registry 跳过 registry 校验（隔离 fixture）
 ```
-退出码：0=无 E 级；1=存在 E 级。
+退出码：0=无 E 级；1=存在 E 级。行为契约锁定于 `tests/unit/test-check-skill.test.mjs`；脚手架 `scripts/scaffold-skill.mjs`（模板 `assets/skill.md.tmpl`）。

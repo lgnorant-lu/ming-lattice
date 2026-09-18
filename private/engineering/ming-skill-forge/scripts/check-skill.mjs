@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // check-skill.mjs — 技能包规范性硬门控（ming-skill-forge §6 技能级检查）
-// 用法: node check-skill.mjs <skill-dir> [--json] [--no-router]
+// 用法: node check-skill.mjs <skill-dir> [--json] [--no-router] [--no-registry]
+//       node check-skill.mjs --all [--json] [--no-router]
 // 退出码: 0=无E级  1=存在E级
 // 校验项清单: ../references/checklist.md
+// 触发原则: 检查按自声明能力触发（有 metadata 查完备、-paradigm 查惯例），不按包形归簇。
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -11,141 +13,199 @@ import { fileURLToPath } from 'node:url';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..', '..', '..');
 
-const args = process.argv.slice(2);
-const skillDir = args.find(a => !a.startsWith('--'));
-const asJson = args.includes('--json');
-const skipRouter = args.includes('--no-router');
+// ---------- 单包检查 ----------
+function checkDir(absDir, { skipRouter = false, skipRegistry = false } = {}) {
+  const issues = [];
+  const dirName = path.basename(absDir);
+  const add = (level, msg, file) => issues.push({ level, msg, file: file || absDir });
 
-if (!skillDir) {
-  console.error('用法: node check-skill.mjs <skill-dir> [--json] [--no-router]');
-  process.exit(1);
-}
-
-const absDir = path.resolve(skillDir);
-const dirName = path.basename(absDir);
-const issues = [];
-const add = (level, msg, file) => issues.push({ level, msg, file: file || absDir });
-
-// ---------- 结构项 ----------
-const skillMd = path.join(absDir, 'SKILL.md');
-if (!fs.existsSync(skillMd)) {
-  add('E', 'SKILL.md 缺失');
-  report(); process.exit(1);
-}
-const content = fs.readFileSync(skillMd, 'utf8');
-if (!content.trim()) { add('E', 'SKILL.md 为空'); report(); process.exit(1); }
-
-const fmMatch = content.match(/^---\s*\n([\s\S]*?)\n---/);
-if (!fmMatch) {
-  add('E', '无 frontmatter（--- 块缺失）');
-} else {
-  const fm = fmMatch[1];
-  const nameM = fm.match(/^name\s*:\s*(\S+)\s*$/m);
-  const descM = fm.match(/^description\s*:\s*(.+?)(?=\n\S|\n---|\s*$)/ms);
-
-  if (!nameM) {
-    add('E', 'frontmatter 缺 name');
-  } else {
-    const name = nameM[1].trim().replace(/^["']|["']$/g, '');
-    if (!/^[a-z0-9-]+$/.test(name)) add('E', `name 非 kebab-case: ${name}`);
-    if (name !== dirName) add('E', `name(${name}) != 目录名(${dirName})`);
+  // ---------- 结构项 ----------
+  const skillMd = path.join(absDir, 'SKILL.md');
+  if (!fs.existsSync(skillMd)) {
+    add('E', 'SKILL.md 缺失');
+    return issues;
   }
+  const content = fs.readFileSync(skillMd, 'utf8');
+  if (!content.trim()) { add('E', 'SKILL.md 为空'); return issues; }
 
-  if (!descM) {
-    add('E', 'frontmatter 缺 description');
+  const fmMatch = content.match(/^---\s*\n([\s\S]*?)\n---/);
+  if (!fmMatch) {
+    add('E', '无 frontmatter（--- 块缺失）');
   } else {
-    let desc = descM[1].trim().replace(/^["']|["']$/g, '');
-    // YAML 块标量: description: | / > ——正文在后续缩进行
-    if (/^[|>][+-]?$/.test(desc)) {
-      const fmLines = fm.split(/\n/);
-      const di = fmLines.findIndex(l => /^description\s*:/.test(l));
-      const block = [];
-      for (let i = di + 1; i < fmLines.length && /^\s+\S/.test(fmLines[i]); i++) block.push(fmLines[i].trim());
-      desc = block.join(' ');
+    const fm = fmMatch[1];
+    const nameM = fm.match(/^name\s*:\s*(\S+)\s*$/m);
+    const descM = fm.match(/^description\s*:\s*(.+?)(?=\n\S|\n---|\s*$)/ms);
+
+    if (!nameM) {
+      add('E', 'frontmatter 缺 name');
+    } else {
+      const name = nameM[1].trim().replace(/^["']|["']$/g, '');
+      if (!/^[a-z0-9-]+$/.test(name)) add('E', `name 非 kebab-case: ${name}`);
+      if (name !== dirName) add('E', `name(${name}) != 目录名(${dirName})`);
     }
-    if (desc.length < 20) add('E', `description 过短(${desc.length} 字符)，路由触发会不准`);
-    if (desc.length > 400) add('W', `description 过长(${desc.length} 字符)，L0 常驻税过高`);
-    // 触发面质量启发式
-    const hasWhat = /[一-龥]/.test(desc) || /\b(use|create|when|for)\b/i.test(desc);
-    const hasTriggers = /触发词|trigger|使用|use when/i.test(desc) || desc.split(/[,，、;；]/).length >= 3;
-    if (!hasWhat) add('W', 'description 缺 What（做什么）表述');
-    if (!hasTriggers) add('W', 'description 无显式触发词/场景枚举——undertrigger 风险');
-    if (/[A-Z]:\\|\/home\/|\/Users\//.test(desc)) add('W', 'description 含绝对路径——绑死本机则漏触发');
-    if (/使用\s+\S+(-mcp|-server)/.test(desc)) add('W', 'description 绑定具体工具名（lint 同级告警项）');
+
+    if (!descM) {
+      add('E', 'frontmatter 缺 description');
+    } else {
+      let desc = descM[1].trim().replace(/^["']|["']$/g, '');
+      // YAML 块标量: description: | / > ——正文在后续缩进行
+      if (/^[|>][+-]?$/.test(desc)) {
+        const fmLines = fm.split(/\n/);
+        const di = fmLines.findIndex(l => /^description\s*:/.test(l));
+        const block = [];
+        for (let i = di + 1; i < fmLines.length && /^\s+\S/.test(fmLines[i]); i++) block.push(fmLines[i].trim());
+        desc = block.join(' ');
+      }
+      if (desc.length < 20) add('E', `description 过短(${desc.length} 字符)，路由触发会不准`);
+      if (desc.length > 400) add('W', `description 过长(${desc.length} 字符)，L0 常驻税过高`);
+      // 触发面质量启发式
+      const hasWhat = /[一-龥]/.test(desc) || /\b(use|create|when|for)\b/i.test(desc);
+      const hasTriggers = /触发词|trigger|使用|use when/i.test(desc) || desc.split(/[,，、;；]/).length >= 3;
+      if (!hasWhat) add('W', 'description 缺 What（做什么）表述');
+      if (!hasTriggers) add('W', 'description 无显式触发词/场景枚举——undertrigger 风险');
+      if (/[A-Z]:\\|\/home\/|\/Users\//.test(desc)) add('W', 'description 含绝对路径——绑死本机则漏触发');
+      if (/使用\s+\S+(-mcp|-server)/.test(desc)) add('W', 'description 绑定具体工具名（lint 同级告警项）');
+    }
+
+    // metadata 自声明即查完备性；不声明不索求（检查按能力触发，不按包形归簇）
+    if (/^metadata\s*:/m.test(fm)) {
+      if (!/^  layer\s*:/m.test(fm)) add('W', 'metadata 缺 layer');
+      if (!/^  compose\s*:/m.test(fm)) add('W', 'metadata 缺 compose');
+    }
   }
 
-  // metadata 自声明即查完备性；不声明不索求（检查按能力触发，不按包形归簇）
-  if (/^metadata\s*:/m.test(fm)) {
-    if (!/^  layer\s*:/m.test(fm)) add('W', 'metadata 缺 layer');
-    if (!/^  compose\s*:/m.test(fm)) add('W', 'metadata 缺 compose');
+  // 正文预算（frontmatter 之后）
+  const bodyLines = content.replace(/^---[\s\S]*?---\n?/, '').split('\n').length;
+  if (bodyLines > 500) add('W', `正文 ${bodyLines} 行超 500 预算——细节下沉 references/`);
+
+  // emoji 禁令（与 scripts/hooks/validate.mjs hasEmoji 同强度：旗帜/keycap/ZWJ 序列全覆盖）
+  const emojiRe = new RegExp(
+    "\\p{RI}{2}|(?![#*\\d](?!\\uFE0F?\\u20E3))\\p{Emoji}(?:\\p{EMod}|[\\u{E0020}-\\u{E007E}]+\\u{E007F}|\\uFE0F?\\u20E3)?(?:\\u200D\\p{Emoji}(?:\\p{EMod}|[\\u{E0020}-\\u{E007E}]+\\u{E007F}|\\uFE0F?\\u20E3)?)*",
+    "u"
+  );
+  if (emojiRe.test(content)) add('E', '含 emoji（仓库铁律：用 [禁止]/[警告] 结构化标签）');
+
+  // 相对链接文件存在性（剔除代码围栏与行内代码——语法示例不是真链接）
+  const linkScanText = content.replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]*`/g, '');
+  for (const m of linkScanText.matchAll(/\]\(([^)]+)\)/g)) {
+    const link = m[1].split('#')[0].trim();
+    if (!link || /^(https?:|mailto:|#)/.test(link)) continue;
+    if (!fs.existsSync(path.join(absDir, link))) add('E', `引用的文件不存在: ${link}`);
   }
+
+  // 家族惯例：*-paradigm 元包自声明契约（sources.md + Compose 节）
+  // -idiom 不索：testing-*-idiom 是语言落地包非元包，同后缀不同种（撞名记录见 checklist.md）
+  const isParadigm = /-paradigm$/.test(dirName);
+  if (isParadigm && !fs.existsSync(path.join(absDir, 'references', 'sources.md'))) {
+    add('W', '家族惯例：*-paradigm 包应带 references/sources.md');
+  }
+  if (isParadigm && !/^##?\s*.*Compose/m.test(content)) add('I', '无 Compose 节（元包装配关系惯例）');
+
+  // ---------- 接线项 ----------
+  if (!skipRegistry) {
+    const registryPath = path.join(REPO_ROOT, 'registry.yaml');
+    if (fs.existsSync(registryPath)) {
+      const reg = fs.readFileSync(registryPath, 'utf8');
+      const rel = path.relative(REPO_ROOT, absDir).replace(/\\/g, '/');
+      const entryRe = new RegExp(`-\\s*name:\\s*${dirName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b([\\s\\S]*?)(?=\\n\\s*-\\s*name:|\\n\\S|$)`);
+      const entry = reg.match(entryRe);
+      if (!entry) {
+        add('E', 'registry.yaml 无此条目（单一事实源未登记）');
+      } else {
+        if (!entry[1].includes(`path: ${rel}`)) add('E', `registry path 不符（期望 ${rel}）`);
+        if (!/note\s*:/.test(entry[1])) add('W', 'registry 条目缺 note');
+        if (!/deploy\s*:/.test(entry[1])) add('W', 'registry 条目缺 deploy 段');
+      }
+    } else {
+      add('I', 'registry.yaml 不在仓库根（独立校验模式）');
+    }
+  }
+
+  if (!skipRouter) {
+    const manifestSrc = path.join(REPO_ROOT, 'scripts', 'build-router-manifest.mjs');
+    if (fs.existsSync(manifestSrc)) {
+      const src = fs.readFileSync(manifestSrc, 'utf8');
+      if (!src.includes(`"${dirName}"`)) {
+        add('W', '未进 DOMAIN_DEFS——路由不可见（内部包可用 --no-router 豁免）');
+      } else {
+        // T6 一致性提示：名字在 skillTriggers 的词与 description 零交集 = 路由/直连各说各话
+        const skillTrigRe = new RegExp(`"${dirName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"\\s*:\\s*\\[([^\\]]*)\\]`);
+        const trigM = src.match(skillTrigRe);
+        if (trigM) {
+          const terms = [...trigM[1].matchAll(/"([^"]+)"/g)].map(x => x[1].toLowerCase());
+          const descM2 = content.match(/^description\s*:\s*(.+?)(?=\n\S|\n---|\s*$)/ms);
+          const descText = (descM2 ? descM2[1] : '').toLowerCase();
+          if (terms.length && !terms.some(t => descText.includes(t))) {
+            add('I', `skillTriggers 词 [${terms.join(', ')}] 未出现在 description——路由与直连触发面可能漂移`);
+          }
+        }
+      }
+    }
+  }
+
+  return issues;
 }
 
-// 正文预算（frontmatter 之后）
-const bodyLines = content.replace(/^---[\s\S]*?---\n?/, '').split('\n').length;
-if (bodyLines > 500) add('W', `正文 ${bodyLines} 行超 500 预算——细节下沉 references/`);
-
-// emoji 禁令（与 scripts/hooks/validate.mjs hasEmoji 同强度：旗帜/keycap/ZWJ 序列全覆盖）
-const emojiRe = new RegExp(
-  "\\p{RI}{2}|(?![#*\\d](?!\\uFE0F?\\u20E3))\\p{Emoji}(?:\\p{EMod}|[\\u{E0020}-\\u{E007E}]+\\u{E007F}|\\uFE0F?\\u20E3)?(?:\\u200D\\p{Emoji}(?:\\p{EMod}|[\\u{E0020}-\\u{E007E}]+\\u{E007F}|\\uFE0F?\\u20E3)?)*",
-  "u"
-);
-if (emojiRe.test(content)) add('E', '含 emoji（仓库铁律：用 [禁止]/[警告] 结构化标签）');
-
-// 相对链接文件存在性（剔除代码围栏与行内代码——语法示例不是真链接）
-const linkScanText = content.replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]*`/g, '');
-for (const m of linkScanText.matchAll(/\]\(([^)]+)\)/g)) {
-  const link = m[1].split('#')[0].trim();
-  if (!link || /^(https?:|mailto:|#)/.test(link)) continue;
-  if (!fs.existsSync(path.join(absDir, link))) add('E', `引用的文件不存在: ${link}`);
-}
-
-// 家族惯例：*-paradigm 元包自声明契约（sources.md + Compose 节）
-// -idiom 不索：testing-*-idiom 是语言落地包非元包，同后缀不同种（撞名记录见 checklist.md）
-const isParadigm = /-paradigm$/.test(dirName);
-if (isParadigm && !fs.existsSync(path.join(absDir, 'references', 'sources.md'))) {
-  add('W', '家族惯例：*-paradigm 包应带 references/sources.md');
-}
-if (isParadigm && !/^##?\s*.*Compose/m.test(content)) add('I', '无 Compose 节（元包装配关系惯例）');
-
-// ---------- 接线项 ----------
-const registryPath = path.join(REPO_ROOT, 'registry.yaml');
-if (fs.existsSync(registryPath)) {
+// ---------- --all：registry private 区批量 ----------
+function privateEntries() {
+  const registryPath = path.join(REPO_ROOT, 'registry.yaml');
+  if (!fs.existsSync(registryPath)) return [];
   const reg = fs.readFileSync(registryPath, 'utf8');
-  const rel = path.relative(REPO_ROOT, absDir).replace(/\\/g, '/');
-  const entryRe = new RegExp(`-\\s*name:\\s*${dirName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b([\\s\\S]*?)(?=\\n\\s*-\\s*name:|\\n\\S|$)`);
-  const entry = reg.match(entryRe);
-  if (!entry) {
-    add('E', 'registry.yaml 无此条目（单一事实源未登记）');
-  } else {
-    if (!entry[1].includes(`path: ${rel}`)) add('E', `registry path 不符（期望 ${rel}）`);
-    if (!/note\s*:/.test(entry[1])) add('W', 'registry 条目缺 note');
-    if (!/deploy\s*:/.test(entry[1])) add('W', 'registry 条目缺 deploy 段');
+  const startM = reg.match(/^private:\s*$/m);
+  if (!startM) return [];
+  const rest = reg.slice(startM.index + startM[0].length);
+  const nextTop = rest.search(/^\S/m); // 下一个顶层键或 EOF
+  const block = nextTop < 0 ? rest : rest.slice(0, nextTop);
+  const entries = [];
+  for (const m of block.matchAll(/-\s*name:\s*(\S+)[\s\S]*?path:\s*(\S+)/g)) {
+    entries.push({ name: m[1], path: m[2] });
   }
-} else {
-  add('I', 'registry.yaml 不在仓库根（独立校验模式）');
+  return entries;
 }
 
-if (!skipRouter) {
-  const manifestSrc = path.join(REPO_ROOT, 'scripts', 'build-router-manifest.mjs');
-  if (fs.existsSync(manifestSrc)) {
-    const src = fs.readFileSync(manifestSrc, 'utf8');
-    if (!src.includes(`"${dirName}"`)) {
-      add('W', '未进 DOMAIN_DEFS——路由不可见（内部包可用 --no-router 豁免）');
+// ---------- CLI ----------
+function main() {
+  const args = process.argv.slice(2);
+  const skillDir = args.find(a => !a.startsWith('--'));
+  const asJson = args.includes('--json');
+  const opts = { skipRouter: args.includes('--no-router'), skipRegistry: args.includes('--no-registry') };
+  const allMode = args.includes('--all');
+
+  if (!skillDir && !allMode) {
+    console.error('用法: node check-skill.mjs <skill-dir>|--all [--json] [--no-router] [--no-registry]');
+    process.exit(1);
+  }
+
+  const results = []; // {dir, issues}
+  if (allMode) {
+    for (const e of privateEntries()) {
+      const abs = path.join(REPO_ROOT, e.path);
+      if (!fs.existsSync(abs)) { results.push({ dir: e.path, issues: [{ level: 'E', msg: `registry 登记路径不存在: ${e.path}`, file: abs }] }); continue; }
+      results.push({ dir: e.name, issues: checkDir(abs, opts) });
     }
+  } else {
+    const absDir = path.resolve(skillDir);
+    results.push({ dir: path.basename(absDir), issues: checkDir(absDir, opts) });
   }
+
+  if (asJson) {
+    console.log(JSON.stringify(allMode ? results : results[0].issues, null, 2));
+  } else {
+    let te = 0, tw = 0, tn = 0;
+    for (const r of results) {
+      for (const i of r.issues) console.log(`[${i.level}] ${allMode ? r.dir + ': ' : ''}${i.msg}`);
+      const e = r.issues.filter(i => i.level === 'E').length;
+      const w = r.issues.filter(i => i.level === 'W').length;
+      const n = r.issues.filter(i => i.level === 'I').length;
+      te += e; tw += w; tn += n;
+      if (!allMode || r.issues.length) console.log(`check-skill: ${r.dir} → E=${e} W=${w} I=${n}`);
+    }
+    console.log(`\ntotal: ${results.length} pkg → E=${te} W=${tw} I=${tn}`);
+  }
+  process.exitCode = results.some(r => r.issues.some(i => i.level === 'E')) ? 1 : 0;
 }
 
-report();
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) main();
 
-function report() {
-  if (asJson) { console.log(JSON.stringify(issues, null, 2)); }
-  else {
-    for (const i of issues) console.log(`[${i.level}] ${i.msg}`);
-    const e = issues.filter(i => i.level === 'E').length;
-    const w = issues.filter(i => i.level === 'W').length;
-    const n = issues.filter(i => i.level === 'I').length;
-    console.log(`\ncheck-skill: ${dirName} → E=${e} W=${w} I=${n}`);
-  }
-  process.exitCode = issues.some(i => i.level === 'E') ? 1 : 0;
-}
+export { checkDir, privateEntries };

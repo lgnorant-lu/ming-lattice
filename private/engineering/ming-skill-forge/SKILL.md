@@ -64,9 +64,13 @@ description 是**唯一常驻的路由面**，写它 = 写触发器：
 | 门 | 覆盖 |
 |---|---|
 | `pwsh scripts/lint.ps1` | 仓库级：SKILL.md 存在、frontmatter 缺字段、引用文件存在性、硬编码外部路径、空壳 |
-| `node private/engineering/ming-skill-forge/scripts/check-skill.mjs <dir>` | **技能级**：命名一致/kebab、description 长度与触发词启发式、正文 ≤500 行预算、家族惯例（按自声明能力触发：有 metadata 查完备、`-paradigm` 查 sources.md/Compose）、registry 条目、路由接线。标志：`--json` 机器可读输出、`--no-router` 跳过 DOMAIN_DEFS 检查（路由基础设施等不进路由的包用） |
+| `node private/engineering/ming-skill-forge/scripts/check-skill.mjs <dir>` | **技能级**：命名一致/kebab、description 长度与触发词启发式、正文 ≤500 行预算、家族惯例（按自声明能力触发：有 metadata 查完备、`-paradigm` 查 sources.md/Compose）、registry 条目、路由接线、skillTriggers/description 一致性提示。标志：`--all` 扫 registry private 区全量、`--no-registry` 豁免 registry 检查、`--json` 机器可读输出、`--no-router` 跳过 DOMAIN_DEFS 检查（路由基础设施等不进路由的包用） |
 
-边界：lint 查"这个文件像不像技能"，check-skill 查"这个技能合不合规范"。
+| `node .../scaffold-skill.mjs <name> --desc "..." [--paradigm]` | 脚手架：`assets/skill.md.tmpl` 注入生成 SKILL.md（`--paradigm` 附 sources.md 桩），fail-closed 拒覆写，生成后自证过检并打印 §5 三处接线清单 |
+
+另：`check-skill.mjs --all` 作为 `skill-conformance` 套件进 `tests/run.mjs`（E 级门禁）；check-skill 行为契约由 `tests/unit/test-check-skill.test.mjs` 锁定。
+
+边界：lint 查"这个文件像不像技能"，check-skill 查"这个技能合不合规范"，scaffold 管"新技能从模板出生即合规"。
 
 ## 7. 创作工作流
 
