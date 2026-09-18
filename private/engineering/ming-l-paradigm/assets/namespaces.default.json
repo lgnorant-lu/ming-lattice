@@ -6,6 +6,7 @@
     { "prefix": "L-<word>",      "pattern": "^L-[a-z-]+$",          "domain": "spec",   "ordering": "floating",      "role": "id",    "note": "层栈外附属规约" },
     { "prefix": "M<N>",          "pattern": "^M\\d+$",              "domain": "plan",   "ordering": "semantic",      "role": "id",    "note": "里程碑" },
     { "prefix": "ADR-<NNNN>",    "pattern": "^ADR-\\d{4}$",         "domain": "meta",   "ordering": "alloc",         "role": "id",    "note": "决策记录" },
+    { "prefix": "O<N>",          "pattern": "^O\\d+$",              "domain": "plan",   "ordering": "enum",          "role": "id",    "note": "序律条目（ORDERING.md）" },
     { "prefix": "A/B/C/Q<N>",    "pattern": "^[ABCQ]\\d+$",         "domain": "verify", "ordering": "category+alloc","role": "id",    "note": "候审档分级：真洞/细节/注记/待商确" },
     { "prefix": "D<N>",          "pattern": "^D\\d+$",              "domain": "dev",    "ordering": "enum",          "role": "id",    "note": "dev 契约章节" },
     { "prefix": "T<N>",          "pattern": "^T\\d+$",              "domain": "spec",   "ordering": "tier",          "role": "id",    "note": "归因分级" },

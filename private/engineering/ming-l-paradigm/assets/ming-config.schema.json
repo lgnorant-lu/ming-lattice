@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ming-config.schema.json",
+  "title": "ming.yaml — Ming-L 项目配置",
+  "description": "项目形态声明：tier/domains/gates/namespaces——audit-domains 与 scaffold-domains 的共享输入",
+  "type": "object",
+  "required": ["ming_v", "tier"],
+  "properties": {
+    "ming_v":     { "type": "string", "pattern": "^ming\\.\\d+(\\.\\d+)?$", "description": "Ming-L 协议版本" },
+    "project":    { "type": "string" },
+    "tier":       { "enum": ["minimal", "standard", "full"], "description": "采纳档：minimal=META+namespaces+1spec+findings / standard=+dev+spec分层+软门 / full=九域+全查+硬门" },
+    "domains":    { "type": "array", "items": { "enum": ["meta","spec","dev","plan","gov","exp","verify","ops","know","req"] }, "uniqueItems": true, "description": "已实例化域集——未列域的矩阵空格检查静默" },
+    "gates":      { "enum": ["off", "soft", "hard"], "default": "soft", "description": "门控档：与 tier 正交；hard=CI/pre-commit 接线" },
+    "namespaces": { "type": "string", "default": "namespaces.json", "description": "标号登记表路径（相对配置文件）" },
+    "template_v": { "type": "string", "description": "scaffold 模板版本参考位（升级走人工 review，不做自动迁移）" }
+  },
+  "additionalProperties": true
+}

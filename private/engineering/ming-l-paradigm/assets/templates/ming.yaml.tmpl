@@ -1,0 +1,10 @@
+# ming.yaml — Ming-L 项目配置（配置化优先：模型读此文件即知项目形态）
+# schema: ming-config.schema.json（ming-l-paradigm skill assets）
+ming_v: "ming.1"
+project: {{project}}
+tier: {{tier}}        # minimal | standard | full
+gates: soft           # off | soft | hard —— 与 tier 正交
+namespaces: namespaces.json
+template_v: "ming.1"  # scaffold 模板版本参考位（升级走人工 review）
+domains:              # 已实例化域集——audit 对未实例化域的矩阵空格静默
+{{domain_lines}}

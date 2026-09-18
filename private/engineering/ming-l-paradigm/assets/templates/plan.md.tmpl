@@ -1,0 +1,33 @@
+---
+domain: plan
+status: normative
+dynamics: [立, 用, 省, 改]
+---
+
+# PLAN — 里程碑总表
+
+> 依据：推进顺序遵守 `ORDERING.md` 序律；本文件是活文档——里程碑状态随推进流转。
+> 里程碑状态机（封闭词表）：`planned → active → done | aborted`；变更记录进本表不另发文。
+
+## 总表
+
+| 里程碑 | 标题 | 依赖 | 状态 |
+|---|---|---|---|
+| M0 | （首里档标题） | —— | planned |
+
+DAG：（里程碑依赖图——M<N> 为语义序标号，已登记 namespaces.json）
+
+## M0 — （首里档标题）
+
+- **交付面**：
+- **出门禁**：（尽量机查：命令/测试/审计级别）
+- **锚定**：（本里档冻结的 spec 面——锚定=改动须新 ADR，非 status:frozen）
+
+## 冻结语义
+
+出门禁 = **锚定控制**而非 `status: frozen`——frozen 是 Know 域"永不改"语义，活 spec 不配它。
+锚定后相关 spec 改动必须走新 ADR；破坏性变更 bump `ming.<a>`。
+
+## 回授约定
+
+每里程碑收尾：本里档踩坑/判据蒸馏为 findings，反哺 skill 的种子/模板/precedents——回授是 Plan 域的"省"动力学面。
