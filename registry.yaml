@@ -1420,6 +1420,12 @@ private:
     note: "技能包创作与修订元规则 (渐进披露预算 + 触发面工艺 + 注册路由接线 + check-skill 硬门控)"
     deploy:
       claude: true
+  - name: ming-experience-direction
+    path: private/engineering/ming-experience-direction
+    enabled: true
+    note: "体验导演式设计流水线元规则 (文档阶梯 + 宪法约束源 + 叙事主干 + 六门过审 + 媒介映射预算)"
+    deploy:
+      claude: true
   - name: antibot-fingerprint-paradigm
     path: private/antibot-fingerprint-paradigm
     enabled: true

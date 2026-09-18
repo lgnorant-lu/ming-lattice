@@ -24,7 +24,8 @@ private/
 │   ├── overlay-core-paradigm/         # B列: 质量属性横切不变量单包
 │   ├── arch-core-paradigm/            # A列: 架构边界元规则 (六边形/Ports-Adapters 最小形态)
 │   ├── ming-l-paradigm/               # 项目结构域分层元规则 (九域 x 七动力学 + 候审档)
-│   └── ming-skill-forge/              # 技能包创作元规则 + check-skill/scaffold 硬门控
+│   ├── ming-skill-forge/              # 技能包创作元规则 + check-skill/scaffold 硬门控
+│   └── ming-experience-direction/     # 体验导演式设计流水线 (文档阶梯+宪法+叙事主干+六门+媒介预算)
 │
 ├── antibot-fingerprint-paradigm/      # 反爬指纹对抗分层知识库 (JA3/JA4/h2/JS一致性/判定引擎)
 ├── ui-design-paradigms/               # 全局 UI/UX 设计范式与 Design Tokens

@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-18T07:07:32.358Z",
+  "generatedAt": "2026-09-18T12:15:55.771Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -224,6 +224,7 @@
         "arch-core-paradigm",
         "ming-l-paradigm",
         "ming-skill-forge",
+        "ming-experience-direction",
         "ming-distiller"
       ],
       "triggers": [
@@ -284,6 +285,14 @@
         "skill包",
         "skill authoring",
         "frontmatter",
+        "体验导演",
+        "叙事设计",
+        "产品体验设计",
+        "scrollytelling",
+        "电影感网页",
+        "沉浸式体验",
+        "设计宪法",
+        "storyboard",
         "沉淀",
         "蒸馏",
         "复盘",
@@ -406,6 +415,20 @@
           "skill-creator",
           "frontmatter",
           "渐进披露"
+        ],
+        "ming-experience-direction": [
+          "体验导演",
+          "叙事设计",
+          "产品体验设计",
+          "scrollytelling",
+          "电影感网页",
+          "沉浸式体验",
+          "immersive",
+          "设计宪法",
+          "storyboard",
+          "设计门禁",
+          "媒介映射",
+          "design pipeline"
         ],
         "testing-scenario-embed-ffi": [
           "v8",
@@ -598,6 +621,7 @@
     "macos-reverse": "ready",
     "malware-analysis": "ready",
     "ming-distiller": "ready",
+    "ming-experience-direction": "ready",
     "ming-l-paradigm": "ready",
     "ming-skill-forge": "ready",
     "mobile-reverse": "ready",

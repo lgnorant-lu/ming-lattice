@@ -102,6 +102,7 @@ const DOMAIN_DEFS = {
       "arch-core-paradigm",
       "ming-l-paradigm",
       "ming-skill-forge",
+      "ming-experience-direction",
       "ming-distiller"
     ],
     triggers: [
@@ -115,6 +116,7 @@ const DOMAIN_DEFS = {
       "性能", "安全", "隐私", "韧性", "上下文成本", "可移植", "overlay",
       "规范体系", "项目分层", "治理文档", "候审档", "ming-l",
       "新技能", "写技能", "技能包", "skill包", "skill authoring", "frontmatter",
+      "体验导演", "叙事设计", "产品体验设计", "scrollytelling", "电影感网页", "沉浸式体验", "设计宪法", "storyboard",
       "沉淀", "蒸馏", "复盘", "distill", "retrospective", "经验回收", "查沉淀", "项目复盘"
     ],
     qualityGateTriggers: [
@@ -136,6 +138,7 @@ const DOMAIN_DEFS = {
       "arch-core-paradigm": ["六边形架构", "hexagonal", "ports and adapters", "端口适配器", "依赖倒置", "clean architecture", "洋葱架构", "架构边界", "ffi边界", "strangler"],
       "ming-l-paradigm": ["项目分层", "规范体系", "治理文档", "候审档", "ming-l", "domain", "设计域"],
       "ming-skill-forge": ["新技能", "写技能", "技能包", "skill包", "skill authoring", "skill-creator", "frontmatter", "渐进披露"],
+      "ming-experience-direction": ["体验导演", "叙事设计", "产品体验设计", "scrollytelling", "电影感网页", "沉浸式体验", "immersive", "设计宪法", "storyboard", "设计门禁", "媒介映射", "design pipeline"],
       "testing-scenario-embed-ffi": ["v8", "v8-isolate", "pyo3", "ffi", "跨语言", "嵌入", "isolate"],
       "testing-rust-idiom": ["rust", "rustc", "cargo", "miri", "proptest"],
       "testing-python-idiom": ["python", "pytest", "pyo3", "hypothesis"],

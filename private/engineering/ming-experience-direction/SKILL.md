@@ -1,0 +1,157 @@
+---
+name: ming-experience-direction
+description: 体验导演式设计流水线元规则——从模糊 brief 到可建 spec 的文档阶梯方法：宪法约束源、叙事主干（故事弧>界面孤件）、分层语法脉冲（空间/动效/视觉/资产/场景/技术映射）、备选案不混合制、OQ 台账状态机、决策门禁过审仪式、媒介映射预算。当为产品演示站/作品集/发布会级体验页做设计方向、叙事结构、逐层语法或技术选型推演时使用。触发词：体验导演、叙事设计、scrollytelling、产品体验设计、设计宪法、design pipeline、电影感网页、immersive experience、storyboard、设计门禁、媒介映射。不适用：常规 UI 范式选型（走 ui-design-paradigms）、纯工程实现。
+metadata:
+  layer: methodology
+  compose: overlay-on-engineering
+---
+
+# ming-experience-direction — 体验导演式设计流水线
+
+> 把"一句话风格 brief"变成"可过审可建造的设计 spec"的流水线方法。
+> 本质：叙事先于视觉、原则先于选型、上层文档不碰实现——方案可追溯，门禁有记录。
+> 实例源：product-system-demo/design 的 PULSE 案（见 `references/pulse-case.md`）。
+
+## 1. 何时用 / 何时不用
+
+适用：
+
+- 产品演示站、作品集、发布会级体验页的方向设计与技术推演；
+- 只有模糊风格信号（"黑客风""高级感""电影感"）没有事实需求的场合——先把信号变假设台账，再逐层收敛；
+- 需要向多方证明"这个设计不是拍的"——每个决策可追溯原则、每层产出有边界声明；
+- scroll-driven / WebGL 电影感体验的场景规划、媒介选型与降级设计。
+
+不适用：
+
+- 常规界面范式/组件库选型 → `ui-design-paradigms`；
+- 纯工程实现、页面已定型只缺代码 → 直接实现；
+- 单页静态排版微调——本方法是重装备，小活杀鸡勿用。
+
+## 2. 方法全景：文档阶梯
+
+十层文档阶梯是主骨架。**仅最后两层允许讨论媒介与实现**；此前各层只答"用户感受到什么、为什么这样表达"：
+
+```text
+00 Constitution   宪法：不可违反原则 + 全选型规范索引（本文刻意不写什么也要声明）
+01 Philosophy     哲学：世界观、价值主张、产品人格
+02 Narrative      叙事主干：故事弧、因果、证明结构（多案竞选，备选不混合）
+03 Concept        概念组合：域对象与能力词汇
+04 Direction      体验导演：用户位置弧线、注意力、节奏、控制感
+05 Spatial        空间语法：深度职责、关系场、密度语义
+06 Motion         动效语法：时间行为、状态语义、节奏（禁裸时长缓动参数）
+07 Visual         视觉材质：形态、光、状态编码、密度增长
+08 Asset          资产圣经：统一语言对象、驯化规则、删除测试
+09 Scene          场景交互：beat→scene 压缩、每场景一个主问题
+10 Tech Mapping   技术映射：职责→媒介配比、预算、降级（此层才谈栈）
+11 Tokens         Token 抽取：从已驯化的 mood frames 提取，不凭空定色
+```
+
+每层产出一份 **pulse 文档**（§4）。下层不得偷渡上层决策；上层不得写死下层数值——违例即边界违规。
+
+## 3. 宪法即约束源
+
+第一条产出的不是方案，是宪法：
+
+- **可追溯律**：后续一切视觉/节奏/资产/交互/选型必须能追溯到宪法某条原则；无法追溯 = 不得进入方案；
+- **刻意不声明**：宪法开头明写"本文刻意不出现的内容"（如具体像素值、必仿站点案例）——防宪法膨胀成实现手册；
+- **层级仲裁**：原则间冲突按层级高者优先；实现与原则冲突时原则胜；
+- **版本化演化**：宪法自身走 v0.x 多版演化（扩展生态面、修订原则），每版留痕。
+
+先例：GOV.UK Design Principles（十条活十年的原则集）、Rams 十诫——好宪法是"少而可追溯"，不是多而全。详见 `references/external-stacks.md`。
+
+## 4. Pulse 文档模式
+
+每层语法文档固定四件套头：
+
+```text
+版本/状态   —— Draft vX.Y + 当前基线 or 备选
+上游        —— 显式列出依赖的上层文档（形成可追溯链）
+边界        —— "定义 X、Y、Z；不定义 A、B、C" 双向边界
+总命题      —— 一句话本文论点（该层语法的第一性原理）
+```
+
+加层特有**语义词表**：任何该层产出必须能归到词表某一义。例：动效层六义 Balance/Deviation/Propagation/Branching/Constraint/Reformation/Evidence——"任何正式动态必须至少属于其中一种语义"，归不进词表的动效不许存在。语义化审查比"好不好看"客观得多。
+
+## 5. 叙事主干与导演弧线
+
+- **故事弧是载体**：体验的载体是叙事弧不是界面孤件。PULSE 用 7 阶段导演弧线（Entry→Mission→Mechanism→Decision→Execution→Proof→Continuity）；外部同构有三幕制、12-beat（Storyframe）——选哪种看产品，但**必须显式选定并写进叙事层**；
+- **角色弧线**：用户位置随叙事演进（Observer→Witness→Interpreter→Commander→Verifier）——角色弧必须比任何视觉效果更清晰；
+- **beat→scene 压缩**：叙事拍点不一分页。PULSE 把 10 beats 压成 6 scene chapters，**每场景只回答一个主问题**；
+- **备选案不混合制**：多案竞选确立主案后，备选保留为记录但**禁止混入主案的领域对象与证明逻辑**，除非主案被正式否决——防止风格串味；
+- **gut-check**：2 句话说不清弧线就不是叙事项目（外部 playbook 同判据），该当普通页面做。
+
+## 6. OQ 台账：假设的状态机
+
+模糊需求下**禁止把假设当事实**。Open Questions Register 把一切未决问题登记为带状态条目：
+
+```text
+状态：open / hypothesis / accepted / rejected / deferred / blocked
+字段：ID | 问题 | 当前状态 | 备注（含 hypothesis 的工作值）
+```
+
+- 只有 `accepted` 可当事实引用；`hypothesis` 条目必须标注"工作假设，非客户事实"；
+- 台账是**决策索引不是答案预设**——它记录什么还没定，防止设计在假象共识上盖楼；
+- 配套 **deliberation record**（informative）：保存"为什么形成这条原则"的推理证据，避免后续只见结论不见推理。
+
+## 7. 决策门禁仪式
+
+收束层（蓝图）必须过**显式门禁审查**并留 PASS 记录。PULSE 用六门：
+
+| 门 | 审什么 |
+|---|---|
+| 追溯门 | 每处决策能否指回宪法条文 |
+| 情绪门 | 整体气质是否命中哲学层目标情绪（且无非目标元素混入） |
+| 克制门 | 密度/亮度/元素数是否守住留白预算（如"80% 真空深黑"） |
+| 解释门 | 每个视觉元素能否说清它代表的语义实体 |
+| 降级门 | reduced-motion/低端设备路径是否设计过而非砍掉 |
+| 可行门 | 媒介配比是否在性能预算内（下节） |
+
+门禁不过 = 蓝图不进入实现；过审记录写进蓝图文档本身。门集合可裁剪但**不可免审**。
+
+## 8. 媒介映射预算
+
+技术映射层才谈栈，且守四条：
+
+- **职责先于媒介**：先列表现职责，再分配载体。PULSE 配比参考：55-70% DOM+CSS（语义与操作）/ 15-25% SVG（可交互结构）/ 10-20% Canvas2D（场与密度）/ 0-10% WebGL（仅结构矢量做不到的空气与连续材质）；
+- **重媒介举证制**：WebGL/3D/视频等重媒介必须证明不可替代收益，否则降档；
+- **降级层级**：预定义性能预算与降级阶梯；`prefers-reduced-motion` 用**两层级联**（全局归零 + 仅恢复必需信号的 opacity 化表达）——逐组件开关是 fail-open 反模式；
+- **token 后置**：visual tokens 从已驯化的 mood frames 抽取并注语义列，去色后一级关系仍须靠明度/线宽/间距可读（luminance-first 可读性）。
+
+## 9. 红线
+
+- [禁止] 上层文档出现具体技术选型/像素值/库名（技术映射层以下才可）；
+- [禁止] 决策无宪法追溯点——"感觉对"不是原则；
+- [禁止] 备选案混入主案领域对象（要么扶正要么封存）；
+- [禁止] 把 hypothesis 当 accepted 事实引用；
+- [禁止] 叙事未立先画 UI——storyboard 先行，能在低保真暴露约八成叙事矛盾；
+- [警告] 宪法膨胀成实现手册；pulse 文档缺"不定义什么"边界；门禁走过场不留记录；
+- [警告] 重媒介无降级设计——reduced-motion 砍掉动效而非重表达即违例。
+
+## 10. 快速启动（新项目四步）
+
+1. **抄宪法**：`assets/constitution.tmpl.md` 起 v0.1——先写"刻意不出现"清单与可追溯律，原则控制在 10 条内；
+2. **立台账**：`assets/oq-register.tmpl.md` 把 brief 拆成 open/hypothesis 条目，只标记不答题；
+3. **竞选叙事**：2-3 个备选叙事案各写一页总命题+弧线，选主案、封存备选；
+4. **逐层脉冲**：`assets/pulse.tmpl.md` 按阶梯逐层产出；每层先写上游链与边界声明再写本体。
+
+完成后用 §7 门禁表自审，全过才进技术映射。
+
+## Compose
+
+```
+ming-experience-direction（本包：设计流水线方法）
++ ming-l-paradigm（同源序律——文档阶梯 = 域排序律在设计域的实例；pulse 层 ≈ 域）
++ ui-design-paradigms（视觉范式目录——本包管"怎么走到选型"，它管"选哪个范式"）
++ docs-core-paradigm（pulse 文档属 reference 体裁；deliberation record 属 explanation 体裁）
++ contract-core-paradigm（OQ 状态机/宪法版本演进遵守只加不改义）
++ obs-core-paradigm（门禁 PASS 记录 = 设计域的结构化审计事件）
+```
+
+## 参考
+
+- `references/document-ladder.md` —— 十层契约全表（每层定义/不定义/产出物/上游）
+- `references/gate-review.md` —— 六门判定细则 + 过审记录格式 + OQ/备选案协议
+- `references/external-stacks.md` —— 分层层外部参考栈（叙事/动效/token/空间/WebGL/声音/降级）
+- `references/pulse-case.md` —— PULSE 实例案例索引与关键决策摘编
+- `references/sources.md` —— 文献索引与不纳入反例
+- `assets/` —— constitution/pulse/oq-register 三件套模板
