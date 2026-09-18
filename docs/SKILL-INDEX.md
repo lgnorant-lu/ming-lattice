@@ -3,6 +3,7 @@
 > 用途：第一层路由参考——AI/用户在任务开始时按此表选 skill。description 才是外层触发依据（Claude Code 按 frontmatter description 惰性加载）；本表是人工可读的精要版。
 > 生成：2026-08-18 · 覆盖：基座 20 部署模块 + 垂直 27 参考 + 私有 1
 > 后续增补：2026-09-16 指纹专项（vertical fingerprintjs/ja4/creepjs + private antibot-fingerprint-paradigm/arch-core-paradigm）
+> 后续增补：2026-09-18 工程元规范族小节补全（engineering/* 10 包）+ ming-skills-router + config-core-paradigm 登记
 
 ## 一、基座模块（已部署, 20 个）
 
@@ -212,9 +213,7 @@
 |---|---|---|
 | blog-content | 博客创作与发布全流程规范 | 已部署 |
 | antibot-fingerprint-paradigm | 反爬指纹对抗分层知识库：JA3/JA4+h2+TCP/IP+JS 一致性+判定引擎形态+组件选型 | 已部署 |
-| arch-core-paradigm | 架构边界元规则：六边形/Ports-Adapters 最小形态 + FFI 迁移接缝 | 已部署 |
-| ming-l-paradigm | 项目结构域分层元规则：Ming-L 九域全景 x 七动力学 + 规则属性系统 + 域准入判据 + 候审档机制 | 已部署 |
-| ming-skill-forge | 技能包创作元规则：渐进披露预算 + 触发面工艺 + 注册路由接线 + check-skill.mjs 硬门控 | 已部署 |
+| ming-skills-router | 全局无副作用领域分流与配方装配中枢（Domain Gate & Recipe Dispatcher） | 已部署 |
 | ming-distiller | 项目级经验沉淀与检索双模态入口：distill/ 库 INDEX.yaml 索引 + 懒加载正文 + _proposals 晋升 staging | 已部署 |
 | ui-oracle-protocol | 自研：安卓 UI 控件自动化作为协议逆向 oracle（见二点五） | 已部署 |
 | ui-design-paradigms | 全球数字产品主流 UI/UX 设计范式知识库 (Material 3 / shadcn / Apple HIG / Bento / Swiss / Neubrutalism) | 已部署 |
@@ -237,6 +236,23 @@
 | **testing-scenario-embed-ffi** | 场景特化 | 嵌入式与跨语言 FFI (Rust+V8+PyO3+JS补丁)，跨端 Shared Testdata 契约，三册专项分流 | v8-test, pyo3-test, js-patch-test, ffi-test |
 | **testing-scenario-cli** | 场景特化 | 命令行与脚本工具契约：参数退出码矩阵、可注入FS/Env、幂等性与防半成品 | cli-test, command-line-testing, exit-codes, golden-files |
 | **testing-scenario-scraper** | 场景特化 | 采集爬虫与清洗管道：离线 Fixture 优先、领域不变量、选择器健康度、活网仅作探针 | scraper-testing, crawler-test, selector-health, fixture-parsing |
+
+### 3. 工程元规范族（engineering/* 根级 10 包）
+
+> 惯例：`metadata.layer` + `compose` 自声明装配；`*-paradigm` 带 references/sources.md 文献链 + Compose 节。导引见 `private/engineering/README.md`。
+
+| skill | 一句话定位 | 状态 |
+|---|---|---|
+| docs-core-paradigm | 跨场景文档元规则：Diataxis 四体裁 + Nygard ADR + 单一事实源 | 已部署 |
+| docs-presentation-idiom | GitHub 文档视觉排版与去疲劳范式（块动线 + 零前缀 + 读者分流） | 已部署 |
+| obs-core-paradigm | 跨场景可观测元规则：宽结构化事件 + 相关 ID + 脱敏红线 | 已部署 |
+| sec-core-paradigm | 跨场景安全元规则：运行时防御 + OWASP AST01~10 供应链 | 已部署 |
+| contract-core-paradigm | 跨场景数据契约元规则：只加不改义演进五条 + 宽容读取 | 已部署 |
+| config-core-paradigm | 跨场景配置归一化元规则：十轴模型 + 组合解析 + 旗标生命周期 + 复杂度时钟 | 已部署 |
+| overlay-core-paradigm | 跨场景 B 级质量属性横切不变量：性能/隐私/韧性/成本/兼容/无障碍 | 已部署 |
+| arch-core-paradigm | 架构边界元规则：六边形/Ports-Adapters 最小形态 + FFI 迁移接缝 | 已部署 |
+| ming-l-paradigm | 项目结构域分层元规则：Ming-L 九域全景 x 七动力学 + 规则属性系统 + 域准入判据 + 候审档机制 | 已部署 |
+| ming-skill-forge | 技能包创作元规则：渐进披露预算 + 触发面工艺 + 注册路由接线 + check-skill.mjs 硬门控 | 已部署 |
 
 ## 四、案例库（docs/cases/）
 
