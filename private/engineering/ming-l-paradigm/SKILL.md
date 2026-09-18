@@ -219,6 +219,8 @@ proposed --promote--> normative --relax--> descriptive
 
 **自指验证**：本范式应能描述它的容器——skills-collection 仓库即实例：registry.yaml=Spec（单一事实源）、STANDARDS.md=Gov、tests/=Verify、PLAYBOOK.md=Know、CLAUDE.md=Meta（"registry 是单一事实源"即立法条款）。范式能无损描述自身所在仓库，是自洽性证据；不能自指的元规则值得怀疑。
 
+*注：本仓是**概念实例**（域映射成立），docs/ 未采 `domain:` frontmatter 机读方案——`audit-domains.mjs` 面向采纳方案的文档树，对本仓扫出的 orphan W 是"未采纳"信号而非范式失效。*
+
 ## 11. 参考系（诚实交代）
 
 | 成分 | 出处 |

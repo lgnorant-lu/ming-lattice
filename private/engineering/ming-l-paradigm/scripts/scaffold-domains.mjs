@@ -30,7 +30,7 @@ function emit(rel, fromAbs) {
   const body = fs.readFileSync(fromAbs, 'utf8').replaceAll('{{project}}', project);
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.writeFileSync(dest, body);
-  results.push({ rel, action: fs.existsSync(dest) ? 'written' : 'written' });
+  results.push({ rel, action: 'written' });
 }
 
 for (const d of domains) {
