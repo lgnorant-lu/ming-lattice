@@ -60,6 +60,7 @@ cp templates/post-template.md drafts/YYYY-MM-DD-slug.md
 ## 3. Frontmatter
 
 YAML 前后 `---` 包裹，由 `gray-matter`（web）和 `gopkg.in/yaml.v3`（tui）解析。
+权威规格：`blog-tui/docs/specs/frontmatter.md`——本节为速查层，冲突以规格为准。
 
 ### 3.1 必填字段
 
@@ -70,34 +71,64 @@ YAML 前后 `---` 包裹，由 `gray-matter`（web）和 `gopkg.in/yaml.v3`（tu
 
 ### 3.2 可选字段
 
+展示层（渲染引擎消费）：
+
 | 字段 | 类型 | 默认 | 说明 |
 |------|------|------|------|
-| `slug` | string | 从文件名解析 | 自定义 URL slug |
-| `summary` | string | `""` | 文章摘要，1-2 句 |
-| `description` | string | `summary` 后备 | 同 summary，二选一 |
-| `tags` | string[] | `[]` | 标签列表（数组格式） |
-| `series` | string | `""` | 所属系列名 |
-| `draft` | boolean | `false` | 草稿标记（生产环境隐藏） |
-| `image` | string | `""` | 封面图路径（暂未启用） |
-| `weight` | number | `0` | 置顶权重（越大越靠前） |
+| `updated` | string | git 最后提交日期 | 最后修改日期（git 不可用时回退 `date`） |
+| `author` | string | 站点 `site.author` | 覆盖默认作者 |
+| `cover` | string | `""` | 封面图路径（`/images/...`） |
+| `draft` | boolean | `false` | 草稿标记 |
 
-### 3.3 `draft` 字段行为
+语义层（搜索/分类/AI 消费）：
+
+| 字段 | 类型 | 默认 | 说明 |
+|------|------|------|------|
+| `slug` | string | 从文件名解析 | 自定义 URL slug（`[a-z0-9-]+`） |
+| `summary` | string | 正文首段 | 文章摘要，1-2 句 |
+| `tags` | string[] | `[]` | 维度标签（≤15 个，TUI 可浏览） |
+| `categories` | string[] | `[]` | 层级分类（3-5 个，TUI 可浏览） |
+| `keywords` | string | `""` | 细粒搜索词——**逗号分隔字符串**非数组（FTS5 索引） |
+| `series` | string | `""` | 系列归属——同 `series` 值文章可顺序导航，空串=不属于任何系列 |
+| `weight` | number | `0` | 同日文章排序降序；`0` = 按文件名自然序 |
+
+### 3.3 tags / categories / keywords 正交分工
+
+| 字段 | 回答的问题 | 粒度 | 示例 |
+|------|-----------|------|------|
+| `categories` | 属于哪个大领域 | 粗（3-5 个） | `["tech"]` |
+| `tags` | 涉及什么技术/概念 | 中（5-15 个） | `["go", "tui"]` |
+| `keywords` | 搜什么词能找到 | 细（逗号串，10-30 词） | `"golang, ssh tunnel"` |
+
+### 3.4 `draft` 判定与行为
+
+`IsDraft` 双源判定：文件在 `drafts/` 目录 **或** frontmatter `draft: true` 即为草稿。
 
 | 环境 | `draft: false` | `draft: true` |
 |------|---------------|---------------|
 | 开发 (`npm run dev`) | 显示 | 显示 |
-| 生产 (`npm run build`) | 显示 | **隐藏** |
+| 生产 (`npm run build`) | 显示 | **隐藏**（唯一硬阻断） |
 
-### 3.4 规范示例
+### 3.5 校验规则（warning 模式）
+
+解析不合规**不拒载**，仅 `slog.Warn`：title 空（回退文件名）、date 非 `YYYY-MM-DD`（回退 mtime）、tags >15、slug 非 `[a-z0-9-]+`（自动 slugify）。唯一硬阻断：`draft: true` 服务器不展示。
+
+### 3.6 规范示例
 
 ```yaml
 ---
-title: 文章标题
+title: "文章标题"
 date: 2026-07-09
+updated: 2026-07-11
+author: "lgnorant-lu"
 slug: custom-slug
+summary: "文章摘要"
 tags: [tag1, tag2]
+categories: ["tech"]
+keywords: "comma, separated, terms"
 series: series-name
-summary: 文章摘要
+cover: "/images/cover.webp"
+weight: 10
 draft: false
 ---
 ```

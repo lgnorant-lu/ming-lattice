@@ -102,6 +102,7 @@ function checkDir(absDir, { skipRouter = false, skipRegistry = false } = {}) {
   if (isParadigm && !/^##?\s*.*Compose/m.test(content)) add('I', '无 Compose 节（元包装配关系惯例）');
 
   // ---------- 接线项 ----------
+  let routerExempt = false; // registry `router: false` 显式豁免位
   if (!skipRegistry) {
     const registryPath = path.join(REPO_ROOT, 'registry.yaml');
     if (fs.existsSync(registryPath)) {
@@ -115,6 +116,7 @@ function checkDir(absDir, { skipRouter = false, skipRegistry = false } = {}) {
         if (!entry[1].includes(`path: ${rel}`)) add('E', `registry path 不符（期望 ${rel}）`);
         if (!/note\s*:/.test(entry[1])) add('W', 'registry 条目缺 note');
         if (!/deploy\s*:/.test(entry[1])) add('W', 'registry 条目缺 deploy 段');
+        routerExempt = /router\s*:\s*false/.test(entry[1]);
       }
     } else {
       add('I', 'registry.yaml 不在仓库根（独立校验模式）');
@@ -125,9 +127,12 @@ function checkDir(absDir, { skipRouter = false, skipRegistry = false } = {}) {
     const manifestSrc = path.join(REPO_ROOT, 'scripts', 'build-router-manifest.mjs');
     if (fs.existsSync(manifestSrc)) {
       const src = fs.readFileSync(manifestSrc, 'utf8');
-      if (!src.includes(`"${dirName}"`)) {
-        add('W', '未进 DOMAIN_DEFS——路由不可见（内部包可用 --no-router 豁免）');
+      const routed = src.includes(`"${dirName}"`);
+      if (!routed) {
+        if (routerExempt) add('I', 'router:false 已声明——DOMAIN_DEFS 检查豁免');
+        else add('W', '未进 DOMAIN_DEFS——路由不可见（内部包可在 registry 标 router:false 或用 --no-router 豁免）');
       } else {
+        if (routerExempt) add('W', 'router:false 声明与 DOMAIN_DEFS 引用矛盾——豁免位漂移');
         // T6 一致性提示：名字在 skillTriggers 的词与 description 零交集 = 路由/直连各说各话
         const skillTrigRe = new RegExp(`"${dirName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"\\s*:\\s*\\[([^\\]]*)\\]`);
         const trigM = src.match(skillTrigRe);

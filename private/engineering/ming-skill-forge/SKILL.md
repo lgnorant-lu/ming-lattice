@@ -57,7 +57,7 @@ description 是**唯一常驻的路由面**，写它 = 写触发器：
 | `build-router-manifest.mjs` DOMAIN_DEFS | 域 `skills` 列表 + `skillTriggers` 关键词 + 必要时域级 `triggers` | `node scripts/build-router-manifest.mjs` 重建；`--check` 验证未过期 |
 | `engineering/README.md` | 资产图 + Compose 公式 | 人工 |
 
-新增包未进 DOMAIN_DEFS = 路由不可见——check-skill.mjs 会查这一项。
+新增包未进 DOMAIN_DEFS = 路由不可见——check-skill.mjs 会查这一项；**有意不路由**的包在 registry 条目标 `router: false` 显式豁免（比 --no-router 临时豁免更优：豁免本身是登记事实）。
 
 ## 6. 硬门控分工
 

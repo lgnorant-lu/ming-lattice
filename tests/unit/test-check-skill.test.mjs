@@ -87,14 +87,23 @@ export function run() {
     const overlap = mkSkill('contract-core-paradigm', fm('contract-core-paradigm', '', '数据契约演进相关技能包描述，用于测试一致性检查场景。'));
     assert.ok(!has(checkDir(overlap, { skipRegistry: true, skipRouter: false }), 'I', 'skillTriggers'), '含触发词不应报 I');
 
-    // 11. CLI 退出码契约：合法→0，缺 SKILL.md→1
+    // 11. router:false 豁免位：registry 声明的包不进 DOMAIN_DEFS 不报错（I 级留痕）
+    //     （借真实条目 blog-content——其 registry 已标 router:false；fixture 路径不符只产 E 不影响断言面）
+    const exempt = mkSkill('blog-content', fm('blog-content'));
+    const exemptIssues = checkDir(exempt, { skipRegistry: false, skipRouter: false });
+    assert.ok(has(exemptIssues, 'I', 'router:false'), '声明豁免应留 I 级痕迹');
+    assert.ok(!has(exemptIssues, 'W', '未进 DOMAIN_DEFS'), '豁免包不应报 DOMAIN_DEFS W');
+    const unrouted = mkSkill('unrouted-fixture', fm('unrouted-fixture'));
+    assert.ok(has(checkDir(unrouted, { skipRegistry: true, skipRouter: false }), 'W', '未进 DOMAIN_DEFS'), '未声明豁免的包仍报 W');
+
+    // 12. CLI 退出码契约：合法→0，缺 SKILL.md→1
     execFileSync('node', [SCRIPT, ok, '--no-router', '--no-registry']); // 不抛即 exit 0
     let failed = false;
     try { execFileSync('node', [SCRIPT, empty, '--no-router', '--no-registry'], { stdio: 'pipe' }); }
     catch (e) { failed = e.status === 1; }
     assert.ok(failed, 'E 级 findings 应 exit 1');
 
-    console.log('  11 组断言全过');
+    console.log('  12 组断言全过');
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }

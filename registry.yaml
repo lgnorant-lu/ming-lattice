@@ -1356,6 +1356,7 @@ private:
   - name: ming-skills-router
     path: private/ming-skills-router
     enabled: true
+    router: false   # 显式豁免：路由基础设施自身不进 DOMAIN_DEFS（check-skill 免报 W）
     note: "全局无副作用领域分流与配方装配中枢 (Domain Gate & Recipe Dispatcher)"
     deploy:
       claude: true
@@ -1428,6 +1429,7 @@ private:
   - name: blog-content
     path: private/blog-content
     enabled: true
+    router: false   # 显式豁免：直接点名使用，不进 DOMAIN_DEFS（check-skill 免报 W）
     note: 博客文章全生命周期规范(模板/frontmatter/命名/发布流程, 配 blog-tui+blog-web 生态)
     deploy:
       claude: true

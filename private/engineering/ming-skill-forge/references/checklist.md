@@ -38,7 +38,8 @@
 |---|---|---|
 | `registry.yaml` 有条目且 path 相符 | E | registry 是单一事实源 |
 | 条目含 `note` 与 `deploy` 段 | W | 部署完整性 |
-| `build-router-manifest.mjs` DOMAIN_DEFS 引用该名 | W | 未接线=路由不可见；纯内部包可豁免（--no-router 标志） |
+| `build-router-manifest.mjs` DOMAIN_DEFS 引用该名 | W | 未接线=路由不可见；有意不路由的包在 registry 标 `router: false` 显式豁免（I 级留痕），临时豁免用 --no-router |
+| `router:false` 声明与 DOMAIN_DEFS 引用矛盾 | W | 豁免位漂移——声明不路由却仍被引用 |
 | `skillTriggers` 词与 description 零交集 | I | 双触发面漂移提示（forge §3：两关键词集必须一致） |
 | SKILL.md 内相对链接文件存在 | E | lint 同级（防死链）；代码围栏与行内代码豁免——语法示例非真链接 |
 
