@@ -1,6 +1,6 @@
 ---
 name: docs-presentation-idiom
-description: Cross-scene GitHub Markdown presentation and typography rules. Eliminates AI aesthetic fatigue, emoji soup, and duplicated marketing fluff. Enforces block-type visual flow, strict symbol budgets, Chinese-English spacing, persona-based entry diversion, and volume limits (<= 200 lines for root README). Use when reviewing, writing, or refactoring GitHub READMEs, project docs, or release notes. 触发词：文档排版、README 美化、去疲劳、动线、中英混排、release notes。
+description: Cross-scene GitHub Markdown presentation and typography rules. Eliminates AI aesthetic fatigue, emoji soup, and marketing fluff. Enforces block-type visual flow, symbol budgets, CJK-Latin spacing, persona diversion, and volume limits (<= 200 lines for root README). Use when reviewing, writing, or refactoring GitHub READMEs, docs, or release notes. 触发词：文档排版、README 美化、去疲劳、动线、中英混排、release notes。
 metadata:
   layer: documentation
   compose: overlay-on-docs-core

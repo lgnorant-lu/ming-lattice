@@ -54,7 +54,15 @@ if (!fmMatch) {
   if (!descM) {
     add('E', 'frontmatter 缺 description');
   } else {
-    const desc = descM[1].trim().replace(/^["']|["']$/g, '');
+    let desc = descM[1].trim().replace(/^["']|["']$/g, '');
+    // YAML 块标量: description: | / > ——正文在后续缩进行
+    if (/^[|>][+-]?$/.test(desc)) {
+      const fmLines = fm.split(/\n/);
+      const di = fmLines.findIndex(l => /^description\s*:/.test(l));
+      const block = [];
+      for (let i = di + 1; i < fmLines.length && /^\s+\S/.test(fmLines[i]); i++) block.push(fmLines[i].trim());
+      desc = block.join(' ');
+    }
     if (desc.length < 20) add('E', `description 过短(${desc.length} 字符)，路由触发会不准`);
     if (desc.length > 400) add('W', `description 过长(${desc.length} 字符)，L0 常驻税过高`);
     // 触发面质量启发式
@@ -66,9 +74,8 @@ if (!fmMatch) {
     if (/使用\s+\S+(-mcp|-server)/.test(desc)) add('W', 'description 绑定具体工具名（lint 同级告警项）');
   }
 
-  if (!/^metadata\s*:/m.test(fm)) {
-    add('W', '缺 metadata 段（engineering 系惯例：layer + compose）');
-  } else {
+  // metadata 自声明即查完备性；不声明不索求（检查按能力触发，不按包形归簇）
+  if (/^metadata\s*:/m.test(fm)) {
     if (!/^  layer\s*:/m.test(fm)) add('W', 'metadata 缺 layer');
     if (!/^  compose\s*:/m.test(fm)) add('W', 'metadata 缺 compose');
   }
@@ -85,19 +92,21 @@ const emojiRe = new RegExp(
 );
 if (emojiRe.test(content)) add('E', '含 emoji（仓库铁律：用 [禁止]/[警告] 结构化标签）');
 
-// 相对链接文件存在性
-for (const m of content.matchAll(/\]\(([^)]+)\)/g)) {
+// 相对链接文件存在性（剔除代码围栏与行内代码——语法示例不是真链接）
+const linkScanText = content.replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]*`/g, '');
+for (const m of linkScanText.matchAll(/\]\(([^)]+)\)/g)) {
   const link = m[1].split('#')[0].trim();
   if (!link || /^(https?:|mailto:|#)/.test(link)) continue;
   if (!fs.existsSync(path.join(absDir, link))) add('E', `引用的文件不存在: ${link}`);
 }
 
-// 家族惯例：*-paradigm / *-idiom 应有 sources.md
-if (/-(paradigm|idiom)$/.test(dirName) && !fs.existsSync(path.join(absDir, 'references', 'sources.md'))) {
-  add('W', '家族惯例：*-paradigm/-idiom 包应带 references/sources.md');
+// 家族惯例：*-paradigm 元包自声明契约（sources.md + Compose 节）
+// -idiom 不索：testing-*-idiom 是语言落地包非元包，同后缀不同种（撞名记录见 checklist.md）
+const isParadigm = /-paradigm$/.test(dirName);
+if (isParadigm && !fs.existsSync(path.join(absDir, 'references', 'sources.md'))) {
+  add('W', '家族惯例：*-paradigm 包应带 references/sources.md');
 }
-// Compose 节
-if (!/^##?\s*.*Compose/m.test(content)) add('I', '无 Compose 节（元包装配关系惯例）');
+if (isParadigm && !/^##?\s*.*Compose/m.test(content)) add('I', '无 Compose 节（元包装配关系惯例）');
 
 // ---------- 接线项 ----------
 const registryPath = path.join(REPO_ROOT, 'registry.yaml');

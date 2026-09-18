@@ -46,8 +46,7 @@ description 是**唯一常驻的路由面**，写它 = 写触发器：
 ## 4. 家族惯例（engineering 系元包）
 
 - frontmatter 增 `metadata.layer`（methodology/architecture/testing/…）与 `metadata.compose`；
-- `*-paradigm` / `*-idiom` 型元包**应带** `references/sources.md`（文献索引 + 明确不纳入反例）；
-- 正文末尾保留 `Compose` 节（与其他元包的装配关系）；
+- `*-paradigm` 型元包**应带** `references/sources.md`（文献索引 + 明确不纳入反例）与正文末尾 `Compose` 节（与其他元包的装配关系）——自声明后缀触发惯例检查；`-idiom` 不索（testing-*-idiom 是语言落地包非元包，同后缀不同种）；
 - 禁令节用 `[禁止]`/`[警告]` 结构化标签，**禁 emoji**（仓库铁律）。
 
 ## 5. 注册与路由接线（新包三处不可少）
@@ -65,7 +64,7 @@ description 是**唯一常驻的路由面**，写它 = 写触发器：
 | 门 | 覆盖 |
 |---|---|
 | `pwsh scripts/lint.ps1` | 仓库级：SKILL.md 存在、frontmatter 缺字段、引用文件存在性、硬编码外部路径、空壳 |
-| `node private/engineering/ming-skill-forge/scripts/check-skill.mjs <dir>` | **技能级**：命名一致/kebab、description 长度与触发词启发式、正文 ≤500 行预算、metadata 家族字段、sources.md 家族惯例、registry 条目、路由接线。标志：`--json` 机器可读输出、`--no-router` 跳过 DOMAIN_DEFS 检查（路由基础设施等不进路由的包用） |
+| `node private/engineering/ming-skill-forge/scripts/check-skill.mjs <dir>` | **技能级**：命名一致/kebab、description 长度与触发词启发式、正文 ≤500 行预算、家族惯例（按自声明能力触发：有 metadata 查完备、`-paradigm` 查 sources.md/Compose）、registry 条目、路由接线。标志：`--json` 机器可读输出、`--no-router` 跳过 DOMAIN_DEFS 检查（路由基础设施等不进路由的包用） |
 
 边界：lint 查"这个文件像不像技能"，check-skill 查"这个技能合不合规范"。
 

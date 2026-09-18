@@ -1422,6 +1422,7 @@ private:
   - name: blog-content
     path: private/blog-content
     enabled: true
+    note: 博客文章全生命周期规范(模板/frontmatter/命名/发布流程, 配 blog-tui+blog-web 生态)
     deploy:
       claude: true
   - name: ui-oracle-protocol

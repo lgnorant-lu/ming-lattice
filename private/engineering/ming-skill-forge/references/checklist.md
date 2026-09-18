@@ -2,6 +2,8 @@
 
 每项注明级别（E=硬错误阻断 / W=警告 / I=提示）与出处依据。
 
+**触发原则**：检查按**自声明能力**触发，不按包形归簇——有 `metadata:` 块才查字段完备、名字以 `-paradigm` 结尾才查元包惯例；未声明能力的包只过通用项。新增检查项须有现有检查表达不了的不变量（ming-l §2 准入判据的门控应用）。
+
 ## 结构项
 
 | 检查 | 级 | 依据 |
@@ -21,13 +23,13 @@
 | description 含显式触发词（中英至少一类） | W | undertrigger 对策 |
 | description 不含绝对路径/具体工具名绑定 | W | lint 既有 W 级；工具缺席即漏触发 |
 
-## 家族惯例（engineering 系）
+## 家族惯例（自声明触发）
 
 | 检查 | 级 | 依据 |
 |---|---|---|
-| `metadata.layer` / `metadata.compose` 字段 | W | engineering 元包惯例 |
-| `*-paradigm`/`*-idiom` 包带 `references/sources.md` | W | 家族文献链惯例 |
-| 正文末尾 `Compose` 节 | I | 元包装配关系惯例 |
+| 有 `metadata:` 段时 `layer` / `compose` 字段完备 | W | engineering 元包惯例；无 metadata 段不索求（testing 族以 compose.yaml 为组合真源，补字段=双真相） |
+| `*-paradigm` 包带 `references/sources.md` | W | 家族文献链惯例；`*-idiom` 不索——testing-*-idiom 是语言落地包非元包（同后缀不同种） |
+| `*-paradigm` 包正文末尾 `Compose` 节 | I | 元包装配关系惯例 |
 | 无 emoji | E | 仓库铁律（githooks 同级门禁） |
 
 ## 接线项
