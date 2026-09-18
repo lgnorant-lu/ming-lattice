@@ -85,6 +85,6 @@ testing-core-oracle + 1 场景 + 1 语言 + 1 工作流
 + 按需 A 列（docs | obs | sec | contract）
 + overlay-core-paradigm（本包，整份或只读相关节）
 + 本包 scenes/<scene>.md
-```
 
-C 级（逆向授权、爬虫 ToS、游戏锁步、FFI Isolate 物理、账务守恒）**不要**从本包长出来，只在场景测试包。
+C 级（逆向授权、爬虫 ToS、游戏锁步、FFI Isolate 物理、账务守恒）不要从本包长出来，只在场景测试包。
+```

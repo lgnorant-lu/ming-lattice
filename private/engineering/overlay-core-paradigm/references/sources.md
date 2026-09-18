@@ -7,6 +7,7 @@
 
 ## 韧性
 
+- AWS Builder's Library, Timeouts, retries, and backoff with jitter — https://d1.awsstatic.com/builderslibrary/pdfs/timeouts-retries-and-backoff-with-jitter.pdf
 - Google SRE Book / Workbook（错误预算、重试上限、幂等）
 - 半成品与原子改名是 CLI 场景已有实践，本包提升为跨场景不变量
 
