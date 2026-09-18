@@ -1389,6 +1389,12 @@ private:
     note: "跨场景数据契约元规则 (只加不改义演进五条 + 宽容读取)"
     deploy:
       claude: true
+  - name: config-core-paradigm
+    path: private/engineering/config-core-paradigm
+    enabled: true
+    note: "跨场景配置归一化元规则 (十轴模型 + 组合解析 + 旗标生命周期 + 复杂度时钟)"
+    deploy:
+      claude: true
   - name: overlay-core-paradigm
     path: private/engineering/overlay-core-paradigm
     enabled: true

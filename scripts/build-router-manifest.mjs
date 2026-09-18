@@ -97,6 +97,7 @@ const DOMAIN_DEFS = {
       "obs-core-paradigm",
       "sec-core-paradigm",
       "contract-core-paradigm",
+      "config-core-paradigm",
       "overlay-core-paradigm",
       "arch-core-paradigm",
       "ming-l-paradigm",
@@ -110,6 +111,7 @@ const DOMAIN_DEFS = {
       "可观测", "日志", "observability", "structured logging", "wide events", "宽事件", "相关id",
       "安全元规则", "ast10", "agentic-skills", "supply-chain", "最小权限",
       "数据契约", "schema-evolution", "tolerant-reader", "data-contract", "字段演进",
+      "配置", "配置归一化", "环境变量", "特性开关", "feature flag", "i18n", "config",
       "性能", "安全", "隐私", "韧性", "上下文成本", "可移植", "overlay",
       "规范体系", "项目分层", "治理文档", "候审档", "ming-l",
       "新技能", "写技能", "技能包", "skill包", "skill authoring", "frontmatter",
@@ -129,6 +131,7 @@ const DOMAIN_DEFS = {
       "obs-core-paradigm": ["日志", "可观测", "observability", "logging", "telemetry", "宽事件", "相关id"],
       "sec-core-paradigm": ["安全", "security", "供应链", "supply-chain", "最小权限", "ast10"],
       "contract-core-paradigm": ["数据契约", "字段演进", "schema-evolution", "schemaVersion", "tolerant-reader", "data-contract"],
+      "config-core-paradigm": ["配置", "配置归一化", "环境变量", "env vars", "特性开关", "feature flag", "i18n", "config", "precedence"],
       "overlay-core-paradigm": ["性能", "performance", "隐私", "privacy", "韧性", "可移植", "上下文成本", "overlay"],
       "arch-core-paradigm": ["六边形架构", "hexagonal", "ports and adapters", "端口适配器", "依赖倒置", "clean architecture", "洋葱架构", "架构边界", "ffi边界", "strangler"],
       "ming-l-paradigm": ["项目分层", "规范体系", "治理文档", "候审档", "ming-l", "domain", "设计域"],
@@ -163,6 +166,7 @@ const RECIPES = {
       "obs-core-paradigm",
       "sec-core-paradigm",
       "contract-core-paradigm",
+      "config-core-paradigm",
       "overlay-core-paradigm"
     ]
   },

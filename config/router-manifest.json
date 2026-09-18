@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-17T11:11:43.963Z",
+  "generatedAt": "2026-09-18T07:07:32.358Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -219,6 +219,7 @@
         "obs-core-paradigm",
         "sec-core-paradigm",
         "contract-core-paradigm",
+        "config-core-paradigm",
         "overlay-core-paradigm",
         "arch-core-paradigm",
         "ming-l-paradigm",
@@ -258,6 +259,13 @@
         "tolerant-reader",
         "data-contract",
         "字段演进",
+        "配置",
+        "配置归一化",
+        "环境变量",
+        "特性开关",
+        "feature flag",
+        "i18n",
+        "config",
         "性能",
         "安全",
         "隐私",
@@ -346,6 +354,17 @@
           "schemaVersion",
           "tolerant-reader",
           "data-contract"
+        ],
+        "config-core-paradigm": [
+          "配置",
+          "配置归一化",
+          "环境变量",
+          "env vars",
+          "特性开关",
+          "feature flag",
+          "i18n",
+          "config",
+          "precedence"
         ],
         "overlay-core-paradigm": [
           "性能",
@@ -455,6 +474,7 @@
         "obs-core-paradigm",
         "sec-core-paradigm",
         "contract-core-paradigm",
+        "config-core-paradigm",
         "overlay-core-paradigm"
       ]
     },
@@ -565,6 +585,7 @@
     "apk-reverse": "ready",
     "arch-core-paradigm": "ready",
     "binary-diff": "ready",
+    "config-core-paradigm": "ready",
     "contract-core-paradigm": "ready",
     "docs-core-paradigm": "ready",
     "docs-presentation-idiom": "ready",
