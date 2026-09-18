@@ -65,7 +65,7 @@ description 是**唯一常驻的路由面**，写它 = 写触发器：
 | 门 | 覆盖 |
 |---|---|
 | `pwsh scripts/lint.ps1` | 仓库级：SKILL.md 存在、frontmatter 缺字段、引用文件存在性、硬编码外部路径、空壳 |
-| `node private/engineering/ming-skill-forge/scripts/check-skill.mjs <dir>` | **技能级**：命名一致/kebab、description 长度与触发词启发式、正文 ≤500 行预算、metadata 家族字段、sources.md 家族惯例、registry 条目、路由接线 |
+| `node private/engineering/ming-skill-forge/scripts/check-skill.mjs <dir>` | **技能级**：命名一致/kebab、description 长度与触发词启发式、正文 ≤500 行预算、metadata 家族字段、sources.md 家族惯例、registry 条目、路由接线。标志：`--json` 机器可读输出、`--no-router` 跳过 DOMAIN_DEFS 检查（路由基础设施等不进路由的包用） |
 
 边界：lint 查"这个文件像不像技能"，check-skill 查"这个技能合不合规范"。
 

@@ -2,6 +2,9 @@
 name: ming-skills-router
 description: Classify task intent and compose testing, engineering quality, reverse, protocol and UI references. Use for skill selection, testing-system reviews and multi-skill planning. Preserve review/explain/plan/implement modes; never grant execution permission or initialize a case.
 compatibility: Node.js 22+ for the bundled CLI; reads its local manifest without writes or network. Without Node, use host skill metadata and report the fallback.
+metadata:
+  layer: infrastructure
+  compose: dispatcher
 ---
 
 # ming-skills 路由与组合

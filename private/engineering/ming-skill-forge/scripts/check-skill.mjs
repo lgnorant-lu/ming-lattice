@@ -78,8 +78,11 @@ if (!fmMatch) {
 const bodyLines = content.replace(/^---[\s\S]*?---\n?/, '').split('\n').length;
 if (bodyLines > 500) add('W', `正文 ${bodyLines} 行超 500 预算——细节下沉 references/`);
 
-// emoji 禁令
-const emojiRe = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}]/u;
+// emoji 禁令（与 scripts/hooks/validate.mjs hasEmoji 同强度：旗帜/keycap/ZWJ 序列全覆盖）
+const emojiRe = new RegExp(
+  "\\p{RI}{2}|(?![#*\\d](?!\\uFE0F?\\u20E3))\\p{Emoji}(?:\\p{EMod}|[\\u{E0020}-\\u{E007E}]+\\u{E007F}|\\uFE0F?\\u20E3)?(?:\\u200D\\p{Emoji}(?:\\p{EMod}|[\\u{E0020}-\\u{E007E}]+\\u{E007F}|\\uFE0F?\\u20E3)?)*",
+  "u"
+);
 if (emojiRe.test(content)) add('E', '含 emoji（仓库铁律：用 [禁止]/[警告] 结构化标签）');
 
 // 相对链接文件存在性
