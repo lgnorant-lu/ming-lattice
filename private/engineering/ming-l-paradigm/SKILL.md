@@ -128,10 +128,16 @@ metadata:
 ```
 proposed --promote--> normative --relax--> descriptive
    |                     |                     |
-   +----reject------+   supersede          archive
-                    v      v                  v
+   |                  supersede          archive
+   |                     |                     |
+   +--fast-track--> provisional --ratify--> normative
+   |                     |
+   +----reject------+   supersede
+                    v      v
                     frozen（吸收态：永不复活，新版=新规则）
 ```
+
+- **provisional 插队轨**：fast-track 紧急落盘走 `status: provisional`（非旗标——避免与 status 构成歧义矩阵），须带 `since:` 计龄，超龄未回候审档补裁决 = W（audit 6b 查）；倒挂检查同 proposed 处理（准规范前态）。
 
 - **模态决定测试种类**：normative→spec 测试（断言应然）；descriptive→characterization（锁定实然）；proposed→契约草案验证；frozen→无测试（纯史）；
 - `proposed` 即 `ming_` 孵化字段与候审档条目的正式态名；
@@ -195,7 +201,7 @@ proposed --promote--> normative --relax--> descriptive
 | **O1 依赖序** | 被依赖者先固化；同层候选按扇出+不可逆性加权 | —— |
 | **O2 裁决序** | 裁决先于生成 | 候审档纪律（Meta 细则） |
 | **O3 校验夹位** | 固化→审计→下游；批次节奏：按目标文档分批、批间回验 | —— |
-| **O4 增序** | 提案无序、落盘有序；fast-track 插队须 `provisional:`/`ming_` 留痕并事后补裁决——可插队不可隐身 | ming_ 豁免位（标识律） |
+| **O4 增序** | 提案无序、落盘有序；fast-track 插队须 `status: provisional`/`ming_` 留痕并事后补裁决——可插队不可隐身 | ming_ 豁免位（标识律） |
 | **O5 改序** | expand→migrate→contract 三步，不原地替换 | 演进五条（contract-paradigm） |
 | **O6 废序** | deprecated→迁移窗口→removed；墓碑不重用 | 标识分配律 N3 |
 | **O7 守序** | convention→warning→error 不直跳 | 效力阶梯（属性系统）——本律约束其**转移边** |
@@ -288,7 +294,7 @@ proposed --promote--> normative --relax--> descriptive
 6. **[禁止] 矩阵空格无意留白**：域 x 动词矩阵的空格必须是有意的零并标注理由；
 7. **[禁止] 效力跃进**：规则不得从 convention 直跳 error+——沿阶梯迁移，未达天花板前保留降级通道；
 8. **[禁止] 标号裸奔**：新标号族先登记命名空间（前缀/格式/序性）再使用；号码不回收、不改名（改名=新号+旧号墓碑）；
-9. **[禁止] 插队隐身**：fast-track 修复必须留痕（`provisional:`/`ming_` 标记）并事后回候审档补裁决——可插队不可隐身；
+9. **[禁止] 插队隐身**：fast-track 修复必须留痕（`status: provisional`/`ming_` 标记）并事后回候审档补裁决——可插队不可隐身；
 10. **[禁止] 机制越权**：新横切机制先过正交判据（回答现有机制答不了的问题）；序律只陈述时间约束，不重复实体规则。
 
 ## 14. Compose

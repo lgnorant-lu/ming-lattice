@@ -9,7 +9,7 @@
 //   4. 双真相: `canonical:` 事实键跨文档重复声明 = E
 //   5. frozen 不可变: `status: frozen` 文档改动拦截（--staged 模式接 git 暂存区）
 //   6. proposed 超期: `status: proposed` + `since:` 超 --proposed-days = W（"省"动力学复审提醒）
-//      6b. provisional 插队销账: `provisional:` 超龄未回候审档 = W（序律 O4：可插队不可隐身）
+//      6b. provisional 插队销账: `status: provisional` 超龄未回候审档 = W（序律 O4：可插队不可隐身）
 //   7. 标识分配律: 标号唯一性(E) / 悬空引用(W) / 命名空间格式(W) / 登记表互锁(E)
 //      7b. O1 倒挂检查: normative 引用 proposed 定义 = W（序律 O1 机器面）
 //      7c. 未登记命名空间族启发式: ID 形 token 成族出现但未登记 = W（提示性，不自动登记）
@@ -56,7 +56,7 @@ if (mingCfgPath) {
 }
 
 const DOMAINS = new Set(['meta', 'spec', 'dev', 'plan', 'gov', 'exp', 'verify', 'ops', 'know', 'req']);
-const STATUSES = new Set(['proposed', 'normative', 'descriptive', 'frozen']);
+const STATUSES = new Set(['proposed', 'provisional', 'normative', 'descriptive', 'frozen']);
 const TYPES = new Set(['constitutive', 'regulative']);
 const VERBS = ['立', '用', '守', '省', '改', '增', '废'];
 
@@ -148,7 +148,7 @@ for (const f of mdFiles) {
     }
 
     // 6b. provisional 插队销账（序律 O4：可插队不可隐身——超龄未回候审档补裁决 = W）
-    if (fm.provisional === 'true' || fm.provisional === true) {
+    if (fm.status === 'provisional') {
       if (fm.since) {
         const age = (now - Date.parse(fm.since)) / 86400000;
         if (age > provDays) add('W', `provisional 插队 ${Math.floor(age)} 天超 ${provDays} 天未销账——须回候审档补裁决`, rel);
@@ -283,8 +283,8 @@ if (nsFile) {
     defStatus.set(id, statusByFile.get(f));
   }
   for (const { id, rel, line } of refsLive) {
-    if (statusByFile.get(rel) === 'normative' && defStatus.get(id) === 'proposed') {
-      add('W', `倒挂引用: normative 文档引用 proposed 定义的 ${id}（${rel}:${line}）——序律 O1`, rel);
+    if (statusByFile.get(rel) === 'normative' && (defStatus.get(id) === 'proposed' || defStatus.get(id) === 'provisional')) {
+      add('W', `倒挂引用: normative 文档引用 ${defStatus.get(id)} 定义的 ${id}（${rel}:${line}）——序律 O1`, rel);
     }
   }
 }
