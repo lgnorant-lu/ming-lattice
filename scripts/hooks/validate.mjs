@@ -29,6 +29,7 @@ export function loadHookConfig(root = process.cwd()) {
     mojibakeLevel: 'error',
     secretLevel: 'error',
     lintLevel: 'error',
+    trailerLevel: 'error',
     requireCommitMsg: 'true'
   };
   if (!fs.existsSync(configPath)) return defaults;
@@ -79,6 +80,36 @@ export function hasMojibake(text) {
   if (typeof text !== 'string' || text.length === 0) return false;
   const mojibakeRegex = /[\u9357\u922b\u95ab\u95ae\u93b9\u93c4\u6d93\u9359\u9367\u9369\u9368\u942d\u93c9\u93c0\u9474\u93cd]/;
   return mojibakeRegex.test(text);
+}
+
+/**
+ * 禁止出现在提交信息中的署名/trailer 字段
+ * 约定: 本仓署名即作者本人, 不附 AI 工具署名行 (2026-09-17 清史后门禁化)
+ */
+export const BANNED_TRAILER_PATTERNS = [
+  { re: /^Generated with\b/im, label: 'Generated with' },
+  { re: /^Co-Authored-By\s*:/im, label: 'Co-Authored-By' }
+];
+
+/**
+ * 校验提交信息全文不含被禁 trailer 字段
+ */
+export function validateTrailer(message, opts = {}) {
+  const trailerLevel = opts.trailerLevel ?? 'error';
+  const warnings = [];
+  if (trailerLevel === 'off' || typeof message !== 'string' || message.length === 0) {
+    return { ok: true, reason: '', warnings };
+  }
+  for (const { re, label } of BANNED_TRAILER_PATTERNS) {
+    if (re.test(message)) {
+      const msg = `提交信息包含被禁 trailer 字段 "${label}"（本仓署名即作者本人，不附 AI 工具署名行）`;
+      if (trailerLevel === 'error') {
+        return { ok: false, reason: msg, warnings };
+      }
+      warnings.push(msg);
+    }
+  }
+  return { ok: true, reason: '', warnings };
 }
 
 /**
@@ -157,10 +188,17 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(im
       process.exit(1);
     }
 
-    if (res.warnings && res.warnings.length > 0) {
-      for (const w of res.warnings) {
-        console.warn(`[WARN] ${w}`);
-      }
+    const trailerRes = validateTrailer(rawMsg, config);
+    if (!trailerRes.ok) {
+      console.error('\n==================== [ming-skills 提交门禁拦截] ====================');
+      console.error(`[REJECT] ${trailerRes.reason}`);
+      console.error('====================================================================\n');
+      process.exit(1);
+    }
+
+    const allWarnings = [...(res.warnings || []), ...(trailerRes.warnings || [])];
+    for (const w of allWarnings) {
+      console.warn(`[WARN] ${w}`);
     }
     process.exit(0);
   } catch (err) {

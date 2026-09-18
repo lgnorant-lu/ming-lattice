@@ -15,3 +15,6 @@ secretLevel=error
 
 # 5. 自动化测试金字塔门禁（提交前自动执行 tests/run.mjs --require-all 校验）
 lintLevel=error
+
+# 6. AI 署名 trailer 门禁（拦截 Generated with / Co-Authored-By 字段；署名即作者本人）
+trailerLevel=error

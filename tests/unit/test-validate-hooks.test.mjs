@@ -3,7 +3,7 @@
 // 覆盖: Commit Type 校验, Scope 格式, Emoji 过滤, Mojibake 拦截, 合并放行
 
 import assert from 'node:assert/strict';
-import { validateSubject, extractSubject, hasEmoji, hasMojibake } from '../../scripts/hooks/validate.mjs';
+import { validateSubject, validateTrailer, extractSubject, hasEmoji, hasMojibake } from '../../scripts/hooks/validate.mjs';
 
 export function run() {
   console.log('[TEST UNIT] scripts/hooks/validate.mjs...');
@@ -66,6 +66,20 @@ export function run() {
       assert.ok(res.reason.includes(inv.match), `错误信息不符: "${res.reason}" 未包含 "${inv.match}"`);
     }
   }
+
+  // 6. validateTrailer — AI 署名字段门禁 (2026-09-17 清史后设立)
+  const cleanMsg = 'feat(x): 正常提交\n\n正文无署名行';
+  assert.equal(validateTrailer(cleanMsg).ok, true);
+  assert.equal(validateTrailer('feat(x): a\n\nGenerated with [Devin](https://devin.ai)').ok, false);
+  assert.equal(validateTrailer('feat(x): a\n\nCo-Authored-By: Devin <bot@x>').ok, false);
+  assert.equal(validateTrailer('feat(x): a\n\nCo-Authored-By: Claude <noreply@anthropic.com>').ok, false);
+  assert.equal(validateTrailer('feat(x): a\n\nCo-Authored-By: Human <h@x>').ok, false, '字段级拦截不区分署名对象');
+  assert.equal(validateTrailer(cleanMsg, { trailerLevel: 'off' }).ok, true);
+  const wr = validateTrailer('feat(x): a\n\nCo-Authored-By: Devin <b@x>', { trailerLevel: 'warn' });
+  assert.equal(wr.ok, true);
+  assert.equal(wr.warnings.length, 1);
+  assert.equal(validateTrailer('').ok, true);
+  assert.equal(validateTrailer(null).ok, true);
 
   console.log('  -> validate.mjs 全部断言通过！');
 }
