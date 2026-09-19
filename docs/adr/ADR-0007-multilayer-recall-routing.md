@@ -26,6 +26,8 @@
    - S1 显式点名：最高优先，用户宣言不可被分数稀释（现状）
    - S2 关键词触发：域 triggers + skillTriggers + negatives 中和（现状）
    - S3 词法相似层（**新增**）：BM25/TF-IDF 对 (name+description+triggers) 三合文档打分——纯逻辑实现，符合零依赖约束，提供词形重叠容错
+   - **S3 tokenizer 规格（三轮调研关键发现）**：CJK 无空格分词必须走**字符级 bigram**（PGroonga TokenBigram / Lucene / Meilisearch 全系生产检索引擎同法——白空格 tokenizer 对中文查询返回 0 命中的生产事故案例见 hindsight #3892/#1077）；实现=ASCII 词 `[a-z0-9]{2,}` + CJK 区间（U+4E00-9FFF）重叠二元组，CJK 标点切分，k1=1.4 b=0.75
+   - **IDF 即特异性先验**：BM25 的 IDF 天然降权"测试/性能"类泛词（出现于多文档→低 IDF），结构性缓解已知边界#1 中文前缀穿透（"渗透测试"的"测试"bigram 弱分、"渗透"bigram 强分），减少对人工 negatives 词表的依赖
    - S5 负词否决：现状保留
    - 融合：各信号 min-max 归一化 → 加权凸组合 → reasons[] 记录分项贡献（可审计优先于 RRF）
 
@@ -51,6 +53,8 @@
    - **标注铁律**（goldset 原则）：**禁用路由器自身输出自动当期望**——未评分日志 bootstrap 不出 gold，会把历史错误烙进基准；每条期望 outcome 人审确认
    - **覆盖度口径**：按 domain×skill 分类矩阵度量覆盖，不以观察流量自封完备（goldset 第二原则）
    - **统计诚实**：~100 条规模下单点召回率 CI 宽——eval 作**回归门**（有没有退化）而非精度测量仪；权重调参若发生须留 holdout 防过拟合 eval 集本身
+   - **度量口径**（三轮调研对齐 vLLM-sr/CLINC 指标谱）：主指标 **candidates recall@k**（期望技能是否进候选集）+ dispatch 正确率（应路由案例的 action/domain/recipe 吻合）+ **OOS 误纳率**（C 层被路由的比例——CLINC 实证 OOS 检测最难，最好系统仅 66% OOS recall，我们靠确定性门槛天然占优）；报告按 domain×language 切片（zh/en/mixed），杜绝均值掩盖
+   - **语料 schema**：`{id, query, expect:{domain?,skills?,action?}, tier:A|B|C, provenance:golden-paraphrase|scenario|real-miss, lang:zh|en|mixed}`——provenance 分账是 goldset 原则的落点
    - S3 上线以 eval 增量为准入门槛；S4 离线产出的词表提案以 eval 验证为准入
 
 ## Consequences
