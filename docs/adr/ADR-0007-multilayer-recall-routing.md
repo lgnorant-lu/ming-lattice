@@ -28,8 +28,12 @@
    - S3 词法相似层（**新增**）：BM25/TF-IDF 对 (name+description+triggers) 三合文档打分——纯逻辑实现，符合零依赖约束，提供词形重叠容错
    - **S3 tokenizer 规格（三轮调研关键发现）**：CJK 无空格分词必须走**字符级 bigram**（PGroonga TokenBigram / Lucene / Meilisearch 全系生产检索引擎同法——白空格 tokenizer 对中文查询返回 0 命中的生产事故案例见 hindsight #3892/#1077）；实现=ASCII 词 `[a-z0-9]{2,}` + CJK 区间（U+4E00-9FFF）重叠二元组，CJK 标点切分，k1=1.4 b=0.75
    - **IDF 即特异性先验**：BM25 的 IDF 天然降权"测试/性能"类泛词（出现于多文档→低 IDF），结构性缓解已知边界#1 中文前缀穿透（"渗透测试"的"测试"bigram 弱分、"渗透"bigram 强分），减少对人工 negatives 词表的依赖
+   - **字段加权规格 BM25F（四轮调研）**：三合文档非均质——name/description/skillTriggers 三字段权重不同；采用 Robertson 2004 版 BM25F：**先按字段 boost 加权词频再进非线性饱和**（`weight=Σ_c occurs·boost_c/((1-b_c)+b_c·l_c/avl_c)` → `weight/(k1+weight)`），勿做字段独立打分后线性加（破坏饱和特性）；字段 boost 初值 name×3 / triggers×2 / description×1。注意"标题 boost 不普适"反例（ADCS'16）：导航型查询才受益——name 字段加权仅兜**嵌入式提及**，精确点名已由 S1 承担，防双计分
+   - **小语料注记**：44 文档使 IDF 粒度仅 44 档、绝对分数无意义——词法层只产**排序信号**，进融合前按 query min-max 归一
+   - **实现不变量**：S3 必须消费与 S2 相同的 `activeText`（代码块/引用已剥离、否定从句已过滤）——"不用 apk-reverse"的否定语义在词法层同样成立，不得另起未过滤的文本通道
    - S5 负词否决：现状保留
    - 融合：各信号 min-max 归一化 → 加权凸组合 → reasons[] 记录分项贡献（可审计优先于 RRF）
+   - **权重标定协议（四轮调研）**：权重**不手工钦定**——初值启发式（词法/关键词权重主导，本仓语料是技术标识符密集场景，alpha 向 BM25 侧倾；参照"技术文档应提高 BM25 权重"的 Elastic 经验），eval 集就绪后做 **OpenSearch SRW 式网格搜索**（归一化×组合方式×权重 0.1 步进）对 recall@k 寻优，留 holdout 防过拟合；RRF（k=60）保留为对照基线——若 CC 在 eval 上表现脆化则切换，二者均为业内标准件
 
 2. **召回优先策略**
    - candidates 取各信号超阈值的并集（宽网提名）
