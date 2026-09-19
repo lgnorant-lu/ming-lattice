@@ -151,16 +151,70 @@ function checkDir(absDir, { skipRouter = false, skipRegistry = false } = {}) {
   return issues;
 }
 
+// ---------- candidates：候审区契约与统计 ----------
+// 协议见 ../references/candidacy.md——一进证据开市、二进证据触发毕业（I 级放行信号）。
+function registrySection(key) {
+  const registryPath = path.join(REPO_ROOT, 'registry.yaml');
+  if (!fs.existsSync(registryPath)) return null;
+  const reg = fs.readFileSync(registryPath, 'utf8');
+  const startM = reg.match(new RegExp(`^${key}:\\s*$`, 'm'));
+  if (!startM) return null;
+  const rest = reg.slice(startM.index + startM[0].length);
+  const nextTop = rest.search(/^\S/m);
+  return nextTop < 0 ? rest : rest.slice(0, nextTop);
+}
+
+function candidateEntries() {
+  const block = registrySection('candidates');
+  if (!block) return [];
+  const entries = [];
+  for (const m of block.matchAll(/-\s*name:\s*(\S+)[\s\S]*?(?=-\s*name:|$)/g)) {
+    const b = m[0];
+    const pick = k => { const f = b.match(new RegExp(`^\\s*${k}:\\s*"?(.+?)"?\\s*$`, 'm')); return f && f[1]; };
+    const evBlock = (b.match(/evidence:[^\n]*\n([\s\S]*?)(?=\n\s+\w+:|$)/) || [null, ''])[1];
+    entries.push({
+      name: m[1],
+      domain: pick('domain'),
+      path: pick('path'),
+      rationale: pick('rationale'),
+      graduation: pick('graduation'),
+      openedAt: pick('openedAt'),
+      evidence: evBlock.split('\n').filter(l => /^\s*-\s*\S/.test(l)).length,
+    });
+  }
+  return entries;
+}
+
+function checkCandidates(pkgNames = new Set()) {
+  const entries = candidateEntries();
+  const results = [];
+  const seen = new Set();
+  let ready = 0, oldestDays = 0;
+  const today = new Date();
+  for (const c of entries) {
+    const issues = [];
+    const add = (level, msg) => issues.push({ level, msg });
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(c.name)) add('E', `候选名非 kebab-case: ${c.name}`);
+    for (const k of ['domain', 'path', 'rationale', 'graduation', 'openedAt']) {
+      if (!c[k]) add('E', `候选条目缺字段 ${k}`);
+    }
+    if (c.evidence === 0) add('E', '候选条目无 evidence——开市须至少一份实例证据');
+    if (seen.has(c.name)) add('E', `候选重名: ${c.name}`);
+    seen.add(c.name);
+    if (pkgNames.has(c.name)) add('E', `候选与既有包重名: ${c.name}——应毕业或撤回`);
+    if (c.path && fs.existsSync(path.join(REPO_ROOT, c.path))) add('W', `候选已有实体目录 ${c.path}——毕业接线或撤回`);
+    if (c.evidence >= 2) { add('I', `graduation-ready：${c.evidence} 份证据已达毕业阈值`); ready++; }
+    const days = c.openedAt ? Math.floor((today - new Date(c.openedAt)) / 86400000) : NaN;
+    if (Number.isNaN(days)) add('W', `openedAt 不可解析: ${c.openedAt}`);
+    else { if (days > oldestDays) oldestDays = days; if (days > 90) add('I', `aging candidate：开市 ${days} 天未毕业——复审存续`); }
+    results.push({ name: c.name, issues });
+  }
+  return { entries, results, stats: { count: entries.length, ready, oldestDays } };
+}
+
 // ---------- --all：registry private 区批量 ----------
 function privateEntries() {
-  const registryPath = path.join(REPO_ROOT, 'registry.yaml');
-  if (!fs.existsSync(registryPath)) return [];
-  const reg = fs.readFileSync(registryPath, 'utf8');
-  const startM = reg.match(/^private:\s*$/m);
-  if (!startM) return [];
-  const rest = reg.slice(startM.index + startM[0].length);
-  const nextTop = rest.search(/^\S/m); // 下一个顶层键或 EOF
-  const block = nextTop < 0 ? rest : rest.slice(0, nextTop);
+  const block = registrySection('private') || '';
   const entries = [];
   for (const m of block.matchAll(/-\s*name:\s*(\S+)[\s\S]*?path:\s*(\S+)/g)) {
     entries.push({ name: m[1], path: m[2] });
@@ -182,11 +236,20 @@ function main() {
   }
 
   const results = []; // {dir, issues}
+  let candStats = null;
+  let pkgCount = 0;
   if (allMode) {
-    for (const e of privateEntries()) {
+    const pkgs = privateEntries();
+    pkgCount = pkgs.length;
+    for (const e of pkgs) {
       const abs = path.join(REPO_ROOT, e.path);
       if (!fs.existsSync(abs)) { results.push({ dir: e.path, issues: [{ level: 'E', msg: `registry 登记路径不存在: ${e.path}`, file: abs }] }); continue; }
       results.push({ dir: e.name, issues: checkDir(abs, opts) });
+    }
+    if (!opts.skipRegistry) {
+      const cand = checkCandidates(new Set(pkgs.map(p => p.name)));
+      for (const c of cand.results) results.push({ dir: `candidate:${c.name}`, issues: c.issues });
+      candStats = cand.stats;
     }
   } else {
     const absDir = path.resolve(skillDir);
@@ -194,7 +257,7 @@ function main() {
   }
 
   if (asJson) {
-    console.log(JSON.stringify(allMode ? results : results[0].issues, null, 2));
+    console.log(JSON.stringify(allMode ? { results, candidates: candStats } : results[0].issues, null, 2));
   } else {
     let te = 0, tw = 0, tn = 0;
     for (const r of results) {
@@ -205,7 +268,8 @@ function main() {
       te += e; tw += w; tn += n;
       if (!allMode || r.issues.length) console.log(`check-skill: ${r.dir} → E=${e} W=${w} I=${n}`);
     }
-    console.log(`\ntotal: ${results.length} pkg → E=${te} W=${tw} I=${tn}`);
+    console.log(`\ntotal: ${allMode ? pkgCount : results.length} pkg → E=${te} W=${tw} I=${tn}`);
+    if (candStats) console.log(`candidates: ${candStats.count} registered (oldest ${candStats.oldestDays}d; ${candStats.ready} graduation-ready)`);
   }
   process.exitCode = results.some(r => r.issues.some(i => i.level === 'E')) ? 1 : 0;
 }
@@ -213,4 +277,4 @@ function main() {
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) main();
 
-export { checkDir, privateEntries };
+export { checkDir, privateEntries, candidateEntries, checkCandidates };

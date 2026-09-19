@@ -10,7 +10,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { checkDir } from '../../private/engineering/ming-skill-forge/scripts/check-skill.mjs';
+import { checkDir, checkCandidates } from '../../private/engineering/ming-skill-forge/scripts/check-skill.mjs';
 
 const SCRIPT = path.resolve(import.meta.dirname, '../../private/engineering/ming-skill-forge/scripts/check-skill.mjs');
 const OPTS = { skipRouter: true, skipRegistry: true };
@@ -103,7 +103,22 @@ export function run() {
     catch (e) { failed = e.status === 1; }
     assert.ok(failed, 'E 级 findings 应 exit 1');
 
-    console.log('  12 组断言全过');
+    // 13. 候审区契约：真实 registry candidates 段应全合法（字段齐/零冲突/有证据/无实体）
+    const cand = checkCandidates(new Set());
+    assert.ok(cand.entries.length >= 4, 'candidates 段应至少登记 4 条候审');
+    for (const c of cand.entries) {
+      assert.ok(c.domain && c.path && c.rationale && c.graduation && c.openedAt, `候选 ${c.name} 必填字段齐`);
+      assert.ok(c.evidence >= 1, `候选 ${c.name} 开市须有 evidence`);
+    }
+    for (const r of cand.results) {
+      assert.ok(!r.issues.some(i => i.level === 'E'), `候选 ${r.name} 不应有 E 级`);
+    }
+    assert.equal(cand.stats.count, cand.entries.length, '统计数应等于登记数');
+    // 与既有包重名应报 E（注入模拟重名验证）
+    const collide = checkCandidates(new Set(['immersive-web-idiom']));
+    assert.ok(collide.results.find(r => r.name === 'immersive-web-idiom').issues.some(i => i.level === 'E' && i.msg.includes('重名')), '与既有包重名应报 E');
+
+    console.log('  13 组断言全过');
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }

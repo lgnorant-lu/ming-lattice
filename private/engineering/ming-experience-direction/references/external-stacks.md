@@ -2,6 +2,15 @@
 
 海纳百川的外部印证与可采栈。每层只收"该层决策能直接用"的参考，不堆书名。
 
+## 方法论正典（元模型）
+
+- **Garrett 五平面**（Elements of User Experience, 2002）：Strategy→Scope→Structure→Skeleton→Surface 建造序——文档阶梯的祖师爷模型；其"基本二元性"（每平面同时有软件面与信息空间面）是双轴思考的先声；
+- **MDA 框架**（Hunicke/LeBlanc/Zubeck 2004, GDC）：Mechanics→Dynamics→Aesthetics，建造方向与体验方向相反——**双轴模型的最直接先例**；"小机制改动向上级联成意外体验"= 我们"下层偷渡上层"边界违规的同构警告；
+- **RampStack creative-direction skill**（开源）：四轴 brief 框架（tone/aesthetic/relationship/sensory）——"让 brief 可被下游引用、drift 在决策时被捕"，与我们宪法可追溯律同病同药；证明"方向结构化为机读件"是生态公认需求；
+- **Storyflow 三类评审**：direction/craft/decision 三型评审不可混开——评审相位表的直接来源；
+- **Nielsen crit 协议**：presenter framing（用户是谁/目标/约束/今天要什么反馈）、3-8 人、反馈只对声明问题；
+- **Agency routes / SMP**：创意公司"多条 creative routes 竞选、选定不混合"惯例 + single-minded proposition——备选案不混合制的行业原型。
+
 ## 宪法层（00）
 
 - **GOV.UK Design Principles**（2012 起迭代至今）：十条原则活十年的先例——"Start with user needs / Do less / Iterate then iterate again"；证明好宪法是少而可追溯；
@@ -30,6 +39,7 @@
 ## 动效层（06）
 
 - **Disney 12 Principles of Animation → UI 映射**：squash & stretch 慎用（消费感），timing/staging/ease-in-out 必用；
+- **Ussai UX Choreography 五原则**（R/GA + Glen Keane, SXSW 2015）：feedback(夸张)/feedforward(预示)/spatial awareness(舞台调度)/user focus/brand voice——动效语义词表的现成工业版："motion 回答 how+when+why"；
 - **Material M3 Motion**：easing/duration token 表（emphasized/standard 双集 + short/medium/long 时长档）+ 新 motion physics springs；
 - **IBM Carbon Motion**：productive vs expressive 双模式——企业级克制动效的参照系；
 - **micro-interaction 四要素（Dan Saffer）**：trigger/rules/feedback/loops-and-modes——交互级动效的最小完整模型。
@@ -38,7 +48,8 @@
 
 - **禁带清单先例**：PULSE 明禁玻璃拟态/紫蓝渐变/霓虹/glitch/终端绿字/悬浮 HUD——负面清单写法；
 - **驯化（taming）流程**：mood frames → 删到只剩语义 → 抽 token；资产圣经的"删除测试"：删除后表达实质受损才留；
-- **Dark composite / precision 材质方向**：低反射、有质量、可切层——肃穆系体验的常用材质母题。
+- **Dark composite / precision 材质方向**：低反射、有质量、可切层——肃穆系体验的常用材质母题；
+- **Atomic Design（Brad Frost）**：atoms→molecules→organisms→templates→pages 部件家族层级——与资产圣经"部件家族"同构；**关键警告：它不是线性流程**而是整体/局部并发的心智模型（先画 atoms 再祈祷合得拢是误读）；token 是其"亚原子粒子"。
 
 ## 场景层（09）
 

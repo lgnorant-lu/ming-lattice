@@ -59,6 +59,8 @@ description 是**唯一常驻的路由面**，写它 = 写触发器：
 
 新增包未进 DOMAIN_DEFS = 路由不可见——check-skill.mjs 会查这一项；**有意不路由**的包在 registry 条目标 `router: false` 显式豁免（比 --no-router 临时豁免更优：豁免本身是登记事实）。
 
+**候审区（candidates）**："值得立项但证据不足"的包提案登记在 registry `candidates:` 顶层段——一进证据开市、二进证据触发毕业信号、毕业走 scaffold 接线并删候选条目。协议全文见 `references/candidacy.md`；`check-skill --all` 附带候选契约检查与统计放行信号。
+
 ## 6. 硬门控分工
 
 | 门 | 覆盖 |

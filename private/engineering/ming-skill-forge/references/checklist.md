@@ -43,6 +43,18 @@
 | `skillTriggers` 词与 description 零交集 | I | 双触发面漂移提示（forge §3：两关键词集必须一致） |
 | SKILL.md 内相对链接文件存在 | E | lint 同级（防死链）；代码围栏与行内代码豁免——语法示例非真链接 |
 
+## 候审区项（--all 附带，registry `candidates:` 段）
+
+| 检查 | 级 | 依据 |
+|---|---|---|
+| 候选名 kebab-case / 必填字段齐（domain/path/rationale/graduation/openedAt）/ evidence ≥1 | E | candidacy.md §2 契约——零证据不开市 |
+| 候选间重名 / 与既有包重名 | E | 重名即应毕业或撤回 |
+| 候选 `path` 已有实体目录 | W | 候选+实体双态非法——毕业接线或撤回 |
+| `openedAt` 日期可解析 | W | 时效统计依赖 |
+| evidence ≥2 → graduation-ready | I | 放行信号：达毕业阈值提示人审（机器不自动立包） |
+| openedAt >90d → aging | I | 候开设时效——复审存续或撤回 |
+| 统计尾行 `candidates: N registered (oldest Xd; K ready)` | — | 放行面板：`--all` 附带，--no-registry 豁免 |
+
 ## 用法
 
 ```bash

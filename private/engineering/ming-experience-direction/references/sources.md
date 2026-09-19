@@ -4,6 +4,17 @@
 
 - `product-system-demo/design/`（D:\dogepy\Blogs\product-system-demo）——方法萃取的完整实例，PULSE 案 24 文档。置信度：本仓一手工程产物。
 
+## 方法论正典（元模型先例）
+
+- **Garrett, Elements of User Experience**（jjg.net/elements，2002）——五平面建造序 + 软件/信息二元性。UX 元模型祖师爷。
+- **Hunicke/LeBlanc/Zubeck, MDA: A Formal Approach to Game Design**（GDC 2004, users.cs.northwestern.edu/~hunicke/MDA）——建造/体验双轴双向性的正式表述。学术论文。
+- **Rebecca Ussai, The Principles of UX Choreography**（freecodecamp 2015, R/GA + Glen Keane）——Disney 12 原则→UX 五原则（feedback/feedforward/staging/focus/brand voice）。业界方法论。
+- **Brad Frost, Atomic Design**（bradfrost.com + atomic-design repo）——部件层级心智模型；"非线性流程"的本人澄清 + token=亚原子。官方一手。
+- **RampStack creative-direction framework**（rampstack.co）——四轴 brief 机读化 + drift 诊断。同位 skill 生态参照。
+- **Storyflow, How to Run a Design Review**（storyflow.so, 2026）——direction/craft/decision 三型评审分离。社区方法文。
+- **Jakob Nielsen, How to Run a UX Design Critique**（jakobnielsenphd.substack.com）——crit 结构化协议。权威从业者。
+- **Structured Design Critique System**（claudecodehq.com/playbooks）——brief→评审计划→分区评审流水线。同位 playbook 生态。
+
 ## 同构方法论（外部印证）
 
 - **The Spark: Engineering an Immersive, Story-First Web Experience** — Codrops 2026-01（Active Theory 系）。storyboard 先于引擎、叙事脊柱跨栈存活。官方一手 case study。

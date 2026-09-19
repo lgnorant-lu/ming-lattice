@@ -1529,3 +1529,41 @@ private:
     note: "项目级经验沉淀与检索双模态入口 (distill/ 索引+懒加载, skill库晋升走 _proposals staging)"
     deploy:
       claude: true
+
+# ── 候审区 (candidates) ──────────────────────────────────────────────
+# 包提案登记处：非实体包（无 SKILL.md），一进证据开市、二进证据触发毕业。
+# 协议见 private/engineering/ming-skill-forge/references/candidacy.md；
+# 契约与统计由 check-skill.mjs --all 附带检查。
+candidates:
+  - name: immersive-web-idiom
+    domain: engineering
+    path: private/engineering/immersive-web-idiom
+    rationale: "WebGL/scroll 沉浸式体验的工程实现侧——栈分级、相机路径、后处理、性能预算、降级实现"
+    evidence:
+      - "2026-09-18 PULSE design/ 萃取：媒介映射层外部参考栈已成形（ming-experience-direction/references/external-stacks.md）"
+    graduation: "第二个按体验流水线产出的真实项目需要实现侧参考时立项"
+    openedAt: 2026-09-18
+  - name: narrative-core-paradigm
+    domain: engineering
+    path: private/engineering/narrative-core-paradigm
+    rationale: "叙事结构跨场景元规则——故事弧/节拍/角色弧在博客文、文档、演讲、产品页间复用"
+    evidence:
+      - "2026-09-18 PULSE 叙事主干萃取：7阶段导演弧线+角色弧成形（ming-experience-direction §5）"
+    graduation: "第二个非产品页场景（如 blog-content 文章结构）复用同一叙事语法时立项"
+    openedAt: 2026-09-18
+  - name: design-token-idiom
+    domain: engineering
+    path: private/engineering/design-token-idiom
+    rationale: "DTCG token 格式与三层结构的地道落地——primitive/semantic/component + theming"
+    evidence:
+      - "2026-09-18 PULSE 工作 token 表成形（mood-frames→token 抽取链验证）"
+    graduation: "真实 token 系统（多主题/多平台消费）出现维护需求时立项"
+    openedAt: 2026-09-18
+  - name: experience-critique
+    domain: engineering
+    path: private/engineering/experience-critique
+    rationale: "六门评审泛化为任意设计稿的评审协议——独立于流水线的设计审查门集"
+    evidence:
+      - "2026-09-18 PULSE 六门过审记录验证（17-blueprint/18-spec 两次全过）"
+    graduation: "出现对非本流水线产物的设计稿评审需求时立项"
+    openedAt: 2026-09-18
