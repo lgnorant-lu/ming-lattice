@@ -12,6 +12,7 @@ import { run as runScaGeneration } from './contract/test-sca-generation.mjs';
 import { createOperationalEvent, emitEvent } from '../private/ming-skills-router/scripts/observability.mjs';
 import { run as runCliIntegration } from './integration/test-cli-tools.test.mjs';
 import { run as runRouteEffects } from './evals/test-route-effects.mjs';
+import { run as runSkillRecall } from './evals/test-skill-recall.mjs';
 import { run as runLintContract } from './contract/test-lint-contract.mjs';
 import { run as runHookPlannerContract } from './contract/test-hook-planner.mjs';
 
@@ -61,6 +62,7 @@ export const allSuites = [
   { name: 'lint-contract', tier: 'contract', pwsh: true, run: runLintContract },
   { name: 'hook-planner', tier: 'contract', run: runHookPlannerContract },
   { name: 'route-effects', tier: 'eval', run: runRouteEffects },
+  { name: 'skill-recall', tier: 'eval', run: runSkillRecall },
   { name: 'route-safety', tier: 'contract', run: () => node('--test', 'tests/contract/test-route-safety.test.mjs') },
   { name: 'hook-index', tier: 'integration', git: true, run: () => node('--test', 'tests/integration/test-hook-index.test.mjs') },
   { name: 'yaml-contract', tier: 'contract', pwsh: true, run: () => execFileSync('pwsh', ['-NoProfile', '-File', 'tests/unit/test-yaml-lite.test.ps1'], { cwd: root, stdio: 'inherit', timeout: 30000 }) },

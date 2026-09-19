@@ -117,7 +117,15 @@ const DOMAIN_DEFS = {
       "规范体系", "项目分层", "治理文档", "候审档", "ming-l",
       "新技能", "写技能", "技能包", "skill包", "skill authoring", "frontmatter",
       "体验导演", "叙事设计", "产品体验设计", "scrollytelling", "电影感网页", "沉浸式体验", "设计宪法", "storyboard",
-      "沉淀", "蒸馏", "复盘", "distill", "retrospective", "经验回收", "查沉淀", "项目复盘"
+      "沉淀", "蒸馏", "复盘", "distill", "retrospective", "经验回收", "查沉淀", "项目复盘",
+      // ── skillTriggers 升格词：专属无歧义词也当域门，裸词即可开门 ──
+      // （工程域在 find 顺序最末，升词纯增益；语言名/泛词不升——裸词意图模糊留 handoff）
+      "六边形架构", "hexagonal", "ports and adapters", "端口适配器", "依赖倒置",
+      "clean architecture", "洋葱架构", "架构边界", "ffi边界", "strangler",
+      "排版", "logging", "telemetry", "security", "供应链", "supply-chain",
+      "schemaVersion", "env vars", "precedence", "performance", "privacy",
+      "设计域", "skill-creator", "渐进披露", "immersive", "媒介映射", "design pipeline", "设计门禁",
+      "ffi", "pyo3", "v8", "v8-isolate", "isolate", "跨语言"
     ],
     qualityGateTriggers: [
       "质量门禁", "门禁", "git hooks", "pre-commit", "pre-push", "ci", "ci/cd", "runner",

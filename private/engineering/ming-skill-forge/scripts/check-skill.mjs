@@ -143,6 +143,15 @@ function checkDir(absDir, { skipRouter = false, skipRegistry = false } = {}) {
           if (terms.length && !terms.some(t => descText.includes(t))) {
             add('I', `skillTriggers 词 [${terms.join(', ')}] 未出现在 description——路由与直连触发面可能漂移`);
           }
+          // T7 域门覆盖检查：skillTrigger 词若不在任何域 triggers/qualityGateTriggers，
+          // 则只能域内细化、裸词永不开门——提示作者决断（细化词属正常，需开门请升格）
+          const gateTerms = new Set(
+            [...src.matchAll(/^\s*(?:qualityGate)?[tT]riggers\s*:\s*\[([\s\S]*?)\]/gm)]
+              .flatMap(m => [...m[1].matchAll(/"([^"]+)"/g)].map(x => x[1].toLowerCase())));
+          const gated = terms.filter(t => !gateTerms.has(t));
+          if (gated.length) {
+            add('I', `skillTriggers 词 [${gated.join(', ')}] 不在任何域触发词——仅域内细化、裸词不开门（有意细化可忽略，需开门请升入域 triggers）`);
+          }
         }
       }
     }
