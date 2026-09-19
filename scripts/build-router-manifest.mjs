@@ -63,7 +63,8 @@ const DOMAIN_DEFS = {
       "指纹", "ja3", "ja4", "风控", "反爬", "指纹浏览器", "webdriver检测", "tls指纹",
       "headless检测", "bot detection", "fingerprint", "渗透测试", "安全测试", "pentest", "penetration",
       // ── eval 挖出的缺门词：常用短形与场景词补齐 ──
-      "渗透", "反汇编", "反混淆", "栈溢出", "利用链", "安装包", "小程序", "二进制分析", "抓包"
+      "渗透", "反汇编", "反混淆", "栈溢出", "利用链", "安装包", "小程序", "二进制分析", "抓包",
+      "wasm"
     ],
     negatives: [
       "单元测试", "测试覆盖", "pytest", "cargo test", "tdd", "bdd", "覆盖设计",

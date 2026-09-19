@@ -342,6 +342,7 @@ export function route(hint) {
 function parseCliArgs(args) {
   const hint = [];
   let eventFile = process.env.MING_SKILLS_EVENT_FILE;
+  let hintLog = process.env.MING_SKILLS_HINT_LOG; // opt-in 本地明文 hint 日志（B 层语料收割源；默认关闭）
   let workUnitId = process.env.MING_SKILLS_WORK_UNIT_ID;
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
@@ -351,6 +352,12 @@ function parseCliArgs(args) {
     } else if (arg.startsWith('--event-file=')) {
       eventFile = arg.slice('--event-file='.length);
       if (!eventFile) throw new Error('usage: --event-file requires a path');
+    } else if (arg === '--hint-log') {
+      if (!args[index + 1]) throw new Error('usage: --hint-log requires a path');
+      hintLog = args[++index];
+    } else if (arg.startsWith('--hint-log=')) {
+      hintLog = arg.slice('--hint-log='.length);
+      if (!hintLog) throw new Error('usage: --hint-log requires a path');
     } else if (arg === '--work-unit-id') {
       if (!args[index + 1]) throw new Error('usage: --work-unit-id requires a value');
       workUnitId = args[++index];
@@ -361,7 +368,7 @@ function parseCliArgs(args) {
       hint.push(arg);
     }
   }
-  return { hint: hint.join(' '), eventFile, workUnitId };
+  return { hint: hint.join(' '), eventFile, hintLog, workUnitId };
 }
 
 function elapsedMs(startedAt) {
@@ -375,6 +382,18 @@ export function runRouteCli(args = process.argv.slice(2)) {
     options = parseCliArgs(args);
     const decision = route(options.hint);
     console.log(JSON.stringify(decision, null, 2));
+    // opt-in 明文 hint 旁路：本地语料收割用，与脱敏事件流分离（事件只存 hint_hash）
+    if (options.hintLog) {
+      try {
+        fs.appendFileSync(path.resolve(options.hintLog), JSON.stringify({
+          at: new Date().toISOString(), hint: options.hint,
+          domain: decision.domain, action: decision.action,
+          reason_codes: decision.reasons
+        }) + '\n', 'utf8');
+      } catch {
+        console.error('route_hint_log_failed: output unavailable');
+      }
+    }
     if (options.eventFile) {
       try {
         emitEvent(createRouteDecidedEvent({
