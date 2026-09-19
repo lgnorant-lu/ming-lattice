@@ -166,3 +166,12 @@ pwsh scripts/sync.ps1
    - 常规门禁和 CI 执行均强制 `network=not_used`，严禁在常规流水线中发起无受控的动态网络拉取；
    - 依赖更新与漏洞库比对采用定期受控任务，经由 `scripts/update.ps1` 与联网 SCA 扫描后受控提交流水线。
 
+---
+
+## 8. 包内候审条款约定（Pending Docket）
+
+1. **驻留择需**：规则发行包（`private/engineering/` 范式族及其他产规则的包）可在 SKILL.md 内设 `## 候审条款` 节收条目级待议项——节形态即可，不必独立文件（ming-l：域≠目录，薄域以节存在）。叶级场景/idiom 包不强制。
+2. **条目格式**：每条 = 现象 / 建议修法 / 目标位 三字段（先例：ming-l-paradigm SKILL.md §6.6——de facto 升 de jure）。
+3. **升格路径**：条目需档案级论证（建议 diff、证据链）时升 `distill/_proposals/` 提案档（协议见 `private/ming-distiller/references/proposals.md`）；节内条目溢出时再按"节→文件"升格独立 findings 文件。
+4. **纪律**：发现先记录不动手（防规范振荡）；条款落地后标落点不删除（只增不隐同 Know 纪律）。
+
