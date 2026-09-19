@@ -1,0 +1,3 @@
+{"id":"b-001","query":"帮我处理 六边形架构 相关的活","expect":{"domain":"engineering","skills":["arch-core-paradigm"]},"tier":"B","provenance":"real-miss","lang":"zh","note":"2026-09-18 实测盲区：裸词无域门 → handoff；已升格修复，保留作回归锚"}
+{"id":"b-002","query":"帮我看看这个 hexagonal architecture 的分层","expect":{"domain":"engineering","skills":["arch-core-paradigm"]},"tier":"B","provenance":"real-miss","lang":"mixed","note":"英文裸词同盲区"}
+{"id":"b-003","query":"telemetry 数据怎么接到后端","expect":{"domain":"engineering","skills":["obs-core-paradigm"]},"tier":"B","provenance":"real-miss","lang":"en","note":"英文词缺域门，升格后修复"}

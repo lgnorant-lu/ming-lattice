@@ -1,0 +1,25 @@
+{"id":"c-001","query":"今天天气真好，出去散步晒太阳","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"golden-paraphrase","lang":"zh"}
+{"id":"c-002","query":"给我讲个笑话","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-003","query":"帮我写个快速排序","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-004","query":"json 和 yaml 有什么区别","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-005","query":"mysql 索引失效的常见原因","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-006","query":"git rebase 和 merge 的区别","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-007","query":"docker 容器 exec 进不去怎么办","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-008","query":"python 字典怎么按值排序","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-009","query":"windows 开机越来越慢怎么排查","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-010","query":"how to center a div in css","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"en"}
+{"id":"c-011","query":"what is a monad","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"en"}
+{"id":"c-012","query":"my wifi keeps dropping","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"en"}
+{"id":"c-013","query":"帮忙测试一下麦克风有没有声音","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh","note":"边界混淆：物理设备测试非软件测试"}
+{"id":"c-014","query":"做个性格测试玩玩","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh","note":"已知难点：'测试'触发词会误命中，记录为 known-miss 观察项"}
+{"id":"c-015","query":"解释一下闭包是什么","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-016","query":"npm install 报错 EACCES 怎么解决","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"mixed"}
+{"id":"c-017","query":"帮我查一下明天的机票","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-018","query":"浏览器缓存怎么彻底清掉","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-019","query":"excel 里 vlookup 怎么用","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-020","query":"手机发烫厉害是什么原因","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-021","query":"typescript interface 和 type 的区别","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"en","note":"已知难点：typescript 是 js-idiom 细化词但非域门，应 none"}
+{"id":"c-022","query":"中午吃什么推荐一下","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-023","query":"帮我把这段话翻译成英文","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-024","query":"mac 的终端快捷键有哪些","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id":"c-025","query":"正则表达式怎么匹配邮箱","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}

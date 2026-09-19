@@ -33,7 +33,10 @@ const DOMAIN_DEFS = {
       "测试", "单测", "覆盖率", "测试用例", "测试规范", "测试覆盖", "测试体系", "测试计划",
       "单元测试", "性质测试", "变异测试", "表征测试", "契约测试", "集成测试", "回归测试",
       "tdd", "bdd", "pytest", "cargo test", "miri", "vitest", "jest", "hypothesis",
-      "proptest", "test framework", "oracle", "golden test", "spec test", "unit test", "testing", "property-based", "mutation testing"
+      "proptest", "test framework", "oracle", "golden test", "spec test", "unit test", "testing", "property-based", "mutation testing",
+      // ── eval 挖出的缺门词：场景探测器词升格 + 常用短形补齐 ──
+      "爬虫", "采集", "清洗", "命令行", "退出码", "cli", "行为快照", "锁定行为",
+      "ffi", "pyo3", "v8", "isolate", "跨语言"
     ],
     negatives: [
       "脱壳", "反编译", "ida pro", "gdb", "rop", "pwn", "hook_installed", "抓包", "绕过frida",
@@ -55,7 +58,9 @@ const DOMAIN_DEFS = {
       "smali", "apk逆向", "jsvmp", "补环境", "混淆还原", "ast解混淆", "抓包分析",
       "协议分析", "私有协议", "签名算法", "sign算法", "so逆向", "rop", "pwn", "固件提取",
       "指纹", "ja3", "ja4", "风控", "反爬", "指纹浏览器", "webdriver检测", "tls指纹",
-      "headless检测", "bot detection", "fingerprint", "渗透测试", "安全测试", "pentest", "penetration"
+      "headless检测", "bot detection", "fingerprint", "渗透测试", "安全测试", "pentest", "penetration",
+      // ── eval 挖出的缺门词：常用短形与场景词补齐 ──
+      "渗透", "反汇编", "反混淆", "栈溢出", "利用链", "安装包", "小程序", "二进制分析", "抓包"
     ],
     negatives: [
       "单元测试", "测试覆盖", "pytest", "cargo test", "tdd", "bdd", "覆盖设计",
@@ -68,7 +73,9 @@ const DOMAIN_DEFS = {
     skills: ["ui-design-paradigms"],
     triggers: [
       "ui", "ux", "设计范式", "前端设计", "交互设计", "响应式布局", "组件库",
-      "界面风格", "tailwind", "shadcn", "design tokens", "视觉规范", "色彩体系"
+      "界面风格", "tailwind", "shadcn", "design tokens", "视觉规范", "色彩体系",
+      // ── eval 挖出的缺门词：常用短形补齐（"布局"泛词不升——会抢"项目布局"） ──
+      "响应式", "配色", "交互规范", "布局规范"
     ],
     negatives: [
       "脱壳", "反编译", "ida", "frida", "漏洞利用", "rop", "pwn", "so逆向"
@@ -82,7 +89,9 @@ const DOMAIN_DEFS = {
       "ui-oracle", "timestamper", "xfqtrace", "流量窗口切片", "重放判官", "无痕hook",
       "appium", "操作到请求", "操作→请求", "请求映射", "生成时机", "参数生成时机",
       "点击触发", "ui自动化", "重放对比", "窗口切片", "操作验证",
-      "什么时候生成", "何时生成"
+      "什么时候生成", "何时生成",
+      // ── eval 挖出的缺门词：操作→请求的自然说法补齐（"按钮"泛词不升——会抢样式问题） ──
+      "哪些请求", "什么请求", "发出的请求", "点击会", "生成哪些参数", "哪个操作", "操作生成"
     ],
     negatives: [
       "单元测试规范", "覆盖设计"
@@ -125,7 +134,10 @@ const DOMAIN_DEFS = {
       "排版", "logging", "telemetry", "security", "供应链", "supply-chain",
       "schemaVersion", "env vars", "precedence", "performance", "privacy",
       "设计域", "skill-creator", "渐进披露", "immersive", "媒介映射", "design pipeline", "设计门禁",
-      "ffi", "pyo3", "v8", "v8-isolate", "isolate", "跨语言"
+      "ffi", "pyo3", "v8", "v8-isolate", "isolate", "跨语言",
+      // ── eval 挖出的缺门词：各元规范常用短形补齐 ──
+      "埋点", "告警", "调用链", "排障", "schema", "向后兼容", "兼容性",
+      "依赖边界", "模块边界", "规范归属", "电影感", "滚动叙事", "叙事页", "沉浸", "哪个域"
     ],
     qualityGateTriggers: [
       "质量门禁", "门禁", "git hooks", "pre-commit", "pre-push", "ci", "ci/cd", "runner",

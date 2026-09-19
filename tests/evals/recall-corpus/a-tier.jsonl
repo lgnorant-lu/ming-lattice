@@ -1,0 +1,50 @@
+{"id":"a-001","query":"我们项目里测试规范相关的包都有哪些，梳理一遍","expect":{"domain":"testing","skills":["testing-core-oracle"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"1.1"}
+{"id":"a-002","query":"盘点下现有测试体系覆盖设计的资源","expect":{"domain":"testing","skills":["testing-core-oracle"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"1.1"}
+{"id":"a-003","query":"新模块先写测试再实现，按规格驱动的方式组织","expect":{"domain":"testing","skills":["testing-core-oracle","testing-workflow-spec"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"1.2"}
+{"id":"a-004","query":"greenfield 模块的 spec 驱动测试流程怎么走","expect":{"domain":"testing","skills":["testing-core-oracle"]},"tier":"A","provenance":"golden-paraphrase","lang":"mixed","of":"1.2"}
+{"id":"a-005","query":"老代码没测试，先把现有行为锁死再动手重构","expect":{"domain":"testing","skills":["testing-core-oracle","testing-workflow-characterize"]},"tier":"A","provenance":"scenario","lang":"zh","of":"1.3"}
+{"id":"a-006","query":"legacy 系统的行为快照测试怎么建立","expect":{"domain":"testing","skills":["testing-core-oracle"]},"tier":"A","provenance":"golden-paraphrase","lang":"mixed","of":"1.3"}
+{"id":"a-007","query":"Rust 里嵌 V8 引擎的隔离边界该测什么","expect":{"skills":["testing-scenario-embed-ffi"]},"tier":"A","provenance":"scenario","lang":"zh","of":"1.4","note":"ffi 裸词走 testing 或 engineering 均为合法路径，断言技能召回即可"}
+{"id":"a-008","query":"node 插件和 python 互调的边界契约怎么测","expect":{"domain":"testing","skills":["testing-core-oracle"]},"tier":"A","provenance":"scenario","lang":"mixed","of":"1.4"}
+{"id":"a-009","query":"爬虫抓回来的数据清洗逻辑怎么离线测","expect":{"domain":"testing","skills":["testing-scenario-scraper"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"1.5"}
+{"id":"a-010","query":"采集管道的 fixture 测试思路给一下","expect":{"domain":"testing","skills":["testing-core-oracle"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"1.5"}
+{"id":"a-011","query":"property-based testing 在这个项目怎么落地","expect":{"domain":"testing","skills":["testing-property-mutation"]},"tier":"A","provenance":"golden-paraphrase","lang":"mixed","of":"1.6"}
+{"id":"a-012","query":"变异测试报告里的杀伤率怎么解读","expect":{"domain":"testing","skills":["testing-core-oracle"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"1.6"}
+{"id":"a-013","query":"微信小程序那个签名参数到底是怎么算的","expect":{"domain":"reverse","skills":["reverse-skill-router"]},"tier":"A","provenance":"scenario","lang":"zh","of":"2.1"}
+{"id":"a-014","query":"frida 挂上进程看 so 里的签名计算","expect":{"domain":"reverse","skills":["reverse-skill-router"]},"tier":"A","provenance":"golden-paraphrase","lang":"mixed","of":"2.1"}
+{"id":"a-015","query":"把这个安卓安装包拆开看看里面的逻辑","expect":{"domain":"reverse","skills":["apk-reverse"]},"tier":"A","provenance":"scenario","lang":"zh","of":"2.2"}
+{"id":"a-016","query":"jadx 打开 apk 后怎么定位签名校验代码","expect":{"domain":"reverse","skills":["apk-reverse"]},"tier":"A","provenance":"golden-paraphrase","lang":"mixed","of":"2.2"}
+{"id":"a-017","query":"这个二进制文件反汇编出来分析一下","expect":{"domain":"reverse","skills":["ida-reverse"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"2.3"}
+{"id":"a-018","query":"利用链怎么构造，栈溢出那块","expect":{"domain":"reverse","skills":["pwn-chain"]},"tier":"A","provenance":"scenario","lang":"zh","of":"2.3"}
+{"id":"a-019","query":"管理后台的整体布局规范该怎么定","expect":{"domain":"ui","skills":["ui-design-paradigms"]},"tier":"A","provenance":"scenario","lang":"zh","of":"3.1"}
+{"id":"a-020","query":"控制台页面的响应式和交互规范帮我梳理","expect":{"domain":"ui","skills":["ui-design-paradigms"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"3.1"}
+{"id":"a-021","query":"组件库配色体系怎么从零搭","expect":{"domain":"ui","skills":["ui-design-paradigms"]},"tier":"A","provenance":"scenario","lang":"zh","of":"3.2"}
+{"id":"a-022","query":"前端 design tokens 体系怎么规划","expect":{"domain":"ui","skills":["ui-design-paradigms"]},"tier":"A","provenance":"golden-paraphrase","lang":"mixed","of":"3.2"}
+{"id":"a-023","query":"给我讲讲 testing-python-idiom 这个包","expect":{"domain":"testing","skills":["testing-python-idiom"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"4.1"}
+{"id":"a-024","query":"testing-rust-idiom 里 miri 怎么用","expect":{"domain":"testing","skills":["testing-rust-idiom"]},"tier":"A","provenance":"golden-paraphrase","lang":"mixed","of":"4.2"}
+{"id":"a-025","query":"ui-design-paradigms 里有哪些界面范式","expect":{"domain":"ui","skills":["ui-design-paradigms"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"4.3"}
+{"id":"a-026","query":"把单元测试和验收自动化这块补齐","expect":{"domain":"testing","skills":["testing-core-oracle"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"5.1"}
+{"id":"a-027","query":"pytest 的覆盖率方案怎么设计","expect":{"domain":"testing","skills":["testing-python-idiom"]},"tier":"A","provenance":"golden-paraphrase","lang":"mixed","of":"5.2"}
+{"id":"a-028","query":"先逆向分析这个目标，顺便把核心函数的测试规范定了","expect":{"skills":["reverse-skill-router","testing-core-oracle"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"6.1"}
+{"id":"a-029","query":"仓库的文档规范化整体怎么做，review 一下","expect":{"domain":"engineering","skills":["docs-core-paradigm"]},"tier":"A","provenance":"golden-paraphrase","lang":"mixed","of":"8.1"}
+{"id":"a-030","query":"README 和整套文档体系帮我梳理规划","expect":{"domain":"engineering","skills":["docs-core-paradigm"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"8.1"}
+{"id":"a-031","query":"对渗透目标做一轮安全审计","expect":{"domain":"reverse","skills":["reverse-skill-router"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"9.1"}
+{"id":"a-032","query":"接口调用链的日志关联和排障怎么规范","expect":{"domain":"engineering","skills":["obs-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-033","query":"服务告警和指标埋点的规范在哪","expect":{"domain":"engineering","skills":["obs-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-034","query":"CI 里怎么防依赖投毒和供应链注入","expect":{"domain":"engineering","skills":["sec-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-035","query":"上游改了字段怎么保证下游不破","expect":{"domain":"engineering","skills":["contract-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-036","query":"接口 schema 演进要向后兼容怎么约束","expect":{"domain":"engineering","skills":["contract-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-037","query":"多环境配置的优先级和归一化怎么设计","expect":{"domain":"engineering","skills":["config-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-038","query":"这个功能性能扛不住时降级方案怎么定","expect":{"domain":"engineering","skills":["overlay-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-039","query":"模块之间的依赖边界应该怎么划","expect":{"domain":"engineering","skills":["arch-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-040","query":"新写的规则应该归到哪个域里去","expect":{"domain":"engineering","skills":["ming-l-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-041","query":"我要新写一个技能包，规范和流程是什么","expect":{"domain":"engineering","skills":["ming-skill-forge"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-042","query":"帮我做个有电影感的滚动叙事产品发布页","expect":{"domain":"engineering","skills":["ming-experience-direction"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-043","query":"发布会级的沉浸式产品页设计方向怎么推演","expect":{"domain":"engineering","skills":["ming-experience-direction"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-044","query":"这轮逆向踩的坑帮我沉淀记录一下","expect":{"skills":["ming-distiller"]},"tier":"A","provenance":"scenario","lang":"zh","note":"复合意图（逆向语境+沉淀动作）：域归属按 find 序可落 reverse，断技能召回即可"}
+{"id":"a-045","query":"点击这个按钮实际会发出哪些请求","expect":{"domain":"protocol","skills":["ui-oracle-protocol"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-046","query":"怎么验证某个参数是哪个操作生成的","expect":{"domain":"protocol","skills":["ui-oracle-protocol"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-047","query":"README 排版和动线怎么改得不那么 AI 味","expect":{"domain":"engineering","skills":["docs-presentation-idiom"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-048","query":"给 rust 项目的边界写 fuzz 测试","expect":{"domain":"testing","skills":["testing-rust-idiom"]},"tier":"A","provenance":"scenario","lang":"mixed"}
+{"id":"a-049","query":"typescript 项目的测试怎么规范起来","expect":{"domain":"testing","skills":["testing-js-idiom"]},"tier":"A","provenance":"scenario","lang":"mixed"}
+{"id":"a-050","query":"命令行工具的退出码和标准输出怎么规范","expect":{"domain":"testing","skills":["testing-scenario-cli"]},"tier":"A","provenance":"scenario","lang":"zh"}

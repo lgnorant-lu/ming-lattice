@@ -63,6 +63,7 @@ export const allSuites = [
   { name: 'hook-planner', tier: 'contract', run: runHookPlannerContract },
   { name: 'route-effects', tier: 'eval', run: runRouteEffects },
   { name: 'skill-recall', tier: 'eval', run: runSkillRecall },
+  { name: 'recall-eval', tier: 'eval', run: () => node('tests/evals/eval-recall.mjs', '--gate') },
   { name: 'route-safety', tier: 'contract', run: () => node('--test', 'tests/contract/test-route-safety.test.mjs') },
   { name: 'hook-index', tier: 'integration', git: true, run: () => node('--test', 'tests/integration/test-hook-index.test.mjs') },
   { name: 'yaml-contract', tier: 'contract', pwsh: true, run: () => execFileSync('pwsh', ['-NoProfile', '-File', 'tests/unit/test-yaml-lite.test.ps1'], { cwd: root, stdio: 'inherit', timeout: 30000 }) },
