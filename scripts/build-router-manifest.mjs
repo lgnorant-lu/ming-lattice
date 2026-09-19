@@ -40,7 +40,10 @@ const DOMAIN_DEFS = {
     ],
     negatives: [
       "脱壳", "反编译", "ida pro", "gdb", "rop", "pwn", "hook_installed", "抓包", "绕过frida",
-      "渗透测试", "安全测试", "pentest"
+      "渗透测试", "安全测试", "pentest",
+      // 物理设备/心理测量类"测试"的歧义否决（c-013/c-014 语料靶点）
+      // 负词为掩码语义——必须盖住"测试"本体才中和，故用"测试+设备"复合词
+      "性格测试", "网速测试", "麦克风测试", "测试麦克风", "测试一下麦克风", "测试一下摄像头", "测试一下网速"
     ],
     defaultRecipe: "spec-driven-greenfield"
   },

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T17:29:25.464Z",
+  "generatedAt": "2026-09-19T17:53:24.851Z",
   "results": {
     "a-001": true,
     "a-002": true,
@@ -66,8 +66,8 @@
     "c-010": true,
     "c-011": true,
     "c-012": true,
-    "c-013": false,
-    "c-014": false,
+    "c-013": true,
+    "c-014": true,
     "c-015": true,
     "c-016": true,
     "c-017": true,
