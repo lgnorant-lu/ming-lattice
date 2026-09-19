@@ -40,9 +40,9 @@ realpath 落不进仓（拷贝分发场景）时走 fallback 链。工作目录�
 
 ## 3. 晋升旁路（显式才走，罕见）
 
-用户明确说"这条进 skill 库/paradigm"时：
+用户明确说"这条进 skill 库/paradigm"，或采纳实证反馈需回传包体（field-feedback）时：
 
-1. 产提案到 `distill/_proposals/<date>-<slug>.md`：目标包、类型（scene 差页 / trigger 词 / 新 paradigm 草案）、证据引用、建议 diff、**明确不采纳项**；
+1. 产提案到 `distill/_proposals/<date>-<slug>.md`：目标包、类型、证据引用、建议 diff、**明确不采纳项**——完整协议（选区键/type 词表/status 生命周期/aging/移送边界）见 [references/proposals.md](references/proposals.md)；
 2. 不直接编辑 `private/engineering/**` 或 `build-router-manifest.mjs`——人审合入后跑 lint + 测试 + `build-router-manifest.mjs --check`；
 3. 项目私有决策留原项目 ADR，只有跨仓库仍成立的方法论才配晋升。
 
