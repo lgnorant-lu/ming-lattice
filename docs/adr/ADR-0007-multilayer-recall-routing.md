@@ -44,8 +44,13 @@
    - 触发复议条件：出现常驻服务路径可摊销冷启动，且离线词表挖掘经 eval 证明显著不足
    - 届时立新 ADR 修正 §31 条款；本 ADR 不推翻先例，在其边界内取零成本增量
 
-5. **验证先于采纳（eval-first gate）**
-   - `tests/evals/` 建双层召回集：回归层（黄金用例 ×2-3 paraphrase ≈ 50-70 条）+ 实战 miss 语料层（真实假阴性入档，随实战增长——如 "做个六边形架构设计" 裸词案例）
+5. **验证先于采纳（eval-first gate）**——三层数据集设计（2026-09-18 二轮调研细化）
+   - **A 回归层**（黄金 paraphrase ≈ 60-80 条）：现有 23 黄金各改 2-3 种说法；生成方法用 CLINC150 双轨——paraphrase 种子 + **场景应答**（"假装你要 X 会怎么说"，产出 paraphrase 得不到的措辞多样性）；synthetic 样本须标 provenance 与真实样本分账
+   - **B miss 语料层**（实战假阴性，随实战增长）：原料即 `route.decided` 事件里的 hint（observability 通道已在）——domain=none/handoff 但本应路由的案例入档，如 "做个六边形架构设计" 裸词案例
+   - **C 负空间层（OOS）**：CLINC150 的 OOS split 设计——**不该路由的查询必须入集**（闲聊/通用编程/边界混淆词），守卫 fail-closed 姿态不被召回优化侵蚀
+   - **标注铁律**（goldset 原则）：**禁用路由器自身输出自动当期望**——未评分日志 bootstrap 不出 gold，会把历史错误烙进基准；每条期望 outcome 人审确认
+   - **覆盖度口径**：按 domain×skill 分类矩阵度量覆盖，不以观察流量自封完备（goldset 第二原则）
+   - **统计诚实**：~100 条规模下单点召回率 CI 宽——eval 作**回归门**（有没有退化）而非精度测量仪；权重调参若发生须留 holdout 防过拟合 eval 集本身
    - S3 上线以 eval 增量为准入门槛；S4 离线产出的词表提案以 eval 验证为准入
 
 ## Consequences
