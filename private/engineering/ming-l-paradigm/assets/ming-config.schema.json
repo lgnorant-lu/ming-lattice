@@ -12,7 +12,8 @@
     "domains":    { "type": "array", "items": { "enum": ["meta","spec","dev","plan","gov","exp","verify","ops","know","req"] }, "uniqueItems": true, "description": "已实例化域集——未列域的矩阵空格检查静默" },
     "gates":      { "enum": ["off", "soft", "hard"], "default": "soft", "description": "门控档：与 tier 正交；hard=CI/pre-commit 接线" },
     "namespaces": { "type": "string", "default": "namespaces.json", "description": "标号登记表路径（相对配置文件）" },
-    "template_v": { "type": "string", "description": "scaffold 模板版本参考位（升级走人工 review，不做自动迁移）" }
+    "template_v": { "type": "string", "description": "scaffold 模板版本参考位（升级走人工 review，不做自动迁移）" },
+    "dynamics_zero": { "type": "array", "items": { "type": "string", "pattern": "^\\S+\\s+\\S+$" }, "description": "域x动词矩阵有意零裁决位——平铺条目 \"<域> <动词>\"；在列格静默，未在列且未标注=I" }
   },
   "additionalProperties": true
 }

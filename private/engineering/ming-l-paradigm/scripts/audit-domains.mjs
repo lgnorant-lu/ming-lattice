@@ -5,7 +5,10 @@
 // 检查面:
 //   1. orphan 规则: docs 下每个 .md 须带 `domain:` frontmatter（口头规则禁令的机器投影，默认 W，--strict 升 E）
 //   2. landed 指针: OPEN-FINDINGS 类文件的 [landed] 标注须指向存在文件
-//   3. 域 x 动词矩阵: `dynamics:` 标注盘点，未标注空格=I 级提示（"有意的零"须显式标注）
+//   3. 域 x 动词矩阵: `dynamics:` 标注盘点（描述性本档执行集），未标注空格=I 级提示；
+//      有意零在 ming.yaml `dynamics_zero:`（"<域> <动词>" 平铺条目）裁决；zero 与实态矛盾=W
+//   3b. 词表补检: dynamics 值词表外=E（与 status/type/binding 同级）；status 缺席=I（ADR 豁免）；
+//      文档域 ∉ ming.yaml domains=W（域实例化须先登记——O4 可插队不可隐身）
 //   4. 双真相: `canonical:` 事实键跨文档重复声明 = E
 //   5. frozen 不可变: `status: frozen` 文档改动拦截（--staged 模式接 git 暂存区）
 //   6. proposed 超期: `status: proposed` + `since:` 超 --proposed-days = W（"省"动力学复审提醒）
@@ -84,6 +87,13 @@ if (mingCfgPath) {
     }
   } catch (e) { add('E', `ming.yaml 解析失败: ${mingCfgPath} — ${e.message}`); }
 }
+// YAML-lite 兼容：行内 `domains: []` 解析为字符串，归一化为数组
+if (mingCfg && typeof mingCfg.domains === 'string') {
+  const s = mingCfg.domains.trim();
+  mingCfg.domains = s.startsWith('[')
+    ? s.slice(1, -1).split(',').map(x => x.trim().replace(/^["']|["']$/g, '')).filter(Boolean)
+    : [s];
+}
 
 if (!fs.existsSync(target)) {
   console.error(`目标目录不存在: ${target}`);
@@ -150,6 +160,17 @@ for (const f of mdFiles) {
     if (fm.status && !STATUSES.has(fm.status)) add('E', `status 词表外: ${fm.status}（合法: ${[...STATUSES].join('/')})`, rel);
     if (fm.type && !TYPES.has(fm.type)) add('E', `type 词表外: ${fm.type}（合法: constitutive/regulative）`, rel);
     if (fm.binding !== undefined && !/^[0-4]$/.test(String(fm.binding))) add('E', `binding 越界: ${fm.binding}（合法: 0-4）`, rel);
+    for (const v of [].concat(fm.dynamics || []))
+      if (!VERBS.includes(v)) add('E', `dynamics 词表外: ${v}（合法: ${VERBS.join('/')})`, rel);
+
+    // 模态缺席提示：规则承载文档应显式标 status——缺省不定性（normative 被静默降格比不报更坏）；
+    // ADR 豁免：生命周期走正文 Status（Proposed/Accepted/Superseded），不进模态词表
+    if (fm.domain && !fm.status && !/(?:^|\/)adr\/\d{4}-[^/]+\.md$/.test(rel))
+      add('I', `status 未声明（模态机不可见——spec-fuzz 无法判定断言权威；ADR 豁免）`, rel);
+
+    // 域登记反向检查：文档域合法但不在 ming.yaml domains = 域被事实实例化而无立法痕迹（O4：可插队不可隐身）
+    if (fm.domain && DOMAINS.has(fm.domain) && mingCfg && Array.isArray(mingCfg.domains) && !mingCfg.domains.includes(fm.domain))
+      add('W', `文档域 ${fm.domain} 未在 ming.yaml domains 登记（域实例化须先登记）`, rel);
 
     // 4. canonical 双真相
     for (const key of fm.canonical || []) {
@@ -338,15 +359,30 @@ if (mingCfg) {
 }
 
 // ---------- 3. 域 x 动词矩阵 ----------
+// dynamics 语义 = 描述性"本档实际执行集"（非域级覆盖声明）；矩阵 = 域内各档执行集并集（观测）
 const matrix = {};
 for (const [dom, docs] of domainDocs) {
   matrix[dom] = new Set();
   for (const { fm } of docs) for (const v of fm.dynamics || []) matrix[dom].add(v);
 }
+// 有意零裁决位：ming.yaml `dynamics_zero:` 平铺列表 "<域> <动词>"——配置层裁决（YAML-lite 只支持列表不嵌套 map）
+const zeroCells = new Set();
+for (const ent of [].concat(mingCfg?.dynamics_zero || [])) {
+  const [zd, zv] = String(ent).trim().split(/\s+/);
+  if (!zd || !zv || !DOMAINS.has(zd) || !VERBS.includes(zv)) {
+    add('W', `dynamics_zero 条目非法: "${ent}"（格式 "<域> <动词>"，域/动词须在词表内）`);
+    continue;
+  }
+  zeroCells.add(`${zd}:${zv}`);
+}
 const allDomains = [...DOMAINS].filter(d => domainDocs.has(d));
 for (const d of allDomains) {
   for (const v of VERBS) {
-    if (!matrix[d].has(v)) add('I', `矩阵空格: ${d} x ${v} 未标注（有意零请在域文档 dynamics: 显式标注或注明豁免）`);
+    if (matrix[d].has(v)) {
+      if (zeroCells.has(`${d}:${v}`)) add('W', `dynamics_zero 矛盾: ${d} x ${v} 已有文档执行却仍声明为零（声明与实态漂移）`);
+    } else if (!zeroCells.has(`${d}:${v}`)) {
+      add('I', `矩阵空格: ${d} x ${v} 未标注（有意零请在 ming.yaml dynamics_zero 声明）`);
+    }
   }
 }
 

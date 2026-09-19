@@ -1,6 +1,6 @@
 {
   "version": "ming.1",
-  "comment": "标号命名空间登记表——标识分配律的机器可读事实源。role=id 的命名空间参与定义位/引用位扫描；role=value 仅为词表（如错误码、版本号、算子 type）。序性: stack=栈位序 semantic=语义序 alloc=分配序 enum=枚举 category+alloc=类别x序号 ns=命名空间 semver=版本。",
+  "comment": "标号命名空间登记表——标识分配律的机器可读事实源。role=id 的命名空间参与定义位/引用位扫描；role=value 仅为词表（如错误码、版本号、算子 type）。序性: stack=栈位序 semantic=语义序 alloc=分配序 enum=枚举 category+alloc=类别x序号 ns=命名空间 semver=版本。domain 字段=发证机关（该命名空间格式的立法域），不约束宿主文档域——异域文档持本域标号合法（域≠目录同律）。",
   "namespaces": [
     { "prefix": "L<N>",          "pattern": "^L\\d+$",              "domain": "spec",   "ordering": "stack",         "role": "id",    "note": "文档层栈位" },
     { "prefix": "L-<word>",      "pattern": "^L-[a-z-]+$",          "domain": "spec",   "ordering": "floating",      "role": "id",    "note": "层栈外附属规约" },

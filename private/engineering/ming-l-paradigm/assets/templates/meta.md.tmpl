@@ -13,6 +13,7 @@ status: normative
 1. **一切规则进文档**：不进口头约定——未被任何域文档记载的规则不成立。
 2. **规则修改走 ADR**：Accepted 文档不改写，变更 = 新 ADR 或 Supersede 标记。
    - *豁免*：不改变语义的编辑性修正（typo/排版/死链修复）不过 ADR。
+   - *frontmatter 约定*：ADR 文件只挂 `domain: meta`——生命周期（Proposed/Accepted/Superseded）走正文 Status 字段，不进模态词表（规则模态与决策态是两套状态机）。
 3. **ADR 流程自身的修改也走 ADR**（自指闭环）。
 
 ## 标号命名空间登记

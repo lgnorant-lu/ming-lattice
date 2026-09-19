@@ -102,9 +102,9 @@ metadata:
 | **增** | Extend | 新内容准入 | 域准入判据、`ming_` 孵化 |
 | **废** | Retire | 日落/降级/撤销 | `deprecated→removed`、域萎缩回节 |
 
-**矩阵纪律**：`域 x 动词` 画矩阵，**每个空格必须是有意的零**——空格即病灶检查器。活体先例全覆盖见 [references/precedents.md](references/precedents.md)（K8s feature gates=增、deprecation policy=废、Rust crater run=省……）。
+**矩阵纪律**：`域 x 动词` 画矩阵，**每个空格必须是有意的零**——空格即病灶检查器。活体先例全覆盖见 [references/precedents.md](references/precedents.md)（K8s feature gates=增、deprecation policy=废、Rust crater run=省……）。机读约定：文档 frontmatter `dynamics` 记**本档实际执行**的动词集（描述性观测，非域级覆盖声明）；域级"有意零"在 `ming.yaml` 的 `dynamics_zero:` 平铺条目（`"<域> <动词>"`）裁决——audit 据此区分已裁决零（静默）与未标空格（I）。
 
-**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点/双真相/frozen 拦截/proposed+provisional 计龄/标号四检（唯一性·悬空引用·格式·登记表互锁）/O1 倒挂/未登记命名空间族启发式/ming.yaml 校验（词表事实源=ming-config.schema.json，`--ming-schema` 覆盖即项目私有扩展通道）/gates 退出轴/`--emit-index` 索引层；**自测套** `audit-domains.test.mjs` 31 fixture 树用例（守门员自洽，\r 末行丢键已固化回归）。域骨架生成见 `scripts/scaffold-domains.mjs`（模板实例化 + namespaces.json/ming.yaml 播种，生成物即过审计；九域+候审档模板齐备），配套 `scaffold-domains.test.mjs` 9 用例（档产物面/幂等/--force/--domains/生成物即审计）。平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。
+**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点（dynamics_zero 裁决位+矛盾漂移查）/双真相/frozen 拦截/proposed+provisional 计龄/标号四检（唯一性·悬空引用·格式·登记表互锁）/O1 倒挂/未登记命名空间族启发式/frontmatter 词表补检（dynamics 值+status 缺席提示+文档域反向登记）/ming.yaml 校验（词表事实源=ming-config.schema.json，`--ming-schema` 覆盖即项目私有扩展通道）/gates 退出轴/`--emit-index` 索引层；**自测套** `audit-domains.test.mjs` 38 fixture 树用例（守门员自洽，\r 末行丢键已固化回归）。域骨架生成见 `scripts/scaffold-domains.mjs`（模板实例化 + namespaces.json/ming.yaml 播种，生成物即过审计；九域+候审档模板齐备），配套 `scaffold-domains.test.mjs` 9 用例（档产物面/幂等/--force/--domains/生成物即审计）。平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。
 
 ## 6. 规则属性系统（Rule Attribute Systems）
 
@@ -141,6 +141,8 @@ proposed --promote--> normative --relax--> descriptive
 
 - **模态决定测试种类**：normative→spec 测试（断言应然）；descriptive→characterization（锁定实然）；proposed→契约草案验证；frozen→无测试（纯史）；
 - `proposed` 即 `ming_` 孵化字段与候审档条目的正式态名；
+- **ADR 例外**：决策记录 frontmatter 只挂 `domain: meta`——生命周期（Proposed/Accepted/Superseded）走正文 Status 字段，不进本模态词表（规则模态与决策态是两套状态机，混挂会造成 status 缺席误报与语义混淆）；
+- **status 缺席**：规则承载文档应显式标模态，缺席=I 级提示且**不设默认值**——缺省视为 descriptive 会把 normative 文档静默降格，比不报更坏；
 - 对应道义逻辑 normative/assertoric 区分（Hume is-ought：从实然推导应然是非法推理——"基线当真理"型 bug 的哲学原型）。
 
 ### 6.3 作用域代数（scope）——谓词合取 + 单调加强
@@ -187,7 +189,7 @@ proposed --promote--> normative --relax--> descriptive
 
 **机械执行面**：`audit-domains.mjs` §7 四查——**唯一性**（同 ID 多定义位 = E）、**悬空引用**（正文标号无定义位 = W；候审档与 descriptive/frozen 史档豁免——冻结史旧名非悬空）、**格式合规**（W）、**登记表互锁**（meta 表与 namespaces.json 漂移 = E）。
 
-**登记表外置（高度自定义化）**：命名空间声明是**数据不是脚本**——`namespaces.json`（prefix/pattern/domain/ordering/role/note）按项目私有，`role=id` 参与定义/引用扫描、`role=value` 仅为词表。audit-domains 三级回退：`--labels <json>` > `<target>/namespaces.json` > `assets/namespaces.default.json` 内置种子；`scaffold-domains.mjs` 播种项目副本，立即可裁剪扩展。
+**登记表外置（高度自定义化）**：命名空间声明是**数据不是脚本**——`namespaces.json`（prefix/pattern/domain/ordering/role/note）按项目私有，`role=id` 参与定义/引用扫描、`role=value` 仅为词表。其中 `domain` 字段 = **发证机关**（该命名空间格式的立法域），**不约束宿主文档域**——verify 域文档持 spec 发放的 `L*` 标号合法（域≠目录同律）。audit-domains 三级回退：`--labels <json>` > `<target>/namespaces.json` > `assets/namespaces.default.json` 内置种子；`scaffold-domains.mjs` 播种项目副本，立即可裁剪扩展。
 
 **分配器裁决**：单作者低并发 → 人工分配 + 机器查重足够（PEP/RFC 编辑分配先例）；并发发号（多分支/多 Agent）才建取号器——adr-tools issue#102 是已录实坑，counter lockfile 可以合并冲突为检测器。**文件系统本身即已发号簿**（`adr/NNNN-*.md` 文件名=号码簿）；`namespaces.json` 登记的是**命名空间声明**（格式 schema），与号码簿不同位面，不构成双真相。
 

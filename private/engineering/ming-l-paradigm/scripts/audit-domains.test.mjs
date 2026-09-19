@@ -281,6 +281,67 @@ const CASES = [
     args: ['--ming-schema', '{dir}/my.schema.json'],
     expect: { msg: ['tier 词表外'] },
   },
+  {
+    name: 'dynamics 词表外=E',
+    files: {
+      'X.md': fm({ domain: 'spec', status: 'normative', dynamics: '[立, bogus]' }) + '# X\n',
+      'namespaces.json': NS_MIN,
+    },
+    expect: { E: 1, msg: ['dynamics 词表外'] },
+  },
+  {
+    name: 'dynamics_zero 消格（有意零裁决位）',
+    files: {
+      'ming.yaml': 'project: x\ntier: standard\ndomains:\n  - plan\ndynamics_zero:\n  - plan 守\n  - plan 增\n  - plan 废\n',
+      'PLAN.md': fm({ domain: 'plan', status: 'normative', dynamics: '[立, 用, 省, 改]' }) + '# PLAN\n',
+      'namespaces.json': NS_MIN,
+    },
+    expect: { E: 0, W: 0, noMsg: ['plan x 守', 'plan x 增', 'plan x 废', '矩阵空格'] },
+  },
+  {
+    name: 'dynamics_zero 矛盾=W（已执行仍声明零）',
+    files: {
+      'ming.yaml': 'project: x\ndomains:\n  - plan\ndynamics_zero:\n  - plan 立\n',
+      'PLAN.md': fm({ domain: 'plan', status: 'normative', dynamics: '[立]' }) + '# PLAN\n',
+      'namespaces.json': NS_MIN,
+    },
+    expect: { msg: ['dynamics_zero 矛盾'] },
+  },
+  {
+    name: 'dynamics_zero 条目非法=W',
+    files: {
+      'ming.yaml': 'project: x\ndomains:\n  - plan\ndynamics_zero:\n  - plan 错\n',
+      'PLAN.md': fm({ domain: 'plan', status: 'normative' }) + '# PLAN\n',
+      'namespaces.json': NS_MIN,
+    },
+    expect: { msg: ['dynamics_zero 条目非法'] },
+  },
+  {
+    name: '文档域未在 ming.yaml 登记=W',
+    files: {
+      'ming.yaml': 'project: x\ndomains:\n  - meta\n',
+      'META.md': fm({ domain: 'meta', status: 'normative' }) + '# META\n',
+      'P.md': fm({ domain: 'plan', status: 'normative' }) + '# P\n',
+      'namespaces.json': NS_MIN,
+    },
+    expect: { msg: ['未在 ming.yaml'] },
+  },
+  {
+    name: 'status 未声明=I（ADR 不豁免同行）',
+    files: {
+      'X.md': fm({ domain: 'spec' }) + '# X\n',
+      'namespaces.json': NS_MIN,
+    },
+    expect: { msg: ['status 未声明'] },
+  },
+  {
+    name: 'ADR 缺 status 豁免',
+    files: {
+      'adr/0001-foo.md': fm({ domain: 'meta' }) + '# ADR\n',
+      'namespaces.json': NS_MIN,
+    },
+    expect: { E: 0, noMsg: ['status 未声明'] },
+  },
 ];
 
 // emit-index 单独验证（产物文件断言）
