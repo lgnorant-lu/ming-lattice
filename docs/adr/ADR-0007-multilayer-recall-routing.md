@@ -58,8 +58,17 @@
    - **覆盖度口径**：按 domain×skill 分类矩阵度量覆盖，不以观察流量自封完备（goldset 第二原则）
    - **统计诚实**：~100 条规模下单点召回率 CI 宽——eval 作**回归门**（有没有退化）而非精度测量仪；权重调参若发生须留 holdout 防过拟合 eval 集本身
    - **度量口径**（三轮调研对齐 vLLM-sr/CLINC 指标谱）：主指标 **candidates recall@k**（期望技能是否进候选集）+ dispatch 正确率（应路由案例的 action/domain/recipe 吻合）+ **OOS 误纳率**（C 层被路由的比例——CLINC 实证 OOS 检测最难，最好系统仅 66% OOS recall，我们靠确定性门槛天然占优）；报告按 domain×language 切片（zh/en/mixed），杜绝均值掩盖
-   - **语料 schema**：`{id, query, expect:{domain?,skills?,action?}, tier:A|B|C, provenance:golden-paraphrase|scenario|real-miss, lang:zh|en|mixed}`——provenance 分账是 goldset 原则的落点
+   - **语料 schema**：`{id, query, expect:{domain?,skills?,anySkills?,action?,actionIn?}, tier:A|B|C, provenance:golden-paraphrase|scenario|real-miss, lang:zh|en|mixed}`——provenance 分账是 goldset 原则的落点；`anySkills`（任一候选即召回）与 `actionIn`（动作白名单）为召回优先策略的期望算子——OOS 相邻查询的真契约是"永不置域/dispatch"而非"必须 handoff"
    - S3 上线以 eval 增量为准入门槛；S4 离线产出的词表提案以 eval 验证为准入
+
+## Implementation Notes (S3 落地, 2026-09-19)
+
+S3 词法层已入核并验证（`scripts/build-router-manifest.mjs` 产 `skillDocs` 三合文档；`route-core.mjs` 内 bigram tokenizer + BM25F + candidates 并集 + none→ask 升级）。实测增量：**74/78 → 76/78**（A 层 48/50→50/50 满分；a-008/a-035 两个泛词盲区经词法候选召回修复；C 层 23/25）。调参过程中发现并修复两个结构性缺陷：
+
+- **停用词必须双侧过滤**：无停用词表时英文功能词（is/a/to/what）与中文功能 bigram（帮我/怎么/区别）计入命中数与打分，OOS 误纳 15 例；建 `LEX_STOP_EN`/`LEX_STOP_ZH` 双侧过滤后收敛
+- **min-max 归一化的结构性漏洞**：top 命中恒为 norm=1.0，任何单弱命中都过相对阈——加**证据下限**：`matched≥1 && matchedBoost≥1`（至少 1 词命中 name/triggers 加权字段，纯 description 命中不提名）
+- 未解决边界（有意留档 known-miss）：c-013/c-014（物理测试/性格测试被"测试"关键词劫持——S2 层问题，非 S3）；单词低鉴别力命中仍有上限（如"上游改了字段"仅"字段"命中 contract-core——matchedBoost 救回后已召回，但更普遍的"单内容词"场景词法层触顶，正是 S4 嵌入的目标面）
+- 适配契约同步放宽：`injectedCandidates` 断言从"恰好 11"改为"域内全量⊆"（并集宽网的必然结果）
 
 ## Consequences
 

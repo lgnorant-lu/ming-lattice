@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-19T17:18:46.197Z",
+  "generatedAt": "2026-09-19T17:22:48.522Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -730,5 +730,352 @@
     "ui-design-paradigms": "ready",
     "ui-oracle-protocol": "ready",
     "xfqtrace-kit": "ready"
+  },
+  "skillDocs": {
+    "antibot-fingerprint-paradigm": {
+      "name": "antibot-fingerprint-paradigm",
+      "description": "反爬指纹对抗的分层知识库与组件选型元规则（TLS JA3/JA4、Akamai h2、TCP/IP、JS 环境一致性、谎言检测、判定引擎形态）。当任务涉及指纹对抗、风控识别、协议层伪装、HTTP 客户端选型（curl_cffi/utls/tls-client/wreq）、浏览器指纹一致性、webdriver/CDP 痕迹清理、挑战协议（DDoS-Guard/Cloudflare/DataDome/Akamai/Kasada/Imperva）时使用。触发词：指纹、JA3、JA4、风控、反爬、指纹浏览器、canvas指纹、webgl指纹、webdriver检测、TLS指纹、headless检测、bot detection、fingerprint spoofing。",
+      "triggers": []
+    },
+    "apk-reverse": {
+      "name": "apk-reverse",
+      "description": "在 CLI 环境下做 Android APK 逆向时使用。适用于 APK 解包、Java 反编译、smali 修改、重打包、Frida 动态 Hook，以及按需切换到 so/native 分析。优先使用本机已安装的 jadx、apktool、frida、adb、ida-reverse、radare2。",
+      "triggers": []
+    },
+    "arch-core-paradigm": {
+      "name": "arch-core-paradigm",
+      "description": "跨场景架构边界元规则——六边形架构（Ports & Adapters）的最小形态：内核/端口/适配器/依赖倒置/组装根六概念，适用边界判定，与 DDD/Clean/Onion 的关系，端口作为 FFI/语言迁移接缝。当讨论架构边界、模块解耦、外部系统适配、语言迁移预备、插件化 vs 端口化抉择时使用。触发词：六边形架构、hexagonal、ports and adapters、端口适配器、依赖倒置、clean architecture、洋葱架构、架构边界、FFI 边界、strangler fig、内核解耦。",
+      "triggers": [
+        "六边形架构",
+        "hexagonal",
+        "ports and adapters",
+        "端口适配器",
+        "依赖倒置",
+        "clean architecture",
+        "洋葱架构",
+        "架构边界",
+        "ffi边界",
+        "strangler"
+      ]
+    },
+    "binary-diff": {
+      "name": "binary-diff",
+      "description": "跨版本符号迁移与二进制差分。当你有旧版本的符号/逆向结果，需要快速迁移到新版本时使用。\n  适用场景：内核缺 PDB 用旧版符号推导、程序更新后批量迁移函数名、应用更新后快速定位新偏移。\n  核心方法：用 LLM 做结构化差异比对，程序化输入输出，成本极低（200 函数 ~1 元）。\n  触发关键词：符号迁移、bindiff、跨版本、PDB 缺失、函数偏移迁移、symbol migration、binary diff、版本对比。",
+      "triggers": []
+    },
+    "config-core-paradigm": {
+      "name": "config-core-paradigm",
+      "description": "Cross-scene configuration meta-rules: schema-first, binding projection, composition over precedence, ten-axis model, feature-flag lifecycle, complexity-clock restraint. Use when designing env vars, config files, user prefs, feature flags, i18n, or precedence rules. Triggers: config, env vars, feature flag, i18n, 配置, 环境变量, 特性开关. Not for payload evolution (see contract-core-paradigm).",
+      "triggers": [
+        "配置",
+        "配置归一化",
+        "环境变量",
+        "env vars",
+        "特性开关",
+        "feature flag",
+        "i18n",
+        "config",
+        "precedence"
+      ]
+    },
+    "contract-core-paradigm": {
+      "name": "contract-core-paradigm",
+      "description": "Cross-scene data-contract meta-rules for additive schema evolution, semantic compatibility, and a single source of truth shared with tests and docs. Use when changing JSON schemas, testdata, API payloads, flags, exit codes, or cross-language fixtures. Triggers include schema-evolution, backwards-compatibility, tolerant-reader, data-contract, protobuf-compat, 数据契约, 字段演进, schemaVersion.",
+      "triggers": [
+        "数据契约",
+        "字段演进",
+        "schema-evolution",
+        "schemaVersion",
+        "tolerant-reader",
+        "data-contract"
+      ]
+    },
+    "docs-core-paradigm": {
+      "name": "docs-core-paradigm",
+      "description": "Cross-scene documentation meta-rules using Diataxis four quadrants, Nygard ADRs, and a single source of truth for reference. Use when writing, splitting, or reviewing docs, READMEs, ADRs, schemas-as-docs, CLI help, pipeline field dictionaries, or FFI ABI notes. Triggers include documentation, diataxis, ADR, docs-as-code, how-to, reference-docs, explanation, tutorial, 文档体裁, 架构决策记录.",
+      "triggers": [
+        "文档",
+        "diataxis",
+        "adr",
+        "docs-as-code"
+      ]
+    },
+    "docs-presentation-idiom": {
+      "name": "docs-presentation-idiom",
+      "description": "Cross-scene GitHub Markdown presentation and typography rules. Eliminates AI aesthetic fatigue, emoji soup, and marketing fluff. Enforces block-type visual flow, symbol budgets, CJK-Latin spacing, persona diversion, and volume limits (<= 200 lines for root README). Use when reviewing, writing, or refactoring GitHub READMEs, docs, or release notes. 触发词：文档排版、README 美化、去疲劳、动线、中英混排、release notes。",
+      "triggers": [
+        "排版",
+        "readme",
+        "动线"
+      ]
+    },
+    "dotnet-reverse": {
+      "name": "dotnet-reverse",
+      "description": ".NET / C# 二进制逆向。当目标是 .NET assembly（PE 头含 CLR、.exe/.dll 托管程序）、C# 编译产物（含 NativeAOT）、红队 Sharp* 工具（Rubeus / SharpHound / SharpHound 等）、.NET 混淆程序（ConfuserEx / SmartAssembly / Babel / Eazfuscator）、.NET loader / info-stealer / 套壳 malware 时使用。优先用 dnSpyEx + de4dot，需要 AI 直接操作时联动 dnSpy MCP。不用于纯 native 二进制（走 reverse-engineering / ida-reverse）。",
+      "triggers": []
+    },
+    "firmware-pentest": {
+      "name": "firmware-pentest",
+      "description": "固件 / IoT 渗透链。从拿到一坨 .bin / .img 开始，闭环走完逆向 → 提取 → 模拟 → 利用。\n  方法论遵循 OWASP FSTM 九阶段；工具链以 binwalk v3、unblob、EMBA、Firmadyne、AFL++ 为主。\n  适用场景：路由器/摄像头/智能家居固件审计、固件升级包逆向、IoT CVE 复现、嵌入式 0day 挖掘。\n  触发关键词：固件、firmware、IoT、binwalk、unblob、UART、JTAG、squashfs、UBI、JFFS2、Firmadyne、QEMU 全系统仿真、EMBA、固件渗透、路由器固件、嵌入式漏洞利用、bootloader、NVRAM、FAT、firmware analysis toolkit。",
+      "triggers": []
+    },
+    "ghidra-reverse": {
+      "name": "ghidra-reverse",
+      "description": "Use for free/open reverse engineering with Ghidra (headless or GUI), including decompile, cross-refs, and optional Ghidra MCP workflows when IDA is unavailable.",
+      "triggers": []
+    },
+    "go-rust-reverse": {
+      "name": "go-rust-reverse",
+      "description": "Use for reverse engineering stripped Go and Rust binaries including runtime recognition, pclntab/moduel data recovery, panic strings, and idiomatic decompilation recovery.",
+      "triggers": []
+    },
+    "ida-reverse": {
+      "name": "ida-reverse",
+      "description": "IDA Pro 逆向分析辅助技能。当用户提到逆向、反编译、分析二进制/PE/ELF/APK/DLL/SO、破解、找密码、漏洞分析、病毒分析、firmware 固件分析，或需要分析 exe/dll/so/elf/macho/sys 等文件时，务必使用此技能。",
+      "triggers": []
+    },
+    "js-reverse": {
+      "name": "js-reverse",
+      "description": "在使用 js-reverse-mcp 做前端 JavaScript 逆向时使用，适用于签名链路定位、页面观察取证、运行时采样、本地补环境复现与证据化输出。优先适配当前环境里的 js-reverse_* 工具，需要更强的浏览器/CDP/Hook 面时联动 jshookmcp。",
+      "triggers": []
+    },
+    "macos-reverse": {
+      "name": "macos-reverse",
+      "description": "Use for authorized macOS and Mach-O reverse engineering including codesign, Objective-C/Swift recovery, endpoint security surfaces, and Apple platform malware analysis.",
+      "triggers": []
+    },
+    "malware-analysis": {
+      "name": "malware-analysis",
+      "description": "Use when analyzing suspected malware through static, dynamic, and behavioral techniques, including IOC extraction, YARA or Sigma rules, sandboxing, and anti-analysis behavior.",
+      "triggers": []
+    },
+    "ming-distiller": {
+      "name": "ming-distiller",
+      "description": "项目级经验沉淀与沉淀检索双模态入口（ming-skills 中枢）。阶段性设计/逆向/测试/调参工作收尾时，把本轮决策、踩坑与判据蒸馏为带机读索引的项目复盘条目（distill/ 库）；或先查索引检索既有沉淀，命中再懒加载正文，不足走外部调研。触发词：沉淀、复盘、蒸馏、distill、记录经验、项目复盘、retrospective、查沉淀、之前踩过。不适用：直接改写 paradigm/router 源文件（晋升走显式 staging）、单次任务流水账。",
+      "triggers": [
+        "沉淀",
+        "蒸馏",
+        "distill",
+        "复盘",
+        "retrospective",
+        "经验回收",
+        "查沉淀",
+        "项目复盘"
+      ]
+    },
+    "ming-experience-direction": {
+      "name": "ming-experience-direction",
+      "description": "体验导演式设计流水线元规则——从模糊 brief 到可建 spec 的文档阶梯方法：宪法约束源、叙事主干（故事弧>界面孤件）、分层语法脉冲（空间/动效/视觉/资产/场景/技术映射）、备选案不混合制、OQ 台账状态机、决策门禁过审仪式、媒介映射预算。当为产品演示站/作品集/发布会级体验页做设计方向、叙事结构、逐层语法或技术选型推演时使用。触发词：体验导演、叙事设计、scrollytelling、产品体验设计、设计宪法、design pipeline、电影感网页、immersive experience、storyboard、设计门禁、媒介映射。不适用：常规 UI 范式选型（走 ui-design-paradigms）、纯工程实现。",
+      "triggers": [
+        "体验导演",
+        "叙事设计",
+        "产品体验设计",
+        "scrollytelling",
+        "电影感网页",
+        "沉浸式体验",
+        "immersive",
+        "设计宪法",
+        "storyboard",
+        "设计门禁",
+        "媒介映射",
+        "design pipeline"
+      ]
+    },
+    "ming-l-paradigm": {
+      "name": "ming-l-paradigm",
+      "description": "项目结构域分层元规则——Ming-L-* 九域全景（Meta立法/Spec协议/Dev开发/Plan规划/Gov治理/Exp实验/Verify验证/Ops运行/Know知识）x 七动力学（立用守省改增废）+ 规则属性系统 + 标识分配律 + 序律（推进顺序/生命周期序）+ 采纳档（minimal/standard/full 分层采纳 + 域脚手架/命名空间登记），域粒度分级，域间契约闭环，\"新规则进哪个域\"判定表，候审档机制。当项目立项搭规范体系、文档域规划、里程碑排序、判断规则归属、审查规范是否过度设计时使用。触发词：项目分层、规范体系、治理文档、开发规范、设计域、domain layers、Ming-L、规范草案、候审档、脚手架、里程碑。",
+      "triggers": [
+        "项目分层",
+        "规范体系",
+        "治理文档",
+        "候审档",
+        "ming-l",
+        "domain",
+        "设计域"
+      ]
+    },
+    "ming-skill-forge": {
+      "name": "ming-skill-forge",
+      "description": "技能包创作与修订元规则——SKILL.md 解剖（frontmatter 契约、渐进披露三级预算、description 触发面工艺）、registry.yaml 登记、路由接线（DOMAIN_DEFS + skillTriggers）、references/scripts/assets 分工、硬门控 check-skill.mjs。当新建技能包、修订/调优现有 skill、诊断路由不触发、审查技能规范性时使用，即使用户没有明说\"写个 skill\"。触发词：新技能、写技能、skill包、skill-creator、skill authoring、frontmatter、渐进披露、progressive disclosure、技能规范、forge。",
+      "triggers": [
+        "新技能",
+        "写技能",
+        "技能包",
+        "skill包",
+        "skill authoring",
+        "skill-creator",
+        "frontmatter",
+        "渐进披露"
+      ]
+    },
+    "mobile-reverse": {
+      "name": "mobile-reverse",
+      "description": "Use for authorized Android or iOS application reverse engineering and security testing, including APK or IPA analysis, runtime instrumentation, SSL pinning, and platform protection checks.",
+      "triggers": []
+    },
+    "obs-core-paradigm": {
+      "name": "obs-core-paradigm",
+      "description": "Cross-scene observability meta-rules for wide structured events, correlation IDs, and telemetry that is queryable without joining prose logs. Use when adding logging, tracing, metrics, audit journals, CLI machine events, or pipeline batch telemetry. Triggers include observability, structured logging, wide events, correlation-id, OpenTelemetry, telemetry, 可观测, 结构化日志, 宽事件.",
+      "triggers": [
+        "日志",
+        "可观测",
+        "observability",
+        "logging",
+        "telemetry",
+        "宽事件",
+        "相关id"
+      ]
+    },
+    "overlay-core-paradigm": {
+      "name": "overlay-core-paradigm",
+      "description": "Cross-scene quality overlays for performance, privacy, resilience, cost/context, portability, and accessibility. Use when a feature is correct but slow, leaky, brittle, expensive to load, or unusable across OS/harness. Triggers include performance-overlay, privacy, resilience, idempotence, context-economy, portability, accessibility, 性能横切, 隐私, 韧性, 上下文成本, 可移植.",
+      "triggers": [
+        "性能",
+        "performance",
+        "隐私",
+        "privacy",
+        "韧性",
+        "可移植",
+        "上下文成本",
+        "overlay"
+      ]
+    },
+    "patch-diff-exploit": {
+      "name": "patch-diff-exploit",
+      "description": "N-day 补丁差分到利用。从厂商发布的补丁里反推漏洞点、写 PoC、做成可用的攻击模块。\n  适用场景：已知 CVE 编号但只有补丁没有 PoC、SRC/红队需要打击未及时更新的资产、N-day 武器化、Patch Tuesday 跟进。\n  核心方法：拿 before/after 二进制 → 对齐符号 → 二进制 diff → 看新增的安全检查反推 bug class → 写 PoC 触发漏洞。\n  触发关键词：N-day、Nday、补丁差分、patch diff、patch tuesday、1day、binary diff 漏洞、bindiff 利用、ghidriff、Diaphora、补丁分析、CVE 复现、漏洞还原、补丁反推、N-day 武器化。",
+      "triggers": []
+    },
+    "protocol-reverse": {
+      "name": "protocol-reverse",
+      "description": "Use for authorized reverse engineering of custom binary protocols, Protobuf/gRPC, WebSocket frames, and PCAP-driven protocol recovery.",
+      "triggers": []
+    },
+    "pwn-chain": {
+      "name": "pwn-chain",
+      "description": "从逆向走到可用利用 (Working Exploit) 的全链路工程化方法。\n  适用场景：拿到了二进制 + 漏洞点 + 目标环境，需要写出一个能稳定打通的 exploit（不是只能本地复现一下、远程一打就崩的脚本）。\n  覆盖三大方向：栈溢出 / 堆利用 / 内核 pwn。强调\"CTF 本地通 → 真实远程稳定打通\"的工程差距：libc 版本错配、堆喷射时序、SMEP/SMAP/KASLR、栈对齐、远程缓冲。\n  核心工具链：pwntools + GEF/pwndbg + ROPgadget/Ropper + one_gadget + libc-database + qemu-system 内核调试。\n  触发关键词：pwn、栈溢出、堆溢出、ROP、ret2libc、ret2csu、one_gadget、libc-database、堆利用、tcache、fastbin、unsorted bin、kernel pwn、kROP、SMEP、SMAP、KASLR、modprobe_path、pwntools、GEF、pwndbg。",
+      "triggers": []
+    },
+    "radare2": {
+      "name": "radare2",
+      "description": "Use this skill whenever the user wants to analyze binaries with radare2/r2 from the command line, including reverse engineering, disassembly, function analysis, strings/import inspection, patching, binary diffing, hex inspection, or r2 scripting. Also use it when the user mentions PE/ELF/Mach-O/DEX/WASM files together with CLI analysis, `rabin2`, `rasm2`, `radiff2`, `r2pipe`, or asks for radare2 command help on Windows/Linux/macOS.",
+      "triggers": []
+    },
+    "reverse-engineering": {
+      "name": "reverse-engineering",
+      "description": "Provides reverse engineering techniques. Use when the main job is to understand how a compiled, obfuscated, packed, or virtualized target works before exploiting or solving it, including binaries, APKs, WASM, firmware, custom VMs, bytecode, malware-like loaders, and anti-debug or anti-analysis logic. Do not use it when the vulnerability is already understood and the remaining task is exploitation; use pwn instead. Do not use it for pure web workflows, log or disk forensics, or standalone crypto problems unless reversing the implementation is the real blocker.",
+      "triggers": []
+    },
+    "reverse-skill-router": {
+      "name": "reverse-skill-router",
+      "description": "Routes reverse engineering, exploitation, penetration testing, malware, mobile, firmware, and binary analysis tasks. (Do NOT use for unit testing, coverage design, pytest, TDD, benchmarking, or application logic - use testing-core-oracle instead).",
+      "triggers": []
+    },
+    "sec-core-paradigm": {
+      "name": "sec-core-paradigm",
+      "description": "Cross-scene security meta-rules for untrusted input, least privilege, credential hygiene, and agent-skill supply chain. Use when reviewing authz, path traversal, injection, skill install trust, registry pinning, or sandbox side effects. Triggers include application-security, OWASP, ASVS, AST10, agentic-skills, supply-chain, 安全, 最小权限, 供应链, 不可信输入.",
+      "triggers": [
+        "安全",
+        "security",
+        "供应链",
+        "supply-chain",
+        "最小权限",
+        "ast10"
+      ]
+    },
+    "testing-core-oracle": {
+      "name": "testing-core-oracle",
+      "description": "测试元规则与判定中枢（Core Testing Oracle & Meta-Rules）：定义独立 Oracle 判定律、Agile 测试四象限、FIRST 原则、Goodhart 覆盖率禁令、同义反复与实现绑定防范、质量属性（安全/性能/可观测性）横切规范，以及多包加载时的组合协议（Composition Protocol）。触发词：test-strategy, testing-philosophy, oracle, test-review, test-quality, code-testing, verification-strategy.",
+      "triggers": []
+    },
+    "testing-go-idiom": {
+      "name": "testing-go-idiom",
+      "description": "Go 地道测试机制规范（Testing Go Idiomatic）：定义 Go 表驱动测试（Table-Driven Tests）、t.Run 子测试、wantErr 模式、testdata 隔离、原生 Fuzzing 以及 errors.Is/As 错误契约断言。触发词：go-test, golang-testing, table-driven-tests, go-fuzz, go-testdata.",
+      "triggers": []
+    },
+    "testing-js-idiom": {
+      "name": "testing-js-idiom",
+      "description": "JavaScript 与 TypeScript 地道测试机制规范（Testing JS/TS Idiomatic）：定义 Node 与浏览器宿主环境隔离、异步与事件循环契约断言、避免全局原型链污染、精确断言与拒绝全量源码文本快照的反模式防护。触发词：js-test, ts-test, vitest, jest, node-testing, async-testing.",
+      "triggers": [
+        "javascript",
+        "typescript",
+        "node.js",
+        "event loop",
+        "页面事件"
+      ]
+    },
+    "testing-property-mutation": {
+      "name": "testing-property-mutation",
+      "description": "基于性质与变异测试规范（Testing Property & Mutation）：超越手写固定用例，利用形式化不变量（对称性、幂等性、单调性、守恒性）生成海量随机输入验证系统边界；利用代码变异分析（cargo-mutants、mutmut、stryker）审计测试套件的真正缺陷杀伤力与存活变异体。触发词：property-testing, mutation-testing, hypothesis, proptest, cargo-mutants, invariants-testing.",
+      "triggers": []
+    },
+    "testing-python-idiom": {
+      "name": "testing-python-idiom",
+      "description": "Python 地道测试机制规范（Testing Python Idiomatic）：定义 pytest Fixture 作用域分层（session/module/function）与依赖注入、parametrize 表驱动测试、pytest.raises 严格异常契约断言、避免滥用 monkeypatch 刺探私有状态，以及基于协议的轻量适配器模式。触发词：python-test, pytest, pytest-patterns, python-fixtures, parametrize-test, hypothesis-python.",
+      "triggers": [
+        "python",
+        "pytest",
+        "pyo3",
+        "hypothesis"
+      ]
+    },
+    "testing-rust-idiom": {
+      "name": "testing-rust-idiom",
+      "description": "Rust 地道测试机制规范（Testing Rust Idiomatic）：定义 cfg(test) 单元测试与 tests/ 黑盒集成测试边界、利用强类型系统与所有权消除无效断言、Result 与 should_panic 断言范式、Miri 未定义行为检测（仅限纯 Rust 层）以及 cargo-fuzz 入口。触发词：rust-test, cargo-test, proptest-rust, miri-test, rstest, idiomatic-rust-testing.",
+      "triggers": [
+        "rust",
+        "rustc",
+        "cargo",
+        "miri",
+        "proptest"
+      ]
+    },
+    "testing-scenario-cli": {
+      "name": "testing-scenario-cli",
+      "description": "命令行与脚本工具场景测试规范（Testing Scenario CLI & Tools）：将 CLI/脚本/转换器视为具有强契约的独立产品。定义参数矩阵、退出码契约、标准输入输出断言、Golden 文件比对、可注入文件系统/环境隔离，以及幂等性与半成品写入防范。触发词：cli-test, command-line-testing, exit-codes, golden-files, tool-testing, script-testing.",
+      "triggers": []
+    },
+    "testing-scenario-embed-ffi": {
+      "name": "testing-scenario-embed-ffi",
+      "description": "嵌入式与跨语言 FFI 场景测试规范（Testing Scenario Embed & FFI）：针对 Rust 内核、V8 引擎嵌入、JS 行为补丁以及 PyO3 胶水层的复杂边界场景。定义跨三端共享的单一真相测试数据集契约（Shared Testdata，显式标注 kind: spec | characterize）、分层精力预算启发式，并通过分册提供针对 v8-isolate、js-patch 和 pyo3 的具体失败模式与测试约束。触发词：v8-test, pyo3-test, js-patch-test, ffi-test, isolate-testing, embed-test.",
+      "triggers": [
+        "v8",
+        "v8-isolate",
+        "pyo3",
+        "ffi",
+        "跨语言",
+        "嵌入",
+        "isolate"
+      ]
+    },
+    "testing-scenario-scraper": {
+      "name": "testing-scenario-scraper",
+      "description": "采集爬虫与数据清洗管道场景测试规范（Testing Scenario Scraper & Pipelines）：严格区分「本地解析逻辑错误」与「外部源站页面改版」。定义离线 Fixture 解析优先原则、字段结构契约（必填项、单调性、价格范围）、选择器健康度监控、模拟重试限流退避，以及将活网连通性作为非阻塞探针的约束。触发词：scraper-testing, crawler-test, pipeline-testing, selector-health, fixture-parsing, data-cleaning-test.",
+      "triggers": []
+    },
+    "testing-workflow-characterize": {
+      "name": "testing-workflow-characterize",
+      "description": "表征测试与黄金样例工作流（Testing Workflow Characterization & Golden Master）：专用于棕场开发、遗留代码重构、JS 行为补丁迭代与跨语言重写。定义先抓取系统当前运行现状作为安全防护网（kind: characterize）、精确控制 Golden 边界、在防护网下重构并进行差异审计的标准工作流。触发词：characterization-test, golden-master, regression-lock, legacy-refactor, brownfield-testing.",
+      "triggers": []
+    },
+    "testing-workflow-spec": {
+      "name": "testing-workflow-spec",
+      "description": "规格驱动开发工作流（Testing Workflow Spec-Driven & BDD）：适用于绿场开发、含糊需求与新接口契约设计。定义从业务意图提炼可判定行为清单（Given/When/Then）、先写失败验收用例（kind: spec）再写实现的门禁流程，以及与外部 TDD 驱动司机（Matt Pocock tdd vs Obra test-driven-development）的互斥协同协议。触发词：spec-driven, bdd-workflow, acceptance-test, test-first, given-when-then, spec-test.",
+      "triggers": []
+    },
+    "ui-design-paradigms": {
+      "name": "ui-design-paradigms",
+      "description": "现代数字产品与跨端 UI/UX 设计范式知识库与决策路由。包含 Google Material 3 (M3/Material You)、shadcn/ui 极客工程风、Apple HIG 毛玻璃、Bento Grid 便当盒美学、Swiss Style 瑞士国际排版、Neubrutalism 新野兽派、Editorial 杂志风等全球主流 UI 范式的核心哲学、Design Tokens 规范、网格韵律、组件层级与选型决策。当需要进行界面重构、设计规范对齐、组件库选型、制定设计系统或美化前端交互时使用。",
+      "triggers": []
+    },
+    "ui-oracle-protocol": {
+      "name": "ui-oracle-protocol",
+      "description": "将安卓 UI 控件自动化作为协议逆向的 oracle（时间戳对齐+流量窗口切片）。当需要验证抓包参数猜测、还原加密参数生成时机、确认某个 UI 操作触发了哪些网络请求、对比重放结果、生成\"操作→请求\"映射表时使用。依赖 appium-mcp MCP server（NO_UI=true）、mitmproxy（时间戳脚本）、frida（unpinning）。目标为安卓真机/模拟器上的真实 App。",
+      "triggers": []
+    },
+    "xfqtrace-kit": {
+      "name": "xfqtrace-kit",
+      "description": "Android Native 层 Trace 工具包（xfinject 注入链路 + xfqtrace 引擎 + 无痕 hook backend）。适用于 Android App 协议逆向中的 native 层调用追踪、加密参数生成链路定位、so 层函数插桩、反检测对抗研究。包含 30+ 真实站点 recipe（淘宝/闲鱼/抖音/小红书/美团等）。注意：仅限授权研究目标。",
+      "triggers": []
+    }
   }
 }

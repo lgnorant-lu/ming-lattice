@@ -25,7 +25,11 @@ export function run() {
     assert.equal(d.domain, 'testing');
     assert.equal(adapted.allowCaseInit, false, 'CRITICAL: 测试任务严禁开启工单初始化权限！');
     assert.equal(adapted.promptAction, 'overview_explain', '盘点意图必须映射为阐述讲述动作！');
-    assert.equal(adapted.injectedCandidates.length, 11, '候选集必须全量 11 包供模型感知');
+    // S3 词法层可能并入跨域候选（ADR-0007 并集宽网）——契约不变量：testing 域 11 包全量在场
+    const testingSkills = manifest.domains.testing.skills.filter(s => manifest.availability[s] === 'ready');
+    assert.ok(adapted.injectedCandidates.length >= testingSkills.length, '候选集至少覆盖 testing 域全量包');
+    for (const s of testingSkills)
+      assert.ok(adapted.injectedCandidates.includes(s), `候选集缺 testing 域包: ${s}`);
     assert.equal(adapted.loadSkills.length, 4, '默认正文只加载 catalog 4 个核心包');
     assert.ok(adapted.loadSkills.includes('testing-core-oracle'));
     assert.ok(adapted.loadSkills.includes('testing-workflow-spec'));

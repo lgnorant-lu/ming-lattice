@@ -302,9 +302,33 @@ export function buildRouterManifest({ repoRoot = ROOT_DIR, registry, write = fal
     }
     availability[name] = actualName === name && description ? 'ready' : 'invalid';
   }
+  // S3 词法层文档：name + description + skillTriggers 三合（ADR-0007）
+  // description 复用 availability 检查期的 frontmatter 提取结果——二次读取保一致性
+  const skillTriggerMap = {};
+  for (const info of Object.values(DOMAIN_DEFS)) {
+    for (const [skill, terms] of Object.entries(info.skillTriggers || {})) {
+      skillTriggerMap[skill] = terms;
+    }
+  }
+  const skillDocs = {};
+  for (const [name, state] of Object.entries(availability)) {
+    if (state !== 'ready') continue;
+    const unit = units.get(name);
+    const source = path.resolve(repoRoot, unit.path, 'SKILL.md');
+    const text = fs.readFileSync(source, 'utf8').replace(/^﻿/, '');
+    const frontmatter = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    let description = frontmatter?.[1].match(/^description:[\t ]*([^\r\n]*)/m)?.[1].trim() || '';
+    if (/^[>|]/.test(description)) {
+      description = frontmatter[1].match(/^description:[^\r\n]*\r?\n((?:[\t ]+[^\r\n]*(?:\r?\n|$))+)/m)?.[1].trim() || '';
+    } else {
+      description = description.replace(/^(["'])(.*)\1$/, '$2').trim();
+    }
+    skillDocs[name] = { name, description, triggers: skillTriggerMap[name] || [] };
+  }
   const manifest = {
     version: '2.0.0', generatedAt,
-    domains: structuredClone(DOMAIN_DEFS), recipes: structuredClone(RECIPES), availability
+    domains: structuredClone(DOMAIN_DEFS), recipes: structuredClone(RECIPES), availability,
+    skillDocs
   };
   if (write) {
     for (const relative of ['config/router-manifest.json', 'private/ming-skills-router/config/router-manifest.json']) {

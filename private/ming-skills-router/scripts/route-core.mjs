@@ -21,6 +21,80 @@ const isRecord = value => value !== null && typeof value === 'object' && !Array.
 const isStringArray = value => Array.isArray(value) && value.every(item => typeof item === 'string');
 const isSkillName = value => typeof value === 'string' && value.length <= 64 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
 
+// ── S3 词法层（ADR-0007）：CJK bigram + ASCII tokenizer，BM25F 字段加权 ──
+// 只产 candidates 召回信号，永不单独置 domain/dispatch——确定性语义不破。
+const CJK_RUN = /[㐀-䶿一-鿿豈-﫿぀-ヿ가-힯]+/g;
+// 停用词：查询与文档双侧过滤——无鉴别力的功能词不参与命中计数与打分
+const LEX_STOP_EN = new Set(['a','an','the','is','are','am','to','in','on','of','for','and','or','how','what','do','does','did','with','my','can','i','it','this','that','be','at','by','from','as','me','we','you','your','not','no','so','if','then','than','too','very','just','about','into','over','after','why','when','which','who','will','would','could','should','there','here','out','up','down','off','again','once','have','has','had','was','were','been','being','get','got','make','use','using','want','need','help','please','tell','show','give','let','some','any','all','each','both','few','more','most','other','such','only','own','same','also']);
+const LEX_STOP_ZH = new Set(['帮我','怎么','什么','一下','这个','那个','区别','可以','哪些','哪里','怎样','如何','是不是','有没有','请问','讲讲','用到','有关','相关','的话','我们','你们','他们','就是','还有','需要','想要','实现','进行','处理','一个','一些','为啥','为何','以及','或者','如果','因为','所以','但是','然后','现在','已经','还是','应该','知道','明白','看看','说说','出来','起来','不了','得先','会不会','能不能']);
+function lexTokenize(text) {
+  const tokens = [];
+  const lower = (text || '').toLowerCase();
+  for (const m of lower.matchAll(/[a-z0-9][a-z0-9_.+-]*/g)) {
+    if (!LEX_STOP_EN.has(m[0])) tokens.push(m[0]);
+  }
+  for (const run of lower.match(CJK_RUN) || []) {
+    if (run.length === 1) { if (!LEX_STOP_ZH.has(run)) tokens.push(run); continue; }
+    for (let i = 0; i < run.length - 1; i++) {
+      const bi = run.slice(i, i + 2);
+      if (!LEX_STOP_ZH.has(bi)) tokens.push(bi);
+    }
+  }
+  return tokens;
+}
+const LEX_FIELDS = [['name', 3], ['triggers', 2], ['description', 1]];
+const LEX_K1 = 1.4, LEX_B = 0.75, LEX_MIN_NORM = 0.45, LEX_TOPK = 5;
+function scoreLexical(queryText, skillDocs) {
+  const qTerms = [...new Set(lexTokenize(queryText))];
+  if (!qTerms.length || !isRecord(skillDocs)) return [];
+  const docs = [];
+  for (const d of Object.values(skillDocs)) {
+    if (!isRecord(d) || typeof d.name !== 'string') continue;
+    docs.push({
+      name: d.name,
+      name_: lexTokenize(d.name),
+      triggers: lexTokenize((d.triggers || []).join(' ')),
+      description: lexTokenize(d.description || '')
+    });
+  }
+  if (!docs.length) return [];
+  const N = docs.length;
+  const df = {};
+  for (const doc of docs) {
+    for (const t of new Set([...doc.name_, ...doc.triggers, ...doc.description])) df[t] = (df[t] || 0) + 1;
+  }
+  const avl = {};
+  for (const [field] of LEX_FIELDS) {
+    avl[field] = docs.reduce((s, d) => s + d[field === 'name' ? 'name_' : field].length, 0) / N || 1;
+  }
+  const ranked = [];
+  for (const doc of docs) {
+    let score = 0;
+    let matched = 0;
+    let matchedBoost = 0; // 命中 name/triggers 加权字段的词数——纯 description 命中不提名
+    for (const t of qTerms) {
+      if (!df[t]) continue;
+      matched++;
+      const idf = Math.log(1 + (N - df[t] + 0.5) / (df[t] + 0.5));
+      let weight = 0;
+      let inBoosted = false;
+      for (const [field, boost] of LEX_FIELDS) {
+        const arr = doc[field === 'name' ? 'name_' : field];
+        const tf = arr.filter(x => x === t).length;
+        if (tf && boost > 1) inBoosted = true;
+        weight += tf * boost / ((1 - LEX_B) + LEX_B * (arr.length / avl[field]));
+      }
+      if (inBoosted) matchedBoost++;
+      score += idf * (weight / (LEX_K1 + weight));
+    }
+    if (score > 0) ranked.push({ skill: doc.name, score, matched, matchedBoost });
+  }
+  ranked.sort((a, b) => b.score - a.score);
+  if (!ranked.length) return [];
+  const max = ranked[0].score;
+  return ranked.map(r => ({ skill: r.skill, score: r.score, norm: r.score / max, matched: r.matched, matchedBoost: r.matchedBoost }));
+}
+
 export function Decide(hint, manifest) {
   const text = (typeof hint === 'string' ? hint : '').trim().toLowerCase()
     .replace(/```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)/g, '')
@@ -95,6 +169,12 @@ export function Decide(hint, manifest) {
   for (const [name, info] of Object.entries(domains)) {
     candidatesByDomain[name] = info.skills.filter(skill => availability[skill] === 'ready' && !excluded.has(skill));
   }
+  // S3 词法层召回：消费与 S2 同源的 activeText（否定从句已过滤）；只提名 candidates
+  // 证据下限：至少 2 个 distinct 查询词命中文档——单词偶然命中不提名（min-max 归一化下 top 恒为 1.0 的结构性防线）
+  const lexicalPicks = scoreLexical(activeText, manifest.skillDocs)
+    .filter(p => p.norm >= LEX_MIN_NORM && p.matched >= 1 && p.matchedBoost >= 1
+      && availability[p.skill] === 'ready' && !excluded.has(p.skill))
+    .slice(0, LEX_TOPK);
   for (const [skill, domain] of explicit) {
     if (availability[skill] !== 'ready') {
       decision.action = 'ask';
@@ -121,15 +201,24 @@ export function Decide(hint, manifest) {
   const domain = qualityGate && positive('engineering') ? 'engineering'
     : ['testing', 'protocol', 'reverse', 'ui', 'engineering'].find(positive);
   if (!domain) {
-    decision.reasons.push('no_domain_triggers_matched');
+    // 词法层兜底召回：无域门命中但有可信词法近邻 → 升 ask 带候选，仍不 dispatch
+    if (lexicalPicks.length) {
+      decision.action = 'ask';
+      decision.candidates = lexicalPicks.map(p => p.skill);
+      decision.reasons.push('lexical_fallback: ' + lexicalPicks.map(p => `${p.skill}@${p.norm.toFixed(2)}`).join(', '));
+    } else {
+      decision.reasons.push('no_domain_triggers_matched');
+    }
     return decision;
   }
   decision.domain = domain;
   decision.confidence = scores[domain] >= 2 ? 'high' : 'medium';
   decision.candidates = [...new Set([
     ...(candidatesByDomain[domain] || []),
-    ...(positive('engineering') ? candidatesByDomain.engineering || [] : [])
+    ...(positive('engineering') ? candidatesByDomain.engineering || [] : []),
+    ...lexicalPicks.map(p => p.skill)
   ])];
+  if (lexicalPicks.length) decision.reasons.push('lexical_candidates: ' + lexicalPicks.map(p => `${p.skill}@${p.norm.toFixed(2)}`).join(', '));
 
   let recipeKey = domains[domain].defaultRecipe;
   const ffiQualityGate = domain === 'engineering' && qualityGate

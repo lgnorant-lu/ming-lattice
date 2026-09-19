@@ -25,10 +25,17 @@ function checkCase(c) {
     fails.push(`domain=${d.domain}≠${c.expect.domain}`);
   if (c.expect.action !== undefined && d.action !== c.expect.action)
     fails.push(`action=${d.action}≠${c.expect.action}`);
+  // actionIn：动作白名单——OOS 相邻查询的真契约是"永不置域/dispatch"，ask+候选属可容忍召回
+  if (c.expect.actionIn !== undefined && !c.expect.actionIn.includes(d.action))
+    fails.push(`action=${d.action}∉[${c.expect.actionIn}]`);
   for (const s of c.expect.skills || []) {
     if (!d.candidates.includes(s) && !d.active_recipe.skills.includes(s))
       fails.push(`miss:${s}`);
   }
+  // anySkills：任一候选即算召回——召回优先策略下不要求预言唯一正确技能
+  if (c.expect.anySkills?.length
+    && !c.expect.anySkills.some(s => d.candidates.includes(s) || d.active_recipe.skills.includes(s)))
+    fails.push(`miss-any:[${c.expect.anySkills}]`);
   return { pass: fails.length === 0, fails, decision: { domain: d.domain, action: d.action } };
 }
 

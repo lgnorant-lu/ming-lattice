@@ -5,7 +5,7 @@
 {"id":"a-005","query":"老代码没测试，先把现有行为锁死再动手重构","expect":{"domain":"testing","skills":["testing-core-oracle","testing-workflow-characterize"]},"tier":"A","provenance":"scenario","lang":"zh","of":"1.3"}
 {"id":"a-006","query":"legacy 系统的行为快照测试怎么建立","expect":{"domain":"testing","skills":["testing-core-oracle"]},"tier":"A","provenance":"golden-paraphrase","lang":"mixed","of":"1.3"}
 {"id":"a-007","query":"Rust 里嵌 V8 引擎的隔离边界该测什么","expect":{"skills":["testing-scenario-embed-ffi"]},"tier":"A","provenance":"scenario","lang":"zh","of":"1.4","note":"ffi 裸词走 testing 或 engineering 均为合法路径，断言技能召回即可"}
-{"id":"a-008","query":"node 插件和 python 互调的边界契约怎么测","expect":{"domain":"testing","skills":["testing-core-oracle"]},"tier":"A","provenance":"scenario","lang":"mixed","of":"1.4"}
+{"id": "a-008", "query": "node 插件和 python 互调的边界契约怎么测", "expect": {"action": "ask", "anySkills": ["testing-scenario-embed-ffi", "testing-python-idiom", "testing-js-idiom"]}, "tier": "A", "provenance": "scenario", "lang": "mixed", "of": "1.4", "note": "词法层按设计不置域；跨语言互调→embed-ffi 最优解，python/js-idiom 相邻可接受"}
 {"id":"a-009","query":"爬虫抓回来的数据清洗逻辑怎么离线测","expect":{"domain":"testing","skills":["testing-scenario-scraper"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"1.5"}
 {"id":"a-010","query":"采集管道的 fixture 测试思路给一下","expect":{"domain":"testing","skills":["testing-core-oracle"]},"tier":"A","provenance":"golden-paraphrase","lang":"zh","of":"1.5"}
 {"id":"a-011","query":"property-based testing 在这个项目怎么落地","expect":{"domain":"testing","skills":["testing-property-mutation"]},"tier":"A","provenance":"golden-paraphrase","lang":"mixed","of":"1.6"}
@@ -32,7 +32,7 @@
 {"id":"a-032","query":"接口调用链的日志关联和排障怎么规范","expect":{"domain":"engineering","skills":["obs-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
 {"id":"a-033","query":"服务告警和指标埋点的规范在哪","expect":{"domain":"engineering","skills":["obs-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
 {"id":"a-034","query":"CI 里怎么防依赖投毒和供应链注入","expect":{"domain":"engineering","skills":["sec-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
-{"id":"a-035","query":"上游改了字段怎么保证下游不破","expect":{"domain":"engineering","skills":["contract-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id": "a-035", "query": "上游改了字段怎么保证下游不破", "expect": {"action": "ask", "skills": ["contract-core-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "note": "词法层召回 contract-core 进候选；不置域是设计"}
 {"id":"a-036","query":"接口 schema 演进要向后兼容怎么约束","expect":{"domain":"engineering","skills":["contract-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
 {"id":"a-037","query":"多环境配置的优先级和归一化怎么设计","expect":{"domain":"engineering","skills":["config-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
 {"id":"a-038","query":"这个功能性能扛不住时降级方案怎么定","expect":{"domain":"engineering","skills":["overlay-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}

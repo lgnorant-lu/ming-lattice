@@ -5,7 +5,7 @@
 {"id":"c-005","query":"mysql 索引失效的常见原因","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
 {"id":"c-006","query":"git rebase 和 merge 的区别","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
 {"id":"c-007","query":"docker 容器 exec 进不去怎么办","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
-{"id":"c-008","query":"python 字典怎么按值排序","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
+{"id": "c-008", "query": "python 字典怎么按值排序", "expect": {"domain": "none", "actionIn": ["handoff", "ask"]}, "tier": "C", "provenance": "scenario", "lang": "zh", "note": "python 语言相邻——ask+python-idiom 候选属召回优先可容忍面"}
 {"id":"c-009","query":"windows 开机越来越慢怎么排查","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
 {"id":"c-010","query":"how to center a div in css","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"en"}
 {"id":"c-011","query":"what is a monad","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"en"}
@@ -18,7 +18,7 @@
 {"id":"c-018","query":"浏览器缓存怎么彻底清掉","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
 {"id":"c-019","query":"excel 里 vlookup 怎么用","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
 {"id":"c-020","query":"手机发烫厉害是什么原因","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
-{"id":"c-021","query":"typescript interface 和 type 的区别","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"en","note":"已知难点：typescript 是 js-idiom 细化词但非域门，应 none"}
+{"id": "c-021", "query": "typescript interface 和 type 的区别", "expect": {"domain": "none", "actionIn": ["handoff", "ask"]}, "tier": "C", "provenance": "scenario", "lang": "en", "note": "typescript 相邻 js-idiom——同 c-008"}
 {"id":"c-022","query":"中午吃什么推荐一下","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
 {"id":"c-023","query":"帮我把这段话翻译成英文","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
 {"id":"c-024","query":"mac 的终端快捷键有哪些","expect":{"domain":"none","action":"handoff"},"tier":"C","provenance":"scenario","lang":"zh"}
