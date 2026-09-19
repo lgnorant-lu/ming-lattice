@@ -342,6 +342,88 @@ const CASES = [
     },
     expect: { E: 0, noMsg: ['status 未声明'] },
   },
+  {
+    name: 'adr_dir 锚点重映射（decisions/）',
+    files: {
+      'ming.yaml': 'project: x\nadr_dir: decisions\n',
+      'decisions/0001-foo.md': fm({ domain: 'meta' }) + '# ADR\n',
+      'B.md': fm({ domain: 'spec', status: 'normative' }) + '# B\n\n依 ADR-0001。\n',
+    },
+    expect: { E: 0, noMsg: ['悬空引用: ADR-0001', 'status 未声明'] },
+  },
+  {
+    name: 'adr_dir 空值=W+回退默认 adr',
+    files: {
+      'ming.yaml': 'project: x\nadr_dir:\n',
+      'adr/0001-x.md': fm({ domain: 'meta' }) + '# ADR\n',
+      'B.md': fm({ domain: 'spec', status: 'normative' }) + '# B\n\n依 ADR-0001。\n',
+    },
+    expect: { msg: ['adr_dir 为空/非法'], noMsg: ['悬空引用: ADR-0001'] },
+  },
+  {
+    name: 'findings_pat 锚点重映射（BACKLOG.md 豁免）',
+    files: {
+      'ming.yaml': 'project: x\nfindings_pat: backlog\n',
+      'BACKLOG.md': fm({ domain: 'spec', status: 'normative' }) + '# B\n\n旧条目见 M9。\n',
+      'namespaces.json': NS_MIN,
+    },
+    expect: { noMsg: ['悬空引用'] },
+  },
+  {
+    name: '候审档不合锚点仍报悬空（对照组）',
+    files: {
+      'BACKLOG.md': fm({ domain: 'spec', status: 'normative' }) + '# B\n\n旧条目见 M9。\n',
+      'namespaces.json': NS_MIN,
+    },
+    expect: { msg: ['悬空引用: M9'] },
+  },
+  {
+    name: 'ming.yaml namespaces 指针消费（FOO9 悬空证明已加载）',
+    files: {
+      'ming.yaml': 'project: x\nnamespaces: custom/ns.json\n',
+      'custom/ns.json': JSON.stringify({ namespaces: [
+        { prefix: 'FOO<N>', pattern: '^FOO\\d+$', domain: 'spec', ordering: 'enum', role: 'id', note: '自定义' },
+      ]}),
+      'A.md': fm({ domain: 'spec', status: 'normative' }) + '# A\n\n## FOO1 — 自定义\n\n见 FOO1 与 FOO9。\n',
+    },
+    expect: { msg: ['悬空引用: FOO9'], noMsg: ['不匹配已登记命名空间', 'namespaces 指向不存在'] },
+  },
+  {
+    name: 'ming.yaml namespaces 指向不存在=E（声明即承诺不回退）',
+    files: {
+      'ming.yaml': 'project: x\nnamespaces: missing.json\n',
+      'namespaces.json': NS_MIN,
+      'P.md': fm({ domain: 'plan', status: 'normative' }) + '# P\n',
+    },
+    expect: { E: 1, msg: ['namespaces 指向不存在'] },
+  },
+  {
+    name: 'canonical 标量归一（不按字符碰撞造假双真相）',
+    files: {
+      'A.md': fm({ domain: 'spec', status: 'normative', canonical: 'foo' }) + '# A\n',
+      'B.md': fm({ domain: 'spec', status: 'normative', canonical: 'bar' }) + '# B\n',
+      'namespaces.json': NS_MIN,
+    },
+    expect: { E: 0, noMsg: ['双真相'] },
+  },
+  {
+    name: 'dynamics_zero 行内表归一（[]空表+[plan 守]单条目）',
+    files: {
+      'ming.yaml': 'project: x\ndomains:\n  - plan\ndynamics_zero: [plan 守]\n',
+      'PLAN.md': fm({ domain: 'plan', status: 'normative', dynamics: '[立, 用, 省, 改, 增, 废]' }) + '# PLAN\n',
+      'namespaces.json': NS_MIN,
+    },
+    expect: { noMsg: ['dynamics_zero 条目非法', '矩阵空格'] },
+  },
+  {
+    name: 'ming.yaml 未知键=W（x_ 私有位豁免）',
+    files: {
+      'ming.yaml': 'project: x\nadr_dirr: decisions\nx_note: 私有扩展\n',
+      'P.md': fm({ domain: 'plan', status: 'normative' }) + '# P\n',
+      'namespaces.json': NS_MIN,
+    },
+    expect: { W: 1, msg: ['未知键: adr_dirr'], noMsg: ['未知键: x_note'] },
+  },
 ];
 
 // emit-index 单独验证（产物文件断言）

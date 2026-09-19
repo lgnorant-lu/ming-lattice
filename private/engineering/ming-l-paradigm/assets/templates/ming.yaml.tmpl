@@ -10,3 +10,8 @@ domains:              # 已实例化域集——audit 对未实例化域的矩�
 {{domain_lines}}
 # dynamics_zero:      # 域x动词有意零裁决位（平铺 "<域> <动词>"）——在列格静默，未标空格报 I
 #   - know 守         # 例：know 域设计上无 enforcement 文档
+# —— 结构锚点（棕场适配专用；绿场保持默认勿动，语义全走 frontmatter 不载于文件名）——
+# adr_dir: adr              # ADR 目录锚点（相对 docs 根的路径片段，可嵌套如 arch/decisions）；棕场 decisions/ 等命名改此
+# findings_pat: findings    # 候审档路径特征（子串匹配）；棕场 BACKLOG/OPEN-ISSUES 等命名改此
+# namespaces 键相对本文件所在目录解析——本文件在 docs/ 内写 namespaces.json，移到项目根则写 docs/namespaces.json
+# x_ 前缀 = 项目私有扩展位（audit 未知键检查豁免）

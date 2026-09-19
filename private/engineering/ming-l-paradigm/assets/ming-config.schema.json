@@ -11,9 +11,12 @@
     "tier":       { "enum": ["minimal", "standard", "full"], "description": "采纳档：minimal=META+namespaces+1spec+findings / standard=+dev+spec分层+软门 / full=九域+全查+硬门" },
     "domains":    { "type": "array", "items": { "enum": ["meta","spec","dev","plan","gov","exp","verify","ops","know","req"] }, "uniqueItems": true, "description": "已实例化域集——未列域的矩阵空格检查静默" },
     "gates":      { "enum": ["off", "soft", "hard"], "default": "soft", "description": "门控档：与 tier 正交；hard=CI/pre-commit 接线" },
-    "namespaces": { "type": "string", "default": "namespaces.json", "description": "标号登记表路径（相对配置文件）" },
+    "namespaces": { "type": "string", "default": "namespaces.json", "description": "标号登记表路径（相对 ming.yaml 所在目录；声明而缺失=audit E 级）" },
+    "adr_dir":    { "type": "string", "default": "adr", "description": "ADR 目录锚点（相对 docs 根的路径片段，支持嵌套如 arch/decisions）——棕场命名向下兼容位" },
+    "findings_pat": { "type": "string", "default": "findings", "description": "候审档路径特征（对 docs 内相对路径做子串匹配，有意宽松）——引用/族启发式豁免键" },
     "template_v": { "type": "string", "description": "scaffold 模板版本参考位（升级走人工 review，不做自动迁移）" },
     "dynamics_zero": { "type": "array", "items": { "type": "string", "pattern": "^\\S+\\s+\\S+$" }, "description": "域x动词矩阵有意零裁决位——平铺条目 \"<域> <动词>\"；在列格静默，未在列且未标注=I" }
   },
+  "patternProperties": { "^x_": {} },
   "additionalProperties": true
 }

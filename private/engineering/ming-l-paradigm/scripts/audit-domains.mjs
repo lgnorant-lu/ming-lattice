@@ -17,6 +17,8 @@
 //      7b. O1 倒挂检查: normative 引用 proposed 定义 = W（序律 O1 机器面）
 //      7c. 未登记命名空间族启发式: ID 形 token 成族出现但未登记 = W（提示性，不自动登记）
 //   8. ming.yaml 校验: tier/gates/domains 词表（词表事实源=ming-config.schema.json，--ming-schema 可覆盖）+ 声明域实例化提示
+//      8b. 未知键 W（键集=schema properties，x_ 前缀私有扩展豁免）；结构锚点键: adr_dir/findings_pat/namespaces
+//          ——棕场命名向下兼容（语义走 frontmatter 零载名，仅此三处文件名承重；先例 adr-tools/.adr-dir、log4brains adrFolder）
 // 索引层: --emit-index 输出 labels-index.json（id→定义位/引用数/死定义 + 文档目录——派生视图非事实源）
 // 退出码: 0=无E级  1=存在E级
 
@@ -47,6 +49,7 @@ const BUILTIN_VOCAB = {
   gates: ['off', 'soft', 'hard'],
 };
 let VOCAB = BUILTIN_VOCAB;
+let KNOWN_KEYS = new Set(['ming_v', 'project', 'tier', 'gates', 'namespaces', 'template_v', 'domains', 'dynamics_zero', 'adr_dir', 'findings_pat']);
 {
   const schemaPath = mingSchemaArg ? path.resolve(mingSchemaArg) : path.join(SKILL_DIR, 'assets/ming-config.schema.json');
   try {
@@ -56,6 +59,7 @@ let VOCAB = BUILTIN_VOCAB;
       tier: props.tier?.enum || BUILTIN_VOCAB.tier,
       gates: props.gates?.enum || BUILTIN_VOCAB.gates,
     };
+    if (Object.keys(props).length) KNOWN_KEYS = new Set(Object.keys(props)); // 键集事实源=schema properties（与词表同通道）
   } catch {
     add(mingSchemaArg ? 'E' : 'W', `ming-config schema 未加载（${schemaPath}），回退内置词表`);
   }
@@ -87,13 +91,30 @@ if (mingCfgPath) {
     }
   } catch (e) { add('E', `ming.yaml 解析失败: ${mingCfgPath} — ${e.message}`); }
 }
-// YAML-lite 兼容：行内 `domains: []` 解析为字符串，归一化为数组
-if (mingCfg && typeof mingCfg.domains === 'string') {
-  const s = mingCfg.domains.trim();
-  mingCfg.domains = s.startsWith('[')
-    ? s.slice(1, -1).split(',').map(x => x.trim().replace(/^["']|["']$/g, '')).filter(Boolean)
-    : [s];
+// YAML-lite 兼容：行内 `key: []`/`key: [a, b]` 解析为字符串，列表型键归一化为数组
+if (mingCfg) {
+  for (const k of ['domains', 'dynamics_zero']) {
+    if (typeof mingCfg[k] !== 'string') continue;
+    const s = mingCfg[k].trim();
+    mingCfg[k] = s.startsWith('[')
+      ? s.slice(1, -1).split(',').map(x => x.trim().replace(/^["']|["']$/g, '')).filter(Boolean)
+      : [s];
+  }
 }
+
+// 结构锚点（棕场向下兼容）：语义走 frontmatter 零载名，仅 adr 目录/候审档特征/命名空间表三处文件名承重
+// 项目声明进 ming.yaml 平铺键（YAML-lite 无嵌套 map）；先例: adr-tools .adr-dir / adrs.toml adr_dir / log4brains adrFolder
+const escRe = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const anchorStr = (key, dflt) => {
+  const v = mingCfg?.[key]; // mingCfg=null（无 ming.yaml）须得 undefined——null!==undefined 会误落非法分支
+  if (v === undefined) return dflt;
+  if (typeof v !== 'string' || !v.trim()) { add('W', `ming.yaml ${key} 为空/非法（回退默认 ${dflt}）`); return dflt; }
+  return v.trim();
+};
+const adrDir = anchorStr('adr_dir', 'adr');           // ADR 目录（相对 target，支持嵌套如 arch/decisions）
+const findingsPat = anchorStr('findings_pat', 'findings'); // 候审档路径特征（子串匹配，有意宽松——豁免语义）
+const ADR_RE = new RegExp(`(?:^|/)${escRe(adrDir)}/(\\d{4})-[^/]+\\.md$`);
+const FINDINGS_RE = new RegExp(escRe(findingsPat), 'i');
 
 if (!fs.existsSync(target)) {
   console.error(`目标目录不存在: ${target}`);
@@ -165,15 +186,15 @@ for (const f of mdFiles) {
 
     // 模态缺席提示：规则承载文档应显式标 status——缺省不定性（normative 被静默降格比不报更坏）；
     // ADR 豁免：生命周期走正文 Status（Proposed/Accepted/Superseded），不进模态词表
-    if (fm.domain && !fm.status && !/(?:^|\/)adr\/\d{4}-[^/]+\.md$/.test(rel))
+    if (fm.domain && !fm.status && !ADR_RE.test(rel))
       add('I', `status 未声明（模态机不可见——spec-fuzz 无法判定断言权威；ADR 豁免）`, rel);
 
     // 域登记反向检查：文档域合法但不在 ming.yaml domains = 域被事实实例化而无立法痕迹（O4：可插队不可隐身）
     if (fm.domain && DOMAINS.has(fm.domain) && mingCfg && Array.isArray(mingCfg.domains) && !mingCfg.domains.includes(fm.domain))
       add('W', `文档域 ${fm.domain} 未在 ming.yaml domains 登记（域实例化须先登记）`, rel);
 
-    // 4. canonical 双真相
-    for (const key of fm.canonical || []) {
+    // 4. canonical 双真相（[].concat 归一——标量写法 for-of 会按字符遍历造假碰撞）
+    for (const key of [].concat(fm.canonical || [])) {
       if (!canonical.has(key)) canonical.set(key, []);
       canonical.get(key).push(rel);
     }
@@ -222,10 +243,20 @@ for (const [key, files] of canonical) {
 // ---------- 7. 标识分配律 ----------
 // 定义位: 标题 ID（### A5. / # L3 — / ## D5.）+ adr/NNNN-*.md 文件名 + 候审档字母区内编号项 + 粗体定义位
 // 引用位: 正文独立标号 token（含反引号）；未定义 = 悬空
-// 命名空间表外置（高度自定义化）：--labels <json> > <target>/namespaces.json > skill 内置默认
+// 命名空间表外置（高度自定义化）消费链: --labels > ming.yaml namespaces > <target>/namespaces.json > skill 内置默认
+// 路径相对 ming.yaml 所在目录解析（mkdocs docs_dir 先例）——自洽兼容两种放置：docs/ming.yaml 写 "namespaces.json"，根 ming.yaml 写 "docs/namespaces.json"
 let nsList = null, nsSource = null;
-const convNs = path.join(target, 'namespaces.json');
-const nsFile = labelsArg || (fs.existsSync(convNs) ? convNs : null);
+let nsFile = labelsArg || null;
+const nsDeclared = mingCfg && mingCfg.namespaces !== undefined;
+if (!nsFile && nsDeclared) {
+  const decl = path.resolve(path.dirname(mingCfgPath), String(mingCfg.namespaces));
+  if (fs.existsSync(decl)) nsFile = decl;
+  else add('E', `ming.yaml namespaces 指向不存在: ${mingCfg.namespaces}（相对 ${path.dirname(mingCfgPath)}）`);
+}
+if (!nsFile && !nsDeclared) {
+  const convNs = path.join(target, 'namespaces.json');
+  if (fs.existsSync(convNs)) nsFile = convNs;
+}
 if (nsFile) {
   try { nsList = JSON.parse(fs.readFileSync(nsFile, 'utf8')).namespaces; nsSource = nsFile; }
   catch (e) { add('E', `命名空间登记表解析失败: ${nsFile} — ${e.message}`); }
@@ -250,8 +281,8 @@ for (const f of mdFiles) {
   const fm = parseFm(content);
   statusByFile.set(rel, fm && fm.status);
 
-  // ADR 文件名定义
-  const adm = rel.match(/(?:^|\/)adr\/(\d{4})-[^/]+\.md$/);
+  // ADR 文件名定义（adr_dir 锚点可配——棕场 decisions/ 等命名向下兼容）
+  const adm = rel.match(ADR_RE);
   if (adm) {
     const id = `ADR-${adm[1]}`;
     if (!defined.has(id)) defined.set(id, []);
@@ -286,9 +317,9 @@ for (const f of mdFiles) {
     for (const rm of line.matchAll(LABEL_REF)) refs.push({ id: rm[1], rel, line: i + 1 });
   }
 }
-// 引用检查豁免：候审档（只增不隐）+ descriptive/frozen 史档——旧名是冻结史不是悬空
+// 引用检查豁免：候审档（只增不隐；findings_pat 锚点可配）+ descriptive/frozen 史档——旧名是冻结史不是悬空
 const refsLive = refs.filter(r =>
-  !/findings/i.test(r.rel) && !['descriptive', 'frozen'].includes(statusByFile.get(r.rel)));
+  !FINDINGS_RE.test(r.rel) && !['descriptive', 'frozen'].includes(statusByFile.get(r.rel)));
 
 for (const [id, sites] of defined) {
   const files = [...new Set(sites.map(s => s.split(':')[0]))];
@@ -336,7 +367,7 @@ if (nsFile) {
   const STOP = new Set(['ISO','UTF','SHA','MD','RGB','HSL','IP','TCP','UDP','HTTP','HTTPS','SQL','PNG','JPG','JPEG','GIF','BMP','PDF','ZIP','GPU','CPU','API','URL','URI','JSON','YAML','XML','HTML','CSS','CLI','GUI','IDE','SDK','VM','CI','CD','IoU','AR','GT','WS','DTD','MAE','ONNX','UI','TDD','BDD','MDT','DNA','RGB','SARIF','OPA','ADR']);
   const fam = new Map(); // prefix -> {tokens:Set, files:Set, count}
   for (const { rel, text } of allDocs) {
-    if (/findings/i.test(rel) || ['descriptive','frozen'].includes(statusByFile.get(rel))) continue;
+    if (FINDINGS_RE.test(rel) || ['descriptive','frozen'].includes(statusByFile.get(rel))) continue;
     for (const m of text.matchAll(/\b([A-Z]{2,})\d+\b/g)) {
       const [tok, pre] = [m[0], m[1]];
       if (STOP.has(pre) || LABEL_FORMATS.some(r => r.test(tok))) continue;
@@ -355,6 +386,11 @@ if (mingCfg) {
   for (const d of mingCfg.domains || []) {
     if (!DOMAINS.has(d)) add('W', `ming.yaml 声明未知域: ${d}`);
     else if (!domainDocs.has(d)) add('I', `ming.yaml 声明域 ${d} 未实例化（有意零请在 ming.yaml 移除或补文档）`);
+  }
+  // 未知键检查：拼错的已知键会被静默忽略=配置漂移隐身（adrs.toml unrecognized-keys warning 先例）；
+  // 键集事实源=schema properties；x_ 前缀 = 项目私有扩展通道（HTTP X- 头惯例），豁免
+  for (const k of Object.keys(mingCfg)) {
+    if (!KNOWN_KEYS.has(k) && !k.startsWith('x_')) add('W', `ming.yaml 未知键: ${k}（拼写漂移隐身——若有意请用 x_ 前缀私有扩展位）`);
   }
 }
 

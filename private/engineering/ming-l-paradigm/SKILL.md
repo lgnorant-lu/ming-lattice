@@ -104,7 +104,7 @@ metadata:
 
 **矩阵纪律**：`域 x 动词` 画矩阵，**每个空格必须是有意的零**——空格即病灶检查器。活体先例全覆盖见 [references/precedents.md](references/precedents.md)（K8s feature gates=增、deprecation policy=废、Rust crater run=省……）。机读约定：文档 frontmatter `dynamics` 记**本档实际执行**的动词集（描述性观测，非域级覆盖声明）；域级"有意零"在 `ming.yaml` 的 `dynamics_zero:` 平铺条目（`"<域> <动词>"`）裁决——audit 据此区分已裁决零（静默）与未标空格（I）。
 
-**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点（dynamics_zero 裁决位+矛盾漂移查）/双真相/frozen 拦截/proposed+provisional 计龄/标号四检（唯一性·悬空引用·格式·登记表互锁）/O1 倒挂/未登记命名空间族启发式/frontmatter 词表补检（dynamics 值+status 缺席提示+文档域反向登记）/ming.yaml 校验（词表事实源=ming-config.schema.json，`--ming-schema` 覆盖即项目私有扩展通道）/gates 退出轴/`--emit-index` 索引层；**自测套** `audit-domains.test.mjs` 38 fixture 树用例（守门员自洽，\r 末行丢键已固化回归）。域骨架生成见 `scripts/scaffold-domains.mjs`（模板实例化 + namespaces.json/ming.yaml 播种，生成物即过审计；九域+候审档模板齐备），配套 `scaffold-domains.test.mjs` 9 用例（档产物面/幂等/--force/--domains/生成物即审计）。平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。
+**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点（dynamics_zero 裁决位+矛盾漂移查）/双真相/frozen 拦截/proposed+provisional 计龄/标号四检（唯一性·悬空引用·格式·登记表互锁）/O1 倒挂/未登记命名空间族启发式/frontmatter 词表补检（dynamics 值+status 缺席提示+文档域反向登记）/ming.yaml 校验（词表事实源=ming-config.schema.json，`--ming-schema` 覆盖即项目私有扩展通道）/gates 退出轴/`--emit-index` 索引层；**自测套** `audit-domains.test.mjs` 47 fixture 树用例（守门员自洽，\r 末行丢键已固化回归）。域骨架生成见 `scripts/scaffold-domains.mjs`（模板实例化 + namespaces.json/ming.yaml 播种，生成物即过审计；九域+候审档模板齐备），配套 `scaffold-domains.test.mjs` 9 用例（档产物面/幂等/--force/--domains/生成物即审计）。平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。
 
 ## 6. 规则属性系统（Rule Attribute Systems）
 
@@ -189,9 +189,9 @@ proposed --promote--> normative --relax--> descriptive
 
 **机械执行面**：`audit-domains.mjs` §7 四查——**唯一性**（同 ID 多定义位 = E）、**悬空引用**（正文标号无定义位 = W；候审档与 descriptive/frozen 史档豁免——冻结史旧名非悬空）、**格式合规**（W）、**登记表互锁**（meta 表与 namespaces.json 漂移 = E）。
 
-**登记表外置（高度自定义化）**：命名空间声明是**数据不是脚本**——`namespaces.json`（prefix/pattern/domain/ordering/role/note）按项目私有，`role=id` 参与定义/引用扫描、`role=value` 仅为词表。其中 `domain` 字段 = **发证机关**（该命名空间格式的立法域），**不约束宿主文档域**——verify 域文档持 spec 发放的 `L*` 标号合法（域≠目录同律）。audit-domains 三级回退：`--labels <json>` > `<target>/namespaces.json` > `assets/namespaces.default.json` 内置种子；`scaffold-domains.mjs` 播种项目副本，立即可裁剪扩展。
+**登记表外置（高度自定义化）**：命名空间声明是**数据不是脚本**——`namespaces.json`（prefix/pattern/domain/ordering/role/note）按项目私有，`role=id` 参与定义/引用扫描、`role=value` 仅为词表。其中 `domain` 字段 = **发证机关**（该命名空间格式的立法域），**不约束宿主文档域**——verify 域文档持 spec 发放的 `L*` 标号合法（域≠目录同律）。audit-domains 四级回退：`--labels <json>` > ming.yaml `namespaces` 指针（相对配置文件所在目录解析）> `<target>/namespaces.json` > `assets/namespaces.default.json` 内置种子——**声明而缺失=E，不回退**（声明即承诺）；`scaffold-domains.mjs` 播种项目副本，立即可裁剪扩展。
 
-**分配器裁决**：单作者低并发 → 人工分配 + 机器查重足够（PEP/RFC 编辑分配先例）；并发发号（多分支/多 Agent）才建取号器——adr-tools issue#102 是已录实坑，counter lockfile 可以合并冲突为检测器。**文件系统本身即已发号簿**（`adr/NNNN-*.md` 文件名=号码簿）；`namespaces.json` 登记的是**命名空间声明**（格式 schema），与号码簿不同位面，不构成双真相。
+**分配器裁决**：单作者低并发 → 人工分配 + 机器查重足够（PEP/RFC 编辑分配先例）；并发发号（多分支/多 Agent）才建取号器——adr-tools issue#102 是已录实坑，counter lockfile 可以合并冲突为检测器。**文件系统本身即已发号簿**（`adr/NNNN-*.md` 文件名=号码簿——目录锚点可由 ming.yaml `adr_dir` 重映射，见 §11 棕场适配）；`namespaces.json` 登记的是**命名空间声明**（格式 schema），与号码簿不同位面，不构成双真相。
 
 ## 8. 序律（Ordering Laws）——时间轴维度
 
@@ -236,6 +236,8 @@ proposed --promote--> normative --relax--> descriptive
 - 已落盘的标 `[landed]` 并指落点，**不删除**（Know 域纪律：只增不隐）；
 - 候审档在 Verify 轮统一处理——逐条商确，避免"发现即改"造成的规范抖动。
 
+档名不拘（`OPEN-FINDINGS`/`BACKLOG`/`OPEN-ISSUES` 皆可）——audit 的候审档豁免按 ming.yaml `findings_pat` 路径特征匹配（默认 `findings` 子串）。
+
 ## 11. 域健康、启动序列与采纳档
 
 **失能信号（域死了的表现）**：
@@ -262,6 +264,8 @@ proposed --promote--> normative --relax--> descriptive
 | `full` | 九域全景 + 全查 + 硬门接线 | 方法论级项目 |
 
 **两轴分离**：tier（内容多少）× gates（执行强弱 `off|soft|hard`）正交；推荐 minimal→soft、full→hard 默认不锁死——恰是效力阶梯的项目级应用。档声明进 `ming.yaml`（schema: `assets/ming-config.schema.json`），audit 按档豁免：未实例化域的矩阵空格静默（"有意的零"的档级推广）。**gates 退出语义**（fail-on-warn 先例）：`off`=纯报告永不 fail、`soft`=E 才 fail、`hard`=E+W 都 fail——只改退出码不改检查分级（`--strict` 管单查升档，两轴各管一段）。
+
+**棕场适配（结构锚点）**：语义全走 frontmatter（`domain:`/`dynamics:`/`status:`），**文件名在审计中零负载**——棕场文档叫什么名、住什么目录都不影响域归属，实证：DenoiseStudio `governance/`≠播种 `gov/` 仍全绿。文件名仅在三个结构锚点承重：`adr/NNNN-*.md`（ADR 定义位+status 豁免）、候审档路径特征（引用/族启发式豁免）、`namespaces.json` 位置。锚点在 ming.yaml 用平铺键重映射（YAML-lite 无嵌套 map）：`adr_dir`/`findings_pat`/`namespaces`——先例 adr-tools `.adr-dir`、adrs.toml、log4brains `adrFolder`。方向裁决：**向下兼容**（工具读项目声明的现实），不强制改名——自称"域≠目录"却强制文件名是自洽性自杀；且不可映射的棕场命名=永久 W/I 噪音=告警疲劳（与 dynamics_zero 同病同药方）。配套：`namespaces` 指针相对 ming.yaml 所在目录解析（mkdocs `docs_dir` 先例）；ming.yaml 未知键=W（adrs unrecognized-keys 先例），`x_` 前缀为项目私有扩展位。**不建通用文档别名表**——canonical 名是绿场默认值不是负载点，无消费者不立配置。
 
 **脚手架七层**：①配置层 `ming.yaml`（copier answers-file 先例——模型读一份配置即知项目形态）②模板层 `assets/templates/`（只装骨架不装内容）③数据层 `namespaces.default.json` 等机读种子 ④执行层 `scaffold-domains.mjs`→`audit-domains.mjs`→gate 接线 ⑤测试层 verify 域约定模板（不预设语言栈 tests/ 代码形态）⑥索引层 `audit --emit-index` 生成 labels-index.json（派生视图非事实源）⑦回授层（项目经验反哺种子/模板/precedents——约定非工具）。
 
