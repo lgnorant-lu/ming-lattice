@@ -70,6 +70,16 @@ S3 词法层已入核并验证（`scripts/build-router-manifest.mjs` 产 `skillD
 - 未解决边界（有意留档 known-miss）：c-013/c-014（物理测试/性格测试被"测试"关键词劫持——S2 层问题，非 S3）；单词低鉴别力命中仍有上限（如"上游改了字段"仅"字段"命中 contract-core——matchedBoost 救回后已召回，但更普遍的"单内容词"场景词法层触顶，正是 S4 嵌入的目标面）
 - 适配契约同步放宽：`injectedCandidates` 断言从"恰好 11"改为"域内全量⊆"（并集宽网的必然结果）
 
+## Spike Result (S4 嵌入, 2026-09-19) — eval 门禁未通过
+
+`tools/embeddings/`（paraphrase-multilingual-MiniLM-L12-v2, q8, 384 维）对同一 78 例语料的实测：
+
+- **emb-only 命中 = 0**：嵌入层未补回任何现状漏掉的案例；either-并集 = 关键词+词法基线本身
+- **A 层 37/50**：同域技能级消歧弱是结构性短板（测试类查询嵌到正确域但选错技能——description 语义天然彼此接近）；跨域错向案例存在（签名参数→protocol 域、渗透审计→engineering 域）
+- **OOS 分数带重叠**：C 层 top1 cosine max=0.555 > A 层中位 0.491——不存在干净的语义 OOS 阈值；嵌入对"测试"歧义类反而更敏感
+- **裁决**：按"上线以 eval 增量为准入"条款，S4 **不接入运行时**，§31 否决维持且被强化——44 技能+触发词密集语料上，确定性栈召回已超嵌入。嵌入的理论优势（paraphrase 容错）在关键词覆盖良好的前提下未兑现
+- **保留资产**：工具链留仓可复现（`build-embeddings.mjs`/`eval-embeddings.mjs`，模型走 hf-mirror 缓存，权重不进仓）；`router-embeddings.json` artifact 因无消费者暂不提交——B 层实战语料攒大后可重跑翻盘测试，翻盘证据出现前不重议运行时嵌入
+
 ## Consequences
 
 - 召回率提升路径全部落在零依赖约束内：词法层运行时增量 + 嵌入离线挖掘的词表复利

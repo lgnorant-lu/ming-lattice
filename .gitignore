@@ -26,3 +26,10 @@ __pycache__/
 
 # vendored 仓库的 git 元数据（保留 .git 供 update 增量 fetch, 但父仓库不跟踪）
 vertical/*/.git/
+
+# 嵌入工具链依赖与模型缓存（tools/embeddings 隔离包，权重永不进仓）
+tools/embeddings/node_modules/
+tools/embeddings/.cache/
+
+# S4 spike 未过 eval 门禁（emb-only 命中=0）——artifact 暂不提交，工具链可复现
+config/router-embeddings.json
