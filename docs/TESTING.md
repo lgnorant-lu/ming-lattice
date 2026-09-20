@@ -12,7 +12,7 @@ node scripts/verify.mjs --profile <quick|affected|full|release>
 `scripts/verify.mjs` 提供分级门禁编排：
 - `--profile quick`：仅运行纯 Node 逻辑测试（跳过外部 pwsh 进程池，秒级响应）；
 - `--profile affected`：基于 `scripts/hooks/plan.mjs` 仅运行暂存区改动受影响的测试套件；
-- `--profile full`：全量 17 个测试套件 + 严格离线供应链门禁；
+- `--profile full`：全量 22 个测试套件 + 严格离线供应链门禁；
 - `--profile release`：full 门禁 + SBOM/SCA 新鲜度就地深度比对 + Benchmark 性能硬阈值检查。
 
 ## 验证范围
@@ -23,6 +23,9 @@ node scripts/verify.mjs --profile <quick|affected|full|release>
 | Manifest 单测 | 合成 registry 与入口；启用、停用、缺失、身份错误、重复及路径越界；默认无写盘，显式写入仅临时根 |
 | 路由黄金 | 典型任务的分类与候选回归，不单独代表配方质量 |
 | 路由效果评估 | `tests/evals/route-effects.json` 的独立任务契约；验证 mode/domain/action/recipe、实际加载集合和禁止动作 |
+| 词法层单测 | S3 词法召回不变量：none→ask 升级、永不置域/dispatch、否定排除、skillDocs 缺席降级、停用词与证据下限、确定性重放 |
+| 技能召回覆盖 | 44 ready 技能点名召回 + engineering skillTriggers 域内精召 + 每域 defaultRecipe 可解 |
+| 召回评估门禁 | `tests/evals/recall-corpus/` 三层语料（A 回归/B 实战/C 负空间）+ baseline 快照回归门；B 层由 `harvest-misses.mjs` 从 opt-in hint 日志收割草稿待人审 |
 | 路由安全回归 | 只读模式、多包名、否定和引用、词边界、实际配方、可用性、未知契约安全退回 |
 | 适配器契约 | 模式映射、候选与正文分离；分类永不授予 case-init 权限 |
 | 可观测事件契约 | 独立 NDJSON 通道、事件字段、相关 ID、非负耗时及 prompt/密钥脱敏；stdout JSON 不变 |
@@ -37,7 +40,7 @@ node scripts/verify.mjs --profile <quick|affected|full|release>
 | Hook 暂存区集成 | 临时 Git 仓库的 staged/unstaged 分离、工作文件已删、Unicode 和空格路径；不提交 |
 | Manifest 新鲜度 | `--check` 比较两份清单，忽略生成时间；只读，不自动修复 |
 
-测试定义在 [tests/run.mjs](../tests/run.mjs)，计数以运行结果为准（全量共 17 个套件）。测试使用临时目录并在 finally 清理；可用 `SKILLS_TEST_TMPDIR` 指定已存在的测试临时父目录。CLI 隔离测试采用有界异步进程池（并发上限 4）调度以提升执行效率。
+测试定义在 [tests/run.mjs](../tests/run.mjs)，计数以运行结果为准（全量共 22 个套件）。测试使用临时目录并在 finally 清理；可用 `SKILLS_TEST_TMPDIR` 指定已存在的测试临时父目录。CLI 隔离测试采用有界异步进程池（并发上限 4）调度以提升执行效率。
 
 ## 内容与部署检查
 

@@ -135,7 +135,7 @@ export function Decide(hint, manifest) {
     }
   }
   const clauses = text.split(/[，,。；;\n!?？！]|\bbut\b|但是|而是/);
-  const negated = clause => /不(?:要|用|使用|加载|启用|运行)|禁止|排除|无需|\b(?:do not|don't|without|exclude|not using)\b/.test(clause);
+  const negated = clause => /(?:不(?:要|用|使用|加载|启用|运行)|别(?:用|使用|加载|运行|拿)|勿(?:用|使用|加载)|禁止|排除|无需|\b(?:do not|don't|without|exclude|not using)\b)/.test(clause);
   const activeText = clauses.filter(clause => !negated(clause)).join(' ');
   const activeHas = (...terms) => terms.some(term => matches(activeText, term));
   const excluded = new Set();
