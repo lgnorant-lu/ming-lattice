@@ -116,8 +116,14 @@ foreach ($s in $sources) {
         $issues += [ordered]@{ level = $level; name = $s.name; msg = '无 frontmatter（--- 块缺失）'; file = $skillMd }
     }
 
-    # 相对引用检查（排除 http/mailto/锚点）
-    foreach ($m in [regex]::Matches($content, '\]\(([^)]+)\)')) {
+    # 相对引用检查（排除 http/mailto/锚点）——先剥代码围栏：map['a'](1, 2) 类代码不是链接（audit-domains 同族缺陷）
+    $linkLines = @(); $inFence = $false
+    foreach ($l in ($content -split "`r?`n")) {
+        if ($l -match '^\s*(```|~~~)') { $inFence = -not $inFence; continue }
+        if (-not $inFence) { $linkLines += $l }
+    }
+    $linkContent = $linkLines -join "`n"
+    foreach ($m in [regex]::Matches($linkContent, '\]\(([^)]+)\)')) {
         $ref = $m.Groups[1].Value
         if ($ref -match '^(https?://|mailto:|#)') { continue }
         $refPath = ($ref -split '#')[0]

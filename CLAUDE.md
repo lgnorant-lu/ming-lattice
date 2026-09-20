@@ -8,7 +8,7 @@
 registry.yaml            唯一事实源: base(基座模块)/vertical(参考)/deployable(部署)/private(私有) + targets/layers(层别登记)/candidates(候审区)
 .hooksrc                 Git Hook 分级门禁配置 (Emoji/乱码/密钥/lint 等级)
 .githooks/               Git Hooks 拦截脚本 (commit-msg, pre-commit)
-base/reverse-skill/      路由基座 (上游 submodule, 只读; 其 skills/ 下有 20 个模块 + router)
+base/reverse-skill/      路由基座 (上游 submodule; 带**有意本地补丁**——skills/SKILL.md PRE-CHECK 第0步 fail-closed 路由硬化 + field-journal 沉淀, 勿当脏态清理)
 vertical/                vendored 仓库 (参考/源码, 带 .git metadata, 默认不部署)
 deployable/              部署包装 (SKILL.md 改写 + symlink 指向 vertical/base 源)
 private/                 私有与自研内容 (路由、质量规范、UI/协议工具及个人资产)
