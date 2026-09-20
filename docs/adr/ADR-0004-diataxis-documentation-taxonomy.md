@@ -1,3 +1,8 @@
+---
+dynamics: [立,改,增,废]
+domain: gov
+---
+
 # ADR-0004: 采用 Diátaxis 框架进行文档四体裁分类治理
 
 - **状态**: Accepted

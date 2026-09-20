@@ -1,3 +1,8 @@
+---
+dynamics: [立,改,增,废]
+domain: gov
+---
+
 # ADR-0001: 解耦机读全量候选集 (candidates) 与推荐执行装配 (active_recipe)
 
 - **状态**: Accepted

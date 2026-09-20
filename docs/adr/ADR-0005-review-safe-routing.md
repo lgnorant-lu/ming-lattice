@@ -1,3 +1,8 @@
+---
+dynamics: [立,改,增,废]
+domain: gov
+---
+
 # ADR-0005: 审阅安全路由与显式可用性
 
 - Status: Accepted

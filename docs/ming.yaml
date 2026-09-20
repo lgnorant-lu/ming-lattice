@@ -1,0 +1,28 @@
+ming_v: "1"
+project: skills-collection
+tier: minimal
+# 只声明有真实文档实例的域；新域须先在此登记再实例化（audit-domains 反向检查）
+domains: [meta, spec, gov, verify, ops, know]
+namespaces: namespaces.json
+adr_dir: adr
+# 矩阵有意零裁决——本域不行使该动力学（裁决即记录，非缺陷）：
+# 立法只在 meta/spec；执行守护归 verify/ops 实机（scripts/tests/hooks）非文档；
+# gov 文档(ADR)不立不执；know 文档不立不守不废（沉淀只增省用改）。
+dynamics_zero:
+  - "meta 用"      # 立法文档不承载执行
+  - "meta 省"      # 复盘归 know/distill
+  - "spec 用"      # 契约不执行
+  - "spec 守"      # 守护归 verify/tests
+  - "spec 省"      # spec 复盘归 know
+  - "spec 废"      # 尚无契约废止先例
+  - "gov 用"       # ADR 不执行
+  - "gov 守"       # ADR 不守护
+  - "gov 省"       # ADR 不复盘（supersede=废）
+  - "verify 立"    # 测试文档不立法
+  - "verify 省"    # 测试复盘归 know/distill
+  - "verify 废"    # 测试套件废止走代码删除
+  - "ops 立"       # 运行手册不立法
+  - "ops 废"       # 运行资产废止走 scripts 删除
+  - "know 立"      # 知识库不立法
+  - "know 守"      # 知识库不守护
+  - "know 废"      # 沉淀归档非废止

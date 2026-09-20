@@ -1,3 +1,9 @@
+---
+dynamics: [省]
+domain: know
+status: descriptive
+---
+
 # 从抓包到纯 Python：Kimi `device_register` 接口完整还原
 
 `device_register` 是设备首次注册时使用的接口。它看起来只有一个很长的 `tt_info` 参数和一段不可读的二进制请求体，但两者实际上使用了同一套 Native 封装。

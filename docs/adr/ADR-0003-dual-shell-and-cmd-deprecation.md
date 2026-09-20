@@ -1,3 +1,8 @@
+---
+dynamics: [立,改,增,废]
+domain: gov
+---
+
 # ADR-0003: 支持 PowerShell 与 POSIX Shell，坚决废除 Cmd/Batch
 
 - **状态**: Accepted

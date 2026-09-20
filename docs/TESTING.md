@@ -1,3 +1,9 @@
+---
+dynamics: [用,守,改,增]
+domain: verify
+status: normative
+---
+
 # 测试与验证
 
 需要 Node.js 22+。完整套件还需要 PowerShell 7 和 Git；不下载依赖，不连接真实上游，不部署到个人客户端。

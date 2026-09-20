@@ -1,3 +1,8 @@
+---
+dynamics: [立,改,增,废]
+domain: gov
+---
+
 # ADR-0002: 纯 Node.js 决策内核与双端外壳架构
 
 - **状态**: Accepted

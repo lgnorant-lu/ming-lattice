@@ -7,7 +7,7 @@
 
 | 形态 | 动词 | 物 |
 |---|---|---|
-| 域体检器 | 省+守 | `scripts/audit-domains.mjs`——orphan/landed/矩阵/双真相/frozen/proposed 六查 |
+| 域体检器 | 省+守 | `scripts/audit-domains.mjs`——orphan/landed/矩阵/双真相/frozen/proposed/标号分配律/未登记命名空间族/ming.yaml 词表九查（2026-09 自举加固：围栏内不扫标号、ADR- 前缀文件名兼容、族须≥2成员token） |
 
 ## 文档级硬形态（项目侧部署，不实现只规范）
 

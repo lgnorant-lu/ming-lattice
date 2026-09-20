@@ -1,3 +1,9 @@
+---
+dynamics: [省,增]
+domain: know
+status: descriptive
+---
+
 # SSA/IR 反混淆方法论（7 步，可执行）
 
 > 来源：2026-08-18 调研（3 份报告交叉验证）。适用 Web JS + 二进制 + VMP 三类场景。

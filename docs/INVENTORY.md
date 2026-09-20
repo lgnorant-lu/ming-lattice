@@ -1,3 +1,9 @@
+---
+dynamics: [用,守,改,增]
+domain: ops
+status: descriptive
+---
+
 # Skill 采集清单 (INVENTORY)
 
 > [!NOTE]

@@ -1,3 +1,9 @@
+---
+dynamics: [用,守,改]
+domain: ops
+status: descriptive
+---
+
 # MCP 对照清单 (本地 vs 生态索引)
 
 > [!NOTE]

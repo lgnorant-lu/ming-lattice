@@ -56,6 +56,7 @@ export const allSuites = [
   { name: 'check-skill-unit', tier: 'unit', run: runCheckSkillUnit },
   { name: 'scaffold-skill', tier: 'unit', run: runScaffoldSkillUnit },
   { name: 'scaffold-domains', tier: 'unit', run: () => node('private/engineering/ming-l-paradigm/scripts/scaffold-domains.test.mjs') },
+  { name: 'ming-l-audit', tier: 'contract', run: () => node('private/engineering/ming-l-paradigm/scripts/audit-domains.mjs', 'docs') },
   { name: 'route-golden', tier: 'contract', run: () => node('tests/test-route-decision.mjs') },
   { name: 'skill-conformance', tier: 'contract', run: () => node('private/engineering/ming-skill-forge/scripts/check-skill.mjs', '--all') },
   { name: 'adapter-contract', tier: 'contract', run: runAdapterContract },

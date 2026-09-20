@@ -1,3 +1,8 @@
+---
+dynamics: [立,改,增,废]
+domain: gov
+---
+
 # ADR-0006: 项目级经验沉淀库与 ming-distiller 入口
 
 - Status: Accepted

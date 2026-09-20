@@ -1,3 +1,9 @@
+---
+dynamics: [省]
+domain: know
+status: descriptive
+---
+
 # 筛选报告 (SCREENING) — 27 个 vertical 审阅结论
 
 > [!NOTE]

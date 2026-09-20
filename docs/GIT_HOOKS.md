@@ -1,3 +1,9 @@
+---
+dynamics: [守,改,增]
+domain: meta
+status: normative
+---
+
 # Git Hooks 门禁与自动化流水线规范（Git Hooks Governance）
 
 本文档定义 `ming-skills` 仓库的 Git Hook 门禁体系规范：Hook 清单、检查项、分级策略、安装指引、跳过策略与跨平台兼容性约束。

@@ -1,3 +1,8 @@
+---
+dynamics: [立,改,增,废]
+domain: gov
+---
+
 # ADR-0007: 多层召回评分路由——词法层入核、嵌入层离线、召回优先策略
 
 - Status: Proposed

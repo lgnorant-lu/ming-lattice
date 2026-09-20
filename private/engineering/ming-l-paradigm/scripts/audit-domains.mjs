@@ -113,7 +113,7 @@ const anchorStr = (key, dflt) => {
 };
 const adrDir = anchorStr('adr_dir', 'adr');           // ADR 目录（相对 target，支持嵌套如 arch/decisions）
 const findingsPat = anchorStr('findings_pat', 'findings'); // 候审档路径特征（子串匹配，有意宽松——豁免语义）
-const ADR_RE = new RegExp(`(?:^|/)${escRe(adrDir)}/(\\d{4})-[^/]+\\.md$`);
+const ADR_RE = new RegExp(`(?:^|/)${escRe(adrDir)}/(?:ADR-)?(\\d{4})-[^/]+\\.md$`); // ADR-0001-x.md 与裸 0001-x.md 双棕场命名兼容
 const FINDINGS_RE = new RegExp(escRe(findingsPat), 'i');
 
 if (!fs.existsSync(target)) {
@@ -291,8 +291,11 @@ for (const f of mdFiles) {
 
   // 候审档字母区：## Q. 标题下的 "N. xxx" 列表项 = 定义 Q<N>
   let sectionLetter = null;
+  let inFence = false; // 代码围栏内不扫标号——mermaid 节点 ID/代码示例非行文引用
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    if (/^\s*(```|~~~)/.test(line)) { inFence = !inFence; continue; }
+    if (inFence) continue;
     const secM = line.match(/^## ([A-Z])\.\s/);
     if (secM) sectionLetter = secM[1];
     if (/^## /.test(line) && !secM) sectionLetter = null;
@@ -376,7 +379,8 @@ if (nsFile) {
     }
   }
   for (const [pre, f] of fam) {
-    if (f.count >= 2) add('W', `疑似未登记命名空间族: ${pre}<N>（${[...f.tokens].slice(0,5).join(', ')}${f.tokens.size>5?'…':''} 共 ${f.count} 处 @ ${[...f.files].slice(0,3).join(', ')}）——登记或停用，裁决在人`);
+    // 族须 ≥2 个不同成员 token——单 token 重复出现是术语不是族（ARM64×8/BM25×4 类误报来源）
+    if (f.tokens.size >= 2) add('W', `疑似未登记命名空间族: ${pre}<N>（${[...f.tokens].slice(0,5).join(', ')}${f.tokens.size>5?'…':''} 共 ${f.count} 处 @ ${[...f.files].slice(0,3).join(', ')}）——登记或停用，裁决在人`);
   }
 }
 // ming.yaml 校验（配置层）：词表 + 声明域实例化

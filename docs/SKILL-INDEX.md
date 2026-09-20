@@ -1,3 +1,9 @@
+---
+dynamics: [用,改,增]
+domain: know
+status: descriptive
+---
+
 # SKILL-INDEX — 全部 skill 精要索引（路由参考）
 
 > 用途：第一层路由参考——AI/用户在任务开始时按此表选 skill。description 才是外层触发依据（Claude Code 按 frontmatter description 惰性加载）；本表是人工可读的精要版。
