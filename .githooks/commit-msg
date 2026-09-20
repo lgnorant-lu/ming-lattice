@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# ming-skills commit-msg hook
+# ming-skills commit-msg hook -> 门禁引擎调度
 # 跨平台兼容 (Git for Windows / macOS / Linux)
 
-node "$(dirname "$0")/../scripts/hooks/validate.mjs" "$1"
+node "$(dirname "$0")/../scripts/hooks/engine.mjs" commit-msg "$1"

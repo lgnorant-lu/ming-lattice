@@ -11,8 +11,8 @@ for (const scenario of ['staged-secret', 'unstaged-secret', 'deleted-working-fil
     const temp = fs.mkdtempSync(path.join(process.env.SKILLS_TEST_TMPDIR || os.tmpdir(), 'ming-index-'));
     try {
       const root = path.join(temp, 'repo with spaces');
-      fs.mkdirSync(path.join(root, 'scripts/hooks'), { recursive: true });
-      for (const name of ['check.mjs', 'validate.mjs', 'plan.mjs']) fs.copyFileSync(path.join(project, 'scripts/hooks', name), path.join(root, 'scripts/hooks', name));
+      // 引擎化后 check.mjs 是薄入口——整套 hooks 目录（engine/lib/gates）都需就位
+      fs.cpSync(path.join(project, 'scripts/hooks'), path.join(root, 'scripts/hooks'), { recursive: true });
       fs.writeFileSync(path.join(root, '.hooksrc'), 'lintLevel=off\nsecretLevel=error\n');
       execFileSync('git', ['init', '-q', root], { timeout: 10000 });
       const file = scenario === 'unicode-path' ? '\u914d\u7f6e space.json' : 'config.json';

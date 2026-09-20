@@ -1,0 +1,50 @@
+# .hooksrc — Git Hook 门禁配置（脚手架模板）
+# 复制本文件为 .hooksrc 后按需调整；键格式 key=value，行首 # 注释。
+# 等级四级：required(不吃SKIP) | error(拦截) | warn(仅警告) | off(跳过)
+# 引擎文档：docs/GIT_HOOKS.md
+
+# ── 旧键（后兼容别名，等价于 gate.<id>.level）──
+requireCommitMsg=true     # 是否强制提交格式（恒为 true 才有 Conventional 校验）
+emojiLevel=error          # → gate.emoji.level
+mojibakeLevel=error       # → gate.mojibake.level
+secretLevel=error         # → gate.secrets.level
+lintLevel=error           # → gate.impact-test.level（影响面测试）
+trailerLevel=error        # → gate.commit-msg.level（AI 尾巴等）
+
+# ── 原生门等级（新写法，与旧键等价）──
+# gate.secrets.level=error
+# gate.large-file.level=error
+# gate.commit-msg.level=error
+# gate.pre-push-verify.level=error
+# gate.impact-test.level=error
+
+# ── 声明式正则门（单模式+单消息长尾，零代码）──
+# gate.<id>.level=<等级>
+# gate.<id>.pattern=<正则>            # 必填；逐行扫描 staged blob
+# gate.<id>.message=<报告文案>
+# gate.<id>.globs=a,b                 # 可选；无斜杠=basename 匹配，有斜杠=路径前缀；缺省=全部文件
+# gate.<id>.exclude=a,b               # 可选；排除 globs
+# gate.<id>.once=true                 # 可选；每文件只报一次（刷屏防护）
+# gate.<id>.skipIf=merge,rebase       # 可选；git 态条件（merge/rebase/cherry-pick/ref:<branch>）
+#
+# 示例：
+# gate.no-debugger.level=error
+# gate.no-debugger.globs=*.js,*.ts,*.mjs
+# gate.no-debugger.pattern=\bdebugger\b
+# gate.no-debugger.message=调试语句残留
+#
+# gate.fixme.level=warn
+# gate.fixme.pattern=FIXME|XXX|HACK
+# gate.fixme.message=遗留标记待清理
+# gate.fixme.once=true
+
+# ── 引擎级配置 ──
+# integrityLevel=warn    # gates/ 目录 hash 变化提示等级（warn|off）
+# SKIP=<gate1>,<gate2>   # 环境变量：临时豁免点名门；required 级不受影响
+
+# ── 引擎子命令 ──
+# node scripts/hooks/engine.mjs list        # 列出门清单与生效等级
+# node scripts/hooks/engine.mjs run check   # 命名组：按暂存/改动文件跑门禁（等价 pre-commit 检查）
+# node scripts/hooks/engine.mjs run ci      # 命名组：全树扫描（git ls-files + 工作区读）
+# node scripts/hooks/engine.mjs baseline    # 冻结当前全部违规到 .hooks-baseline.json
+# node scripts/hooks/engine.mjs trust       # 确认 gates/ 目录当前 hash（完整性再确认）

@@ -12,6 +12,14 @@ if (-not (Test-Path $hooksDir)) {
 # 配置 git hooksPath
 git -C $repoRoot config core.hooksPath .githooks
 
+# 写入 gates/ 完整性存值（若 node 可用；失败不阻断安装）
+$node = Get-Command node -ErrorAction SilentlyContinue
+if ($node) {
+    try {
+        node (Join-Path $repoRoot 'scripts/hooks/engine.mjs') trust 2>$null | Out-Null
+    } catch { }
+}
+
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "  ming-skills Git Hooks 门禁体系安装成功！" -ForegroundColor Green
 Write-Host "  - core.hooksPath = .githooks" -ForegroundColor Gray

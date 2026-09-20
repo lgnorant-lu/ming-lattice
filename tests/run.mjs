@@ -14,6 +14,7 @@ import { run as runCliIntegration } from './integration/test-cli-tools.test.mjs'
 import { run as runRouteEffects } from './evals/test-route-effects.mjs';
 import { run as runSkillRecall } from './evals/test-skill-recall.mjs';
 import { run as runLexicalLayer } from './unit/test-lexical-layer.test.mjs';
+import { run as runHookEngine } from './unit/test-hook-engine.test.mjs';
 import { run as runLintContract } from './contract/test-lint-contract.mjs';
 import { run as runHookPlannerContract } from './contract/test-hook-planner.mjs';
 
@@ -64,6 +65,7 @@ export const allSuites = [
   { name: 'hook-planner', tier: 'contract', run: runHookPlannerContract },
   { name: 'route-effects', tier: 'eval', run: runRouteEffects },
   { name: 'lexical-layer', tier: 'unit', run: runLexicalLayer },
+  { name: 'hook-engine', tier: 'unit', git: true, run: runHookEngine },
   { name: 'skill-recall', tier: 'eval', run: runSkillRecall },
   { name: 'recall-eval', tier: 'eval', run: () => node('tests/evals/eval-recall.mjs', '--gate') },
   { name: 'route-safety', tier: 'contract', run: () => node('--test', 'tests/contract/test-route-safety.test.mjs') },

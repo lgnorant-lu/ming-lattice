@@ -19,17 +19,37 @@
 门禁体系采用分层递进架构，兼顾日常提交极速响应与远端代码质量底线：
 
 ```
-[git commit] -> pre-commit -> 暂存区静态批量扫描 (cat-file --batch-check)
-                           -> 影响面计划器 plan.mjs (单调性、fail-closed)
-                           -> 受影响测试套件 (纯文档 < 2s; 受限代码 < 5s)
+[git commit] -> pre-commit shim -> engine.mjs -> cheap 门（secrets/mojibake/emoji/large-file/声明式门）
+                                             -> error 命中即跳过昂贵门
+                                             -> impact-test 门 (plan.mjs 单调性、fail-closed)
 
-[git push]   -> pre-push   -> 解析 push stdin (过滤删除分支操作)
-                           -> 统一质量门禁 verify.mjs --profile full
-                           -> 全量 17 个测试套件 + 严格离线供应链检查
+[git push]   -> pre-push shim   -> engine.mjs -> pre-push-verify 门（过滤删除分支，verify.mjs --profile full）
+
+[CLI / CI]   -> engine.mjs run check|ci   命名运行组——与 hooks 同一份 .hooksrc 配置
+             -> engine.mjs baseline       冻结既有违规（棕场接入钥匙）
+             -> engine.mjs list / trust   诊断清单 / gates 完整性再确认
 
 [CI / 发布]  -> CI 门禁    -> 干净 checkout
                            -> verify.mjs --profile release (含新鲜度比对 + benchmark 性能硬阈值)
 ```
+
+### 2.0 引擎化架构（gate 目录 + 声明式门）
+
+`scripts/hooks/engine.mjs` 是统一调度器；门禁规则分两源：
+
+- **原生码门** `scripts/hooks/gates/*.mjs`：导出 `gate` 对象 `{id, stages, defaultLevel, expensive?, needsAllFiles?, globs?, exclude?, available?(ctx), run(ctx)→findings[]}`。secrets/mojibake/emoji/large-file/commit-msg/impact-test/pre-push-verify 七门为出厂目录。
+- **声明式正则门** `.hooksrc` 内 `gate.<id>.<key>` 平铺键——覆盖"单模式+单消息"长尾检查，零代码：
+  ```ini
+  gate.no-debugger.level=error
+  gate.no-debugger.globs=*.js,*.ts,*.mjs
+  gate.no-debugger.pattern=\bdebugger\b|console\.(log|debug)
+  gate.no-debugger.message=调试语句残留
+  gate.no-debugger.once=true            # 可选：逐文件单报
+  gate.no-debugger.skipIf=merge,rebase  # 可选：git 态条件（merge/rebase/cherry-pick/ref:<branch>）
+  ```
+- 项目私有门目录 `gates.local/`（入仓的项目特有门）；个人配置覆盖 `.hooksrc.local`（gitignore）。
+- 退出码契约：`0` 通过 / `1` 门禁拦截 / `2` 引擎故障（fail-closed 且可分辨）。
+- **索引保真不变量**：staged 源下 gate 经 `ctx.read` 读 `git show :path` 索引 blob，原生门禁止 `fs.read` 工作区；`run ci`/`baseline` 走 `git ls-files` + 工作区读（CI 读已提交态，无污染问题）。
 
 ### 2.1 `commit-msg` 检查项
 1. **主题格式**：`<type>(<scope>): <中文描述>`
@@ -99,9 +119,21 @@ lintLevel=error         # error | warn | off（默认 error: lint 失败阻断�
 
 | 等级 | 行为表现 |
 |---|---|
+| `required` | 命中即拒绝，且不吃 `SKIP` 环境变量豁免（最高档；`--no-verify` 仍是 git 层无解，CI 才是真底线） |
 | `error` | 命中即拒绝提交（默认严格模式，CI 与日常开发强制开启） |
 | `warn` | 仅打印黄色警告，不阻断提交（用于临时调试阶段） |
 | `off` | 完全跳过该项检查 |
+
+**等级解析序**：`gate.<id>.level` > 旧键别名（`emojiLevel→emoji` / `mojibakeLevel→mojibake` / `secretLevel→secrets` / `lintLevel→impact-test` / `trailerLevel→commit-msg`）> 门默认级。`.hooksrc.local`（gitignore）在 `.hooksrc` 之上覆盖。
+
+### 3.1 baseline 冻结（棕场接入）
+
+`node scripts/hooks/engine.mjs baseline` 把当前全部违规写入 `.hooks-baseline.json`（存 hash 不存明文；身份=`sha1(gate|file|sha1(matchText))`，行号不入身份）。之后引擎只拦**新增**违规——老欠账冻结入档、新增零容忍。文件改名相当于新文件，需重跑 baseline 再冻结。入仓共享冻结。
+
+### 3.2 临时豁免与完整性
+
+- `SKIP=<gate1>,<gate2> git commit ...`：临时豁免点名门（pre-commit/overcommit 生态惯例名）；`required` 级不吃 SKIP。
+- **gates/ 完整性提示**：`engine.mjs` 每次运行比对 `gates/` 目录 hash 与 `.git/hook-engine-state.json` 存值，不一致时打 warn（透明性特性——变化可见，不阻断）；确认无误后 `node scripts/hooks/engine.mjs trust` 再确认。`integrityLevel=off` 可关。
 
 ---
 

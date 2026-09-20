@@ -33,3 +33,6 @@ tools/embeddings/.cache/
 
 # S4 spike 未过 eval 门禁（emb-only 命中=0）——artifact 暂不提交，工具链可复现
 config/router-embeddings.json
+
+# 门禁引擎个人覆盖层（.hooksrc 为共享配置，.local 为个人豁免——永不入仓）
+.hooksrc.local

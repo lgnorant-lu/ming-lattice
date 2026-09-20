@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# ming-skills pre-commit hook
+# ming-skills pre-commit hook -> 门禁引擎调度
 # 跨平台兼容 (Git for Windows / macOS / Linux)
 
-node "$(dirname "$0")/../scripts/hooks/check.mjs"
+node "$(dirname "$0")/../scripts/hooks/engine.mjs" pre-commit
