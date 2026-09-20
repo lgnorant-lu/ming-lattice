@@ -251,12 +251,20 @@ function privateEntries() {
 // ---------- CLI ----------
 function main() {
   const args = process.argv.slice(2);
-  const skillDir = args.find(a => !a.startsWith('--'));
+  // 显式旗标解析：未知旗标拒绝（防 --no-regstry 类拼错静默放行），位置参数有且仅一个
+  const KNOWN = new Set(['--json', '--no-router', '--no-registry', '--all']);
+  const positional = [];
+  for (const a of args) {
+    if (a.startsWith('--')) {
+      if (!KNOWN.has(a)) { console.error(`[E] 未知旗标: ${a}`); process.exit(1); }
+    } else positional.push(a);
+  }
+  const skillDir = positional[0];
   const asJson = args.includes('--json');
   const opts = { skipRouter: args.includes('--no-router'), skipRegistry: args.includes('--no-registry') };
   const allMode = args.includes('--all');
 
-  if (!skillDir && !allMode) {
+  if ((!skillDir && !allMode) || positional.length > 1) {
     console.error('用法: node check-skill.mjs <skill-dir>|--all [--json] [--no-router] [--no-registry]');
     process.exit(1);
   }

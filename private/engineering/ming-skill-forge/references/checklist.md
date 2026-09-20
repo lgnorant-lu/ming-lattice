@@ -64,4 +64,4 @@ node private/engineering/ming-skill-forge/scripts/check-skill.mjs <skill-dir>
 node private/engineering/ming-skill-forge/scripts/check-skill.mjs --all   # registry private 区全量（= skill-conformance 套件）
 # 选项: --json 机器可读输出; --no-router 跳过 DOMAIN_DEFS 检查（内部未路由包）; --no-registry 跳过 registry 校验（隔离 fixture）
 ```
-退出码：0=无 E 级；1=存在 E 级。行为契约锁定于 `tests/unit/test-check-skill.test.mjs`；脚手架 `scripts/scaffold-skill.mjs`（模板 `assets/skill.md.tmpl`，契约锁定于 `tests/unit/test-scaffold-skill.test.mjs`——参数解析/层白名单/desc 写前校验/重名扫描/失败回滚/纳层评估记录）。
+退出码：0=无 E 级；1=存在 E 级；未知旗标/多位置参数拒于解析期。行为契约锁定于 `tests/unit/test-check-skill.test.mjs`；脚手架 `scripts/scaffold-skill.mjs`（模板 `assets/skill.md.tmpl`，契约锁定于 `tests/unit/test-scaffold-skill.test.mjs`——参数解析/registry 派生层白名单（根层+已登记条目与候选 path 父目录，新层别先登记）/desc 写前校验/重名扫描/失败回滚/纳层评估记录）。

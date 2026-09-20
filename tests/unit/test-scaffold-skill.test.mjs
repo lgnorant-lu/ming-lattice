@@ -44,6 +44,16 @@ export function run() {
       assert.equal(r.status, 0, `testing 子层应放行: ${r.stderr}`);
       assert.ok(r.stdout.includes(path.join('private', 'engineering', 'testing', 'zz-testing-fx')), '落点应在 testing 子层');
     }
+    // 派生白名单：Windows 反斜杠归一 + 未登记新层拒（纳层须先 registry 登记）
+    {
+      const r = scaffold(['zz-bs-fx', '--under', 'private\\engineering', '--desc', DESC, '--dry-run']);
+      assert.equal(r.status, 0, `反斜杠应归一放行: ${r.stderr}`);
+      const r2 = scaffold(['zz-lab-fx', '--under', 'private/labs', '--desc', DESC, '--dry-run']);
+      assert.equal(r2.status, 1, '未登记新层应拒');
+      assert.ok(r2.stderr.includes('登记'), '应提示纳层准入路径');
+      // 重复旗标拒
+      assert.equal(scaffold(['zz-dup-fx', '--desc', DESC, '--desc', DESC]).status, 1, '重复 --desc 应拒');
+    }
     assert.ok(absent('../zz-escape-fx'), '逃逸目录不得存在于仓外');
     assert.ok(absent('private/zz-escape-fx'), '拒绝后不得落盘');
 

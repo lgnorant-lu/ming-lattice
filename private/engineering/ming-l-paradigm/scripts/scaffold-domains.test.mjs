@@ -153,5 +153,25 @@ function check(name, problems) {
   check('模板 dynamics 抑制矩阵噪音', p);
 }
 
-console.log(`\n${pass} passed, ${fail} failed, 9 total`);
+// ── 10. 参数解析缺陷族回归（同 scaffold-skill）：未知旗标/缺值/吞值/无效 tier/位置参数全拒且不落盘 ──
+{
+  const t = path.join(tmp(), 'docs');
+  const p = [];
+  const cases = [
+    ['--tagret', t],                       // 未知旗标（拼错静默建默认 docs/ 的历史缺陷）
+    ['--tier'],                            // 缺值
+    ['--tier', '--force', '--target', t],  // 吞值：--force 被吃成 tier
+    ['--tier', 'bogus', '--target', t],    // 无效 tier 静默回落默认域的历史缺陷
+    ['straypos', '--target', t],           // 位置参数
+    ['--domains', '', '--target', t],      // 空域表
+  ];
+  for (const c of cases) {
+    const r = spawnSync('node', [SCAFFOLD, ...c], { encoding: 'utf8' });
+    if (r.status === 0) p.push(`未拒: ${c.join(' ')}`);
+  }
+  if (exists(t, 'META.md') || exists(t, 'ming.yaml')) p.push('拒后仍落盘');
+  check('参数缺陷族 fail-closed', p);
+}
+
+console.log(`\n${pass} passed, ${fail} failed, 10 total`);
 process.exit(fail ? 1 : 0);

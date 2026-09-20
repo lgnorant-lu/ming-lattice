@@ -11,19 +11,34 @@ import { fileURLToPath } from 'node:url';
 
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
-const arg = (name, dflt) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : dflt; };
-const target = path.resolve(arg('--target', 'docs'));
-const project = arg('--project', path.basename(path.dirname(target)));
-const force = args.includes('--force');
-const tier = arg('--tier', null);
+const die = (msg) => { console.error(`[E] ${msg}`); process.exit(1); };
+// 显式旗标解析（与 scaffold-skill 同一缺陷族）：未知旗标拒、缺值/吞值拒、位置参数拒
+const VALUE_FLAGS = new Set(['--target', '--domains', '--tier', '--project']);
+const opts = {};
+for (let i = 0; i < args.length; i++) {
+  const a = args[i];
+  if (VALUE_FLAGS.has(a)) {
+    const v = args[i + 1];
+    if (v === undefined || v.startsWith('--')) die(`旗标 ${a} 缺值（或把下一个旗标吞成了值）`);
+    if (opts[a] !== undefined) die(`重复旗标: ${a}`);
+    opts[a] = v; i++;
+  } else if (a === '--force') opts[a] = true;
+  else die(a.startsWith('--') ? `未知旗标: ${a}` : `不接受位置参数: ${a}（目录走 --target）`);
+}
+const target = path.resolve(opts['--target'] || 'docs');
+const project = opts['--project'] || path.basename(path.dirname(target));
+const force = !!opts['--force'];
+const tier = opts['--tier'] || null;
 const TIER_DOMAINS = {
   minimal:  ['meta', 'spec', 'findings'],
   standard: ['meta', 'spec', 'dev', 'findings'],
   full:     ['meta', 'spec', 'dev', 'plan', 'gov', 'exp', 'verify', 'ops', 'know', 'findings'],
 };
-const domains = args.includes('--domains')
-  ? arg('--domains').split(',').map(s => s.trim())
+if (tier && !TIER_DOMAINS[tier]) die(`--tier 无效: ${tier}（${Object.keys(TIER_DOMAINS).join('|')}）`);
+const domains = opts['--domains'] !== undefined
+  ? opts['--domains'].split(',').map(s => s.trim()).filter(Boolean)
   : (TIER_DOMAINS[tier] || ['meta', 'spec', 'dev', 'findings']);
+if (!domains.length) die('--domains 解析后为空');
 
 const EMITS = {
   meta:     ['META.md', 'assets/templates/meta.md.tmpl'],

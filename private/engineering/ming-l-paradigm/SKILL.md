@@ -104,7 +104,7 @@ metadata:
 
 **矩阵纪律**：`域 x 动词` 画矩阵，**每个空格必须是有意的零**——空格即病灶检查器。活体先例全覆盖见 [references/precedents.md](references/precedents.md)（K8s feature gates=增、deprecation policy=废、Rust crater run=省……）。机读约定：文档 frontmatter `dynamics` 记**本档实际执行**的动词集（描述性观测，非域级覆盖声明）；域级"有意零"在 `ming.yaml` 的 `dynamics_zero:` 平铺条目（`"<域> <动词>"`）裁决——audit 据此区分已裁决零（静默）与未标空格（I）。
 
-**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点（dynamics_zero 裁决位+矛盾漂移查）/双真相/frozen 拦截/proposed+provisional 计龄/标号四检（唯一性·悬空引用·格式·登记表互锁）/O1 倒挂/未登记命名空间族启发式/frontmatter 词表补检（dynamics 值+status 缺席提示+文档域反向登记）/ming.yaml 校验（词表事实源=ming-config.schema.json，`--ming-schema` 覆盖即项目私有扩展通道）/gates 退出轴/`--emit-index` 索引层；**自测套** `audit-domains.test.mjs` 47 fixture 树用例（守门员自洽，\r 末行丢键已固化回归）。域骨架生成见 `scripts/scaffold-domains.mjs`（模板实例化 + namespaces.json/ming.yaml 播种，生成物即过审计；九域+候审档模板齐备），配套 `scaffold-domains.test.mjs` 9 用例（档产物面/幂等/--force/--domains/生成物即审计）。平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。
+**机械化**：`scripts/audit-domains.mjs` 是省+守的机器形态——orphan 检测/landed 指针/矩阵盘点（dynamics_zero 裁决位+矛盾漂移查）/双真相/frozen 拦截/proposed+provisional 计龄/标号四检（唯一性·悬空引用·格式·登记表互锁）/O1 倒挂/未登记命名空间族启发式（≥2 个相异成员才报族；**术语族非命名空间**被误报时，把该 pattern 登记为 `role=value` 即豁免——词表不参扫、不进族，内置 STOP 表仅兜通用英文缩写，项目词表不外置则不可见）/frontmatter 词表补检（dynamics 值+status 缺席提示+文档域反向登记）/ming.yaml 校验（词表事实源=ming-config.schema.json，`--ming-schema` 覆盖即项目私有扩展通道）/gates 退出轴/`--emit-index` 索引层；**自测套** `audit-domains.test.mjs` 47 fixture 树用例（守门员自洽，\r 末行丢键已固化回归）。域骨架生成见 `scripts/scaffold-domains.mjs`（模板实例化 + namespaces.json/ming.yaml 播种，生成物即过审计；九域+候审档模板齐备），配套 `scaffold-domains.test.mjs` 10 用例（档产物面/幂等/--force/--domains/生成物即审计/参数缺陷族 fail-closed）。平台门禁部署形态见 [references/hard-gates.md](references/hard-gates.md)。
 
 ## 6. 规则属性系统（Rule Attribute Systems）
 

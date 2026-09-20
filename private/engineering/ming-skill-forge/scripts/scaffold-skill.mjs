@@ -16,9 +16,20 @@ const REPO_ROOT = path.resolve(FORGE_DIR, '..', '..', '..');
 const TEMPLATE = path.join(FORGE_DIR, 'assets', 'skill.md.tmpl');
 const REGISTRY = path.join(REPO_ROOT, 'registry.yaml');
 
-// 层白名单 = registry 中实际存在的包父目录（纳层准入门；新层别先入 registry layers 表/走 ming-l 域准入）
-const LAYERS = new Set(['private', 'private/engineering', 'private/engineering/testing']);
-const SCAN_ROOTS = ['private', 'private/engineering', 'private/engineering/testing', 'deployable']; // 未注册游离包的重名扫描面
+// 层白名单 = registry 派生（事实源自维护，不写死）：基础根层 ∪ 已登记条目/候选的父目录。
+// 新层别准入 = 先在 registry（条目或 candidates path）登记该路径，再 scaffold——登记表即纳层门。
+function deriveLayers() {
+  const layers = new Set(['private', 'private/engineering']);
+  if (!fs.existsSync(REGISTRY)) return layers;
+  const reg = fs.readFileSync(REGISTRY, 'utf8');
+  for (const m of reg.matchAll(/path:\s*(private\/[^\s#]+?)\s*(?:#.*)?$/gm)) {
+    const parent = m[1].replace(/\/[^/]+$/, '');
+    if (parent !== m[1]) layers.add(parent);
+  }
+  return layers;
+}
+const LAYERS = deriveLayers();
+const SCAN_ROOTS = [...LAYERS, 'deployable']; // 未注册游离包的重名扫描面 = 全部已知包层 + 包装层
 
 const die = (msg) => { console.error(`[E] ${msg}`); process.exit(1); };
 const usage = () => die('用法: node scaffold-skill.mjs <name> --desc "..." [--under <layer>] [--paradigm] [--dry-run]');
@@ -33,6 +44,7 @@ for (let i = 0; i < args.length; i++) {
   if (a === '--desc' || a === '--under') {
     const v = args[i + 1];
     if (v === undefined || v.startsWith('--')) die(`旗标 ${a} 缺值（或把下一个旗标吞成了值）`);
+    if (opts[a.slice(2)] !== undefined) die(`重复旗标: ${a}`);
     opts[a.slice(2)] = v;
     i++;
   } else if (a === '--paradigm' || a === '--dry-run') {
@@ -47,7 +59,7 @@ if (positional.length !== 1) usage();
 
 const name = positional[0];
 const desc = opts.desc;
-const under = opts.under || 'private';
+const under = (opts.under || 'private').replace(/\\/g, '/').replace(/\/+$/, ''); // Windows 反斜杠/尾斜杠归一
 const dryRun = !!opts['dry-run'];
 const paradigm = !!opts.paradigm;
 
@@ -56,7 +68,7 @@ if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(name) || name.length < 3) {
   die(`name 非规范 kebab-case（小写段+单连字符，≥3 字符）: ${name}`);
 }
 if (!LAYERS.has(under)) {
-  die(`--under 不在层白名单（${[...LAYERS].join(' | ')}）；新层别先入 registry layers 表/走 ming-l 域准入`);
+  die(`--under 不在层白名单（${[...LAYERS].sort().join(' | ')}）；新层别先在 registry 条目或 candidates path 登记该路径（纳层准入），再 scaffold`);
 }
 if (!fs.existsSync(TEMPLATE)) die(`模板缺失: ${TEMPLATE}`);
 const destDir = path.resolve(REPO_ROOT, under, name);
