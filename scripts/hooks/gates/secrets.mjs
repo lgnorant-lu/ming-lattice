@@ -13,6 +13,8 @@
 // 展示：密钥样本只出打码形态（前4…后4），永不打印全文；
 //       matchText 存原始命中仅供 baseline 身份哈希（sha1，不落明文）
 
+import path from 'node:path';
+
 // ---- L1 服务商签名层（近零误报）----
 const SIGNATURE_PATTERNS = [
   { name: 'GitHub PAT',            regex: /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36,}\b/ },
@@ -40,6 +42,10 @@ const SIGNATURE_PATTERNS = [
 const GENERIC_ASSIGN = /\b(?:api[_-]?key|apikey|secret[_-]?key|access[_-]?key|auth[_-]?token|access[_-]?token|client[_-]?secret|private[_-]?key|passwd|password)\b["']?\s*[:=]\s*["']([A-Za-z0-9+/=_\-]{20,})["']/gi;
 // 占位符白名单——文档示例/模板变量常见形态（误报抑制先于上报）
 const PLACEHOLDER = /your[-_ ]|example|sample|placeholder|dummy|changeme|insert|redact|removed|xxx|\.\.\.|\$\{|<[a-z-]+>|\*{3,}|REPLACE|TODO|fake|mock|none|null/i;
+
+// ---- L0 文件名层：私钥文件名即违规（不读内容——防 id_rsa/test host key 类入仓事故）----
+const KEYFILE_NAME = /(^|\/)(id_rsa|id_dsa|id_ecdsa|id_ed25519|\.env\.production|\.env\.prod)|\.(pem|p12|pfx|key)$/i;
+const KEYFILE_ALLOW = /\.(example|sample|template|dist)\.|test|fixture|mock/i;
 
 // ---- L3 编码层 ----
 const SUSPICIOUS_NAME = /env|config|secret|cred|token|\.rc$|settings|\.local/i;
@@ -105,6 +111,14 @@ export const gate = {
     const b64Level = ctx.gateConfig?.b64Level ?? 'warn';
 
     for (const p of ctx.files) {
+      // L0：私钥文件名命中（不看内容不看扩展名白名单）
+      if (KEYFILE_NAME.test(p) && !KEYFILE_ALLOW.test(p)) {
+        findings.push({
+          gate: 'secrets', file: p,
+          matchText: `keyfile:${path.basename(p)}`,
+          message: `疑似私钥/凭据文件名: ${p}（测试用密钥应写进 TempDir，勿入仓）`,
+        });
+      }
       if (!TEXT_EXT.test(p)) continue;
       let content;
       try { content = ctx.read(p); } catch { continue; }

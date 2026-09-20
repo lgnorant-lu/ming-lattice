@@ -219,6 +219,17 @@ export async function run() {
     assert.ok(l3.some(f => f.file === 'config.env' && f.message.includes('b64')), '可疑文件名 b64 应命中');
     assert.ok(!l3.some(f => f.file === 'notes.md' && f.message.includes('b64')), '非可疑文件名不解 b64');
 
+    // L0 文件名层：私钥文件名命中（不读内容）；.example/.test 白名单豁免
+    const l0 = await secrets.run(mkCtx({
+      'certs/id_rsa': 'whatever',
+      'deploy/server.pem': 'x',
+      'conf/app.key': 'x',
+      'conf/app.key.example': 'x',   // 白名单豁免
+      'test/fixture.pem': 'x',       // fixture 白名单豁免
+    }));
+    assert.equal(l0.length, 3, `L0 文件名层命中数 ${l0.length}`);
+    assert.ok(l0.every(f => f.matchText.startsWith('keyfile:')), 'L0 身份用文件名');
+
     // commit-msg 策略词表注入：types/subjectMaxLen/extraTrailers
     const { gate: cmsg } = await import('../../scripts/hooks/gates/commit-msg.mjs');
     const dir = tempRepo();
@@ -294,5 +305,35 @@ export async function run() {
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   }
 
-  console.log('  -> hook-engine: 8 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores）');
+  // 9. run fix 自愈：whitespace 门修工作区 + 报告清单
+  {
+    const wsMod = await import('../../scripts/hooks/gates/whitespace.mjs');
+    const { fixContent } = wsMod;
+    const dir = tempRepo();
+    try {
+      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(dir, 'scripts/hooks'), { recursive: true });
+      fs.writeFileSync(path.join(dir, '.hooksrc'), 'secretLevel=off\nmojibakeLevel=off\nemojiLevel=off\nlintLevel=off\n');
+      const engine = path.join(dir, 'scripts/hooks/engine.mjs');
+
+      // fixContent 纯函数契约
+      const r0 = fixContent('a  \nb\t\nlast-no-newline');
+      assert.equal(r0.content, 'a\nb\nlast-no-newline\n');
+      assert.ok(r0.changed);
+      assert.ok(!fixContent('clean\n').changed);
+
+      // 暂存脏文件 → run fix → 工作区被修
+      fs.writeFileSync(path.join(dir, 'dirty.md'), 'line1   \nline2\t\nno-eof');
+      execFileSync('git', ['add', 'dirty.md'], { cwd: dir });
+      const r = spawnSync(process.execPath, [engine, 'run', 'fix'], { cwd: dir, encoding: 'utf8' });
+      assert.equal(r.status, 0, r.stderr);
+      assert.ok(r.stdout.includes('dirty.md'), 'fix 应报告修复清单');
+      const after = fs.readFileSync(path.join(dir, 'dirty.md'), 'utf8');
+      assert.equal(after, 'line1\nline2\nno-eof\n', '工作区内容应被修复');
+      // fix 只写工作区不碰 index：staged blob 仍是脏的（可复验）
+      const staged = execFileSync('git', ['show', ':dirty.md'], { cwd: dir, encoding: 'utf8' });
+      assert.ok(staged.includes('line1   '), 'index 不被 fix 改动（re-stage 由用户确认）');
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  }
+
+  console.log('  -> hook-engine: 9 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix）');
 }

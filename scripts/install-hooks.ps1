@@ -1,8 +1,68 @@
 # scripts/install-hooks.ps1 — 一键安装与配置 ming-skills Git Hooks 门禁体系
 # 行为: 配置 git core.hooksPath 指向 .githooks 目录
+#   默认        —— 本仓安装
+#   -Target <p> —— 脚手架模式：把门禁引擎 kit 铺进目标仓（第二采纳者路径）
+
+param(
+    [string]$Target = '',
+    [switch]$Force
+)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path $PSScriptRoot -Parent
+
+# ── 脚手架模式：kit 移植到目标仓 ──
+if ($Target) {
+    $dest = Resolve-Path $Target -ErrorAction Stop
+    if (-not (Test-Path (Join-Path $dest '.git'))) {
+        throw "目标不是 git 仓根: $dest"
+    }
+    Write-Host "[scaffold] 门禁引擎 kit -> $dest" -ForegroundColor Cyan
+
+    # 1. scripts/hooks/ 整目录（engine+gates+lib+plan/validate 依赖件一并带）
+    $srcHooks = Join-Path $repoRoot 'scripts/hooks'
+    $dstHooks = Join-Path $dest 'scripts/hooks'
+    New-Item -ItemType Directory -Path $dstHooks -Force | Out-Null
+    Copy-Item (Join-Path $srcHooks '*') $dstHooks -Recurse -Force
+
+    # 2. .githooks/ shims
+    $dstShims = Join-Path $dest '.githooks'
+    New-Item -ItemType Directory -Path $dstShims -Force | Out-Null
+    Copy-Item (Join-Path $repoRoot '.githooks/*') $dstShims -Force
+
+    # 3. .hooksrc：不存在才铺模板（不覆盖目标仓已有配置）
+    $dstRc = Join-Path $dest '.hooksrc'
+    if (-not (Test-Path $dstRc)) {
+        Copy-Item (Join-Path $repoRoot '.hooksrc.tmpl') $dstRc
+        Write-Host "[scaffold] .hooksrc <- .hooksrc.tmpl（按需裁改）" -ForegroundColor Gray
+    } else {
+        Write-Host "[scaffold] .hooksrc 已存在，跳过（-Force 不覆盖配置是刻意的）" -ForegroundColor Yellow
+    }
+
+    # 4. .gitignore 追加 .hooksrc.local（不重复追加）
+    $dstIgnore = Join-Path $dest '.gitignore'
+    $gi = (Test-Path $dstIgnore) ? (Get-Content $dstIgnore -Raw) : ''
+    if ($gi -notmatch '(?m)^\.hooksrc\.local\s*$') {
+        Add-Content $dstIgnore "`n# 门禁引擎个人覆盖层`n.hooksrc.local`n"
+        Write-Host "[scaffold] .gitignore += .hooksrc.local" -ForegroundColor Gray
+    }
+
+    # 5. hooksPath + integrity 存值
+    git -C $dest config core.hooksPath .githooks
+    $node = Get-Command node -ErrorAction SilentlyContinue
+    if ($node) {
+        try { node (Join-Path $dstHooks 'engine.mjs') trust 2>$null | Out-Null } catch { }
+    }
+
+    Write-Host "========================================================" -ForegroundColor Cyan
+    Write-Host "  门禁引擎已铺入 $(Split-Path $dest -Leaf)" -ForegroundColor Green
+    Write-Host "  - 按需裁 .hooksrc（impact-test/pre-push-verify 在无 tests/verify 的仓会自动缺席或调 off）" -ForegroundColor Gray
+    Write-Host "  - 棕场接入建议先跑: node scripts/hooks/engine.mjs baseline" -ForegroundColor Gray
+    Write-Host "========================================================" -ForegroundColor Cyan
+    return
+}
+
+# ── 本仓安装模式 ──
 $hooksDir = Join-Path $repoRoot '.githooks'
 
 if (-not (Test-Path $hooksDir)) {
@@ -25,4 +85,5 @@ Write-Host "  ming-skills Git Hooks 门禁体系安装成功！" -ForegroundColo
 Write-Host "  - core.hooksPath = .githooks" -ForegroundColor Gray
 Write-Host "  - commit-msg     : 强制 Conventional Commits 格式 + 禁 Emoji" -ForegroundColor Gray
 Write-Host "  - pre-commit     : 编码防乱码 + 密钥防泄漏 + 大文件 + lint.ps1 验证" -ForegroundColor Gray
+Write-Host "  - post-merge     : chores 提醒（registry/submodule/hooks 变更）" -ForegroundColor Gray
 Write-Host "========================================================" -ForegroundColor Cyan

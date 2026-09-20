@@ -27,6 +27,7 @@
 [git push]   -> pre-push shim   -> engine.mjs -> pre-push-verify 门（过滤删除分支，verify.mjs --profile full）
 
 [CLI / CI]   -> engine.mjs run check|ci   命名运行组——与 hooks 同一份 .hooksrc 配置
+             -> engine.mjs run fix        自愈组（whitespace 等 fixable 门重写工作区，re-stage 由用户确认）
              -> engine.mjs baseline       冻结既有违规（棕场接入钥匙）
              -> engine.mjs list / trust   诊断清单 / gates 完整性再确认
 
@@ -140,6 +141,8 @@ lintLevel=error         # error | warn | off（默认 error: lint 失败阻断�
 - `SKIP=<gate1>,<gate2> git commit ...`：临时豁免点名门（pre-commit/overcommit 生态惯例名）；`required` 级不吃 SKIP。
 - **gates/ 完整性提示**：`engine.mjs` 每次运行比对 `gates/` 目录 hash 与 `.git/hook-engine-state.json` 存值，不一致时打 warn（透明性特性——变化可见，不阻断）；确认无误后 `node scripts/hooks/engine.mjs trust` 再确认。`integrityLevel=off` 可关。
 - **CI 增量扫描**：`node scripts/hooks/engine.mjs run check --range=origin/main...HEAD`——PR 相对基线分支的变更扫描（gitleaks `--log-opts` 同语义），checkout 后无暂存区概念的 CI 环境用此入口。
+- **自愈**：`node scripts/hooks/engine.mjs run fix`——`fixable` 门（当前 whitespace：行尾空白/EOF 换行）重写工作区文件并报告清单；**不碰 index**，re-stage 由用户确认（刻意避开 lint-staged stash 路线的数据丢失前科）。
+- **移植到其他仓**：`pwsh scripts/install-hooks.ps1 -Target <repo>`——铺入 `scripts/hooks/`（engine+gates+lib+依赖件）+ `.githooks/` shim + `.hooksrc`（模板，不覆盖已有）+ `.gitignore` 补 `.hooksrc.local` + hooksPath + integrity 存值。项目私有门入 `scripts/hooks/gates.local/`；`impact-test`/`pre-push-verify` 在无对应件的仓自动缺席（`available()` 守卫）。第二采纳者实证：blog-tui。
 
 ---
 

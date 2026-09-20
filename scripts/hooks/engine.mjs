@@ -4,6 +4,7 @@
 // 入口契约：
 //   node engine.mjs <stage> [args]   pre-commit | commit-msg <msgfile> | pre-push (stdin refs)
 //   node engine.mjs run check|ci     命名运行组：check=staged 源 / ci=全跟踪文件源（CI 同构）
+//   node engine.mjs run fix          自愈组：fixable 门重写工作区文件，报告清单待 re-stage
 //   node engine.mjs baseline         冻结既有违规 → .hooks-baseline.json（只拦新增）
 //   node engine.mjs trust            再确认 gates/ 目录完整性存值
 //   node engine.mjs list             解析后的门清单（诊断用）
@@ -249,6 +250,35 @@ async function cmdBaseline() {
   return 0;
 }
 
+// run fix：可自愈门的工作区修复（不碰 index——re-stage 由用户确认）
+async function cmdFix() {
+  const root = repoRoot();
+  const cfg = loadHookEngineConfig(root);
+  const src = fileSource(root, { source: 'staged' });
+  let files;
+  try { files = src.list(); } catch { files = []; }
+  const all = [...await loadNativeGates(), ...buildDeclarativeGates(cfg)];
+  const fixable = all.filter(g => g.fix && (g.stages ?? ['pre-commit']).includes('pre-commit'));
+  if (!fixable.length) { console.log('[fix] 无可自愈门启用'); return 0; }
+  let total = 0;
+  for (const g of fixable) {
+    if (resolveLevel(g.id, g.defaultLevel ?? 'warn', cfg) === 'off') continue;
+    const gcfg = cfg.gates[g.id] ?? {};
+    const globs = gcfg.globs?.split(',').map(s => s.trim()).filter(Boolean) ?? g.globs;
+    const exclude = [...(g.exclude ?? []), ...(gcfg.exclude?.split(',').map(s => s.trim()).filter(Boolean) ?? [])];
+    const scope = files.filter(f => matchAnyGlobs(f, globs ?? ['*']) && !matchAnyGlobs(f, exclude));
+    if (!scope.length) continue;
+    try {
+      const fixed = await g.fix({ root, files: scope, gateConfig: gcfg });
+      for (const p of fixed ?? []) { console.log(`[fix] ${g.id}: ${p} 已修复（请 git add 重新暂存）`); total++; }
+    } catch (e) {
+      console.warn(`[fix] ${g.id} 修复异常: ${e.message}`);
+    }
+  }
+  console.log(total ? `[fix] 共修复 ${total} 个文件` : '[fix] 无需修复');
+  return 0;
+}
+
 async function cmdList() {
   const root = repoRoot();
   const cfg = loadHookEngineConfig(root);
@@ -270,6 +300,7 @@ async function main() {
   try {
     if (cmd === 'run') {
       const group = rest.find(a => !a.startsWith('--')) ?? 'check';
+      if (group === 'fix') return await cmdFix();
       const rangeArg = rest.find(a => a.startsWith('--range='))?.slice(8);
       const source = rangeArg ? { source: 'range', range: rangeArg }
         : group === 'ci' ? { source: 'all' } : { source: 'staged' };
