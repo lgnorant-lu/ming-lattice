@@ -11,6 +11,7 @@
 | `commit-msg` | 提交信息录入 | Conventional Commits 主题格式、type 白名单、Emoji 禁令、乱码防御 | 格式/type 恒为 `error` 级；Emoji / 乱码按 `.hooksrc` 分级 |
 | `pre-commit` | 提交前暂存区 | 暂存 blob 批量大文件、乱码、凭据和 Emoji 静态扫描；基于 `plan.mjs` 影响面受限测试 | 命中静态违规或受影响测试失败即阻断提交；纯文档改动免测秒级放行 |
 | `pre-push` | 推送前远端同步 | 解析 push ref 范围，过滤删除操作；执行全量本地质量门禁 (`verify.mjs --profile full`) | 自动化测试或离线供应链门禁失败即阻断推送 |
+| `post-merge` | merge/pull 完成后 | chores 族：监看文件变更提醒（registry→sync 预览、submodule 指针→update、引擎文件→trust） | **suggest-only 永不阻断**——只打印提醒不执行命令 |
 
 ---
 
@@ -48,6 +49,7 @@
   gate.no-debugger.skipIf=merge,rebase  # 可选：git 态条件（merge/rebase/cherry-pick/ref:<branch>）
   ```
 - 项目私有门目录 `gates.local/`（入仓的项目特有门）；个人配置覆盖 `.hooksrc.local`（gitignore）。
+- **chores 族**（非阻断自动化，`chore.<id>.*` 声明式键）：`watch`（变更监看 globs）+ `message`（提醒文案）+ `stages`（默认 post-merge）。**suggest-only 铁律**：只打印提醒、永不执行命令、exit 恒 0——`.hooksrc` 是仓内跟踪文件，自动执行会把配置变成代码注入面（提案审计裁决）。
 - 退出码契约：`0` 通过 / `1` 门禁拦截 / `2` 引擎故障（fail-closed 且可分辨）。
 - **索引保真不变量**：staged 源下 gate 经 `ctx.read` 读 `git show :path` 索引 blob，原生门禁止 `fs.read` 工作区；`run ci`/`baseline` 走 `git ls-files` + 工作区读（CI 读已提交态，无污染问题）。
 

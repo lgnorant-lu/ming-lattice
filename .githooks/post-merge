@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+# ming-skills post-merge hook -> 门禁引擎调度（chore 族宿主：suggest-only，永不阻断）
+# 跨平台兼容 (Git for Windows / macOS / Linux)
+
+node "$(dirname "$0")/../scripts/hooks/engine.mjs" post-merge
+exit 0

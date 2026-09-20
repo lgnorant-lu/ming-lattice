@@ -242,5 +242,57 @@ export async function run() {
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   }
 
-  console.log('  -> hook-engine: 7 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略注入）');
+  // 8. chores 族：声明式构建 + post-merge 端到端（suggest-only 永不阻断）
+  {
+    const { buildChores } = await import('../../scripts/hooks/lib/chores.mjs');
+    const cfg = { chores: {
+      deps: { watch: 'package-lock.json,package.json', message: '依赖变更请 npm ci', stages: 'post-merge' },
+      noMsg: { watch: '*.md' },                       // 缺 message → 略过
+      multi: { watch: 'a/**', message: 'm', stages: 'post-merge,post-checkout' },
+    }, gates: {}, flat: {} };
+    const chores = buildChores(cfg);
+    assert.equal(chores.length, 2, '缺 message 的 chore 应略过');
+    const deps = chores.find(c => c.id === 'chore:deps');
+    assert.deepEqual(deps.stages, ['post-merge']);
+    assert.equal(deps.defaultLevel, 'warn', 'chore 恒 warn');
+    const hit = await deps.run({ files: ['package-lock.json', 'x.md'] });
+    assert.equal(hit.length, 1);
+    assert.equal(hit[0].level, 'warn');
+    assert.ok(hit[0].message.includes('npm ci'));
+    assert.ok(hit[0].message.includes('package-lock.json'), '提醒应带触发文件');
+    const miss = await deps.run({ files: ['x.md'] });
+    assert.equal(miss.length, 0, 'watch 未命中不提醒');
+
+    // e2e：真 merge → post-merge shim 路径（ORIG_HEAD 增量）
+    const dir = tempRepo();
+    try {
+      execFileSync('git', ['config', 'user.email', 't@t'], { cwd: dir });
+      execFileSync('git', ['config', 'user.name', 't'], { cwd: dir });
+      execFileSync('git', ['config', 'commit.gpgsign', 'false'], { cwd: dir });
+      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(dir, 'scripts/hooks'), { recursive: true });
+      fs.writeFileSync(path.join(dir, '.hooksrc'), [
+        'chore.demo.watch=watched.txt',
+        'chore.demo.message=演示提醒文案',
+      ].join('\n'));
+      const engine = path.join(dir, 'scripts/hooks/engine.mjs');
+
+      // 主干提交 → 分支改 watched.txt → 合并回主干（ORIG_HEAD 指向 merge 前）
+      fs.writeFileSync(path.join(dir, 'base.txt'), 'base\n');
+      execFileSync('git', ['add', '.'], { cwd: dir });
+      execFileSync('git', ['commit', '-qm', 'init'], { cwd: dir });
+      execFileSync('git', ['checkout', '-qb', 'feat'], { cwd: dir });
+      fs.writeFileSync(path.join(dir, 'watched.txt'), 'changed\n');
+      execFileSync('git', ['add', '.'], { cwd: dir });
+      execFileSync('git', ['commit', '-qm', 'feat'], { cwd: dir });
+      execFileSync('git', ['checkout', '-q', 'master'], { cwd: dir });
+      execFileSync('git', ['merge', '--no-ff', '-qm', 'merge feat', 'feat'], { cwd: dir });
+
+      const r = spawnSync(process.execPath, [engine, 'post-merge'], { cwd: dir, encoding: 'utf8' });
+      assert.equal(r.status, 0, `chore 永不阻断: ${r.stderr}`);
+      assert.ok(r.stderr.includes('演示提醒文案'), `post-merge 应提醒 chore: ${r.stderr}`);
+      assert.ok(r.stderr.includes('watched.txt'), '应列出触发文件');
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  }
+
+  console.log('  -> hook-engine: 8 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores）');
 }

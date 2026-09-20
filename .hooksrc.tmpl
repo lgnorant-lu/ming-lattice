@@ -49,6 +49,14 @@ trailerLevel=error        # → gate.commit-msg.level（AI 尾巴等）
 # gate.fixme.message=遗留标记待清理
 # gate.fixme.once=true
 
+# ── chores 族（suggest-only 非阻断自动化，post-merge 等阶段提醒，永不执行命令）──
+# chore.<id>.watch=<globs CSV>   监看文件（变更即提醒）
+# chore.<id>.message=<文案>      提醒内容（自动附触发文件清单）
+# chore.<id>.stages=<CSV>        挂载阶段（默认 post-merge）
+# 示例：
+# chore.deps.watch=package-lock.json,package.json
+# chore.deps.message=依赖清单变更——建议 npm ci
+
 # ── 引擎级配置 ──
 # integrityLevel=warn    # gates/ 目录 hash 变化提示等级（warn|off）
 # SKIP=<gate1>,<gate2>   # 环境变量：临时豁免点名门；required 级不受影响

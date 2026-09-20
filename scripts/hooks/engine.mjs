@@ -25,11 +25,15 @@ import { detectGitState, shouldSkip } from './lib/git-state.mjs';
 import { loadBaseline, freshFindings, writeBaseline, baselinePath } from './lib/baseline.mjs';
 import { checkIntegrity, writeTrust } from './lib/integrity.mjs';
 import { buildDeclarativeGates } from './lib/declarative.mjs';
+import { buildChores } from './lib/chores.mjs';
 import { matchAnyGlobs } from './lib/matcher.mjs';
 
 const HOOKS_DIR = path.resolve(import.meta.dirname);
 const NATIVE_GATES_DIR = path.join(HOOKS_DIR, 'gates');
 const LOCAL_GATES_DIR = path.join(HOOKS_DIR, 'gates.local');
+
+// 阻断阶段：error 命中 → exit 1；其余阶段（post-merge 等）一律提醒式，exit 恒 0
+const BLOCKING_STAGES = new Set(['pre-commit', 'commit-msg', 'pre-push', 'check', 'ci']);
 
 async function loadNativeGates() {
   const gates = [];
@@ -70,11 +74,16 @@ async function runStage(stage, opts = {}) {
 
   const nativeGates = await loadNativeGates();
   const declGates = buildDeclarativeGates(cfg);
+  const chores = buildChores(cfg);
   const skip = parseSkipSet();
   const gitState = detectGitState(root);
+  const blocking = BLOCKING_STAGES.has(stage);
 
-  // 阶段上下文
-  const src = fileSource(root, opts.fileSource ?? { source: 'staged' });
+  // 阶段上下文——post-merge 默认 ORIG_HEAD..HEAD 增量文件源
+  const defaultSource = stage === 'post-merge'
+    ? { source: 'range', range: 'ORIG_HEAD..HEAD' }
+    : { source: 'staged' };
+  const src = fileSource(root, opts.fileSource ?? defaultSource);
   const ctx = {
     root,
     stage,
@@ -87,8 +96,14 @@ async function runStage(stage, opts = {}) {
     files: [],
   };
 
-  if (stage === 'pre-commit' || stage === 'ci' || stage === 'check') {
-    ctx.files = src.list();
+  if (stage === 'pre-commit' || stage === 'ci' || stage === 'check' || stage === 'post-merge') {
+    try {
+      ctx.files = src.list();
+    } catch (e) {
+      // post-merge 容错：ORIG_HEAD 缺席（非 merge 场景/直跑）时退化为空集
+      if (stage === 'post-merge') return 0;
+      throw e;
+    }
     if (ctx.files.length === 0 && stage === 'pre-commit') return 0;
     if (src.source === 'staged') {
       const metaMap = batchMeta(root, ctx.files);
@@ -102,6 +117,8 @@ async function runStage(stage, opts = {}) {
     } else {
       ctx.meta = src.meta;
     }
+    // post-merge 容错：ORIG_HEAD 缺席（非 merge 场景直跑）时退化为空集
+    if (stage === 'post-merge' && ctx.files.length === 0) return 0;
   }
 
   // baseline：仅文件型阶段应用（commit-msg 等瞬态门不冻结）
@@ -111,7 +128,8 @@ async function runStage(stage, opts = {}) {
     console.log(`[engine] baseline 生效中（${baselineSet.size} 条既有违规冻结，仅拦新增）`);
   }
 
-  const applicable = [...nativeGates, ...declGates].filter(g => (g.stages ?? ['pre-commit']).includes(stage === 'ci' || stage === 'check' ? 'pre-commit' : stage));
+  const applicable = [...nativeGates, ...declGates, ...chores]
+    .filter(g => (g.stages ?? ['pre-commit']).includes(stage === 'ci' || stage === 'check' ? 'pre-commit' : stage));
 
   const errors = [];
   const warnings = [];
@@ -178,6 +196,15 @@ async function runStage(stage, opts = {}) {
   } else if (expensive.length) {
     skippedExpensive = true;
     console.log(`[engine] 已有 error 级命中，跳过昂贵门: ${expensive.map(g => g.id).join(', ')}`);
+  }
+
+  // 非阻断阶段（chore 宿主）：全部命中降级为提醒式输出，exit 恒 0
+  if (!blocking) {
+    for (const w of [...warnings, ...errors]) {
+      const tag = w.gate?.startsWith('chore:') ? 'chore' : 'warn';
+      console.warn(`[${tag}] ${w.gate}: ${w.file && w.file !== '-' ? w.file + ' — ' : ''}${w.message}`);
+    }
+    return 0;
   }
 
   for (const w of warnings) reportFinding(w, 'warn');
@@ -252,6 +279,7 @@ async function main() {
     if (cmd === 'trust') { writeTrust(repoRoot()); console.log('[engine] gates/ 完整性存值已更新'); return 0; }
     if (cmd === 'list') return await cmdList();
     if (cmd === 'commit-msg') return await runStage('commit-msg', { msgPath: rest[0] });
+    if (cmd === 'post-merge') return await runStage('post-merge');
     if (cmd === 'pre-push') {
       const { parsePushLines } = await import('./pre-push.mjs');
       const stdin = fs.readFileSync(0, 'utf8');
