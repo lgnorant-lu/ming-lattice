@@ -56,11 +56,3 @@ export function matchAnyGlobs(relPath, globs) {
   }
   return false;
 }
-
-/**
- * 文件过滤：globs 命中且未被 exclude 排除
- */
-export function filterFiles(files, { globs = ['*'], exclude = [] } = {}) {
-  return files.filter(f => matchAnyGlobs(typeof f === 'string' ? f : f.path, globs)
-    && !matchAnyGlobs(typeof f === 'string' ? f : f.path, exclude));
-}

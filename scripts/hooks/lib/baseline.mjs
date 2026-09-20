@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const BASELINE_VERSION = 1;
+const BASELINE_VERSION = 1;
 
 export function findingId(finding) {
   const h = createHash('sha1');

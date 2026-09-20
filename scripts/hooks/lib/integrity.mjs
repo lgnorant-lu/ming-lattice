@@ -24,7 +24,7 @@ function hashDir(dir) {
   return h.digest('hex');
 }
 
-export function stateFilePath(root) {
+function stateFilePath(root) {
   return path.join(gitDir(root), STATE_FILE);
 }
 
