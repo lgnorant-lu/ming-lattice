@@ -7,6 +7,7 @@
 id: 2026-09-17-<topic>          # <date>-<topic-slug>，全库唯一
 project: <project-slug>         # 项目目录名
 axis: [testing]                 # 闭集: testing docs docs-presentation obs sec contract overlay arch reverse ui antibot protocol other
+                                #       + Ming-L 九域名: meta spec dev plan gov exp verify ops know
 tags: [<自由词>]                # 检索提示，可多个
 revision: 1                     # 同 topic 再蒸馏 +1
 updatedAt: 2026-09-17
