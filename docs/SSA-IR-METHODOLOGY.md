@@ -46,7 +46,7 @@
 | 层 | 工具 | 形态 |
 |---|---|---|
 | VMP 去虚拟化 | Mergen（~850★，VMProtect 3.4-3.8/Themida 实测）/ VTIL2（C# 重写 2025 获奖）/ vmprotect-research（Rust 22/22） | 工具 |
-| IDA microcode | hrtng（Kaspersky 官方 ~1894★）/ d810-ng / IDAvator（microcode↔LLVM） | 插件 |
+| IDA microcode | hrtng（Kaspersky 官方 ~1894★）/ d810-ng / IDAvator（microcode<->LLVM） | 插件 |
 | JS 反混淆 | synchrony（~1237★）/ obfuscator-io-deobfuscator / decode-js（已有） | 工具 |
 | SSA 教学 | hsk/sccp_js | 代码 |
 | JS IR 标准 | google/jsir（660★ MLIR，CASCADE） | 工具 |

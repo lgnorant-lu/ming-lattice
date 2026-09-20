@@ -100,7 +100,8 @@ export function validateTrailer(message, opts = {}) {
   if (trailerLevel === 'off' || typeof message !== 'string' || message.length === 0) {
     return { ok: true, reason: '', warnings };
   }
-  for (const { re, label } of BANNED_TRAILER_PATTERNS) {
+  const patterns = [...BANNED_TRAILER_PATTERNS, ...(opts.extraTrailers ?? [])];
+  for (const { re, label } of patterns) {
     if (re.test(message)) {
       const msg = `提交信息包含被禁 trailer 字段 "${label}"（本仓署名即作者本人，不附 AI 工具署名行）`;
       if (trailerLevel === 'error') {
@@ -118,6 +119,11 @@ export function validateTrailer(message, opts = {}) {
 export function validateSubject(subject, opts = {}) {
   const emojiLevel = opts.emojiLevel ?? 'error';
   const mojibakeLevel = opts.mojibakeLevel ?? 'error';
+  // 策略词表可经 opts 覆盖（引擎门从 gate.commit-msg.* 注入；缺省=本仓规范）
+  const types = opts.types ?? COMMIT_TYPES;
+  const subjectPattern = opts.subjectPattern ?? SUBJECT_PATTERN;
+  const subjectMaxLen = Number(opts.subjectMaxLen ?? 0);
+  const patternHint = opts.patternHint ?? '<type>(<scope>): <中文描述>';
   const warnings = [];
 
   if (!subject || subject.length === 0) {
@@ -148,20 +154,26 @@ export function validateSubject(subject, opts = {}) {
   }
 
   // 4. 正则格式检查
-  if (!SUBJECT_PATTERN.test(subject)) {
+  if (!subjectPattern.test(subject)) {
     return {
       ok: false,
-      reason: `提交格式不符合规范: "${subject}"\n期望格式: <type>(<scope>): <中文描述>\n示例: feat(testing-rust): 新增 Miri 内存与未定义行为检查规范`
+      reason: `提交格式不符合规范: "${subject}"\n期望格式: ${patternHint}\n示例: feat(testing-rust): 新增 Miri 内存与未定义行为检查规范`
     };
   }
 
   // 5. Type 白名单校验
   const type = subject.split(/[(:]/)[0];
-  if (!COMMIT_TYPES.includes(type)) {
+  if (!types.includes(type)) {
     return {
       ok: false,
-      reason: `Type "${type}" 不在允许的白名单中: ${COMMIT_TYPES.join('/')}`
+      reason: `Type "${type}" 不在允许的白名单中: ${types.join('/')}`
     };
+  }
+
+  // 6. 主题长度上限（overcommit TextWidth 同款；0=不限制）
+  if (subjectMaxLen > 0 && subject.length > subjectMaxLen) {
+    const msg = `提交主题超长 (${subject.length} > ${subjectMaxLen} 字符)，请精简`;
+    warnings.push(msg);
   }
 
   return { ok: true, reason: '', warnings };

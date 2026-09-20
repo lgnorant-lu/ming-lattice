@@ -73,8 +73,11 @@
    - 使用 `git cat-file --batch-check` 单进程批量扫描暂存区（Staged Files）对象大小，凡超过 `50MB` 立即阻断提交，防止大归档污染 Git 历史。
 2. **编码防污染扫描（0 Mojibake）**：
    - 对暂存的 `.md`, `.yaml`, `.ps1`, `.json`, `.js` 进行字符扫描，拦截 GBK 转义乱码。
-3. **真实生产敏感密钥防泄漏（Secret Prevention）**：
-   - 拦截包含 `ghp_` (GitHub Token), `sk-` (OpenAI Key), `AKIA` (AWS Key), `BEGIN PRIVATE KEY` 等真实生产私钥。
+3. **敏感密钥防泄漏（Secret Prevention，三层规则）**：
+   - **L1 签名层**（error 级，近零误报）：GitHub 全系（`ghp/gho/ghu/ghs/ghr_`、`github_pat_`）、OpenAI/Anthropic（`sk-` 含 `sk-proj-`/`sk-ant-` 新形态）、Stripe、AWS `AKIA/ASIA`、**阿里云 `LTAI`、腾讯云 `AKID`**、Slack `xox*/xapp-`、Google `AIza`、GitLab `glpat-`、npm/PyPI/HuggingFace/DigitalOcean/SendGrid、JWT、PEM 私钥块。
+   - **L2 通用赋值层**（默认 warn，`gate.secrets.genericLevel` 调级）：`api_key|token|secret|password` 等赋值形态 + 香农熵≥3.8 过滤 + 占位符白名单（your-/example/${}/<...> 等）——抓签名层不认识的新服务凭据。
+   - **L3 编码层**（`gate.secrets.b64Level`，默认 warn）：UTF-16LE/BE 文件转码重扫（PowerShell 重定向产物常见编码）；可疑文件名（env/config/secret/cred/token）内 base64 长串解码回喂 L1，防 `key | base64` 夹带。
+   - 输出只报打码样本（`前4…后4`），永不打印明文密钥；`matchText` 仅存原始命中用于 baseline 身份哈希。
 4. **显式影响面受限测试**：
    - 由 `scripts/hooks/plan.mjs` 分析暂存快照：纯文档变动直接跳过运行期测试；特定域变动（如路由、CLI、供应链）仅执行对应受影响套件；关键全局配置（`registry.yaml`、`tests/run.mjs` 等）或未知路径则 fail-closed 自动升级全量。
 
@@ -134,6 +137,7 @@ lintLevel=error         # error | warn | off（默认 error: lint 失败阻断�
 
 - `SKIP=<gate1>,<gate2> git commit ...`：临时豁免点名门（pre-commit/overcommit 生态惯例名）；`required` 级不吃 SKIP。
 - **gates/ 完整性提示**：`engine.mjs` 每次运行比对 `gates/` 目录 hash 与 `.git/hook-engine-state.json` 存值，不一致时打 warn（透明性特性——变化可见，不阻断）；确认无误后 `node scripts/hooks/engine.mjs trust` 再确认。`integrityLevel=off` 可关。
+- **CI 增量扫描**：`node scripts/hooks/engine.mjs run check --range=origin/main...HEAD`——PR 相对基线分支的变更扫描（gitleaks `--log-opts` 同语义），checkout 后无暂存区概念的 CI 环境用此入口。
 
 ---
 

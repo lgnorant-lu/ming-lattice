@@ -18,6 +18,17 @@ trailerLevel=error        # → gate.commit-msg.level（AI 尾巴等）
 # gate.pre-push-verify.level=error
 # gate.impact-test.level=error
 
+# ── secrets 门多层调优 ──
+# gate.secrets.genericLevel=warn   # L2 通用赋值层（key/token=值+熵检+占位符白名单）：warn|error|off
+# gate.secrets.b64Level=warn       # L3 base64 夹带解码（仅可疑文件名）：warn|error|off
+# gate.secrets.exclude=a/**,b/**   # 追加排除 glob（默认排除 vertical/iwen-scraping/**）
+
+# ── commit-msg 策略词表（采纳项目改配置不改代码）──
+# gate.commit-msg.types=feat,fix,docs            # type 白名单覆盖（自动合成主题正则）
+# gate.commit-msg.pattern=^TASK-\d+: .+          # 主题正则整体覆盖（配 patternHint 提示文案）
+# gate.commit-msg.subjectMaxLen=72               # 主题长度上限（warn 级，0=不限）
+# gate.commit-msg.extraTrailers=^Signed-off-by   # 追加禁尾正则（CSV）
+
 # ── 声明式正则门（单模式+单消息长尾，零代码）──
 # gate.<id>.level=<等级>
 # gate.<id>.pattern=<正则>            # 必填；逐行扫描 staged blob

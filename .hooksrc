@@ -8,10 +8,16 @@ requireCommitMsg=true
 emojiLevel=error
 
 # 3. 编码防污染检查（严禁在 registry/文档/技能中写入 GBK/ANSI 转义乱码）
+#    vertical/** vendored 上游文档编码归上游负责
 mojibakeLevel=error
+gate.mojibake.exclude=vertical/**
 
-# 4. 真实敏感密钥拦截（拦截 sk-, ghp_, AKIA, RSA/EC 私钥等真实生产凭据）
+# 4. 敏感密钥拦截（三层规则：L1 签名层 19 模式 / L2 通用赋值+熵检 warn / L3 UTF-16+b64 编码配对 warn）
+#    vertical/** 为 vendored 上游内容——其 fixture 假密钥非本仓安全面（供应链层管 provenance，不管内容）
 secretLevel=error
+gate.secrets.exclude=vertical/**
+gate.secrets.genericLevel=warn
+gate.secrets.b64Level=warn
 
 # 5. 自动化测试金字塔门禁（提交前自动执行 tests/run.mjs --require-all 校验）
 lintLevel=error

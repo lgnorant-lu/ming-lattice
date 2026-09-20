@@ -130,10 +130,15 @@ async function runStage(stage, opts = {}) {
         continue;
       }
       ctx.gateConfig = cfg.gates[g.id] ?? {};
+      // 配置覆盖：gate.X.globs 整体替换感兴趣域；gate.X.exclude 在门默认排除上追加
+      const cfgGlobs = ctx.gateConfig.globs?.split(',').map(s => s.trim()).filter(Boolean);
+      const cfgExclude = ctx.gateConfig.exclude?.split(',').map(s => s.trim()).filter(Boolean) ?? [];
+      const effGlobs = cfgGlobs ?? g.globs;
+      const effExclude = [...(g.exclude ?? []), ...cfgExclude];
       // globs/exclude 作为"感兴趣文件"短路面（needsAllFiles 门豁免）
-      if (ctx.files.length && !g.needsAllFiles && g.globs) {
+      if (ctx.files.length && !g.needsAllFiles && effGlobs) {
         const interested = ctx.files.filter(f =>
-          matchAnyGlobs(f, g.globs) && !matchAnyGlobs(f, g.exclude ?? []));
+          matchAnyGlobs(f, effGlobs) && !matchAnyGlobs(f, effExclude));
         if (interested.length === 0) continue;
         ctx.gateFiles = interested;
       } else {
@@ -237,8 +242,10 @@ async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
   try {
     if (cmd === 'run') {
-      const group = rest[0] ?? 'check';
-      const source = group === 'ci' ? { source: 'all' } : { source: 'staged' };
+      const group = rest.find(a => !a.startsWith('--')) ?? 'check';
+      const rangeArg = rest.find(a => a.startsWith('--range='))?.slice(8);
+      const source = rangeArg ? { source: 'range', range: rangeArg }
+        : group === 'ci' ? { source: 'all' } : { source: 'staged' };
       return await runStage(group === 'ci' ? 'ci' : 'check', { fileSource: source });
     }
     if (cmd === 'baseline') return await cmdBaseline();

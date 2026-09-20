@@ -167,5 +167,80 @@ export async function run() {
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   }
 
-  console.log('  -> hook-engine: 6 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端契约）');
+  // 7. secrets 多层规则 + commit-msg 策略注入（假 ctx 直跑门，无需 git）
+  {
+    const { gate: secrets } = await import('../../scripts/hooks/gates/secrets.mjs');
+    const mkCtx = (fileMap, gateConfig = {}) => ({
+      files: Object.keys(fileMap), gateConfig,
+      read: p => fileMap[p],
+    });
+    // L1 签名层：新家族命中（gho_/github_pat_/sk-proj-/LTAI/AKID/xoxb/AIza/glpat-/JWT/PEM 扩展形态）
+    const l1files = {
+      'a.env': 'token=gho_' + 'A'.repeat(36) + '\n',
+      'b.env': 'k=github_pat_' + 'B_'.repeat(20) + '\n',
+      'c.env': 'key=sk-proj-' + 'xY9-_' .repeat(6) + '\n',
+      'd.env': 'ak=LTAI' + 'cD3f'.repeat(4) + '\n',
+      'e.env': 'sid=AKID' + 'q1W2'.repeat(5) + '\n',
+      'f.env': 'slack=xoxb-' + '1234-'.repeat(5) + '\n',
+      'g.env': 'gg=AIza' + 'Sy_9'.repeat(8) + 'Syx\n', // AIza+恰好35字符（真实 Google Key 长度）
+      'h.env': 'gl=glpat-' + 'aB3_'.repeat(6) + '\n',
+      'i.env': '-----BEGIN ' + 'OPENSSH PRIVATE KEY-----\n', // 拆开防本文件被 secrets 门自拦
+      'j.env': 'jwt=eyJ' + 'a'.repeat(12) + '.eyJ' + 'b'.repeat(12) + '.' + 'c'.repeat(20) + '\n',
+    };
+    const l1 = await secrets.run(mkCtx(l1files));
+    assert.equal(l1.length, 10, `L1 全家族应命中，实际 ${l1.length}: ${l1.map(f => f.message).join(';')}`);
+    assert.ok(l1.every(f => f.level === undefined), 'L1 命中随门级（无强制级）');
+    assert.ok(l1[0].message.includes('…'), '样本应打码');
+    assert.ok(!l1.some(f => f.message.includes('gho_' + 'A'.repeat(36))), '输出不得含明文密钥');
+
+    // L2 通用赋值层：高熵命中 warn，占位符/低熵抑制
+    const l2files = {
+      'k.env': 'api_key="' + 'Xk9mQ2wP7vN4rT8uY1zA' + '"\n',         // 高熵 → warn
+      'l.env': 'api_key="your-api-key-here-example"\n',              // 占位符 → 抑
+      'm.env': 'password="aaaaaaaaaaaaaaaaaaaaaaaaaaaa"\n',          // 低熵 → 抑
+      'n.env': 'token = "short"\n',                                  // 太短 → 抑
+    };
+    const l2 = await secrets.run(mkCtx(l2files));
+    assert.equal(l2.length, 1, `L2 仅高熵命中，实际 ${l2.length}`);
+    assert.equal(l2[0].level, 'warn', 'L2 默认 warn 级');
+    const l2off = await secrets.run(mkCtx(l2files, { genericLevel: 'off' }));
+    assert.equal(l2off.length, 0, 'genericLevel=off 关闭 L2');
+
+    // L3 编码配对：UTF-16LE 文件 + base64 夹带（可疑文件名才解）
+    const utf16 = '\ufeffkey=ghp_' + 'D'.repeat(36); // BOM 形态
+    const b64 = Buffer.from('token=ghp_' + 'E'.repeat(36), 'utf8').toString('base64');
+    const l3files = {
+      'u.env': utf16,
+      'config.env': 'data=' + b64 + '\n',
+      'notes.md': 'data=' + b64 + '\n', // 非可疑文件名 → 不解
+    };
+    const l3 = await secrets.run(mkCtx(l3files));
+    assert.ok(l3.some(f => f.file === 'u.env' && f.message.includes('utf16')), 'UTF-16 转码应命中');
+    assert.ok(l3.some(f => f.file === 'config.env' && f.message.includes('b64')), '可疑文件名 b64 应命中');
+    assert.ok(!l3.some(f => f.file === 'notes.md' && f.message.includes('b64')), '非可疑文件名不解 b64');
+
+    // commit-msg 策略词表注入：types/subjectMaxLen/extraTrailers
+    const { gate: cmsg } = await import('../../scripts/hooks/gates/commit-msg.mjs');
+    const dir = tempRepo();
+    try {
+      const msg = path.join(dir, 'MSG');
+      const runMsg = async (text, gateConfig = {}) => {
+        fs.writeFileSync(msg, text);
+        return cmsg.run({ msgPath: msg, root: dir, gateConfig });
+      };
+      // 默认白名单外 type → 拦；覆盖 types 后放行
+      let r = await runMsg('wip(core): 进行中\n');
+      assert.ok(r.some(f => !f.level), '默认白名单拒 wip');
+      r = await runMsg('wip(core): 进行中\n', { types: 'wip,feat,fix' });
+      assert.ok(!r.some(f => !f.level), 'types 覆盖应放行 wip');
+      // subjectMaxLen → warn 级提示不拦
+      r = await runMsg('feat: ' + '很'.repeat(80) + '\n', { subjectMaxLen: '50' });
+      assert.ok(r.some(f => f.level === 'warn' && f.message.includes('超长')), '超长应 warn');
+      // extraTrailers 追加禁尾
+      r = await runMsg('feat: x\n\nSigned-off-by: bot <b@x>\n', { extraTrailers: '^Signed-off-by' });
+      assert.ok(r.some(f => !f.level), 'extraTrailers 应拦截');
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  }
+
+  console.log('  -> hook-engine: 7 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略注入）');
 }

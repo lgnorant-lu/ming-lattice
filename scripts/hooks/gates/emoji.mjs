@@ -11,13 +11,16 @@ export const gate = {
   stages: ['pre-commit'],
   family: 'gate',
   defaultLevel: 'error',
-  // 现状作用域：private/ 与 docs/ 与根 README——可在 .hooksrc 用 gate.emoji.globs 调整
+  // 现状作用域：private/ 与 docs/ 与根 README（README 为 basename glob，会在 run 内再收紧到根目录）
   globs: ['private/**', 'docs/**', 'README.md'],
   exclude: [],
   async run(ctx) {
     const findings = [];
     for (const p of ctx.files) {
       if (!TEXT_EXT.test(p)) continue;
+      // 根 README 精确语义：basename glob 会命中任意深度 README.md，收紧回旧行为 relPath==='README.md'
+      if (p.endsWith('README.md') && p !== 'README.md'
+          && !p.startsWith('private/') && !p.startsWith('docs/')) continue;
       let content;
       try { content = ctx.read(p); } catch { continue; }
       if (hasEmoji(content)) {
