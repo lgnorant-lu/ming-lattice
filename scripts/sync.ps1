@@ -10,6 +10,7 @@
 #   - 目标已存在且来源不同 → 移入 .trash/<名称> 备份后重建
 #   - 链接模式: 目录符号链接（跨卷 OK）；无权限时自动 fallback 为 robocopy 复制（mode: copy）
 #   - 不删除 registry 中未启用条目的旧部署（由用户自行决定清理）
+#   - 部署后验证: 穿透链接检查每个目标的 SKILL.md 可解析（"链接存在"不算数，虚空 junction 也判失败）
 
 param(
     [string]$RegistryPath = (Join-Path (Split-Path $PSScriptRoot -Parent) 'registry.yaml'),
@@ -169,6 +170,27 @@ foreach ($u in $units) {
             $modeStat.copy++
         }
     }
+}
+
+# ---------- 部署验证（穿透链接判据: SKILL.md 可解析才算成功; 虚空 junction/复制残缺都拦下） ----------
+if (-not $WhatIf) {
+    $bad = @()
+    foreach ($u in $units) {
+        foreach ($client in $u.clients) {
+            $dst = Join-Path $targets.$client $u.name
+            if (-not (Test-Path -LiteralPath (Join-Path $dst 'SKILL.md') -PathType Leaf)) {
+                $bad += "$($u.name) -> $dst"
+            }
+        }
+    }
+    if ($bad.Count -gt 0) {
+        Write-Host ""
+        Write-Host "[sync] 验证失败: 以下部署目标 SKILL.md 不可解析:" -ForegroundColor Red
+        $bad | ForEach-Object { Write-Host "        $_" -ForegroundColor Red }
+        Emit-SyncFailed -ErrorType 'sync_verify_failed'
+        exit 1
+    }
+    Write-Host "[sync] 验证通过: $($units.Count) 个部署单元 SKILL.md 均可解析" -ForegroundColor Green
 }
 
 Write-Host ""
