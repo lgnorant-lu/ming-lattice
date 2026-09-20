@@ -3,6 +3,7 @@
 #       其余内容(子目录)用符号链接指向 vertical 源 — 单一事实源, 不复制内容
 # 用法: pwsh scripts/build-deployable.ps1
 
+[CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$RepoRoot = (Split-Path $PSScriptRoot -Parent),
     [string[]]$Module = @()
@@ -46,17 +47,22 @@ foreach ($name in $map.Keys) {
     if (-not (Test-Path -LiteralPath (Join-Path $src 'SKILL.md') -PathType Leaf)) { throw "missing_deployable_source: $name" }
 
     # Existing wrappers are maintained content, not disposable build output.
-    New-Item -ItemType Directory -Force -Path $dst | Out-Null
+    if ($PSCmdlet.ShouldProcess($dst, "创建 deployable/$name")) {
+        New-Item -ItemType Directory -Force -Path $dst | Out-Null
+    }
 
     # SKILL.md: 复制原件（改写由 patch-deployable 步骤处理）
     if ((Test-Path (Join-Path $src 'SKILL.md')) -and -not (Test-Path (Join-Path $dst 'SKILL.md'))) {
-        Copy-Item (Join-Path $src 'SKILL.md') (Join-Path $dst 'SKILL.md')
+        if ($PSCmdlet.ShouldProcess((Join-Path $dst 'SKILL.md'), '复制 SKILL.md')) {
+            Copy-Item (Join-Path $src 'SKILL.md') (Join-Path $dst 'SKILL.md')
+        }
     }
 
     # 其余顶层条目: 目录和文件都建符号链接（保持 SKILL.md 引用同级路径可解析; 单一事实源）
     foreach ($item in (Get-ChildItem $src -Force | Where-Object { $_.Name -ne 'SKILL.md' -and $_.Name -ne '.git' })) {
         $link = Join-Path $dst $item.Name
         if (Get-Item -LiteralPath $link -Force -ErrorAction SilentlyContinue) { continue }
+        if (-not $PSCmdlet.ShouldProcess($link, "符号链接 -> $($item.FullName)")) { continue }
         try {
             New-Item -ItemType SymbolicLink -Path $link -Target $item.FullName -ErrorAction Stop | Out-Null
         } catch {
@@ -70,9 +76,15 @@ foreach ($name in $map.Keys) {
 $rsSrc = Join-Path $ver 'js-reverse-715494637\jsr-reverse\references'
 $rsDst = Join-Path $dep 'rs-js-reverse\references'
 if ((Test-Path $rsSrc) -and ($Module.Count -eq 0 -or 'rs-js-reverse' -in $Module)) {
-    New-Item -ItemType Directory -Force -Path $rsDst | Out-Null
+    if ($PSCmdlet.ShouldProcess($rsDst, '创建 rs-js-reverse/references')) {
+        New-Item -ItemType Directory -Force -Path $rsDst | Out-Null
+    }
     Get-ChildItem $rsSrc -File | Where-Object { $_.Name -match 'rs-|anti-patterns|request-chain' } | ForEach-Object {
-        if (-not (Test-Path (Join-Path $rsDst $_.Name))) { Copy-Item $_.FullName (Join-Path $rsDst $_.Name) }
+        if (-not (Test-Path (Join-Path $rsDst $_.Name))) {
+            if ($PSCmdlet.ShouldProcess((Join-Path $rsDst $_.Name), '复制 reference')) {
+                Copy-Item $_.FullName (Join-Path $rsDst $_.Name)
+            }
+        }
         Write-Host "[OK] rs-js-reverse/references/$($_.Name)"
     }
 }
@@ -84,8 +96,14 @@ elseif ($Module -contains 'rs-js-reverse') {
 $iocSrc = Join-Path $ver 'malware-re-skills\.agents\skills\re-ioc-extraction'
 $iocDst = Join-Path $dep 'malware-ioc-extraction'
 if ((Test-Path (Join-Path $iocSrc 'SKILL.md')) -and ($Module.Count -eq 0 -or 'malware-ioc-extraction' -in $Module)) {
-    New-Item -ItemType Directory -Force -Path $iocDst | Out-Null
-    if (-not (Test-Path (Join-Path $iocDst 'SKILL.md'))) { Copy-Item (Join-Path $iocSrc 'SKILL.md') (Join-Path $iocDst 'SKILL.md') }
+    if ($PSCmdlet.ShouldProcess($iocDst, '创建 malware-ioc-extraction')) {
+        New-Item -ItemType Directory -Force -Path $iocDst | Out-Null
+    }
+    if (-not (Test-Path (Join-Path $iocDst 'SKILL.md'))) {
+        if ($PSCmdlet.ShouldProcess((Join-Path $iocDst 'SKILL.md'), '复制 SKILL.md')) {
+            Copy-Item (Join-Path $iocSrc 'SKILL.md') (Join-Path $iocDst 'SKILL.md')
+        }
+    }
     Write-Host "[OK] malware-ioc-extraction (SKILL.md 复制)"
 }
 elseif ($Module -contains 'malware-ioc-extraction') {

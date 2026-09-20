@@ -3,7 +3,10 @@
 #   1. frontmatter name 唯一化（避开基座模块/彼此冲突）
 #   2. description 精要化（触发词优先, 不绑定具体 MCP 名）
 #   3. 已知问题修复: ${CLAUDE_PLUGIN_ROOT} 替换 / 硬编码他人路径
-# 用法: pwsh scripts/patch-deployable.ps1
+# 用法: pwsh scripts/patch-deployable.ps1 [-WhatIf]
+
+[CmdletBinding(SupportsShouldProcess)]
+param()
 
 $ErrorActionPreference = 'Continue'
 $dep = Join-Path (Split-Path $PSScriptRoot -Parent) 'deployable'
@@ -25,7 +28,9 @@ function Set-NameDesc($dir, $newName, $newDesc) {
         } else {
             $fmNew = "name: $newName`n" + ($fm -replace '(?m)^description\s*:.*$', "description: $newDesc")
         }
-        Set-Content -Path $f -Value ("---`n" + $fmNew + "`n---" + $body) -Encoding UTF8
+        if ($PSCmdlet.ShouldProcess($f, "改写 frontmatter name=$newName")) {
+            Set-Content -Path $f -Value ("---`n" + $fmNew + "`n---" + $body) -Encoding UTF8
+        }
         Write-Host "[OK] $dir -> name: $newName"
     } else {
         Write-Host "[WARN] 无 frontmatter: $dir" -ForegroundColor Yellow
@@ -37,7 +42,10 @@ function Fix-Paths($dir, $pattern, $replacement) {
         $t = Get-Content $f.FullName -Raw -ErrorAction SilentlyContinue
         if ($t -and $t -match $pattern) {
             $t2 = $t -replace $pattern, $replacement
-            if ($t2 -ne $t) { Set-Content -Path $f.FullName -Value $t2 -Encoding UTF8; Write-Host "[FIX] $($f.FullName.Replace($dep, '.'))" }
+            if ($t2 -ne $t -and $PSCmdlet.ShouldProcess($f.FullName, "路径修复 $pattern")) {
+                Set-Content -Path $f.FullName -Value $t2 -Encoding UTF8
+                Write-Host "[FIX] $($f.FullName.Replace($dep, '.'))"
+            }
         }
     }
 }
