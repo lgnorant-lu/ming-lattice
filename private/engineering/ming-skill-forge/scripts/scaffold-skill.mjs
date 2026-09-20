@@ -16,8 +16,9 @@ const REPO_ROOT = path.resolve(FORGE_DIR, '..', '..', '..');
 const TEMPLATE = path.join(FORGE_DIR, 'assets', 'skill.md.tmpl');
 const REGISTRY = path.join(REPO_ROOT, 'registry.yaml');
 
-const LAYERS = new Set(['private', 'private/engineering']);
-const SCAN_ROOTS = ['private', 'private/engineering', 'deployable']; // 未注册游离包的重名扫描面
+// 层白名单 = registry 中实际存在的包父目录（纳层准入门；新层别先入 registry layers 表/走 ming-l 域准入）
+const LAYERS = new Set(['private', 'private/engineering', 'private/engineering/testing']);
+const SCAN_ROOTS = ['private', 'private/engineering', 'private/engineering/testing', 'deployable']; // 未注册游离包的重名扫描面
 
 const die = (msg) => { console.error(`[E] ${msg}`); process.exit(1); };
 const usage = () => die('用法: node scaffold-skill.mjs <name> --desc "..." [--under <layer>] [--paradigm] [--dry-run]');

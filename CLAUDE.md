@@ -5,7 +5,7 @@
 ## 仓库地图
 
 ```
-registry.yaml            唯一事实源: base(基座模块)/vertical(参考)/deployable(部署)/private(私有) + targets
+registry.yaml            唯一事实源: base(基座模块)/vertical(参考)/deployable(部署)/private(私有) + targets/layers(层别登记)/candidates(候审区)
 .hooksrc                 Git Hook 分级门禁配置 (Emoji/乱码/密钥/lint 等级)
 .githooks/               Git Hooks 拦截脚本 (commit-msg, pre-commit)
 base/reverse-skill/      路由基座 (上游 submodule, 只读; 其 skills/ 下有 20 个模块 + router)

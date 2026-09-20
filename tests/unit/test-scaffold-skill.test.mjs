@@ -38,6 +38,12 @@ export function run() {
       assert.equal(r.status, 1, `--under ${under} 应拒`);
       assert.ok(r.stderr.includes('白名单'), `--under ${under} 应报白名单: ${r.stderr}`);
     }
+    // 白名单正向面：testing 族子层是真实包层，必须可进（回归——初版白名单漏收）
+    {
+      const r = scaffold(['zz-testing-fx', '--under', 'private/engineering/testing', '--desc', DESC, '--dry-run']);
+      assert.equal(r.status, 0, `testing 子层应放行: ${r.stderr}`);
+      assert.ok(r.stdout.includes(path.join('private', 'engineering', 'testing', 'zz-testing-fx')), '落点应在 testing 子层');
+    }
     assert.ok(absent('../zz-escape-fx'), '逃逸目录不得存在于仓外');
     assert.ok(absent('private/zz-escape-fx'), '拒绝后不得落盘');
 
