@@ -13,6 +13,7 @@ const TEXT_EXT = /\.(md|yaml|yml|json|ps1|js|mjs|ts|txt|toml|py|sh|bat|c|h|cpp|r
 const TRAILING_WS = /[ \t]+$/;
 
 export function fixContent(text) {
+  if (!text) return { changed: false, content: text };
   const lines = text.split('\n');
   const hadEofNl = text.endsWith('\n');
   const fixed = lines.map(l => l.replace(TRAILING_WS, ''));

@@ -1,0 +1,2 @@
+# Hook shim 必须 LF——CRLF 会让 POSIX 端 shebang 失效（#!/usr/bin/env sh\r）
+.githooks/* text eol=lf
