@@ -118,7 +118,53 @@ export function run() {
     const collide = checkCandidates(new Set(['immersive-web-idiom']));
     assert.ok(collide.results.find(r => r.name === 'immersive-web-idiom').issues.some(i => i.level === 'E' && i.msg.includes('重名')), '与既有包重名应报 E');
 
-    console.log('  13 组断言全过');
+    // 14. 命名空间与层别登记门控
+    // 14a. 严格 kebab + ≥3 字符：连字符边界/双连字符/下划线/过短 → E
+    for (const bad of ['-lead', 'trail-', 'a--b', 'under_score', 'ab']) {
+      const d = mkSkill('kebab-fx', fm(bad));
+      assert.ok(has(checkDir(d, OPTS), 'E', 'kebab-case'), `name ${bad} 应报 kebab E`);
+    }
+    // 14b+c. registryPath 注入 fixture：ming- 保留命名空间 + layers 登记表
+    const fxReg = path.join(tmpRoot, 'registry.yaml');
+    fs.writeFileSync(fxReg, [
+      'layers:',
+      '  - methodology',
+      'private:',
+      '  - name: ming-fx-ok',
+      '    metaSystem: true',
+      '    path: tmp/ming-fx-ok',
+      '    note: x',
+      '    deploy: {claude: true}',
+      '  - name: ming-fx-bad',
+      '    path: tmp/ming-fx-bad',
+      '    note: x',
+      '    deploy: {claude: true}',
+      '  - name: plain-fx',
+      '    metaSystem: true',
+      '    path: tmp/plain-fx',
+      '    note: x',
+      '    deploy: {claude: true}',
+      '  - name: lay-ok-fx',
+      '    path: tmp/lay-ok-fx',
+      '    note: x',
+      '    deploy: {claude: true}',
+      '  - name: lay-bad-fx',
+      '    path: tmp/lay-bad-fx',
+      '    note: x',
+      '    deploy: {claude: true}',
+      'candidates:',
+      '',
+    ].join('\n'), 'utf8');
+    const regOpts = { skipRouter: true, registryPath: fxReg };
+    const meta = 'metadata:\n  layer: methodology\n  compose: none\n';
+    assert.ok(!has(checkDir(mkSkill('ming-fx-ok', fm('ming-fx-ok', meta)), regOpts), 'E', 'metaSystem'), '已声明 metaSystem 不应报 E');
+    assert.ok(has(checkDir(mkSkill('ming-fx-bad', fm('ming-fx-bad', meta)), regOpts), 'E', 'metaSystem'), 'ming- 缺声明应报 E');
+    assert.ok(has(checkDir(mkSkill('plain-fx', fm('plain-fx', meta)), regOpts), 'W', '声明漂移'), '非 ming- 声明 metaSystem 应报漂移 W');
+    assert.ok(!has(checkDir(mkSkill('lay-ok-fx', fm('lay-ok-fx', meta)), regOpts), 'W', '未登记'), '登记层别不应报 W');
+    const layBadMeta = 'metadata:\n  layer: bogus-layer\n  compose: none\n';
+    assert.ok(has(checkDir(mkSkill('lay-bad-fx', fm('lay-bad-fx', layBadMeta)), regOpts), 'W', '未登记'), '未登记层别应报 W');
+
+    console.log('  14 组断言全过');
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // scaffold-skill.mjs — 技能包脚手架（ming-skill-forge §1 解剖 + §5 接线）
-// 用法: node scaffold-skill.mjs <name> --desc "..." [--under <parent-dir>] [--paradigm] [--dry-run]
-// 行为: 生成 SKILL.md 骨架（assets/skill.md.tmpl 注入 name/description）→ checkDir 自证 → 打印三处接线清单
-// 契约: fail-closed（目标目录已存在即拒写）；--desc 必填（description 是 L0 强制面）；--dry-run 不落盘。
+// 用法: node scaffold-skill.mjs <name> --desc "..." [--under <layer>] [--paradigm] [--dry-run]
+// 层白名单: private | private/engineering ——纳层准入门（新层别先入 registry layers 表/走 ming-l 域准入；
+//         deployable 是包装层、vertical 是 vendored 源，均不接受新包）
+// 契约: fail-closed——name/layer/desc/重名全部写前校验；写后自证失败自动回滚不留残骸；--dry-run 不落盘。
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,28 +14,77 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const FORGE_DIR = path.resolve(SCRIPT_DIR, '..');
 const REPO_ROOT = path.resolve(FORGE_DIR, '..', '..', '..');
 const TEMPLATE = path.join(FORGE_DIR, 'assets', 'skill.md.tmpl');
+const REGISTRY = path.join(REPO_ROOT, 'registry.yaml');
 
+const LAYERS = new Set(['private', 'private/engineering']);
+const SCAN_ROOTS = ['private', 'private/engineering', 'deployable']; // 未注册游离包的重名扫描面
+
+const die = (msg) => { console.error(`[E] ${msg}`); process.exit(1); };
+const usage = () => die('用法: node scaffold-skill.mjs <name> --desc "..." [--under <layer>] [--paradigm] [--dry-run]');
+const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// ---------- 参数解析：旗标显式消费其值，剩余非旗标参数为位置参数（有且仅一个=name） ----------
 const args = process.argv.slice(2);
-const name = args.find(a => !a.startsWith('--'));
-const flag = (f) => args.includes(f);
-const opt = (f) => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : null; };
-const desc = opt('--desc');
-const under = opt('--under') || 'private';
-const dryRun = flag('--dry-run');
-const paradigm = flag('--paradigm');
-
-function die(msg) { console.error(`[E] ${msg}`); process.exit(1); }
-
-if (!name || !desc) {
-  console.error('用法: node scaffold-skill.mjs <name> --desc "..." [--under <parent-dir>] [--paradigm] [--dry-run]');
-  process.exit(1);
+const opts = {};
+const positional = [];
+for (let i = 0; i < args.length; i++) {
+  const a = args[i];
+  if (a === '--desc' || a === '--under') {
+    const v = args[i + 1];
+    if (v === undefined || v.startsWith('--')) die(`旗标 ${a} 缺值（或把下一个旗标吞成了值）`);
+    opts[a.slice(2)] = v;
+    i++;
+  } else if (a === '--paradigm' || a === '--dry-run') {
+    opts[a.slice(2)] = true;
+  } else if (a.startsWith('--')) {
+    die(`未知旗标: ${a}`);
+  } else {
+    positional.push(a);
+  }
 }
-if (!/^[a-z0-9-]+$/.test(name)) die(`name 非 kebab-case: ${name}`);
-if (!fs.existsSync(TEMPLATE)) die(`模板缺失: ${TEMPLATE}`);
+if (positional.length !== 1) usage();
 
+const name = positional[0];
+const desc = opts.desc;
+const under = opts.under || 'private';
+const dryRun = !!opts['dry-run'];
+const paradigm = !!opts.paradigm;
+
+// ---------- 写前校验（fail-fast，不落残骸） ----------
+if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(name) || name.length < 3) {
+  die(`name 非规范 kebab-case（小写段+单连字符，≥3 字符）: ${name}`);
+}
+if (!LAYERS.has(under)) {
+  die(`--under 不在层白名单（${[...LAYERS].join(' | ')}）；新层别先入 registry layers 表/走 ming-l 域准入`);
+}
+if (!fs.existsSync(TEMPLATE)) die(`模板缺失: ${TEMPLATE}`);
 const destDir = path.resolve(REPO_ROOT, under, name);
+if (!destDir.startsWith(REPO_ROOT + path.sep)) die(`目标路径逃逸仓库: ${destDir}`);
 if (fs.existsSync(destDir)) die(`目录已存在，拒写: ${destDir}`);
 
+if (!desc) usage();
+if (/[\r\n]/.test(desc)) die('--desc 必须单行（换行会破坏 frontmatter plain scalar）');
+if (desc !== desc.trim()) die('--desc 首尾空白');
+if (/^[!&*?|>%@`"',#[\]{}]|^-\s|^:\s/.test(desc)) die('--desc 以 YAML 指示字符开头——会破坏 plain scalar');
+if (/:\s|\s#/.test(desc)) die('--desc 含 ": " 或 " #"——会破坏 YAML plain scalar');
+if (desc.length < 20) die(`--desc 过短(${desc.length} 字符)——L0 触发面不足`);
+if (desc.length > 400) console.error(`[W] desc ${desc.length} 字符超 400 预算——check-skill 将告警`);
+
+// ---------- 重名扫描：层目录 + registry 名（含 candidates 区分毕业/冲突） ----------
+for (const root of SCAN_ROOTS) {
+  if (fs.existsSync(path.join(REPO_ROOT, root, name))) die(`重名碰撞: ${root}/${name} 已存在`);
+}
+let candGraduation = false;
+if (fs.existsSync(REGISTRY)) {
+  const reg = fs.readFileSync(REGISTRY, 'utf8');
+  const candM = reg.match(/^candidates:\s*\n([\s\S]*)$/m); // candidates 是末区
+  const active = candM ? reg.slice(0, candM.index) : reg;
+  if (new RegExp(`name:\\s*${escRe(name)}\\b`).test(active)) die(`重名碰撞: registry.yaml 已有 ${name} 条目`);
+  candGraduation = !!(candM && new RegExp(`name:\\s*${escRe(name)}\\b`).test(candM[1]));
+}
+if (candGraduation) console.log(`[I] "${name}" 在 candidates 候审区——建包即毕业，接线后清候选条目`);
+
+// ---------- 生成 ----------
 const skillMd = fs.readFileSync(TEMPLATE, 'utf8')
   .replaceAll('{{name}}', name)
   .replaceAll('{{description}}', desc);
@@ -59,15 +109,27 @@ for (const [rel, content] of Object.entries(files)) {
   console.log(`[written] ${path.relative(REPO_ROOT, abs)}`);
 }
 
-// 自证：生成物须过检（未接线前豁免 registry/router 检查）
+// ---------- 自证 + 失败回滚（不留残骸） ----------
 const issues = checkDir(destDir, { skipRouter: true, skipRegistry: true });
 for (const i of issues) console.log(`[${i.level}] ${i.msg}`);
 const eCount = issues.filter(i => i.level === 'E').length;
 console.log(`\n自证: E=${eCount} W=${issues.filter(i => i.level === 'W').length} I=${issues.filter(i => i.level === 'I').length}`);
-if (eCount) { console.error('[E] 生成物未过检——模板与门控漂移，需修 forge'); process.exit(1); }
+if (eCount) {
+  fs.rmSync(destDir, { recursive: true, force: true });
+  die(`生成物未过检（E=${eCount}）——已回滚 ${path.relative(REPO_ROOT, destDir)}`);
+}
+
+// ---------- 纳层评估（准入门控记录） ----------
+console.log(`\n纳层评估（准入记录）:`);
+console.log(`  name=${name}  kebab✓ 跨层与 registry 无碰撞✓${paradigm ? '  paradigm 惯例自声明✓' : ''}`);
+console.log(`  layer=${under}（白名单内）`);
+console.log(`  desc=${desc.length} 字符（≤400 预算内）`);
+if (name.startsWith('ming-')) {
+  console.log(`  [注意] ming- 前缀=元系统保留——registry 条目须加 metaSystem: true，否则 check-skill E 级`);
+}
 
 console.log(`\n接线清单（forge §5 三处不可少）：`);
-console.log(`  1. registry.yaml private 区加条目: name=${name} path=${under}/${name} enabled/note/deploy.claude`);
+console.log(`  1. registry.yaml private 区加条目: name=${name} path=${under}/${name} enabled/note/deploy.claude${name.startsWith('ming-') ? '/metaSystem' : ''}`);
 console.log(`  2. scripts/build-router-manifest.mjs DOMAIN_DEFS: 域 skills 列表 + skillTriggers 关键词 → node 重建 + --check`);
 console.log(`  3. ${under === 'private/engineering' ? 'private/engineering/README.md 资产图 + Compose 公式' : '对应目录 README 资产图'}`);
 console.log(`  4. node check-skill.mjs ${path.relative(REPO_ROOT, destDir)} ——接线后复检应为 E=0`);

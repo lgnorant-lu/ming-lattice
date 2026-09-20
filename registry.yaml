@@ -26,6 +26,22 @@ targets:
   claude: C:\Users\Lenovo\.cc-switch\skills
   # codex: C:\Users\Lenovo\.codex\skills    # 需要时启用并安装对应客户端
 
+# 层别登记表（元组管理）——SKILL.md metadata.layer 的合法值域。
+# 新类别先入此表再使用；check-skill 对未登记值告警。ming-* 前缀另须条目级 metaSystem: true 声明。
+layers:
+  - methodology        # 方法/流程元规则
+  - architecture       # 架构边界元规则
+  - testing            # 测试域
+  - knowledge-paradigm # 领域知识范式
+  - infrastructure     # 基础设施/路由自身
+  - documentation      # 文档体裁/排版
+  - security           # 安全元规则
+  - observability      # 可观测
+  - quality-overlay    # 质量横切 overlay
+  - data-contract      # 数据契约演进
+  - config             # 配置归一化
+  - meta               # 元系统自身（distiller 等）
+
 base:
   - name: reverse-skill
     repo: https://github.com/zhaoxuya520/reverse-skill.git
@@ -1354,6 +1370,7 @@ deployable:
       claude: true
 private:
   - name: ming-skills-router
+    metaSystem: true
     path: private/ming-skills-router
     enabled: true
     router: false   # 显式豁免：路由基础设施自身不进 DOMAIN_DEFS（check-skill 免报 W）
@@ -1427,18 +1444,21 @@ private:
     deploy:
       claude: true
   - name: ming-l-paradigm
+    metaSystem: true
     path: private/engineering/ming-l-paradigm
     enabled: true
     note: "项目结构域分层元规则 (Ming-L 九域全景 + 粒度分级 + 候审档机制)"
     deploy:
       claude: true
   - name: ming-skill-forge
+    metaSystem: true
     path: private/engineering/ming-skill-forge
     enabled: true
     note: "技能包创作与修订元规则 (渐进披露预算 + 触发面工艺 + 注册路由接线 + check-skill 硬门控)"
     deploy:
       claude: true
   - name: ming-experience-direction
+    metaSystem: true
     path: private/engineering/ming-experience-direction
     enabled: true
     note: "体验导演式设计流水线元规则 (文档阶梯 + 宪法约束源 + 叙事主干 + 六门过审 + 媒介映射预算)"
@@ -1542,6 +1562,7 @@ private:
     deploy:
       claude: true
   - name: ming-distiller
+    metaSystem: true
     path: private/ming-distiller
     enabled: true
     note: "项目级经验沉淀与检索双模态入口 (distill/ 索引+懒加载, skill库晋升走 _proposals staging)"

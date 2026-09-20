@@ -66,9 +66,9 @@ description 是**唯一常驻的路由面**，写它 = 写触发器：
 | 门 | 覆盖 |
 |---|---|
 | `pwsh scripts/lint.ps1` | 仓库级：SKILL.md 存在、frontmatter 缺字段、引用文件存在性、硬编码外部路径、空壳 |
-| `node private/engineering/ming-skill-forge/scripts/check-skill.mjs <dir>` | **技能级**：命名一致/kebab、description 长度与触发词启发式、正文 ≤500 行预算、家族惯例（按自声明能力触发：有 metadata 查完备、`-paradigm` 查 sources.md/Compose）、registry 条目、路由接线、skillTriggers/description 一致性提示。标志：`--all` 扫 registry private 区全量、`--no-registry` 豁免 registry 检查、`--json` 机器可读输出、`--no-router` 跳过 DOMAIN_DEFS 检查（路由基础设施等不进路由的包用） |
+| `node private/engineering/ming-skill-forge/scripts/check-skill.mjs <dir>` | **技能级**：命名一致/严格 kebab、description 长度与触发词启发式、正文 ≤500 行预算、家族惯例（按自声明能力触发：有 metadata 查完备、`-paradigm` 查 sources.md/Compose）、registry 条目、命名空间门控（`ming-` 须 `metaSystem: true` 声明、`metadata.layer` 须在 `layers:` 登记表内）、路由接线、skillTriggers/description 一致性提示。标志：`--all` 扫 registry private 区全量、`--no-registry` 豁免 registry 检查、`--json` 机器可读输出、`--no-router` 跳过 DOMAIN_DEFS 检查（路由基础设施等不进路由的包用） |
 
-| `node .../scaffold-skill.mjs <name> --desc "..." [--paradigm]` | 脚手架：`assets/skill.md.tmpl` 注入生成 SKILL.md（`--paradigm` 附 sources.md 桩），fail-closed 拒覆写，生成后自证过检并打印 §5 三处接线清单 |
+| `node .../scaffold-skill.mjs <name> --desc "..." [--paradigm] [--under 层] [--dry-run]` | 脚手架：`assets/skill.md.tmpl` 注入生成 SKILL.md（`--paradigm` 附 sources.md 桩）。**写前 fail-closed**：name 严格 kebab≥3 字符、`--under` 层白名单（`private`\|`private/engineering`）、desc 单行且 YAML plain-scalar 安全、跨层+registry+candidates 重名扫描；写后自证 E 级即回滚不留残骸；末了打印纳层评估记录 + §5 接线清单 |
 
 另：`check-skill.mjs --all` 作为 `skill-conformance` 套件进 `tests/run.mjs`（E 级门禁）；check-skill 行为契约由 `tests/unit/test-check-skill.test.mjs` 锁定。
 

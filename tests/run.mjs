@@ -3,6 +3,7 @@ import path from 'node:path';
 import { run as runValidateUnit } from './unit/test-validate-hooks.test.mjs';
 import { run as runBuildManifestUnit } from './unit/test-build-manifest.test.mjs';
 import { run as runCheckSkillUnit } from './unit/test-check-skill.test.mjs';
+import { run as runScaffoldSkillUnit } from './unit/test-scaffold-skill.test.mjs';
 import { run as runAdapterContract } from './contract/test-adapter-contract.mjs';
 import { run as runObservabilityContract } from './contract/test-observability-contract.mjs';
 import { run as runRouteDecisionCompatibility } from './contract/test-route-decision-compatibility.mjs';
@@ -53,6 +54,7 @@ export const allSuites = [
   { name: 'hook-validation', tier: 'unit', run: runValidateUnit },
   { name: 'manifest-unit', tier: 'unit', run: runBuildManifestUnit },
   { name: 'check-skill-unit', tier: 'unit', run: runCheckSkillUnit },
+  { name: 'scaffold-skill', tier: 'unit', run: runScaffoldSkillUnit },
   { name: 'route-golden', tier: 'contract', run: () => node('tests/test-route-decision.mjs') },
   { name: 'skill-conformance', tier: 'contract', run: () => node('private/engineering/ming-skill-forge/scripts/check-skill.mjs', '--all') },
   { name: 'adapter-contract', tier: 'contract', run: runAdapterContract },

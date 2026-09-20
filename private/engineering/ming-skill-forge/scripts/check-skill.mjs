@@ -14,10 +14,11 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..', '..', '..');
 
 // ---------- 单包检查 ----------
-function checkDir(absDir, { skipRouter = false, skipRegistry = false } = {}) {
+function checkDir(absDir, { skipRouter = false, skipRegistry = false, registryPath = null } = {}) {
   const issues = [];
   const dirName = path.basename(absDir);
   const add = (level, msg, file) => issues.push({ level, msg, file: file || absDir });
+  let declaredLayer = null; // fm.metadata.layer 值——层别登记校验在 registry 块消费
 
   // ---------- 结构项 ----------
   const skillMd = path.join(absDir, 'SKILL.md');
@@ -40,7 +41,9 @@ function checkDir(absDir, { skipRouter = false, skipRegistry = false } = {}) {
       add('E', 'frontmatter 缺 name');
     } else {
       const name = nameM[1].trim().replace(/^["']|["']$/g, '');
-      if (!/^[a-z0-9-]+$/.test(name)) add('E', `name 非 kebab-case: ${name}`);
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(name) || name.length < 3) {
+        add('E', `name 非规范 kebab-case（小写段+单连字符，≥3 字符）: ${name}`);
+      }
       if (name !== dirName) add('E', `name(${name}) != 目录名(${dirName})`);
     }
 
@@ -69,7 +72,9 @@ function checkDir(absDir, { skipRouter = false, skipRegistry = false } = {}) {
 
     // metadata 自声明即查完备性；不声明不索求（检查按能力触发，不按包形归簇）
     if (/^metadata\s*:/m.test(fm)) {
-      if (!/^  layer\s*:/m.test(fm)) add('W', 'metadata 缺 layer');
+      const layerM = fm.match(/^  layer\s*:\s*(\S+)/m);
+      if (!layerM) add('W', 'metadata 缺 layer');
+      else declaredLayer = layerM[1];
       if (!/^  compose\s*:/m.test(fm)) add('W', 'metadata 缺 compose');
     }
   }
@@ -104,9 +109,9 @@ function checkDir(absDir, { skipRouter = false, skipRegistry = false } = {}) {
   // ---------- 接线项 ----------
   let routerExempt = false; // registry `router: false` 显式豁免位
   if (!skipRegistry) {
-    const registryPath = path.join(REPO_ROOT, 'registry.yaml');
-    if (fs.existsSync(registryPath)) {
-      const reg = fs.readFileSync(registryPath, 'utf8');
+    const rp = registryPath || path.join(REPO_ROOT, 'registry.yaml');
+    if (fs.existsSync(rp)) {
+      const reg = fs.readFileSync(rp, 'utf8');
       const rel = path.relative(REPO_ROOT, absDir).replace(/\\/g, '/');
       const entryRe = new RegExp(`-\\s*name:\\s*${dirName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b([\\s\\S]*?)(?=\\n\\s*-\\s*name:|\\n\\S|$)`);
       const entry = reg.match(entryRe);
@@ -117,6 +122,19 @@ function checkDir(absDir, { skipRouter = false, skipRegistry = false } = {}) {
         if (!/note\s*:/.test(entry[1])) add('W', 'registry 条目缺 note');
         if (!/deploy\s*:/.test(entry[1])) add('W', 'registry 条目缺 deploy 段');
         routerExempt = /router\s*:\s*false/.test(entry[1]);
+        // ming- 前缀=元系统保留命名空间——条目须显式 metaSystem: true；非 ming- 声明此位=漂移
+        const declaredMeta = /metaSystem\s*:\s*true/.test(entry[1]);
+        if (dirName.startsWith('ming-') && !declaredMeta) {
+          add('E', 'ming- 前缀保留给技能系统自身机械——registry 条目须显式声明 metaSystem: true');
+        } else if (!dirName.startsWith('ming-') && declaredMeta) {
+          add('W', 'metaSystem:true 声明在非 ming- 包上——声明漂移');
+        }
+        // 层别登记：metadata.layer 须在 registry layers: 表内（元组管理——新类别先入表再使用）
+        const layerBlock = registrySection('layers', rp);
+        if (declaredLayer && layerBlock) {
+          const allowed = new Set([...layerBlock.matchAll(/^\s*-\s*([a-z-]+)/gm)].map(m => m[1]));
+          if (!allowed.has(declaredLayer)) add('W', `layer 值 "${declaredLayer}" 未登记——新类别先入 registry layers 表`);
+        }
       }
     } else {
       add('I', 'registry.yaml 不在仓库根（独立校验模式）');
@@ -162,8 +180,7 @@ function checkDir(absDir, { skipRouter = false, skipRegistry = false } = {}) {
 
 // ---------- candidates：候审区契约与统计 ----------
 // 协议见 ../references/candidacy.md——一进证据开市、二进证据触发毕业（I 级放行信号）。
-function registrySection(key) {
-  const registryPath = path.join(REPO_ROOT, 'registry.yaml');
+function registrySection(key, registryPath = path.join(REPO_ROOT, 'registry.yaml')) {
   if (!fs.existsSync(registryPath)) return null;
   const reg = fs.readFileSync(registryPath, 'utf8');
   const startM = reg.match(new RegExp(`^${key}:\\s*$`, 'm'));

@@ -10,7 +10,7 @@
 |---|---|---|
 | SKILL.md 存在且非空 | E | Anthropic spec：目录+SKILL.md 为最小形态 |
 | frontmatter `---` 块存在 | E | 同上 |
-| `name` 存在、kebab-case、与目录同名 | E | spec 命名字段约束；本仓 lint 查 name==registry 名 |
+| `name` 存在、严格 kebab-case（小写段+单连字符、≥3 字符）、与目录同名 | E | spec 命名字段约束；vendored 上游名（Restore-JS 等）不在 --all 覆盖面，手工单查会命中——属已知例外 |
 | `description` 存在、≥20 字符 | E | 触发面下限（lint 同级） |
 | `description` ≤400 字符 | W | L0 常驻税——过长是上下文浪费 |
 | 正文 ≤500 行 | W | Anthropic 渐进披露预算 |
@@ -40,6 +40,8 @@
 | 条目含 `note` 与 `deploy` 段 | W | 部署完整性 |
 | `build-router-manifest.mjs` DOMAIN_DEFS 引用该名 | W | 未接线=路由不可见；有意不路由的包在 registry 标 `router: false` 显式豁免（I 级留痕），临时豁免用 --no-router |
 | `router:false` 声明与 DOMAIN_DEFS 引用矛盾 | W | 豁免位漂移——声明不路由却仍被引用 |
+| `ming-*` 条目须显式 `metaSystem: true`；非 ming- 声明此位 | E / W | ming- 前缀=元系统保留命名空间——注册即声明归属，反向声明=漂移 |
+| `metadata.layer` 值须在 registry `layers:` 登记表内 | W | 层别元组管理——新类别先入表再使用（脚手架 `--under` 白名单同理） |
 | `skillTriggers` 词与 description 零交集 | I | 双触发面漂移提示（forge §3：两关键词集必须一致） |
 | SKILL.md 内相对链接文件存在 | E | lint 同级（防死链）；代码围栏与行内代码豁免——语法示例非真链接 |
 
@@ -62,4 +64,4 @@ node private/engineering/ming-skill-forge/scripts/check-skill.mjs <skill-dir>
 node private/engineering/ming-skill-forge/scripts/check-skill.mjs --all   # registry private 区全量（= skill-conformance 套件）
 # 选项: --json 机器可读输出; --no-router 跳过 DOMAIN_DEFS 检查（内部未路由包）; --no-registry 跳过 registry 校验（隔离 fixture）
 ```
-退出码：0=无 E 级；1=存在 E 级。行为契约锁定于 `tests/unit/test-check-skill.test.mjs`；脚手架 `scripts/scaffold-skill.mjs`（模板 `assets/skill.md.tmpl`）。
+退出码：0=无 E 级；1=存在 E 级。行为契约锁定于 `tests/unit/test-check-skill.test.mjs`；脚手架 `scripts/scaffold-skill.mjs`（模板 `assets/skill.md.tmpl`，契约锁定于 `tests/unit/test-scaffold-skill.test.mjs`——参数解析/层白名单/desc 写前校验/重名扫描/失败回滚/纳层评估记录）。
