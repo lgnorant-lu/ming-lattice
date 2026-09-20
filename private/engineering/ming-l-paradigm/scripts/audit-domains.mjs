@@ -29,14 +29,34 @@ import { fileURLToPath } from 'node:url';
 
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
-const target = path.resolve(args.find(a => !a.startsWith('--')) || 'docs');
-const asJson = args.includes('--json');
-const strict = args.includes('--strict');
-const staged = args.includes('--staged');
-const provDays = Number(args[args.indexOf('--proposed-days') + 1]) || 30;
-const labelsArg = args.indexOf('--labels') >= 0 ? args[args.indexOf('--labels') + 1] : null;
-const emitIdx = args.indexOf('--emit-index') >= 0 ? args[args.indexOf('--emit-index') + 1] : null;
-const mingSchemaArg = args.indexOf('--ming-schema') >= 0 ? args[args.indexOf('--ming-schema') + 1] : null;
+// 显式旗标解析（与 scaffold-skill/scaffold-domains 同一缺陷族）：未知旗标拒、缺值/吞值拒、
+// 位置参数至多一个——否则 --labels foo.json 会把值误食成 target 目录、--stict 拼错静默降门控
+const VALUE_FLAGS = new Set(['--proposed-days', '--labels', '--emit-index', '--ming-schema']);
+const BOOL_FLAGS = new Set(['--staged', '--strict', '--json']);
+const dieArg = (msg) => { console.error(`[E] ${msg}`); process.exit(1); };
+const opts = {};
+const positional = [];
+for (let i = 0; i < args.length; i++) {
+  const a = args[i];
+  if (VALUE_FLAGS.has(a)) {
+    const v = args[i + 1];
+    if (v === undefined || v.startsWith('--')) dieArg(`旗标 ${a} 缺值（或把下一个旗标吞成了值）`);
+    if (opts[a] !== undefined) dieArg(`重复旗标: ${a}`);
+    opts[a] = v; i++;
+  } else if (BOOL_FLAGS.has(a)) opts[a] = true;
+  else if (a.startsWith('--')) dieArg(`未知旗标: ${a}`);
+  else positional.push(a);
+}
+if (positional.length > 1) dieArg(`位置参数至多一个（target-dir）: ${positional.join(' ')}`);
+const target = path.resolve(positional[0] || 'docs');
+const asJson = !!opts['--json'];
+const strict = !!opts['--strict'];
+const staged = !!opts['--staged'];
+const provDays = opts['--proposed-days'] !== undefined ? Number(opts['--proposed-days']) : 30;
+if (!Number.isFinite(provDays) || provDays <= 0) dieArg(`--proposed-days 须为正数: ${opts['--proposed-days']}`);
+const labelsArg = opts['--labels'] || null;
+const emitIdx = opts['--emit-index'] || null;
+const mingSchemaArg = opts['--ming-schema'] || null;
 
 const issues = [];
 const add = (level, msg, file) => issues.push({ level, msg, file: file || target });

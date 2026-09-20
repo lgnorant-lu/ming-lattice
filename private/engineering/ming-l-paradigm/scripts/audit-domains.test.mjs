@@ -441,6 +441,27 @@ const CASES = [
   });
 }
 
+// 参数缺陷族回归（同 scaffold-*/check-skill 族）：未知旗标/缺值/吞值/值误食 target/非法天数全拒；
+// 正向面：--labels <file> 的值正确归旗标，不把文件名当 target 目录审
+{
+  const dir = makeTree({
+    'P.md': fm({ domain: 'plan', status: 'normative' }) + '# P\n\n## M0 — 基座\n',
+    'ns.json': NS_MIN,
+  });
+  const raw = (a) => spawnSync('node', [AUDIT, ...a], { encoding: 'utf8' });
+  const bad = [
+    [dir, '--stict'],                            // 未知旗标（拼错静默降门控）
+    [dir, '--labels'],                           // 缺值
+    [dir, '--labels', '--strict'],               // 吞值
+    [dir, '--proposed-days', 'abc'],             // 非数
+    [dir, '--proposed-days', '0'],               // 非正
+    [dir, 'extra-dir'],                          // 双位置参数
+  ];
+  const good = raw([dir, '--labels', path.join(dir, 'ns.json'), '--json']); // 值归旗标不误食
+  const ok = bad.every(a => raw(a).status === 1) && good.status === 0;
+  CASES.push({ name: '参数缺陷族 fail-closed + 值归旗标', _precomputed: { ok, res: { issues: [] } } });
+}
+
 let pass = 0, fail = 0;
 for (const c of CASES) {
   if (c._precomputed) {
