@@ -57,7 +57,7 @@ export const gate = {
       try { content = fs.readFileSync(abs, 'utf8'); } catch { continue; }
       const { changed, content: out } = fixContent(content);
       if (!changed) continue;
-      fs.writeFileSync(abs, out);
+      if (!ctx.dryRun) fs.writeFileSync(abs, out);
       fixed.push(p);
     }
     return fixed;

@@ -141,8 +141,9 @@ lintLevel=error         # error | warn | off（默认 error: lint 失败阻断�
 - `SKIP=<gate1>,<gate2> git commit ...`：临时豁免点名门（pre-commit/overcommit 生态惯例名）；`required` 级不吃 SKIP。
 - **gates/ 完整性提示**：`engine.mjs` 每次运行比对 `gates/` 目录 hash 与 `.git/hook-engine-state.json` 存值，不一致时打 warn（透明性特性——变化可见，不阻断）；确认无误后 `node scripts/hooks/engine.mjs trust` 再确认。`integrityLevel=off` 可关。
 - **CI 增量扫描**：`node scripts/hooks/engine.mjs run check --range=origin/main...HEAD`——PR 相对基线分支的变更扫描（gitleaks `--log-opts` 同语义），checkout 后无暂存区概念的 CI 环境用此入口。
-- **自愈**：`node scripts/hooks/engine.mjs run fix`——`fixable` 门（当前 whitespace：行尾空白/EOF 换行）重写工作区文件并报告清单；**不碰 index**，re-stage 由用户确认（刻意避开 lint-staged stash 路线的数据丢失前科）。
-- **移植到其他仓**：`pwsh scripts/install-hooks.ps1 -Target <repo>`——铺入 `scripts/hooks/`（engine+gates+lib+依赖件）+ `.githooks/` shim + `.hooksrc`（模板，不覆盖已有）+ `.gitignore` 补 `.hooksrc.local` + hooksPath + integrity 存值。项目私有门入 `scripts/hooks/gates.local/`；`impact-test`/`pre-push-verify` 在无对应件的仓自动缺席（`available()` 守卫）。第二采纳者实证：blog-tui。
+- **自愈**：`node scripts/hooks/engine.mjs run fix`——`fixable` 门（当前 whitespace：行尾空白/EOF 换行）重写工作区文件并报告清单；**不碰 index**，re-stage 由用户确认（刻意避开 lint-staged stash 路线的数据丢失前科）。`run fix --dry-run` 走同一遍历路径只报告不写盘。
+- **baseline 预览**：`node scripts/hooks/engine.mjs baseline --dry-run`——按门分组预告将冻结的违规数，不写 `.hooks-baseline.json`。
+- **移植到其他仓**：`pwsh scripts/install-hooks.ps1 -Target <repo>`——铺入 `scripts/hooks/`（engine+gates+lib+依赖件）+ `.githooks/` shim + `.hooksrc`（模板，不覆盖已有）+ `.gitignore` 补 `.hooksrc.local` + hooksPath + integrity 存值。支持 `-WhatIf` 预演（原生 SupportsShouldProcess）；检测到目标已有 `core.hooksPath` 时**拒绝静默切换**（需先平移旧检查到 `gates.local/` 再加 `-Force`——blog-tui 事故的制度化防线）。项目私有门入 `scripts/hooks/gates.local/`；`impact-test`/`pre-push-verify` 在无对应件的仓自动缺席（`available()` 守卫）。第二采纳者实证：blog-tui。
 
 ---
 

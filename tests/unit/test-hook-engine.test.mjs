@@ -320,10 +320,18 @@ export async function run() {
       assert.equal(r0.content, 'a\nb\nlast-no-newline\n');
       assert.ok(r0.changed);
       assert.ok(!fixContent('clean\n').changed);
+      assert.ok(!fixContent('').changed, '空文件不应被 fix 改写');
 
-      // 暂存脏文件 → run fix → 工作区被修
+      // 暂存脏文件 → run fix --dry-run → 报告但不写盘
       fs.writeFileSync(path.join(dir, 'dirty.md'), 'line1   \nline2\t\nno-eof');
       execFileSync('git', ['add', 'dirty.md'], { cwd: dir });
+      const dry = spawnSync(process.execPath, [engine, 'run', 'fix', '--dry-run'], { cwd: dir, encoding: 'utf8' });
+      assert.equal(dry.status, 0, dry.stderr);
+      assert.ok(dry.stdout.includes('将被修复'), 'dry-run 应预告修复清单');
+      assert.equal(fs.readFileSync(path.join(dir, 'dirty.md'), 'utf8'), 'line1   \nline2\t\nno-eof',
+        'dry-run 不得改写工作区');
+
+      // run fix 真跑 → 工作区被修
       const r = spawnSync(process.execPath, [engine, 'run', 'fix'], { cwd: dir, encoding: 'utf8' });
       assert.equal(r.status, 0, r.stderr);
       assert.ok(r.stdout.includes('dirty.md'), 'fix 应报告修复清单');
@@ -332,6 +340,12 @@ export async function run() {
       // fix 只写工作区不碰 index：staged blob 仍是脏的（可复验）
       const staged = execFileSync('git', ['show', ':dirty.md'], { cwd: dir, encoding: 'utf8' });
       assert.ok(staged.includes('line1   '), 'index 不被 fix 改动（re-stage 由用户确认）');
+
+      // baseline --dry-run：预告冻结计数但不写 .hooks-baseline.json
+      const bDry = spawnSync(process.execPath, [engine, 'baseline', '--dry-run'], { cwd: dir, encoding: 'utf8' });
+      assert.equal(bDry.status, 0, bDry.stderr);
+      assert.ok(bDry.stdout.includes('dry-run'), 'baseline --dry-run 应标 dry-run 前缀');
+      assert.ok(!fs.existsSync(path.join(dir, '.hooks-baseline.json')), 'dry-run 不得写冻结档');
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   }
 

@@ -4,8 +4,8 @@
 // 入口契约：
 //   node engine.mjs <stage> [args]   pre-commit | commit-msg <msgfile> | pre-push (stdin refs)
 //   node engine.mjs run check|ci     命名运行组：check=staged 源 / ci=全跟踪文件源（CI 同构）
-//   node engine.mjs run fix          自愈组：fixable 门重写工作区文件，报告清单待 re-stage
-//   node engine.mjs baseline         冻结既有违规 → .hooks-baseline.json（只拦新增）
+//   node engine.mjs run fix [--dry-run]   自愈组：fixable 门重写工作区文件（--dry-run 同路径预览不写盘）
+//   node engine.mjs baseline [--dry-run]  冻结既有违规 → .hooks-baseline.json（--dry-run 只预告不写）
 //   node engine.mjs trust            再确认 gates/ 目录完整性存值
 //   node engine.mjs list             解析后的门清单（诊断用）
 //
@@ -223,7 +223,7 @@ async function runStage(stage, opts = {}) {
 
 // ---------- 命名运行组 / 管理子命令 ----------
 
-async function cmdBaseline() {
+async function cmdBaseline(dryRun = false) {
   const root = repoRoot();
   const cfg = loadHookEngineConfig(root);
   const src = fileSource(root, { source: 'all' });
@@ -244,6 +244,14 @@ async function cmdBaseline() {
     }
   }
   const bp = baselinePath(root, cfg);
+  if (dryRun) {
+    const byGate = {};
+    for (const f of findings) byGate[f.gate] = (byGate[f.gate] ?? 0) + 1;
+    console.log(`[baseline] (dry-run) 将冻结 ${findings.length} 条既有违规:`);
+    for (const [g, n] of Object.entries(byGate).sort()) console.log(`  ${g}: ${n}`);
+    console.log('[baseline] 未写入。确认后去掉 --dry-run 执行');
+    return 0;
+  }
   const n = writeBaseline(bp, findings);
   console.log(`[baseline] 已冻结 ${n} 条既有违规 → ${path.relative(root, bp)}`);
   console.log('[baseline] 后续提交将只拦截新增违规。建议 review 后入仓共享冻结。');
@@ -251,7 +259,8 @@ async function cmdBaseline() {
 }
 
 // run fix：可自愈门的工作区修复（不碰 index——re-stage 由用户确认）
-async function cmdFix() {
+// --dry-run：同一遍历路径预览（gate.fix 收 ctx.dryRun，只报告不写盘）
+async function cmdFix(dryRun = false) {
   const root = repoRoot();
   const cfg = loadHookEngineConfig(root);
   const src = fileSource(root, { source: 'staged' });
@@ -269,13 +278,17 @@ async function cmdFix() {
     const scope = files.filter(f => matchAnyGlobs(f, globs ?? ['*']) && !matchAnyGlobs(f, exclude));
     if (!scope.length) continue;
     try {
-      const fixed = await g.fix({ root, files: scope, gateConfig: gcfg });
-      for (const p of fixed ?? []) { console.log(`[fix] ${g.id}: ${p} 已修复（请 git add 重新暂存）`); total++; }
+      const fixed = await g.fix({ root, files: scope, gateConfig: gcfg, dryRun });
+      for (const p of fixed ?? []) {
+        console.log(`[fix] ${g.id}: ${p} ${dryRun ? '将被修复' : '已修复（请 git add 重新暂存）'}`); total++;
+      }
     } catch (e) {
       console.warn(`[fix] ${g.id} 修复异常: ${e.message}`);
     }
   }
-  console.log(total ? `[fix] 共修复 ${total} 个文件` : '[fix] 无需修复');
+  console.log(total
+    ? `[fix] ${dryRun ? `(dry-run) 将修复 ${total} 个文件——确认后去掉 --dry-run 执行` : `共修复 ${total} 个文件`}`
+    : '[fix] 无需修复');
   return 0;
 }
 
@@ -300,13 +313,13 @@ async function main() {
   try {
     if (cmd === 'run') {
       const group = rest.find(a => !a.startsWith('--')) ?? 'check';
-      if (group === 'fix') return await cmdFix();
+      if (group === 'fix') return await cmdFix(rest.includes('--dry-run'));
       const rangeArg = rest.find(a => a.startsWith('--range='))?.slice(8);
       const source = rangeArg ? { source: 'range', range: rangeArg }
         : group === 'ci' ? { source: 'all' } : { source: 'staged' };
       return await runStage(group === 'ci' ? 'ci' : 'check', { fileSource: source });
     }
-    if (cmd === 'baseline') return await cmdBaseline();
+    if (cmd === 'baseline') return await cmdBaseline(rest.includes('--dry-run'));
     if (cmd === 'trust') { writeTrust(repoRoot()); console.log('[engine] gates/ 完整性存值已更新'); return 0; }
     if (cmd === 'list') return await cmdList();
     if (cmd === 'commit-msg') return await runStage('commit-msg', { msgPath: rest[0] });

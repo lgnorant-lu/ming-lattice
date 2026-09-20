@@ -17,7 +17,7 @@ trailerLevel=error        # → gate.commit-msg.level（AI 尾巴等）
 # gate.commit-msg.level=error
 # gate.pre-push-verify.level=error
 # gate.impact-test.level=error
-# gate.whitespace.level=warn       # 行尾空白/EOF 换行（可 run fix 自愈；exclude 已带 vertical/**）
+# gate.whitespace.level=warn       # 行尾空白/EOF 换行（run fix 自愈；--dry-run 预览；exclude 已带 vertical/**）
 
 # ── 项目私有门 ──
 # scripts/hooks/gates.local/*.mjs  # 入仓的项目特有门（与 gates/ 同接口，如 go-verify）
