@@ -23,6 +23,7 @@ private/engineering/
 ├── config-core-paradigm/              # [A列-配置] 十轴模型、组合解析、旗标生命周期、复杂度时钟
 ├── overlay-core-paradigm/             # [B列-横切] 性能、隐私、韧性、成本、兼容、无障碍
 ├── arch-core-paradigm/                # [A列-架构] 六边形/Ports-Adapters 最小形态、迁移接缝
+├── review-core-paradigm/              # [A列-评审] 消融实验摘除存活性、独立上下文 critic、人筛回喂、证据收尾
 ├── ming-l-paradigm/                   # [A列-方法论] Ming-L 九域分层（项目结构规范总图）、粒度分级、候审档
 ├── ming-skill-forge/                  # [A列-方法论] 技能包创作规程 + check-skill.mjs 硬门控
 └── ming-experience-direction/         # [A列-方法论] 体验导演式设计流水线（文档阶梯/宪法/叙事主干/六门过审/媒介预算）
@@ -37,7 +38,7 @@ private/engineering/
 ```
 Project Stack = 1 个开发工作流 (spec / characterize)
               + 1 套测试组合 (oracle + 语言 + [按需] 场景)
-              + [按需] A 列工程元包 (docs | docs-presentation | obs | sec | contract | config | arch | ming-l | experience-direction)
+              + [按需] A 列工程元包 (docs | docs-presentation | obs | sec | contract | config | arch | review | ming-l | experience-direction)
               + [按需] B 列质量横切包 (overlay-core-paradigm)
               + 该层 scenes/<scene>.md 场景形态差
 ```

@@ -113,6 +113,7 @@ const DOMAIN_DEFS = {
       "config-core-paradigm",
       "overlay-core-paradigm",
       "arch-core-paradigm",
+      "review-core-paradigm",
       "ming-l-paradigm",
       "ming-skill-forge",
       "ming-experience-direction",
@@ -141,7 +142,9 @@ const DOMAIN_DEFS = {
       "ffi", "pyo3", "v8", "v8-isolate", "isolate", "跨语言",
       // ── eval 挖出的缺门词：各元规范常用短形补齐 ──
       "埋点", "告警", "调用链", "排障", "schema", "向后兼容", "兼容性",
-      "依赖边界", "模块边界", "规范归属", "电影感", "滚动叙事", "叙事页", "沉浸", "哪个域"
+      "依赖边界", "模块边界", "规范归属", "电影感", "滚动叙事", "叙事页", "沉浸", "哪个域",
+      // ── review 域门：消融/评审裸词意图明确可开门 ──
+      "消融", "ablation", "过度设计", "over-engineering", "评审", "独立评审", "简化审查"
     ],
     qualityGateTriggers: [
       "质量门禁", "门禁", "git hooks", "pre-commit", "pre-push", "ci", "ci/cd", "runner",
@@ -160,6 +163,7 @@ const DOMAIN_DEFS = {
       "config-core-paradigm": ["配置", "配置归一化", "环境变量", "env vars", "特性开关", "feature flag", "i18n", "config", "precedence"],
       "overlay-core-paradigm": ["性能", "performance", "隐私", "privacy", "韧性", "可移植", "上下文成本", "overlay"],
       "arch-core-paradigm": ["六边形架构", "hexagonal", "ports and adapters", "端口适配器", "依赖倒置", "clean architecture", "洋葱架构", "架构边界", "ffi边界", "strangler"],
+      "review-core-paradigm": ["消融", "ablation", "过度设计", "over-engineering", "简化审查", "精简代码", "删减抽象", "yagni", "评审", "独立评审", "fresh context", "critic"],
       "ming-l-paradigm": ["项目分层", "规范体系", "治理文档", "候审档", "ming-l", "domain", "设计域"],
       "ming-skill-forge": ["新技能", "写技能", "技能包", "skill包", "skill authoring", "skill-creator", "frontmatter", "渐进披露"],
       "ming-experience-direction": ["体验导演", "叙事设计", "产品体验设计", "scrollytelling", "电影感网页", "沉浸式体验", "immersive", "设计宪法", "storyboard", "设计门禁", "媒介映射", "design pipeline"],

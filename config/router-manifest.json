@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-19T18:25:59.755Z",
+  "generatedAt": "2026-09-20T08:29:39.488Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -263,6 +263,7 @@
         "config-core-paradigm",
         "overlay-core-paradigm",
         "arch-core-paradigm",
+        "review-core-paradigm",
         "ming-l-paradigm",
         "ming-skill-forge",
         "ming-experience-direction",
@@ -390,7 +391,14 @@
         "滚动叙事",
         "叙事页",
         "沉浸",
-        "哪个域"
+        "哪个域",
+        "消融",
+        "ablation",
+        "过度设计",
+        "over-engineering",
+        "评审",
+        "独立评审",
+        "简化审查"
       ],
       "qualityGateTriggers": [
         "质量门禁",
@@ -486,6 +494,20 @@
           "架构边界",
           "ffi边界",
           "strangler"
+        ],
+        "review-core-paradigm": [
+          "消融",
+          "ablation",
+          "过度设计",
+          "over-engineering",
+          "简化审查",
+          "精简代码",
+          "删减抽象",
+          "yagni",
+          "评审",
+          "独立评审",
+          "fresh context",
+          "critic"
         ],
         "ming-l-paradigm": [
           "项目分层",
@@ -723,6 +745,7 @@
     "radare2": "ready",
     "reverse-engineering": "ready",
     "reverse-skill-router": "ready",
+    "review-core-paradigm": "ready",
     "sec-core-paradigm": "ready",
     "testing-core-oracle": "ready",
     "testing-go-idiom": "ready",
@@ -977,6 +1000,24 @@
       "name": "reverse-skill-router",
       "description": "Routes reverse engineering, exploitation, penetration testing, malware, mobile, firmware, and binary analysis tasks. (Do NOT use for unit testing, coverage design, pytest, TDD, benchmarking, or application logic - use testing-core-oracle instead).",
       "triggers": []
+    },
+    "review-core-paradigm": {
+      "name": "review-core-paradigm",
+      "description": "Review meta-rules for landed diffs: ablation pass (remove-if-survives test on introduced abstractions, over-production traps) + independent-context critic (diff+spec only) + human curation. Use post-implementation when suspecting over-engineering or needing independent review. Triggers: 消融, ablation, 过度设计, over-engineering, 简化审查, YAGNI, 评审, 独立评审. Not for test design, docs review, CI gates.",
+      "triggers": [
+        "消融",
+        "ablation",
+        "过度设计",
+        "over-engineering",
+        "简化审查",
+        "精简代码",
+        "删减抽象",
+        "yagni",
+        "评审",
+        "独立评审",
+        "fresh context",
+        "critic"
+      ]
     },
     "sec-core-paradigm": {
       "name": "sec-core-paradigm",

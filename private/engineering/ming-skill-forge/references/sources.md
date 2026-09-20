@@ -21,6 +21,13 @@
 - lint 输出中 description 绑工具名的 W 级告警（js-reverse 案例）→ 禁令②的来源；
 - registry 手工编辑丢中文换行事故（hello-js-reverse 幽灵条目）→"registry 编辑用 python"纪律。
 
+## 必要性判据来源（§7 三问 / 禁令⑧）
+
+- **Anthropic skill-creator 正典**："Default assumption: Claude is already very smart. Only add context Claude doesn't already have"——先验稀缺性的官方表述；
+- **arXiv 2605.24050**《More Skills, Worse Agents?》：skill 库扩至 202 时 pass rate 降 ~21%；分解归因显示 **skill shadowing（误选）是主瓶颈，上下文开销效应≈0**——语义撞车判据的直接实证；
+- **arXiv 2601.04748**：skill 选择存在相变，库规模过临界点后准确率陡降，相似 skill 间语义混淆是主因，分层路由可缓解——本仓 DOMAIN_DEFS/router 架构方向的旁证；
+- **维兰《关于 AI Coding 的一些个人技巧》**（2026-09）："只有模型和巴菲特都不知道的知识才用 Skill"——先验稀缺性的通俗表述（巴菲特测试）。
+
 ## 明确不纳入正文
 
 - 技能 marketplace/分发机制（本仓为私有集散，sync.ps1 部署属运维面不进创作规范）；

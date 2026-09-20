@@ -48,3 +48,7 @@
 {"id":"a-048","query":"给 rust 项目的边界写 fuzz 测试","expect":{"domain":"testing","skills":["testing-rust-idiom"]},"tier":"A","provenance":"scenario","lang":"mixed"}
 {"id":"a-049","query":"typescript 项目的测试怎么规范起来","expect":{"domain":"testing","skills":["testing-js-idiom"]},"tier":"A","provenance":"scenario","lang":"mixed"}
 {"id":"a-050","query":"命令行工具的退出码和标准输出怎么规范","expect":{"domain":"testing","skills":["testing-scenario-cli"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-051","query":"实现完成了，帮我跑个消融实验去掉不必要的抽象","expect":{"domain":"engineering","skills":["review-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-052","query":"这个 diff 提交前检查一下有没有过度设计的地方","expect":{"domain":"engineering","skills":["review-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-053","query":"run an ablation pass on this implementation before merge","expect":{"domain":"engineering","skills":["review-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"en"}
+{"id":"a-054","query":"找个没看过实现的新上下文帮我独立评审这个改动","expect":{"domain":"engineering","skills":["review-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
