@@ -1414,6 +1414,18 @@ private:
     note: "跨场景评审元规则 (消融实验摘除存活性 + 独立上下文critic + 人筛回喂 + 证据收尾)"
     deploy:
       claude: true
+  - name: explore-core-paradigm
+    path: private/engineering/explore-core-paradigm
+    enabled: true
+    note: "跨场景发散探索元规则 (升降模型 + VS尾部采样/异策略路径/形态学矩阵/premortem/ToT 算子 + disagree续探agree进承诺判据)"
+    deploy:
+      claude: true
+  - name: depth-core-paradigm
+    path: private/engineering/depth-core-paradigm
+    enabled: true
+    note: "审计下潜深度裁决元规则 (动态序贯下潜 + 静态先验绊线回推 + 可行动性停止判据)"
+    deploy:
+      claude: true
   - name: ming-l-paradigm
     path: private/engineering/ming-l-paradigm
     enabled: true

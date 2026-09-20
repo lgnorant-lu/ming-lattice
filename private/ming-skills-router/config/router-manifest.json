@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-20T08:29:39.488Z",
+  "generatedAt": "2026-09-20T09:42:15.807Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -264,6 +264,8 @@
         "overlay-core-paradigm",
         "arch-core-paradigm",
         "review-core-paradigm",
+        "explore-core-paradigm",
+        "depth-core-paradigm",
         "ming-l-paradigm",
         "ming-skill-forge",
         "ming-experience-direction",
@@ -398,7 +400,21 @@
         "over-engineering",
         "评审",
         "独立评审",
-        "简化审查"
+        "简化审查",
+        "发散",
+        "brainstorm",
+        "diverge",
+        "verbalized sampling",
+        "设计空间",
+        "diverse",
+        "alternatives",
+        "根因",
+        "深挖",
+        "多深",
+        "iceberg",
+        "root cause",
+        "5 whys",
+        "层级归因"
       ],
       "qualityGateTriggers": [
         "质量门禁",
@@ -508,6 +524,32 @@
           "独立评审",
           "fresh context",
           "critic"
+        ],
+        "explore-core-paradigm": [
+          "发散",
+          "探索",
+          "brainstorm",
+          "diverge",
+          "verbalized sampling",
+          "设计空间",
+          "alternatives",
+          "diverse",
+          "形态学",
+          "premortem",
+          "tree of thoughts"
+        ],
+        "depth-core-paradigm": [
+          "根因",
+          "深挖",
+          "下潜",
+          "冰山",
+          "iceberg",
+          "root cause",
+          "5 whys",
+          "多深",
+          "层级归因",
+          "临界",
+          "分界"
         ],
         "ming-l-paradigm": [
           "项目分层",
@@ -722,9 +764,11 @@
     "binary-diff": "ready",
     "config-core-paradigm": "ready",
     "contract-core-paradigm": "ready",
+    "depth-core-paradigm": "ready",
     "docs-core-paradigm": "ready",
     "docs-presentation-idiom": "ready",
     "dotnet-reverse": "ready",
+    "explore-core-paradigm": "ready",
     "firmware-pentest": "ready",
     "ghidra-reverse": "ready",
     "go-rust-reverse": "ready",
@@ -821,6 +865,23 @@
         "data-contract"
       ]
     },
+    "depth-core-paradigm": {
+      "name": "depth-core-paradigm",
+      "description": "审计下潜深度裁决元规则——finding 的因住在哪层、探到何时停。动态序贯下潜为主（层级假设→选区分度最大探针→后验更新→收敛即停），静态先验与绊线为回推（类别默认深度、复发/共因/churn/假设证伪信号、候审兜底）。停止判据=可行动干预+后验集中+边际信息价值转负，非固定层数。finding/bug/事故疑似深层因、根因深度拿不准、浅修怕漏系统因时用。触发词：根因、深挖、下潜、冰山、iceberg、root cause、5 whys、多深、层级归因、临界、分界。",
+      "triggers": [
+        "根因",
+        "深挖",
+        "下潜",
+        "冰山",
+        "iceberg",
+        "root cause",
+        "5 whys",
+        "多深",
+        "层级归因",
+        "临界",
+        "分界"
+      ]
+    },
     "docs-core-paradigm": {
       "name": "docs-core-paradigm",
       "description": "Cross-scene documentation meta-rules using Diataxis four quadrants, Nygard ADRs, and a single source of truth for reference. Use when writing, splitting, or reviewing docs, READMEs, ADRs, schemas-as-docs, CLI help, pipeline field dictionaries, or FFI ABI notes. Triggers include documentation, diataxis, ADR, docs-as-code, how-to, reference-docs, explanation, tutorial, 文档体裁, 架构决策记录.",
@@ -844,6 +905,23 @@
       "name": "dotnet-reverse",
       "description": ".NET / C# 二进制逆向。当目标是 .NET assembly（PE 头含 CLR、.exe/.dll 托管程序）、C# 编译产物（含 NativeAOT）、红队 Sharp* 工具（Rubeus / SharpHound / SharpHound 等）、.NET 混淆程序（ConfuserEx / SmartAssembly / Babel / Eazfuscator）、.NET loader / info-stealer / 套壳 malware 时使用。优先用 dnSpyEx + de4dot，需要 AI 直接操作时联动 dnSpy MCP。不用于纯 native 二进制（走 reverse-engineering / ida-reverse）。",
       "triggers": []
+    },
+    "explore-core-paradigm": {
+      "name": "explore-core-paradigm",
+      "description": "发散探索元规则——开放任务对冲人工蜂巢坍缩（typicality bias 成因）。升降模型：问题抽象一层暴露选项空间→算子换轨（verbalized sampling 尾部采样/异策略路径/形态学矩阵/inversion+premortem/ToT 回溯）→重新实例化候选。判据：disagree 续探、agree 进承诺程序（≠真理）。方案未定/设计空间待探/答案过于典型时用。触发词：发散、探索、多方案、brainstorm、diverge、设计空间、alternatives、diverse。不适用：可验证单答案（走验证通道）、事实裁决（共识≠验证）。",
+      "triggers": [
+        "发散",
+        "探索",
+        "brainstorm",
+        "diverge",
+        "verbalized sampling",
+        "设计空间",
+        "alternatives",
+        "diverse",
+        "形态学",
+        "premortem",
+        "tree of thoughts"
+      ]
     },
     "firmware-pentest": {
       "name": "firmware-pentest",

@@ -252,6 +252,8 @@
 | overlay-core-paradigm | 跨场景 B 级质量属性横切不变量：性能/隐私/韧性/成本/兼容/无障碍 | 已部署 |
 | arch-core-paradigm | 架构边界元规则：六边形/Ports-Adapters 最小形态 + FFI 迁移接缝 | 已部署 |
 | review-core-paradigm | 跨场景评审元规则：消融摘除存活性 + 独立上下文 critic + 人筛回喂 + 证据收尾 | 已部署 |
+| explore-core-paradigm | 发散探索元规则：升降模型 + 五算子换轨（VS尾部采样/异策略/形态学/premortem/ToT）+ disagree续探agree承诺判据 | 已部署 |
+| depth-core-paradigm | 审计下潜深度裁决：动态序贯下潜（层级假设→区分度探针→后验收敛）+ 静态先验绊线 + 可行动性停止判据 | 已部署 |
 | ming-l-paradigm | 项目结构域分层元规则：Ming-L 九域全景 x 七动力学 + 规则属性系统 + 域准入判据 + 候审档机制 | 已部署 |
 | ming-skill-forge | 技能包创作元规则：渐进披露预算 + 触发面工艺 + 注册路由接线 + check-skill.mjs 硬门控 | 已部署 |
 | ming-experience-direction | 体验导演式设计流水线：文档阶梯 + 宪法约束源 + 叙事主干 + OQ 状态机 + 六门过审 + 媒介映射预算 | 已部署 |

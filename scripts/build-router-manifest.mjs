@@ -114,6 +114,8 @@ const DOMAIN_DEFS = {
       "overlay-core-paradigm",
       "arch-core-paradigm",
       "review-core-paradigm",
+      "explore-core-paradigm",
+      "depth-core-paradigm",
       "ming-l-paradigm",
       "ming-skill-forge",
       "ming-experience-direction",
@@ -144,7 +146,11 @@ const DOMAIN_DEFS = {
       "埋点", "告警", "调用链", "排障", "schema", "向后兼容", "兼容性",
       "依赖边界", "模块边界", "规范归属", "电影感", "滚动叙事", "叙事页", "沉浸", "哪个域",
       // ── review 域门：消融/评审裸词意图明确可开门 ──
-      "消融", "ablation", "过度设计", "over-engineering", "评审", "独立评审", "简化审查"
+      "消融", "ablation", "过度设计", "over-engineering", "评审", "独立评审", "简化审查",
+      // ── explore/depth 域门：发散/深度裁决裸词意图明确可开门 ──
+      "发散", "brainstorm", "diverge", "verbalized sampling", "设计空间",
+      "diverse", "alternatives",
+      "根因", "深挖", "多深", "iceberg", "root cause", "5 whys", "层级归因"
     ],
     qualityGateTriggers: [
       "质量门禁", "门禁", "git hooks", "pre-commit", "pre-push", "ci", "ci/cd", "runner",
@@ -164,6 +170,8 @@ const DOMAIN_DEFS = {
       "overlay-core-paradigm": ["性能", "performance", "隐私", "privacy", "韧性", "可移植", "上下文成本", "overlay"],
       "arch-core-paradigm": ["六边形架构", "hexagonal", "ports and adapters", "端口适配器", "依赖倒置", "clean architecture", "洋葱架构", "架构边界", "ffi边界", "strangler"],
       "review-core-paradigm": ["消融", "ablation", "过度设计", "over-engineering", "简化审查", "精简代码", "删减抽象", "yagni", "评审", "独立评审", "fresh context", "critic"],
+      "explore-core-paradigm": ["发散", "探索", "brainstorm", "diverge", "verbalized sampling", "设计空间", "alternatives", "diverse", "形态学", "premortem", "tree of thoughts"],
+      "depth-core-paradigm": ["根因", "深挖", "下潜", "冰山", "iceberg", "root cause", "5 whys", "多深", "层级归因", "临界", "分界"],
       "ming-l-paradigm": ["项目分层", "规范体系", "治理文档", "候审档", "ming-l", "domain", "设计域"],
       "ming-skill-forge": ["新技能", "写技能", "技能包", "skill包", "skill authoring", "skill-creator", "frontmatter", "渐进披露"],
       "ming-experience-direction": ["体验导演", "叙事设计", "产品体验设计", "scrollytelling", "电影感网页", "沉浸式体验", "immersive", "设计宪法", "storyboard", "设计门禁", "媒介映射", "design pipeline"],

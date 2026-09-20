@@ -24,6 +24,8 @@ private/engineering/
 ├── overlay-core-paradigm/             # [B列-横切] 性能、隐私、韧性、成本、兼容、无障碍
 ├── arch-core-paradigm/                # [A列-架构] 六边形/Ports-Adapters 最小形态、迁移接缝
 ├── review-core-paradigm/              # [A列-评审] 消融实验摘除存活性、独立上下文 critic、人筛回喂、证据收尾
+├── explore-core-paradigm/             # [A列-发散] 承诺前候选生成：升降模型 + VS尾部采样/异策略/形态学矩阵/premortem + disagree续探agree承诺
+├── depth-core-paradigm/               # [A列-裁决] finding 下潜深度：动态序贯下潜 + 静态先验绊线 + 可行动性停止判据
 ├── ming-l-paradigm/                   # [A列-方法论] Ming-L 九域分层（项目结构规范总图）、粒度分级、候审档
 ├── ming-skill-forge/                  # [A列-方法论] 技能包创作规程 + check-skill.mjs 硬门控
 └── ming-experience-direction/         # [A列-方法论] 体验导演式设计流水线（文档阶梯/宪法/叙事主干/六门过审/媒介预算）

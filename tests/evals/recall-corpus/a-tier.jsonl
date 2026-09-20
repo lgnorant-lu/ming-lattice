@@ -52,3 +52,7 @@
 {"id":"a-052","query":"这个 diff 提交前检查一下有没有过度设计的地方","expect":{"domain":"engineering","skills":["review-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
 {"id":"a-053","query":"run an ablation pass on this implementation before merge","expect":{"domain":"engineering","skills":["review-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"en"}
 {"id":"a-054","query":"找个没看过实现的新上下文帮我独立评审这个改动","expect":{"domain":"engineering","skills":["review-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-055","query":"这个方案拿不准，帮我发散几个不同方向再决定","expect":{"domain":"engineering","skills":["explore-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-056","query":"generate diverse candidate approaches instead of the obvious one","expect":{"domain":"engineering","skills":["explore-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"en"}
+{"id":"a-057","query":"这个 bug 到底要挖多深，是表面问题还是架构层的","expect":{"domain":"engineering","skills":["depth-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"zh"}
+{"id":"a-058","query":"root cause analysis 到哪层可以停，怕浅修漏掉系统因","expect":{"domain":"engineering","skills":["depth-core-paradigm"]},"tier":"A","provenance":"scenario","lang":"mixed"}
