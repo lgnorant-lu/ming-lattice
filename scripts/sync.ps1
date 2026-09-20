@@ -124,7 +124,7 @@ foreach ($u in $units) {
         if ($existing) {
             $same = $false
             try {
-                if ($existing.LinkType -and $existing.Target) { 
+                if ($existing.LinkType -and $existing.Target) {
                     $same = ($existing.Target -eq $u.src) -or ($existing.Target -eq (Resolve-Path $u.src -ErrorAction SilentlyContinue).Path)
                 }
             } catch { $same = $false }
