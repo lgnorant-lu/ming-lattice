@@ -45,6 +45,8 @@ layers:
 # 资产域登记表——条目级 domain: 字段的合法值域（与 layers: 同构，先入表再使用）。
 # 词表只登记通用类型轴——生态/来源特征不入值（ruyi 系已由 ruyi/web 归并 web/mcp，
 # 来源轴由 name/repo/note 承载）。web/js、android/apk 近义重叠归并裁决另案。
+# 三词表分轴防撞（同名不同词表）：本表=资产域（条目 domain:）；上方 layers:=包分类（SKILL.md
+# metadata.layer）；docs frontmatter domain:=文档归属（ming.yaml domains+audit-domains 治理）。
 domains:
   - js          # Web/JS 逆向
   - bin         # 二进制

@@ -68,6 +68,8 @@ status: normative
 | **提交触发** | 工件因"我们的提交"漂移 | 现全部门 |
 | **周期触发** | 工件因"世界自己变了"漂移（外源漂移） | `gate.<id>.cadence`/`chore.<id>.cadence` 引擎级键——last-run 时间戳存 `.git/hook-engine-state.json`，搭 stage 便车，TTL 封顶频率（已落地，首消费方 review-after） |
 
+> 术语对照：周期触发门即 Ford《Building Evolutionary Architectures》的 **continual fitness function**（持续型适性函数——客观完整性评估的持续验证形态）；提交触发门对应 triggered 族。
+
 外源漂移实例：reviewAfter 日期流逝、上游 repo 移动/404、死链、SCA 咨询库更新。便宜的检查（日期对账）可每次跑；贵的（网络请求）走长 cadence。
 
 ## 6. 四所有权带
@@ -80,6 +82,8 @@ status: normative
 | **节内嵌带** | 手主文件内嵌生成孤岛 | `## 目录` 节、shim 的 `node ...` 行 | 形状校验后定点重写 |
 | **声明带** | SoT 本身 | `.hooksrc`、registry | 内部一致性对账（孤儿键） |
 | **纯手写带** | 散文 | SKILL.md 正文、ADR | 只查派生视图不查内容 |
+
+> 工业先例：节内嵌带与 K8s 对象 `spec`/`status` 分带同构——同一文件人写区（spec: registry 条目/layers/domains 表）与机写区（status: `checkCache` 由 update.ps1 写回）分带不越界。信任链保持 DAG+锚点（spec 是主），控制环保持闭环（写→观测→报告→修）。
 
 **规则**：印记=所有权声明，误标=数据丢失（projen #638 先例）——节内嵌带的门必须先验证内容形状再改写，非生成形 warn-skip 不覆写。
 **印记句式**（采纳 Go `Code generated ... DO NOT EDIT.` 正典的 md 变体）：
@@ -147,6 +151,10 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - doc-claims 门——反引号路径存在性对账，等第二个 doc-断言漂移实例
 - hook 事件接线——observability schema 扩 `hook.*`，等下游消费方
 - 持续型 fitness function——审计陈旧度，我们的节奏是事件驱动
+- domain 同义归并——`domains:` 表内 web/js、android/apk 近义重叠，归并须逐案裁决资产语义（登记按现状不修值）
+- deploy-drift chore 门——registry deploy 声明 vs .cc-switch 实际 symlink 的对账，等手动删链/换机漂移实例（sync -DryRun 现可手动显影）
+- unsuffixed-name 的 layer 歧义——name 后缀=类型面与 layer=领域面分位后，无后缀名的 layer 取值靠人判断，等真实歧义例
+- registry 治理段拆分——layers/domains/candidates 与资产条目同文件，增长至对账成本显著时考虑分离
 
 **已删（消融结论，防复建）**：
 
