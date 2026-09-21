@@ -18,6 +18,7 @@ status: normative
 | `pre-commit` | 提交前暂存区 | 暂存 blob 批量大文件、乱码、凭据和 Emoji 静态扫描；基于 `plan.mjs` 影响面受限测试 | 命中静态违规或受影响测试失败即阻断提交；纯文档改动免测秒级放行 |
 | `pre-push` | 推送前远端同步 | 解析 push ref 范围，过滤删除操作；执行全量本地质量门禁 (`verify.mjs --profile full`) | 自动化测试或离线供应链门禁失败即阻断推送 |
 | `post-merge` | merge/pull 完成后 | chores 族：监看文件变更提醒（registry→sync 预览、submodule 指针→update、引擎文件→trust） | **suggest-only 永不阻断**——只打印提醒不执行命令 |
+| `post-checkout` | 分支切换（`$3`=1） | 挂 post-checkout 的门/chore：`old..new` range 增量（clone/零 SHA 退化全量）；`chore.<id>.stages` 挂载 | 非阻断；shim 内 flag 闸控——文件级检出（`git checkout -- file`）不启 node |
 
 ---
 
@@ -165,6 +166,7 @@ lintLevel=error         # error | warn | off（默认 error: lint 失败阻断�
 - **baseline 预览**：`node scripts/hooks/engine.mjs baseline --dry-run`——按门分组预告将冻结的违规数，不写 `.hooks-baseline.json`。
 - **采纳层自检**（与 gates/ 完整性同级，随 `integrityLevel` 开关）：① `.githooks/` shim 与 `lib/shims.mjs` 规范模板对账——手改/模板更新即 warn（外来 hook 无 `engine.mjs` 引用者尊重不碰）；② shim 内引擎引用可达性——store 搬家/引擎缺失即 warn（相对式与绝对烘焙两种引用都验）；③ `.hooksrc` 的 `gate.<id>.*` 孤儿键——配置指向未装载的门（改名/删除残留）即 warn；④ `gates/`、`gates.local/` 下未导出 `gate` 对象的 `.mjs` 文件在加载时 warn（防"写了没生效"静默）。检查者即被检查者，住在引擎装载路径上而非独立门。
 - **移植到其他仓**：`pwsh scripts/install-hooks.ps1 -Target <repo>`——铺入 `scripts/hooks/`（engine+gates+lib+依赖件）+ `.githooks/` shim + `.hooksrc`（模板，不覆盖已有）+ `.gitignore` 补 `.hooksrc.local` + hooksPath + integrity 存值。支持 `-WhatIf` 预演（原生 SupportsShouldProcess）；检测到目标已有 `core.hooksPath` 时**拒绝静默切换**（需先平移旧检查到 `gates.local/` 再加 `-Force`——blog-tui 事故的制度化防线）。项目私有门入 `scripts/hooks/gates.local/`；`impact-test`/`pre-push-verify` 在无对应件的仓自动缺席（`available()` 守卫）。第二采纳者实证：blog-tui。
+- **采纳元数据**：install 时往目标仓 `hook-engine-state.json` 写入 `adoption`（`sourceRepo`/`sourceRev`/`adoptedAt`）——拷贝模型下目标仓知道自己铺的是哪版引擎；`engine list` 读它并对账源仓 HEAD 报 `已最新`/`落后 N 提交`（源仓不可达时只报记录值）。
 
 ### 3.3 `[glob]` 分节覆盖（域内调参）
 

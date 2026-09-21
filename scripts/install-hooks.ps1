@@ -78,6 +78,24 @@ if ($Target) {
         }
     }
 
+    # 6. 采纳元数据——目标仓被动记录：铺的是哪版引擎（engine list 落后对账依据）
+    if ($PSCmdlet.ShouldProcess($dest, '写入采纳元数据')) {
+        $gitDir = (git -C $dest rev-parse --absolute-git-dir 2>$null)
+        if ($gitDir) {
+            $stateFile = Join-Path $gitDir 'hook-engine-state.json'
+            $state = @{}
+            if (Test-Path $stateFile) {
+                try { $state = Get-Content $stateFile -Raw | ConvertFrom-Json -AsHashtable } catch { $state = @{} }
+            }
+            $state['adoption'] = @{
+                sourceRepo = $repoRoot
+                sourceRev  = (git -C $repoRoot rev-parse HEAD 2>$null)
+                adoptedAt  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'")
+            }
+            ($state | ConvertTo-Json -Depth 6) | Set-Content $stateFile -Encoding UTF8
+        }
+    }
+
     Write-Host "========================================================" -ForegroundColor Cyan
     Write-Host "  门禁引擎已铺入 $(Split-Path $dest -Leaf)" -ForegroundColor Green
     Write-Host "  - 按需裁 .hooksrc（impact-test/pre-push-verify 可用 gate.<id>.command 配仓级命令；未配且无对应件自动缺席）" -ForegroundColor Gray

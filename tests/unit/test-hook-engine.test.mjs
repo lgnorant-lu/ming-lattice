@@ -698,5 +698,41 @@ export async function run() {
     } finally { fs.rmSync(cdir, { recursive: true, force: true }); }
   }
 
-  console.log('  -> hook-engine: 16 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度/键空间对账/post-checkout）');
+  // 17. 采纳元数据：state.adoption 记录 + engine list 落后对账
+  {
+    const adir = tempRepo();
+    try {
+      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(adir, 'scripts/hooks'), { recursive: true });
+      fs.writeFileSync(path.join(adir, '.hooksrc'), 'lintLevel=off\nsecretLevel=off\nmojibakeLevel=off\nemojiLevel=off\ngate.impact-test.level=off\n');
+      fs.writeFileSync(path.join(adir, 'x.txt'), 'x\n');
+      execFileSync('git', ['add', '.'], { cwd: adir });
+      const engine = path.join(adir, 'scripts/hooks/engine.mjs');
+      const sf = path.join(adir, '.git/hook-engine-state.json');
+
+      // 无 adoption 记录 → 静默（自托管仓非采纳形态）
+      let r = spawnSync(process.execPath, [engine, 'list'], { cwd: adir, encoding: 'utf8' });
+      assert.ok(!(r.stdout + r.stderr).includes('kit 来源'), '无 adoption 不打印');
+
+      // 记录源仓=本仓 HEAD → "已最新"（源仓可达对账）
+      const ourHead = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+      fs.writeFileSync(sf, JSON.stringify({ adoption: { sourceRepo: root, sourceRev: ourHead, adoptedAt: '2026-09-21T00:00:00.000Z' } }));
+      r = spawnSync(process.execPath, [engine, 'list'], { cwd: adir, encoding: 'utf8' });
+      assert.ok((r.stdout + r.stderr).includes('kit 来源'), 'adoption 头部打印');
+      assert.ok((r.stdout + r.stderr).includes('已最新'), `同源同版应报已最新: ${r.stdout}`);
+
+      // 记录旧版本 → 落后 N（HEAD~1 必落后 1+ 提交）
+      const oldRev = execFileSync('git', ['rev-parse', 'HEAD~1'], { cwd: root, encoding: 'utf8' }).trim();
+      fs.writeFileSync(sf, JSON.stringify({ adoption: { sourceRepo: root, sourceRev: oldRev, adoptedAt: '2026-09-21T00:00:00.000Z' } }));
+      r = spawnSync(process.execPath, [engine, 'list'], { cwd: adir, encoding: 'utf8' });
+      assert.ok(/落后 \d+ 提交/.test(r.stdout + r.stderr), `旧版应报落后: ${r.stdout}`);
+
+      // 源仓不可达 → 只报记录值不崩
+      fs.writeFileSync(sf, JSON.stringify({ adoption: { sourceRepo: '/nonexistent-repo-xyz', sourceRev: 'abc', adoptedAt: '2026-09-21T00:00:00.000Z' } }));
+      r = spawnSync(process.execPath, [engine, 'list'], { cwd: adir, encoding: 'utf8' });
+      assert.equal(r.status, 0, '源仓不可达不崩');
+      assert.ok((r.stdout + r.stderr).includes('kit 来源'), '记录值仍打印');
+    } finally { fs.rmSync(adir, { recursive: true, force: true }); }
+  }
+
+  console.log('  -> hook-engine: 17 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度/键空间对账/post-checkout/采纳元数据）');
 }

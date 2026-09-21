@@ -24,7 +24,7 @@ import { loadHookEngineConfig, resolveLevel, resolveGateConfigFor, parseSkipSet,
 import { repoRoot, fileSource, batchMeta, listUnstagedOverlap, makeGit } from './lib/files.mjs';
 import { detectGitState, shouldSkip } from './lib/git-state.mjs';
 import { loadBaseline, freshFindings, writeBaseline, baselinePath } from './lib/baseline.mjs';
-import { checkIntegrity, writeTrust, checkAdoptionHealth, orphanGateIds, checkKeyspace, lastRunAt, stampRun } from './lib/integrity.mjs';
+import { checkIntegrity, writeTrust, checkAdoptionHealth, orphanGateIds, checkKeyspace, lastRunAt, stampRun, readState } from './lib/integrity.mjs';
 import { buildDeclarativeGates } from './lib/declarative.mjs';
 import { buildChores } from './lib/chores.mjs';
 import { matchAnyGlobs } from './lib/matcher.mjs';
@@ -345,6 +345,20 @@ async function cmdList() {
   const root = repoRoot();
   const cfg = loadHookEngineConfig(root);
   const skip = parseSkipSet();
+  // 采纳元数据：目标仓记录的 kit 来源版本（install 写入）；源仓可达时对账落后
+  const adoption = readState(root).adoption;
+  if (adoption?.sourceRepo) {
+    let lag = '';
+    try {
+      const git = makeGit(root);
+      const cur = git(['-C', adoption.sourceRepo, 'rev-parse', 'HEAD']).trim();
+      if (cur !== adoption.sourceRev) {
+        const n = git(['-C', adoption.sourceRepo, 'rev-list', '--count', `${adoption.sourceRev}..${cur}`]).trim();
+        lag = ` — 落后 ${n} 提交（重跑 install-hooks 更新）`;
+      } else lag = ' — 已最新';
+    } catch { /* 源仓不可达——只报记录值 */ }
+    console.log(`[engine] kit 来源: ${adoption.sourceRepo}@${String(adoption.sourceRev).slice(0, 8)} 铺于 ${adoption.adoptedAt}${lag}`);
+  }
   for (const g of [...await loadNativeGates(), ...buildDeclarativeGates(cfg)]) {
     const level = resolveLevel(g.id, g.defaultLevel ?? 'warn', cfg);
     const flags = [

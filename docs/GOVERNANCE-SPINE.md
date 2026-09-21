@@ -114,6 +114,7 @@ status: normative
 | `distill/<proj>/*.md` | 投影（经验条目） | INDEX | 同上 | — | — |
 | `.hooksrc`(+分节) | 声明带 SoT | — | 孤儿键+checkKeyspace | hook-engine 组 15 | — |
 | `.githooks/*` | 投影 | `lib/shims.mjs` | `checkAdoptionHealth` | 第 10 组 | — |
+| `state.json` `adoption` | 采纳被动记录 | install-hooks.ps1 写入 | `engine list` 落后对账 | 第 17 组 | — |
 | `gates/*.mjs` | 门本体 | 导出元数据（模块即 SoT：id/stages/configKeys 等） | 完整性 hash+未导出 warn+checkKeyspace | 各套件 | — |
 | `gates.local/*` | 门本体（仓私有） | 同上 | 同上 | 目标仓自测 | — |
 | router manifest | 全生成带 | `build-router-manifest.mjs` | `manifest-freshness` | 套件内 | — |
@@ -145,7 +146,6 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - doc-claims 门——反引号路径存在性对账，等第二个 doc-断言漂移实例
 - link-rot——外链死链，贵检查走 cadence，等真实痛点
 - hook 事件接线——observability schema 扩 `hook.*`，等下游消费方
-- 版本印记——install 时写 `sourceRepo/sourceRev`，下次采纳事件顺手做
 - 持续型 fitness function——审计陈旧度，我们的节奏是事件驱动
 
 **已删（消融结论，防复建）**：
