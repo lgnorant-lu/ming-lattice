@@ -10,7 +10,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { checkDir, checkCandidates } from '../../private/engineering/ming-skill-forge/scripts/check-skill.mjs';
+import { checkDir, checkCandidates, domainVocabSweep, unregisteredDirs, collectStats, skillLayer } from '../../private/engineering/ming-skill-forge/scripts/check-skill.mjs';
 
 const SCRIPT = path.resolve(import.meta.dirname, '../../private/engineering/ming-skill-forge/scripts/check-skill.mjs');
 const OPTS = { skipRouter: true, skipRegistry: true };
@@ -164,7 +164,65 @@ export function run() {
     const layBadMeta = 'metadata:\n  layer: bogus-layer\n  compose: none\n';
     assert.ok(has(checkDir(mkSkill('lay-bad-fx', fm('lay-bad-fx', layBadMeta)), regOpts), 'W', '未登记'), '未登记层别应报 W');
 
-    console.log('  14 组断言全过');
+    // 15. 资产域词表治理 + stats 投影 + fs→registry 反向对账
+    // 15a. domainVocabSweep：登记值零 issue，未登记值 W（fixture registry 注入）
+    const fxReg2 = path.join(tmpRoot, 'registry-domains.yaml');
+    fs.writeFileSync(fxReg2, [
+      'domains:',
+      '  - js',
+      '  - grp/sub',
+      'vertical:',
+      '  - name: v-ok',
+      '    path: vertical/v-ok',
+      '    domain: js',
+      '    deploy: {}',
+      '  - name: v-slash',
+      '    path: vertical/v-slash',
+      '    domain: grp/sub',
+      '    deploy: {}',
+      '  - name: v-bad',
+      '    path: vertical/v-bad',
+      '    domain: bogus-domain',
+      '    deploy: {}',
+      '',
+    ].join('\n'), 'utf8');
+    const domSweep = domainVocabSweep(fxReg2);
+    assert.equal(domSweep.filter(i => i.msg.includes('"js"')).length, 0, '登记值 js 不应报');
+    assert.equal(domSweep.filter(i => i.msg.includes('grp/sub')).length, 0, '登记的斜杠值应判合法');
+    assert.ok(domSweep.some(i => i.level === 'W' && i.msg.includes('bogus-domain')), '未登记 domain 值应报 W');
+    // 15b. checkDir 条目级 domain 比对（同 fixture，路径不符只产 E 不影响 W 断言面）
+    const fxReg3 = path.join(tmpRoot, 'registry-entry-domain.yaml');
+    fs.writeFileSync(fxReg3, [
+      'domains:', '  - js', 'layers:', '  - methodology', 'vertical:',
+      '  - name: dom-ok-fx', '    path: tmp/dom-ok-fx', '    domain: js', '    note: x', '    deploy: {}',
+      '  - name: dom-bad-fx', '    path: tmp/dom-bad-fx', '    domain: nope', '    note: x', '    deploy: {}',
+      '',
+    ].join('\n'), 'utf8');
+    const domOpts = { skipRouter: true, registryPath: fxReg3 };
+    assert.ok(!has(checkDir(mkSkill('dom-ok-fx', fm('dom-ok-fx')), domOpts), 'W', '未登记'), '登记 domain 不应报 W');
+    assert.ok(has(checkDir(mkSkill('dom-bad-fx', fm('dom-bad-fx')), domOpts), 'W', '未登记'), '条目未登记 domain 应报 W');
+    // 15c. unregisteredDirs：含 SKILL.md 未登记=孤儿；容器目录递归；已登记豁免
+    //      （返回值为相对 REPO_ROOT 路径——登记集按同法构造，绝对 root 注入可越仓测试）
+    const pkRoot = path.join(tmpRoot, 'pk');
+    const REPO = path.resolve(import.meta.dirname, '../..');
+    const relOf = p => path.relative(REPO, p).replace(/\\/g, '/');
+    fs.mkdirSync(path.join(pkRoot, 'reg-one'), { recursive: true });
+    fs.writeFileSync(path.join(pkRoot, 'reg-one', 'SKILL.md'), fm('reg-one'));
+    fs.mkdirSync(path.join(pkRoot, 'nest', 'deep-pkg'), { recursive: true });
+    fs.writeFileSync(path.join(pkRoot, 'nest', 'deep-pkg', 'SKILL.md'), fm('deep-pkg'));
+    fs.mkdirSync(path.join(pkRoot, 'plain-dir'), { recursive: true }); // 无 SKILL.md 的容器——非孤儿
+    const orphans = unregisteredDirs([pkRoot], new Set([relOf(path.join(pkRoot, 'reg-one'))]));
+    assert.ok(!orphans.some(o => o.includes('reg-one')), '已登记目录不应报孤儿');
+    assert.ok(!orphans.some(o => o.includes('plain-dir')), '无 SKILL.md 容器目录不应报');
+    assert.ok(orphans.some(o => o.includes('deep-pkg')), '嵌套未登记包应正向捕获');
+    // 15d. collectStats：layer 直方图 + undeclared 桶（真实 registry 注入路径）
+    const stats = collectStats([{ name: 'fake', path: 'private/ming-skills-router' }]);
+    assert.equal(stats.layers.infrastructure, 1, 'ming-skills-router layer=infrastructure 应入直方图');
+    assert.equal(stats.undeclaredLayers, 0);
+    const stats2 = collectStats([]);
+    assert.ok(stats2.domains.js > 0 && stats2.domains.mcp > 0, 'domain 直方图应覆盖全域段');
+
+    console.log('  15 组断言全过');
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }

@@ -42,6 +42,7 @@
 | `router:false` 声明与 DOMAIN_DEFS 引用矛盾 | W | 豁免位漂移——声明不路由却仍被引用 |
 | `ming-*` 条目须显式 `metaSystem: true`；非 ming- 声明此位 | E / W | ming- 前缀=元系统保留命名空间——注册即声明归属，反向声明=漂移 |
 | `metadata.layer` 值须在 registry `layers:` 登记表内 | W | 层别元组管理——新类别先入表再使用（脚手架 `--under` 白名单同理） |
+| 条目 `domain:` 值须在 registry `domains:` 登记表内 | W | 资产域元组管理——自由文本域无门必腐（apk/android、js/web/mp 同义漂移为已发生先例） |
 | `skillTriggers` 词与 description 零交集 | I | 双触发面漂移提示（forge §3：两关键词集必须一致） |
 | SKILL.md 内相对链接文件存在 | E | lint 同级（防死链）；代码围栏与行内代码豁免——语法示例非真链接 |
 
@@ -56,6 +57,14 @@
 | evidence ≥2 → graduation-ready | I | 放行信号：达毕业阈值提示人审（机器不自动立包） |
 | openedAt >90d → aging | I | 候开设时效——复审存续或撤回 |
 | 统计尾行 `candidates: N registered (oldest Xd; K ready)` | — | 放行面板：`--all` 附带，--no-registry 豁免 |
+
+## 统计与全域扫描项（--all 附带）
+
+| 检查 | 级 | 依据 |
+|---|---|---|
+| `domain-vocab`：全段条目 `domain:` 值比对登记表 | W | --all 只迭代 private 条目，但 domain 字段挂在 vertical/deployable——词表治理须 registry 层面扫全段 |
+| `fs-scan`：含 SKILL.md 但 registry 无条目的目录 | W | fs→registry 反向对账——registry→fs 方向已有门（登记路径不存在=E），目录→登记方向此前无门 |
+| `stats:` 尾两行 layer 直方图 + domain 分布 | — | 统计投影（registry 纯函数视图，非新 SoT）；`undeclared` 桶=未声明 metadata.layer 的包，含 testing 族——该族以 compose.yaml 为组合真源是文档化豁免非缺陷 |
 
 ## 用法
 

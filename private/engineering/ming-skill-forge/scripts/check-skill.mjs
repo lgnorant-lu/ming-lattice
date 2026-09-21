@@ -135,6 +135,14 @@ function checkDir(absDir, { skipRouter = false, skipRegistry = false, registryPa
           const allowed = new Set([...layerBlock.matchAll(/^\s*-\s*([a-z-]+)/gm)].map(m => m[1]));
           if (!allowed.has(declaredLayer)) add('W', `layer 值 "${declaredLayer}" 未登记——新类别先入 registry layers 表`);
         }
+        // 资产域登记：条目 domain: 值须在 registry domains: 表内（与 layers 同构——
+        // 自由文本域无门必腐，apk/android、js/web 同义漂移即先例）
+        const domainBlock = registrySection('domains', rp);
+        const domM = entry[1].match(/^\s*domain:\s*(\S+)/m);
+        if (domM && domainBlock) {
+          const allowed = new Set([...domainBlock.matchAll(/^\s*-\s*([\w/-]+)/gm)].map(m => m[1]));
+          if (!allowed.has(domM[1])) add('W', `domain 值 "${domM[1]}" 未登记——新值先入 registry domains 表`);
+        }
       }
     } else {
       add('I', 'registry.yaml 不在仓库根（独立校验模式）');
@@ -248,6 +256,75 @@ function privateEntries() {
   return entries;
 }
 
+// ---------- 资产域词表全域扫描（--all 不迭代 vertical/deployable 条目，
+// 但 domain: 字段挂在那些条目上——词表治理须在 registry 层面扫全段） ----------
+function domainVocabSweep(registryPath = path.join(REPO_ROOT, 'registry.yaml')) {
+  const domainBlock = registrySection('domains', registryPath);
+  if (!domainBlock) return [];
+  const allowed = new Set([...domainBlock.matchAll(/^\s*-\s*([\w/-]+)/gm)].map(m => m[1]));
+  const issues = [];
+  for (const sec of ['base', 'vertical', 'deployable', 'private']) {
+    const block = registrySection(sec, registryPath);
+    if (!block) continue;
+    for (const m of block.matchAll(/^\s+domain:\s*(\S+)/gm)) {
+      if (!allowed.has(m[1])) issues.push({ level: 'W', msg: `${sec} 区 domain 值 "${m[1]}" 未登记——新值先入 registry domains 表` });
+    }
+  }
+  return issues;
+}
+
+// ---------- stats：一键统计投影（registry 纯函数视图——非新 SoT） ----------
+// 三轴：layer 直方图（SKILL.md fm，含 undeclared 桶）/ domain 分布（条目字段）/
+// fs→registry 孤儿目录（反向对账——登记条目→目录已有门，目录→登记此前无门）
+function skillLayer(absDir) {
+  const f = path.join(absDir, 'SKILL.md');
+  if (!fs.existsSync(f)) return null;
+  const fm = fs.readFileSync(f, 'utf8').match(/^---\s*\n([\s\S]*?)\n---/);
+  return fm ? (fm[1].match(/^  layer:\s*(\S+)/m) || [null, null])[1] : null;
+}
+
+function allEntryPaths(registryPath = path.join(REPO_ROOT, 'registry.yaml')) {
+  const out = new Set();
+  for (const sec of ['base', 'vertical', 'deployable', 'private']) {
+    const block = registrySection(sec, registryPath) || '';
+    for (const m of block.matchAll(/path:\s*(\S+)/g)) out.add(m[1]);
+  }
+  return out;
+}
+
+// roots 可注入（测试用）；登记路径集外、含 SKILL.md 的目录 = 未登记孤儿
+function unregisteredDirs(roots, registeredPaths) {
+  const found = [];
+  const walk = (dir) => {
+    if (!fs.existsSync(dir)) return;
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!ent.isDirectory() || ent.name.startsWith('.') || ent.name === 'node_modules') continue;
+      const p = path.join(dir, ent.name);
+      if (fs.existsSync(path.join(p, 'SKILL.md'))) {
+        const rel = path.relative(REPO_ROOT, p).replace(/\\/g, '/');
+        if (!registeredPaths.has(rel)) found.push(rel);
+      } else walk(p); // SKILL.md 目录=包边界不深入；容器目录继续走（engineering/testing/ 嵌套）
+    }
+  };
+  for (const r of roots) walk(path.resolve(REPO_ROOT, r));
+  return found;
+}
+
+function collectStats(pkgs, registryPath = path.join(REPO_ROOT, 'registry.yaml')) {
+  const layers = new Map(); let undeclaredLayers = 0;
+  for (const e of pkgs) {
+    const layer = skillLayer(path.join(REPO_ROOT, e.path));
+    if (layer) layers.set(layer, (layers.get(layer) || 0) + 1); else undeclaredLayers++;
+  }
+  const domains = new Map();
+  for (const sec of ['base', 'vertical', 'deployable', 'private']) {
+    const block = registrySection(sec, registryPath) || '';
+    for (const m of block.matchAll(/^\s+domain:\s*(\S+)/gm)) domains.set(m[1], (domains.get(m[1]) || 0) + 1);
+  }
+  const orphans = unregisteredDirs(['private', 'deployable'], allEntryPaths(registryPath));
+  return { layers: Object.fromEntries(layers), undeclaredLayers, domains: Object.fromEntries(domains), orphans };
+}
+
 // ---------- CLI ----------
 function main() {
   const args = process.argv.slice(2);
@@ -271,6 +348,7 @@ function main() {
 
   const results = []; // {dir, issues}
   let candStats = null;
+  let pkgStats = null;
   let pkgCount = 0;
   if (allMode) {
     const pkgs = privateEntries();
@@ -284,6 +362,13 @@ function main() {
       const cand = checkCandidates(new Set(pkgs.map(p => p.name)));
       for (const c of cand.results) results.push({ dir: `candidate:${c.name}`, issues: c.issues });
       candStats = cand.stats;
+      // 资产域词表全域扫描 + fs→registry 孤儿目录（反向对账补全）
+      const domIssues = domainVocabSweep();
+      if (domIssues.length) results.push({ dir: 'domain-vocab', issues: domIssues });
+      pkgStats = collectStats(pkgs);
+      for (const o of pkgStats.orphans) {
+        results.push({ dir: 'fs-scan', issues: [{ level: 'W', msg: `目录含 SKILL.md 但 registry 无条目: ${o}——登记或移除` }] });
+      }
     }
   } else {
     const absDir = path.resolve(skillDir);
@@ -291,7 +376,7 @@ function main() {
   }
 
   if (asJson) {
-    console.log(JSON.stringify(allMode ? { results, candidates: candStats } : results[0].issues, null, 2));
+    console.log(JSON.stringify(allMode ? { results, candidates: candStats, stats: pkgStats } : results[0].issues, null, 2));
   } else {
     let te = 0, tw = 0, tn = 0;
     for (const r of results) {
@@ -304,6 +389,11 @@ function main() {
     }
     console.log(`\ntotal: ${allMode ? pkgCount : results.length} pkg → E=${te} W=${tw} I=${tn}`);
     if (candStats) console.log(`candidates: ${candStats.count} registered (oldest ${candStats.oldestDays}d; ${candStats.ready} graduation-ready)`);
+    if (pkgStats) {
+      const fmt = o => `{${Object.entries(o).map(([k, v]) => `${k}:${v}`).join(' ')}}`;
+      console.log(`stats: layers ${fmt(pkgStats.layers)} undeclared:${pkgStats.undeclaredLayers}`);
+      console.log(`       domains ${fmt(pkgStats.domains)}`);
+    }
   }
   process.exitCode = results.some(r => r.issues.some(i => i.level === 'E')) ? 1 : 0;
 }
@@ -311,4 +401,4 @@ function main() {
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) main();
 
-export { checkDir, privateEntries, candidateEntries, checkCandidates };
+export { checkDir, privateEntries, candidateEntries, checkCandidates, domainVocabSweep, unregisteredDirs, collectStats, skillLayer };
