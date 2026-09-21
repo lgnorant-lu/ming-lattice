@@ -1,3 +1,9 @@
+---
+domain: know
+status: descriptive
+dynamics: [用,省]
+---
+
 # 2026-09-01 可颂实体级数据门控修复
 
 ## 场景分类

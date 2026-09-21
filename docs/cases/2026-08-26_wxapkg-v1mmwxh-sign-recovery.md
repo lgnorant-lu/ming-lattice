@@ -1,3 +1,9 @@
+---
+domain: know
+status: descriptive
+dynamics: [用,省]
+---
+
 # 2026-08-26 微信小程序 wxapkg 解包 + 签名逆向（三星堆 mini.sxd.cn）
 
 ## 场景分类

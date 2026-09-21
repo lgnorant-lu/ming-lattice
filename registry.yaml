@@ -13,7 +13,7 @@
 #   updatePolicy: { ttlDays: 缓存有效天数, fetchMode: 元数据拉取模式 }
 #   base        : 基座（submodule 跟踪 upstream, 按模块部署）; pin = tag
 #   vertical    : 垂直参考（vendored, 保留 .git）; pin = upstream commit(短 hash)
-#     domain    : js=Web/JS逆向 bin=二进制 apk=Android ios=iOS kb=知识库 ctf=CTF mw=恶意软件 misc=其他
+#     domain    : 资产域（合法值域见下方 domains: 登记表——新值先入表再使用）
 #     deploy    : 部署映射 { 客户端: bool }（空 = 仅参考不部署）
 
 schemaVersion: "1.1"
@@ -41,6 +41,24 @@ layers:
   - data-contract      # 数据契约演进
   - config             # 配置归一化
   - meta               # 元系统自身（distiller 等）
+
+# 资产域登记表——条目级 domain: 字段的合法值域（与 layers: 同构，先入表再使用）。
+# 词表只登记通用类型轴——生态/来源特征不入值（ruyi 系已由 ruyi/web 归并 web/mcp，
+# 来源轴由 name/repo/note 承载）。web/js、android/apk 近义重叠归并裁决另案。
+domains:
+  - js          # Web/JS 逆向
+  - bin         # 二进制
+  - apk         # Android APK 逆向
+  - ios         # iOS
+  - kb          # 知识库
+  - ctf         # CTF
+  - mw          # 恶意软件
+  - misc        # 其他
+  - mcp         # MCP 服务器/插件源码
+  - web         # Web 对抗面（自动化/指纹/反检测；与 js 近义——归并候审）
+  - mp          # 小程序
+  - android     # Android 工具链（非 APK 逆向；与 apk 近义——归并候审）
+  - routing     # 路由基础设施
 
 base:
   - name: reverse-skill
@@ -739,7 +757,7 @@ vertical:
     pin: cc93bde
     acquiredAt: 2026-08-18
     enabled: true
-    domain: ruyi/web
+    domain: web
     note: ruyiPage 自动化框架(★744 活跃), BiDi 过检测 Firefox 内核
     deploy: {}
     checkCache:
@@ -751,7 +769,7 @@ vertical:
     pin: 5f00b6d
     acquiredAt: 2026-08-18
     enabled: true
-    domain: ruyi/web
+    domain: web
     note: ruyiPage skill v1.2，经 deployable 包装
     deploy: {}
     checkCache:
@@ -763,7 +781,7 @@ vertical:
     pin: c32bf8a
     acquiredAt: 2026-08-18
     enabled: true
-    domain: ruyi/web
+    domain: web
     note: RuyiTrace 文档仓库(内核闭源发行), NDJSON 格式+AI 提示词+12 防护案例
     deploy: {}
     checkCache:
@@ -775,7 +793,7 @@ vertical:
     pin: 401a2d2
     acquiredAt: 2026-08-18
     enabled: true
-    domain: ruyi/web
+    domain: web
     note: ruyiPage 配套 Firefox 发行说明
     deploy: {}
     checkCache:
@@ -788,7 +806,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     sourceGone: true
-    domain: ruyi/web
+    domain: web
     note: ruyiPage JS 库(77 files), 上游仓库已下架/私有化, 内容已采集
     deploy: {}
   - name: ruyipage-go
@@ -798,7 +816,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     sourceGone: true
-    domain: ruyi/web
+    domain: web
     note: ruyiPage Go 库(189 files), 上游已下架, 内容已采集
     deploy: {}
   - name: ruyipage-dev
@@ -808,7 +826,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     sourceGone: true
-    domain: ruyi/web
+    domain: web
     note: ruyiPage 开发文档仓库(含 SKILL.md/agents/references, 15MB), 上游已下架
     deploy: {}
   - name: ruyi-mcp
@@ -818,7 +836,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     sourceGone: true
-    domain: ruyi/web
+    domain: mcp
     note: ruyiPage MCP 桥接(98 files), 上游已下架, 内容已采集
     deploy: {}
 
@@ -1357,7 +1375,7 @@ deployable:
   - name: ruyipage-skill
     path: deployable/ruyipage-skill
     enabled: true
-    domain: ruyi/web
+    domain: web
     note: ruyiPage 官方 skill v1.2(BiDi 原生/人机化/指纹浏览器/反爬)
     deploy:
       claude: true
