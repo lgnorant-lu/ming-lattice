@@ -1593,6 +1593,8 @@ private:
 # 包提案登记处：非实体包（无 SKILL.md），一进证据开市、二进证据触发毕业。
 # 协议见 private/engineering/ming-skill-forge/references/candidacy.md；
 # 契约与统计由 check-skill.mjs --all 附带检查。
+# 注：本段 domain: 指目标路由域（build-router-manifest DOMAIN_DEFS 键），
+# 与上方条目 domain:（资产域词表）同字段不同词表——值域当前不相交。
 candidates:
   - name: immersive-web-idiom
     domain: engineering

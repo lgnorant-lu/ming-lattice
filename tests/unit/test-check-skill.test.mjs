@@ -10,7 +10,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { checkDir, checkCandidates, domainVocabSweep, unregisteredDirs, collectStats, skillLayer } from '../../private/engineering/ming-skill-forge/scripts/check-skill.mjs';
+import { checkDir, checkCandidates, routerDomainKeys, domainVocabSweep, unregisteredDirs, collectStats, skillLayer } from '../../private/engineering/ming-skill-forge/scripts/check-skill.mjs';
 
 const SCRIPT = path.resolve(import.meta.dirname, '../../private/engineering/ming-skill-forge/scripts/check-skill.mjs');
 const OPTS = { skipRouter: true, skipRegistry: true };
@@ -221,6 +221,36 @@ export function run() {
     assert.equal(stats.undeclaredLayers, 0);
     const stats2 = collectStats([]);
     assert.ok(stats2.domains.js > 0 && stats2.domains.mcp > 0, 'domain 直方图应覆盖全域段');
+    // 15e. 候选 domain = 目标路由域词表（DOMAIN_DEFS 键）——与条目 domain 资产域同字段不同词表
+    const fxReg4 = path.join(tmpRoot, 'registry-cand.yaml');
+    fs.writeFileSync(fxReg4, [
+      'candidates:',
+      '  - name: cand-ok',
+      '    domain: engineering',
+      '    path: private/engineering/cand-ok',
+      '    rationale: "x"',
+      '    graduation: "x"',
+      '    openedAt: 2026-01-01',
+      '    evidence:',
+      '      - "e1"',
+      '  - name: cand-bad',
+      '    domain: no-such-domain',
+      '    path: private/x',
+      '    rationale: "x"',
+      '    graduation: "x"',
+      '    openedAt: 2026-01-01',
+      '    evidence:',
+      '      - "e1"',
+      '',
+    ].join('\n'), 'utf8');
+    const candRes = checkCandidates(new Set(), { registryPath: fxReg4 });
+    const okIss = candRes.results.find(r => r.name === 'cand-ok').issues;
+    const badIss = candRes.results.find(r => r.name === 'cand-bad').issues;
+    assert.ok(!okIss.some(i => i.msg.includes('DOMAIN_DEFS')), '登记路由域 engineering 不应报');
+    assert.ok(badIss.some(i => i.level === 'W' && i.msg.includes('DOMAIN_DEFS')), '未登记路由域应报 W');
+    const candSkip = checkCandidates(new Set(), { registryPath: fxReg4, skipRouter: true });
+    assert.ok(!candSkip.results.find(r => r.name === 'cand-bad').issues.some(i => i.msg.includes('DOMAIN_DEFS')), 'skipRouter 应豁免路由域检查');
+    assert.ok(routerDomainKeys().has('engineering'), 'DOMAIN_DEFS 键应含 engineering');
 
     console.log('  15 组断言全过');
   } finally {

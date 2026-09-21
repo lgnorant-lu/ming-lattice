@@ -13,6 +13,11 @@ function Read-SkillRegistry {
     param([Parameter(Mandatory)][string]$RegistryPath)
 
     $reg = ConvertFrom-YamlLite (Get-Content -LiteralPath $RegistryPath -Raw -Encoding UTF8)
+    # schemaVersion 活化：缺席放行（fixture 最小形态），在场须 1.x——主版本不符即拒读
+    # （契约演进留钩：未来 2.x 文件不被 1.x 解析器静默误读）
+    if ($null -ne $reg.schemaVersion -and "$($reg.schemaVersion)" -notmatch '^1\.') {
+        throw "registry_unsupported_schema: $($reg.schemaVersion)"
+    }
     if ($reg.targets -isnot [System.Collections.IDictionary]) { throw 'registry_invalid_targets' }
     $deployments = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     $allNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)

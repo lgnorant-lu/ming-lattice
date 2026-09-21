@@ -73,7 +73,12 @@ function parseFrontmatter(file) {
 // ── 主校验 ──
 if (!fs.existsSync(INDEX_PATH)) { add('E', 'distill/INDEX.yaml 不存在'); }
 else {
-  const entries = parseIndex(fs.readFileSync(INDEX_PATH, 'utf8'));
+  const indexText = fs.readFileSync(INDEX_PATH, 'utf8');
+  // schemaVersion 活化——字段须在场且为当前契约版（write-only 仪式字段不设）
+  const svM = indexText.match(/^schemaVersion:\s*"?([^"\s]+)"?\s*$/m);
+  if (!svM) add('W', 'INDEX.yaml 缺 schemaVersion——契约版本未声明');
+  else if (svM[1] !== '1.0') add('W', `INDEX schemaVersion "${svM[1]}" 非当前契约版 1.0——演进未同步`);
+  const entries = parseIndex(indexText);
   if (!entries) add('E', 'INDEX.yaml 无 entries: 块（解析失败）');
   else {
     const seen = new Set();

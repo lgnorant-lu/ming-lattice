@@ -54,6 +54,7 @@
 | 候选间重名 / 与既有包重名 | E | 重名即应毕业或撤回 |
 | 候选 `path` 已有实体目录 | W | 候选+实体双态非法——毕业接线或撤回 |
 | `openedAt` 日期可解析 | W | 时效统计依赖 |
+| 候选 `domain` 值须在 DOMAIN_DEFS 域键内 | W | 候选 domain 契约=目标路由域（candidacy.md §2）——与条目 domain: 资产域词表同字段不同词表，值域当前不相交 |
 | evidence ≥2 → graduation-ready | I | 放行信号：达毕业阈值提示人审（机器不自动立包） |
 | openedAt >90d → aging | I | 候开设时效——复审存续或撤回 |
 | 统计尾行 `candidates: N registered (oldest Xd; K ready)` | — | 放行面板：`--all` 附带，--no-registry 豁免 |
@@ -62,7 +63,7 @@
 
 | 检查 | 级 | 依据 |
 |---|---|---|
-| `domain-vocab`：全段条目 `domain:` 值比对登记表 | W | --all 只迭代 private 条目，但 domain 字段挂在 vertical/deployable——词表治理须 registry 层面扫全段 |
+| `domain-vocab`：条目 `domain:` 值比对登记表 | W | 扫 base/vertical/deployable/private 四段资产域——candidates 的 domain: 是路由域另表，不入此扫；--all 只迭代 private 条目故须 registry 层面全域 |
 | `fs-scan`：含 SKILL.md 但 registry 无条目的目录 | W | fs→registry 反向对账——registry→fs 方向已有门（登记路径不存在=E），目录→登记方向此前无门 |
 | `stats:` 尾两行 layer 直方图 + domain 分布 | — | 统计投影（registry 纯函数视图，非新 SoT）；`undeclared` 桶=未声明 metadata.layer 的包，含 testing 族——该族以 compose.yaml 为组合真源是文档化豁免非缺陷 |
 

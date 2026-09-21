@@ -10,6 +10,7 @@ import { run as runRouteDecisionCompatibility } from './contract/test-route-deci
 import { run as runSupplyChainGate } from './contract/test-supply-chain-gate.mjs';
 import { run as runSbomGeneration } from './contract/test-sbom-generation.mjs';
 import { run as runScaGeneration } from './contract/test-sca-generation.mjs';
+import { run as runRegistryParity } from './contract/test-registry-parity.test.mjs';
 import { createOperationalEvent, emitEvent } from '../private/ming-skills-router/scripts/observability.mjs';
 import { run as runCliIntegration } from './integration/test-cli-tools.test.mjs';
 import { run as runRouteEffects } from './evals/test-route-effects.mjs';
@@ -65,6 +66,7 @@ export const allSuites = [
   { name: 'supply-chain-gate', tier: 'contract', run: runSupplyChainGate },
   { name: 'sbom-generation', tier: 'contract', run: runSbomGeneration },
   { name: 'sca-generation', tier: 'contract', run: runScaGeneration },
+  { name: 'registry-parity', tier: 'contract', run: runRegistryParity },
   { name: 'lint-contract', tier: 'contract', pwsh: true, run: runLintContract },
   { name: 'hook-planner', tier: 'contract', run: runHookPlannerContract },
   { name: 'route-effects', tier: 'eval', run: runRouteEffects },

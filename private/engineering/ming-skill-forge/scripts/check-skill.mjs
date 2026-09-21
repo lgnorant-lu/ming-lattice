@@ -188,6 +188,20 @@ function checkDir(absDir, { skipRouter = false, skipRegistry = false, registryPa
 
 // ---------- candidates：候审区契约与统计 ----------
 // 协议见 ../references/candidacy.md——一进证据开市、二进证据触发毕业（I 级放行信号）。
+// 路由域词表 = build-router-manifest.mjs DOMAIN_DEFS 键（候选 domain 契约是目标路由域，
+// 与条目 domain: 资产域词表同字段不同词表——值域当前不相交，归并/改名裁决见 SPINE §11）。
+let _routerDomainKeys = null;
+function routerDomainKeys() {
+  if (_routerDomainKeys) return _routerDomainKeys;
+  _routerDomainKeys = new Set();
+  const src = path.join(REPO_ROOT, 'scripts', 'build-router-manifest.mjs');
+  if (fs.existsSync(src)) {
+    const m = fs.readFileSync(src, 'utf8').match(/DOMAIN_DEFS\s*=\s*\{([\s\S]*?)\n\};/);
+    if (m) for (const k of m[1].matchAll(/^\s{2}([A-Za-z_]+)\s*:/gm)) _routerDomainKeys.add(k[1]);
+  }
+  return _routerDomainKeys;
+}
+
 function registrySection(key, registryPath = path.join(REPO_ROOT, 'registry.yaml')) {
   if (!fs.existsSync(registryPath)) return null;
   const reg = fs.readFileSync(registryPath, 'utf8');
@@ -198,8 +212,8 @@ function registrySection(key, registryPath = path.join(REPO_ROOT, 'registry.yaml
   return nextTop < 0 ? rest : rest.slice(0, nextTop);
 }
 
-function candidateEntries() {
-  const block = registrySection('candidates');
+function candidateEntries(registryPath = path.join(REPO_ROOT, 'registry.yaml')) {
+  const block = registrySection('candidates', registryPath);
   if (!block) return [];
   const entries = [];
   for (const m of block.matchAll(/-\s*name:\s*(\S+)[\s\S]*?(?=-\s*name:|$)/g)) {
@@ -219,8 +233,8 @@ function candidateEntries() {
   return entries;
 }
 
-function checkCandidates(pkgNames = new Set()) {
-  const entries = candidateEntries();
+function checkCandidates(pkgNames = new Set(), { skipRouter = false, registryPath = path.join(REPO_ROOT, 'registry.yaml') } = {}) {
+  const entries = candidateEntries(registryPath);
   const results = [];
   const seen = new Set();
   let ready = 0, oldestDays = 0;
@@ -231,6 +245,12 @@ function checkCandidates(pkgNames = new Set()) {
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(c.name)) add('E', `候选名非 kebab-case: ${c.name}`);
     for (const k of ['domain', 'path', 'rationale', 'graduation', 'openedAt']) {
       if (!c[k]) add('E', `候选条目缺字段 ${k}`);
+    }
+    // 候选 domain = 目标路由域：值须在 DOMAIN_DEFS 键内（词表门——skipRouter 豁免；
+    // keys 空集=manifest 解析失败则跳过，不把解析器故障放大成全误报）
+    if (c.domain && !skipRouter) {
+      const keys = routerDomainKeys();
+      if (keys.size && !keys.has(c.domain)) add('W', `候选 domain "${c.domain}" 不在 DOMAIN_DEFS 域键——目标路由域先入 build-router-manifest 域表`);
     }
     if (c.evidence === 0) add('E', '候选条目无 evidence——开市须至少一份实例证据');
     if (seen.has(c.name)) add('E', `候选重名: ${c.name}`);
@@ -359,7 +379,7 @@ function main() {
       results.push({ dir: e.name, issues: checkDir(abs, opts) });
     }
     if (!opts.skipRegistry) {
-      const cand = checkCandidates(new Set(pkgs.map(p => p.name)));
+      const cand = checkCandidates(new Set(pkgs.map(p => p.name)), { skipRouter: opts.skipRouter });
       for (const c of cand.results) results.push({ dir: `candidate:${c.name}`, issues: c.issues });
       candStats = cand.stats;
       // 资产域词表全域扫描 + fs→registry 孤儿目录（反向对账补全）
@@ -401,4 +421,4 @@ function main() {
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) main();
 
-export { checkDir, privateEntries, candidateEntries, checkCandidates, domainVocabSweep, unregisteredDirs, collectStats, skillLayer };
+export { checkDir, privateEntries, candidateEntries, checkCandidates, routerDomainKeys, domainVocabSweep, unregisteredDirs, collectStats, skillLayer };
