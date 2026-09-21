@@ -295,3 +295,5 @@ status: descriptive
 | 案例 | 一句话 | 价值点 |
 |---|---|---|
 | device_register-kimi-ttEncrypt.md | Kimi device_register 从抓包到纯 Python 完整还原 | 教科书级"Java 定数据流→Native 定位核心→Frida 坐实原语"方法论 + 15 项验证闭环 |
+| 2026-08-26_wxapkg-v1mmwxh-sign-recovery.md | 微信小程序 wxapkg 解包 + ts/nonce/sign 签名密钥还原 | V1MMWXH 加密包解包→密钥提取→全量采集链路 |
+| 2026-09-01_kesong-entity-semantic-gate.md | 实体语义门禁案例记录 | 语义判定闸门的实战形态样本 |
