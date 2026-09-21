@@ -74,7 +74,12 @@ if ($Target) {
         git -C $dest config core.hooksPath .githooks
         $node = Get-Command node -ErrorAction SilentlyContinue
         if ($node) {
-            try { node (Join-Path $dstHooks 'engine.mjs') trust 2>$null | Out-Null } catch { }
+            # Push-Location 必做：engine repoRoot() 按 cwd 解析——不带 cwd 会把 trust
+            # 写进源仓 state（实测缺陷：目标仓 gatesHash 留旧值，首跑即误报）
+            try {
+                Push-Location $dest
+                node (Join-Path $dstHooks 'engine.mjs') trust 2>$null | Out-Null
+            } catch { } finally { Pop-Location }
         }
     }
 
