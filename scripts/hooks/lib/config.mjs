@@ -4,7 +4,7 @@
 // + 旧键别名映射（emojiLevel → gate.emoji.level 等）+ SKIP 环境变量语义
 //
 // 契约：
-//   - INI 首个 '=' 切分，行内不支持注释（值内 '#' 保留——正则友好）
+//   - INI 首个 '=' 切分；行内注释="空白+#"起剥离（`v  # c`→`v`），`#` 紧跟非空白保留（`pattern=#[0-9a-f]` 正则/锚点友好）
 //   - 合并序：.hooksrc → .hooksrc.local（后者 gitignore，个人覆盖）
 //   - 分节：[glob] 节头开启覆盖域，节内仅 gate.*/chore.* 键；glob 相对仓根
 //   - 等级词表：off | warn | error | required（required 不吃 SKIP）
@@ -37,7 +37,11 @@ function parseIniFile(filePath, into = {}, sections = []) {
       continue;
     }
     const eq = t.indexOf('=');
-    if (eq > 0) (current ? current.entries : into)[t.slice(0, eq).trim()] = t.slice(eq + 1).trim();
+    if (eq > 0) {
+      // 行内注释："空白+#"起剥离（值内 '#' 紧跟非空白则保留——pattern=#[0-9a-f] 友好）
+      const raw = t.slice(eq + 1).replace(/\s+#.*$/, '').trim();
+      (current ? current.entries : into)[t.slice(0, eq).trim()] = raw;
+    }
   }
   return { into, sections };
 }

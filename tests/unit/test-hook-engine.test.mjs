@@ -31,6 +31,9 @@ export async function run() {
       'gate.demo.pattern=TODO',
       'gate.demo.globs=*.md,*.txt',
       'chore.deps.watch=package-lock.json',
+      'gate.demo.level2=off   # 行内注释',           // 空白+#→剥离（blog-tui 风格缺陷回测）
+      'gate.demo.anchor=#[a-z]+ 尾注释 # 剥',        // 值首 # 紧跟=保留；尾" #"仍剥
+      'gate.demo.hex=#[0-9a-f]{6}',                  // # 紧跟=无前置空白→保留
     ].join('\n'));
     fs.writeFileSync(path.join(dir, '.hooksrc.local'), 'gate.demo.level=error\n');
     const cfg = loadHookEngineConfig(dir);
@@ -38,6 +41,9 @@ export async function run() {
     assert.equal(cfg.gates.demo.pattern, 'TODO');
     assert.deepEqual(cfg.gates.demo.globs.split(','), ['*.md', '*.txt']);
     assert.equal(cfg.chores.deps.watch, 'package-lock.json');
+    assert.equal(cfg.gates.demo.level2, 'off', '行内注释剥离');
+    assert.equal(cfg.gates.demo.anchor, '#[a-z]+ 尾注释', '值内紧贴#保留+尾注释剥');
+    assert.equal(cfg.gates.demo.hex, '#[0-9a-f]{6}', '正则#保留');
     assert.equal(resolveLevel('demo', 'warn', cfg), 'error', 'local 覆盖应生效');
     assert.equal(resolveLevel('emoji', 'warn', cfg), 'error', '旧键 emojiLevel 应别名到 gate.emoji');
     assert.equal(resolveLevel('secrets', 'error', cfg), 'error', '默认级兜底');
