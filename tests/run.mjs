@@ -77,7 +77,8 @@ export const allSuites = [
   { name: 'yaml-contract', tier: 'contract', pwsh: true, run: () => execFileSync('pwsh', ['-NoProfile', '-File', 'tests/unit/test-yaml-lite.test.ps1'], { cwd: root, stdio: 'inherit', timeout: 30000 }) },
   { name: 'cli-isolated', tier: 'integration', pwsh: true, run: runCliIntegration },
   { name: 'manifest-freshness', tier: 'contract', run: () => node('scripts/build-router-manifest.mjs', '--check') },
-  { name: 'distill-index', tier: 'contract', run: () => node('private/ming-distiller/scripts/check-index.mjs') }
+  { name: 'distill-index', tier: 'contract', run: () => node('private/ming-distiller/scripts/check-index.mjs') },
+  { name: 'skill-index', tier: 'contract', run: () => node('scripts/check-skill-index.mjs') }
 ];
 
 const VALID_TEST_PROFILES = new Set(['quick', 'full']);

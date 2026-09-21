@@ -7,9 +7,10 @@ status: descriptive
 # SKILL-INDEX — 全部 skill 精要索引（路由参考）
 
 > 用途：第一层路由参考——AI/用户在任务开始时按此表选 skill。description 才是外层触发依据（Claude Code 按 frontmatter description 惰性加载）；本表是人工可读的精要版。
-> 生成：2026-08-18 · 覆盖：基座 20 部署模块 + 垂直 27 参考 + 私有 1
+> 生成：2026-08-18 · 覆盖：基座 20 部署模块 + 垂直 94 参考 + 私有 32
 > 后续增补：2026-09-16 指纹专项（vertical fingerprintjs/ja4/creepjs + private antibot-fingerprint-paradigm/arch-core-paradigm）
 > 后续增补：2026-09-18 工程元规范族小节补全（engineering/* 10 包）+ ming-skills-router + config-core-paradigm 登记
+> 后续增补：2026-09-21 MCP 工具链与 Frida 生态小节补登（18 个 2026-08-18 采集项漏登记）· 契约门禁 scripts/check-skill-index.mjs 落地
 
 ## 一、基座模块（已部署, 20 个）
 
@@ -36,7 +37,7 @@ status: descriptive
 | macos-reverse | macOS/Mach-O 逆向 | macos/mach-o/objective-c/swift | macOS 或跨平台工具 |
 | supply-chain-security | 供应链安全（SBOM/SCA/CI-CD） | 供应链/sbom/sca/依赖投毒 | 按需 |
 
-## 二、垂直参考（27 个, vendored）
+## 二、垂直参考（94 个, vendored）
 
 ### JS / Web 逆向（9）
 
@@ -63,7 +64,7 @@ status: descriptive
 | ida-claude-plugins | IDA 官方 Domain API 插件开发/执行 | reference（官方权威, unsafe 门控） | IDA 9.1+ / uv |
 | jadx-mcp-server | 纯 Java jadx MCP 服务器（14 工具） | watch（SNAPSHOT 依赖无法构建） | Maven |
 
-### 移动端 / 恶意软件（4）
+### 移动端 / 恶意软件（3）
 
 | 仓库 | 一句话定位 | 筛选结论 | 前置依赖 |
 |---|---|---|---|
@@ -150,7 +151,7 @@ status: descriptive
 | areclaw | Windows 优先 Android 分析工作区（15 Frida 脚本 + MASTG 映射） | deploy-子集（脚本+映射） | Windows + Git Bash |
 | malware-re-skills | 防御性 RE：IOC 提取 + 脱壳评估（纯 prompt） | reference（IOC schema 吸收） | 无 |
 
-### 知识库 / CTF / 安全 / 杂项（8）
+### 知识库 / CTF / 安全 / 杂项（7）
 
 | 仓库 | 一句话定位 | 筛选结论 | 前置依赖 |
 |---|---|---|---|
@@ -169,6 +170,31 @@ status: descriptive
 | fingerprintjs | FingerprintJS 开源版本体：src/sources 检测项目录 + hasLied* 谎言检测 | reference（配套 antibot-fingerprint-paradigm） | 无 |
 | ja4 | FoxIO JA4+ 族参考实现（python/wireshark/zeek） | reference（JA4 本体 BSD-3；JA4+ 商用须 OEM） | 无 |
 | creepjs | 谎言检测最强公开参照：prototype lies + worker 隔离 + 跨源一致性 | reference | 无 |
+
+### MCP 工具链与 Frida 生态（2026-08-18 采集, 2026-09-21 补登）
+
+> 该轮 18 项当时漏登记，由 check-skill-index.mjs 门禁发现后补录。
+
+| 仓库 | 一句话定位 | 筛选结论 | 前置依赖 |
+|---|---|---|---|
+| frida-mcp | Frida 进程管理/脚本注入/实时插桩 MCP | reference（移动动态分析候选） | MCP 客户端 |
+| ghidra-mcp-lauriewired | GhidraMCP——Ghidra 逆向 MCP | reference | Ghidra |
+| radare2-mcp | radare2 官方 26+ 工具 MCP | reference | r2 |
+| jadx-mcp-plugin | mobilehackinglab jadx MCP 插件 | reference | jadx |
+| apktool-mcp-server | APK 操作 MCP（apktool 封装） | reference | apktool |
+| burp-mcp-portswigger | Burp 官方 MCP | reference（已确认不用——Burp 非当前工作流, 源码备查） | Burp |
+| wire-mcp | Wireshark MCP（流量分析） | reference | Wireshark |
+| mcp-for-security | SQLMap/FFUF/NMAP/Masscan 集合 MCP | reference（199 文件） | 各工具 |
+| x64dbg-mcp | x64dbg 40+ SDK 工具 MCP | reference（Windows 调试） | x64dbg |
+| har-mcp | HAR 分析 MCP | reference | 无 |
+| harvest-mcp | HAR/API 分析 + 自动生成 API wrapper | reference（重, 114 文件） | 无 |
+| blutter | Flutter AOT 逆向核心工具（编译 Dart runtime, arm64 libapp.so） | reference | Dart 编译链 |
+| camoufox-cli | 反检测浏览器 CLI+Skills（C++ 级指纹伪造 canvas/WebGL/audio） | reference | 构建链 |
+| frida-skills | Frida 全生命周期 skills（planning→writing→packaging→debugging, model-agnostic） | reference | Frida |
+| frida-mcp-agent | AI 驱动 Frida Hook 生成（Android 动态分析, 走 Frida CLI 而非 python API） | reference | Frida CLI |
+| frida-mcp-skills | frida-mcp 配套操作 skill（Frida 17 安全使用 + 脚本生命周期卫生） | reference | frida-mcp |
+| frida-gadget-helper | 傻瓜式 gadget 注入（含预编译 libgadget-rusda.so 25M + xfinjectd + PDF 教程） | reference | Android 设备 |
+| rusda | Frida patch（魔改 server/gadget, 开源版） | reference | Android |
 
 ## 二点五、三方向专项采集（2026-08-18, 三份调研报告决策）
 
@@ -243,7 +269,7 @@ status: descriptive
 | **testing-scenario-cli** | 场景特化 | 命令行与脚本工具契约：参数退出码矩阵、可注入FS/Env、幂等性与防半成品 | cli-test, command-line-testing, exit-codes, golden-files |
 | **testing-scenario-scraper** | 场景特化 | 采集爬虫与清洗管道：离线 Fixture 优先、领域不变量、选择器健康度、活网仅作探针 | scraper-testing, crawler-test, selector-health, fixture-parsing |
 
-### 3. 工程元规范族（engineering/* 根级 12 包）
+### 3. 工程元规范族（engineering/* 根级 14 包）
 
 > 惯例：`metadata.layer` + `compose` 自声明装配；`*-paradigm` 带 references/sources.md 文献链 + Compose 节。导引见 `private/engineering/README.md`。
 

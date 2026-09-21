@@ -416,7 +416,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: APK 鎿嶄綔 MCP
+    note: APK 操作 MCP
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
@@ -440,7 +440,7 @@ vertical:
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
-    note: Wireshark MCP(濞佽儊妫€娴?
+    note: Wireshark MCP(流量检测)
     deploy: {}
     checkCache:
       lastCheckedAt: 2026-08-18
