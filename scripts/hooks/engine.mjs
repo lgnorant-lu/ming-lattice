@@ -20,11 +20,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { loadHookEngineConfig, resolveLevel, resolveGateConfigFor, parseSkipSet, LEVELS } from './lib/config.mjs';
+import { loadHookEngineConfig, resolveLevel, resolveGateConfigFor, parseSkipSet, parseCadence, LEVELS } from './lib/config.mjs';
 import { repoRoot, fileSource, batchMeta, listUnstagedOverlap, makeGit } from './lib/files.mjs';
 import { detectGitState, shouldSkip } from './lib/git-state.mjs';
 import { loadBaseline, freshFindings, writeBaseline, baselinePath } from './lib/baseline.mjs';
-import { checkIntegrity, writeTrust, checkAdoptionHealth, orphanGateIds } from './lib/integrity.mjs';
+import { checkIntegrity, writeTrust, checkAdoptionHealth, orphanGateIds, lastRunAt, stampRun } from './lib/integrity.mjs';
 import { buildDeclarativeGates } from './lib/declarative.mjs';
 import { buildChores } from './lib/chores.mjs';
 import { matchAnyGlobs } from './lib/matcher.mjs';
@@ -163,6 +163,18 @@ async function runStage(stage, opts = {}) {
     for (const g of list) {
       const level = resolveLevel(g.id, g.defaultLevel ?? 'warn', cfg);
       if (level === 'off') continue;
+      // cadence 节流（周期维度：<n>d|h|m|s，state.json lastRun 盖戳；非法值告警并按每次跑处理）
+      const cadenceRaw = cfg.gates[g.id]?.cadence ?? cfg.chores[g.id]?.cadence;
+      let cadenceMs = null;
+      if (cadenceRaw !== undefined) {
+        cadenceMs = parseCadence(cadenceRaw);
+        if (cadenceMs === null) {
+          console.warn(`[engine] [WARN] ${g.id}: cadence 值无法解析 "${cadenceRaw}"（按每次跑处理）`);
+        } else if (Date.now() - lastRunAt(root, g.id) < cadenceMs) {
+          console.log(`[engine] cadence 未到跳过: ${g.id}`);
+          continue;
+        }
+      }
       if (skip.has(g.id) && level !== 'required') {
         console.log(`[engine] SKIP 豁免: ${g.id}`);
         continue;
@@ -200,6 +212,7 @@ async function runStage(stage, opts = {}) {
       } catch (e) {
         findings = [{ gate: g.id, file: '-', message: `门执行异常: ${e.message}`, level: 'error' }];
       }
+      if (cadenceMs !== null) stampRun(root, g.id); // 已跑即盖戳（含异常——下次节流起算点）
       for (const raw of findings) {
         const fLevel = raw.level ?? level;
         const row = { ...raw, resolvedLevel: fLevel };

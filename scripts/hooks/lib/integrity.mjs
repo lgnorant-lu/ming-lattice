@@ -49,9 +49,31 @@ export function checkIntegrity(root, gatesDir) {
 }
 
 export function writeTrust(root, hash) {
-  const sf = stateFilePath(root);
   const current = hash ?? hashDir(path.join(root, 'scripts/hooks/gates'));
-  fs.writeFileSync(sf, JSON.stringify({ gatesHash: current, trustedAt: new Date().toISOString() }, null, 2));
+  writeState(root, { gatesHash: current, trustedAt: new Date().toISOString() });
+}
+
+// ---------- 通用状态读写（lastRun cadence 节流、采纳元数据等运行时被动记录） ----------
+
+export function readState(root) {
+  try { return JSON.parse(fs.readFileSync(stateFilePath(root), 'utf8')); }
+  catch { return {}; }
+}
+
+export function writeState(root, patch) {
+  const cur = readState(root);
+  fs.writeFileSync(stateFilePath(root), JSON.stringify({ ...cur, ...patch }, null, 2));
+}
+
+/** cadence 节流：上次运行时刻（ms 时间戳；无记录=0=立即到期） */
+export function lastRunAt(root, id) {
+  const t = readState(root).lastRun?.[id];
+  const ms = t ? Date.parse(t) : 0;
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+export function stampRun(root, id) {
+  writeState(root, { lastRun: { ...(readState(root).lastRun ?? {}), [id]: new Date().toISOString() } });
 }
 
 /**

@@ -122,3 +122,13 @@ export function parseSkipSet(env = process.env.SKIP) {
   if (!env) return new Set();
   return new Set(env.split(',').map(s => s.trim()).filter(Boolean));
 }
+
+/**
+ * cadence 节流值解析：<n>d|h|m|s → 毫秒；非法 → null
+ * （周期维度最小形态：搭 stage 便车的 TTL 闸，不引入调度器）
+ */
+export function parseCadence(v) {
+  const m = String(v ?? '').trim().match(/^(\d+)\s*([dhms])$/);
+  if (!m) return null;
+  return parseInt(m[1], 10) * { d: 86400e3, h: 3600e3, m: 60e3, s: 1e3 }[m[2]];
+}

@@ -33,6 +33,10 @@ trailerLevel=error
 gate.whitespace.exclude=vertical/**
 gate.toc.exclude=vertical/**,base/**
 
+# 8. 候审档到期提醒（周期维度：reviewAfter 日期到期 warn；cadence 节流 7 天）
+gate.review-after.globs=distill/_proposals/*.md
+gate.review-after.cadence=7d
+
 # ── chores 族（suggest-only：只提醒不执行，post-merge 触发，永不阻断）──
 chore.registry.watch=registry.yaml
 chore.registry.message=registry.yaml 已变更——建议 pwsh scripts/sync.ps1 -DryRun 预览部署差异

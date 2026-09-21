@@ -5,12 +5,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { loadHookEngineConfig, resolveLevel, parseSkipSet } from '../../scripts/hooks/lib/config.mjs';
+import { loadHookEngineConfig, resolveLevel, parseSkipSet, parseCadence } from '../../scripts/hooks/lib/config.mjs';
 import { globToRegExp, matchAnyGlobs } from '../../scripts/hooks/lib/matcher.mjs';
 import { buildDeclarativeGates } from '../../scripts/hooks/lib/declarative.mjs';
 import { findingId, writeBaseline, loadBaseline, freshFindings } from '../../scripts/hooks/lib/baseline.mjs';
 import { shouldSkip } from '../../scripts/hooks/lib/git-state.mjs';
-import { checkAdoptionHealth, orphanGateIds } from '../../scripts/hooks/lib/integrity.mjs';
+import { checkAdoptionHealth, orphanGateIds, readState, writeTrust, lastRunAt, stampRun } from '../../scripts/hooks/lib/integrity.mjs';
 import { HOOK_STAGES, REPO_ENGINE_REF, shimScript, shimEngineRef } from '../../scripts/hooks/lib/shims.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -526,5 +526,78 @@ export async function run() {
     assert.equal((await emojiGate.run(ectx2)).length, 1, '默认 globs=* 仓中性全域');
   }
 
-  console.log('  -> hook-engine: 13 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面）');
+  // 14. 周期维度：parseCadence + state 合并语义 + review-after 门 + cadence 节流 e2e
+  {
+    // 解析：单位齐全 + 非法拒绝
+    assert.equal(parseCadence('7d'), 7 * 86400e3);
+    assert.equal(parseCadence('24h'), 24 * 3600e3);
+    assert.equal(parseCadence('30m'), 30 * 60e3);
+    assert.equal(parseCadence('10s'), 10e3);
+    assert.equal(parseCadence('7'), null, '缺单位拒绝');
+    assert.equal(parseCadence('abc'), null);
+    assert.equal(parseCadence(''), null);
+
+    // state 读写 + writeTrust 合并保留 lastRun（load-bearing：trust 不抹节流戳）
+    const sdir = tempRepo();
+    try {
+      assert.equal(lastRunAt(sdir, 'review-after'), 0, '无记录=立即到期');
+      stampRun(sdir, 'review-after');
+      assert.ok(lastRunAt(sdir, 'review-after') > 0, '盖戳后可读');
+      writeTrust(sdir, 'hash-abc');
+      const st = readState(sdir);
+      assert.equal(st.gatesHash, 'hash-abc');
+      assert.ok(st.lastRun['review-after'], 'trust 写入保留 lastRun');
+    } finally { fs.rmSync(sdir, { recursive: true, force: true }); }
+
+    // review-after 门：到期 warn / 未到期静默 / globs 空 off / globs 域外不扫
+    const { gate: raGate } = await import('../../scripts/hooks/gates/review-after.mjs');
+    const rdir = tempRepo();
+    try {
+      fs.mkdirSync(path.join(rdir, 'distill/_proposals'), { recursive: true });
+      fs.writeFileSync(path.join(rdir, 'distill/_proposals/expired.md'), 'reviewAfter: 2000-01-01\n');
+      fs.writeFileSync(path.join(rdir, 'distill/_proposals/future.md'), 'reviewAfter: 2999-01-01\n');
+      fs.writeFileSync(path.join(rdir, 'distill/_proposals/nodate.md'), '普通候审档\n');
+      fs.mkdirSync(path.join(rdir, 'elsewhere'), { recursive: true });
+      fs.writeFileSync(path.join(rdir, 'elsewhere/old.md'), 'reviewAfter: 1999-12-31\n');
+      execFileSync('git', ['add', '.'], { cwd: rdir });
+      const raCtx = { root: rdir, gateConfig: { globs: 'distill/_proposals/*.md' } };
+      const rf = await raGate.run(raCtx);
+      assert.equal(rf.length, 1, `仅 expired 命中，实际: ${rf.map(f => f.file).join(',')}`);
+      assert.equal(rf[0].file, 'distill/_proposals/expired.md');
+      assert.ok(rf[0].message.includes('2000-01-01'));
+      assert.deepEqual(await raGate.run({ root: rdir, gateConfig: { globs: '' } }), [], 'globs 空=off-until-configured');
+      assert.deepEqual(await raGate.run({ root: rdir, gateConfig: {} }), [], '未配 globs=off');
+    } finally { fs.rmSync(rdir, { recursive: true, force: true }); }
+
+    // e2e：cadence 节流——首跑告警盖戳→次跑跳过→改旧戳再跑复报
+    const edir = tempRepo();
+    try {
+      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(edir, 'scripts/hooks'), { recursive: true });
+      fs.writeFileSync(path.join(edir, '.hooksrc'), [
+        'lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off',
+        'gate.impact-test.level=off', 'gate.pre-push-verify.level=off',
+        'gate.review-after.globs=proposals/*.md', 'gate.review-after.cadence=2s',
+      ].join('\n'));
+      fs.mkdirSync(path.join(edir, 'proposals'), { recursive: true });
+      fs.writeFileSync(path.join(edir, 'proposals/x.md'), 'reviewAfter: 2000-01-01\n');
+      execFileSync('git', ['add', '.'], { cwd: edir });
+      const engine = path.join(edir, 'scripts/hooks/engine.mjs');
+      const runCheck = () => spawnSync(process.execPath, [engine, 'run', 'check'], { cwd: edir, encoding: 'utf8' });
+      let r = runCheck();
+      assert.ok((r.stdout + r.stderr).includes('2000-01-01'), `首跑应告警: ${r.stdout}${r.stderr}`);
+      const sf = path.join(edir, '.git/hook-engine-state.json');
+      assert.ok(JSON.parse(fs.readFileSync(sf, 'utf8')).lastRun['review-after'], '首跑盖戳');
+      r = runCheck();
+      assert.ok((r.stdout + r.stderr).includes('cadence 未到跳过: review-after'), '节流期内跳过');
+      assert.ok(!(r.stdout + r.stderr).includes('2000-01-01'), '节流期内不复报');
+      // 改旧戳→立即到期复跑
+      const st = JSON.parse(fs.readFileSync(sf, 'utf8'));
+      st.lastRun['review-after'] = '2000-01-01T00:00:00.000Z';
+      fs.writeFileSync(sf, JSON.stringify(st));
+      r = runCheck();
+      assert.ok((r.stdout + r.stderr).includes('2000-01-01'), '戳过期后复报');
+    } finally { fs.rmSync(edir, { recursive: true, force: true }); }
+  }
+
+  console.log('  -> hook-engine: 14 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度）');
 }

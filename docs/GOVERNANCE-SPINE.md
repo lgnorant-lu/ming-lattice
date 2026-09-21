@@ -66,7 +66,7 @@ status: normative
 | 触发 | 漂移源 | 覆盖 |
 |---|---|---|
 | **提交触发** | 工件因"我们的提交"漂移 | 现全部门 |
-| **周期触发** | 工件因"世界自己变了"漂移（外源漂移） | `chore.<id>.cadence`——last-run 时间戳存 `.git/hook-engine-state.json`，搭 commits 便车，TTL 封顶频率 |
+| **周期触发** | 工件因"世界自己变了"漂移（外源漂移） | `gate.<id>.cadence`/`chore.<id>.cadence` 引擎级键——last-run 时间戳存 `.git/hook-engine-state.json`，搭 stage 便车，TTL 封顶频率（已落地，首消费方 review-after） |
 
 外源漂移实例：reviewAfter 日期流逝、上游 repo 移动/404、死链、SCA 咨询库更新。便宜的检查（日期对账）可每次跑；贵的（网络请求）走长 cadence。
 
@@ -119,7 +119,7 @@ status: normative
 | router manifest | 全生成带 | `build-router-manifest.mjs` | `manifest-freshness` | 套件内 | — |
 | `scripts/hooks/engine.mjs` | 门宿主 | — | integrityLevel 自检族 | hook-engine 组 | install/doctor 生命周期件 |
 | `.hooksrc.tmpl` | 投影（键空间） | 门 `configKeys`（待补） | tmpl 对账（待立） | — | 键空间无集中 SoT |
-| `distill/_proposals/*` | 候审档 | frontmatter status/reviewAfter | reviewAfter chore（待立） | — | 生命周期无机器执行 |
+| `distill/_proposals/*` | 候审档 | frontmatter status/reviewAfter | `gates/review-after.mjs` + `cadence=7d` | hook-engine 组 14 | warn 提醒非阻断 |
 | observability schema | SoT（事件层） | `docs/schemas/observability-event.schema.json` | 契约测试 | observability 套件 | hook 事件未接线（待消费方） |
 | `## 目录` 节（各仓） | 节内嵌带 | 文档标题集 | `gates/toc.mjs` | hook-engine 第 12 组 | — |
 
