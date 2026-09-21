@@ -65,7 +65,7 @@ Ming 的 Agent 技能集散与工程中枢（Skills Hub & Monorepo）：统一�
                                     ├─ 1. 批量静态扫描 (git cat-file --batch-check)
                                     │     大文件 (>50MB) / 编码 (0 GBK 乱码) / 凭据防泄漏 / 0 Emoji
                                     │
-                                    └─ 2. 显式影响面计划器 (scripts/hooks/plan.mjs)
+                                    └─ 2. 显式影响面计划器 (scripts/plan.mjs)
                                           ├─ 纯文档变更 -> 0 个测试，秒级放行 (实测 0.52s)
                                           ├─ 局部代码变更 -> 仅调度受影响套件 (如 CLI 场景耗时 ~16s)
                                           └─ 全局核心配置/未知路径 -> fail-closed 自动升级全量

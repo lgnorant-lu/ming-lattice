@@ -103,8 +103,8 @@ export const gate = {
   family: 'gate',
   defaultLevel: 'error',
   globs: ['*'],
-  // 已知第三方抓包测试案例目录——默认排除（可经 gate.secrets.exclude 覆盖）
-  exclude: ['vertical/iwen-scraping/**'],
+  // 仓专排除走 gate.secrets.exclude 配置（如 vendored fixture 目录）——默认值须仓中性
+  exclude: [],
   async run(ctx) {
     const findings = [];
     const genericLevel = ctx.gateConfig?.genericLevel ?? 'warn';

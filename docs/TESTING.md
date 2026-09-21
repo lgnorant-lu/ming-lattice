@@ -17,7 +17,7 @@ node scripts/verify.mjs --profile <quick|affected|full|release>
 
 `scripts/verify.mjs` 提供分级门禁编排：
 - `--profile quick`：仅运行纯 Node 逻辑测试（跳过外部 pwsh 进程池，秒级响应）；
-- `--profile affected`：基于 `scripts/hooks/plan.mjs` 仅运行暂存区改动受影响的测试套件；
+- `--profile affected`：基于 `scripts/plan.mjs` 仅运行暂存区改动受影响的测试套件；
 - `--profile full`：全量 23 个测试套件 + 严格离线供应链门禁；
 - `--profile release`：full 门禁 + SBOM/SCA 新鲜度就地深度比对 + Benchmark 性能硬阈值检查。
 

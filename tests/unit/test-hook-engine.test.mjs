@@ -498,5 +498,33 @@ export async function run() {
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   }
 
-  console.log('  -> hook-engine: 12 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门）');
+  // 13. 解耦面：command 键参数化 + emoji 精确文件名根语义（仓专默认值→配置的边界回测）
+  {
+    const { gate: itGate } = await import('../../scripts/hooks/gates/impact-test.mjs');
+    // available：command 已配即启用（无需 tests/run.mjs）；未配且无文件 → 缺席
+    assert.equal(itGate.available({ root: '/nonexistent-x', gateConfig: { command: 'anything' } }), true, 'command 已配即启用');
+    assert.equal(itGate.available({ root: '/nonexistent-x', gateConfig: {} }), false, '未配且无 tests/run.mjs 缺席');
+    // command 执行语义：非零退出 → finding
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ming-cmd-'));
+    try {
+      fs.writeFileSync(path.join(dir, 'ok.mjs'), 'process.exit(0)\n');
+      fs.writeFileSync(path.join(dir, 'bad.mjs'), 'process.exit(1)\n');
+      const node = process.execPath;
+      assert.deepEqual(await itGate.run({ root: dir, files: ['x.md'], gateConfig: { command: `"${node}" ok.mjs` } }), [], '零退出零 finding');
+      const bad = await itGate.run({ root: dir, files: ['x.md'], gateConfig: { command: `"${node}" bad.mjs` } });
+      assert.equal(bad.length, 1);
+      assert.ok(bad[0].message.includes('bad.mjs'), 'finding 应含失败命令');
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+
+    const { gate: emojiGate } = await import('../../scripts/hooks/gates/emoji.mjs');
+    // 精确文件名只认根：docs/** 覆盖下的 README 查，vendor 深层 README 不查
+    const ectx = { files: ['README.md', 'docs/x/README.md', 'vendor/y/README.md', 'docs/a.md'], read: () => 'x \u{1F600}', gateConfig: { globs: 'docs/**,README.md' } };
+    const ef = await emojiGate.run(ectx);
+    assert.deepEqual(ef.map(f => f.file).sort(), ['README.md', 'docs/a.md', 'docs/x/README.md'], 'literal 根语义+slash glob 覆盖');
+    // 默认全域（['*']）：所有文本文件在域
+    const ectx2 = { files: ['vendor/y/README.md'], read: () => 'x \u{1F600}', gateConfig: {} };
+    assert.equal((await emojiGate.run(ectx2)).length, 1, '默认 globs=* 仓中性全域');
+  }
+
+  console.log('  -> hook-engine: 13 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面）');
 }

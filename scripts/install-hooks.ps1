@@ -31,12 +31,14 @@ if ($Target) {
         if (-not $Force) { throw "存在既有 hooksPath——确认迁移方案后用 -Force 重试（或先平移旧检查到 gates.local）" }
     }
 
-    # 1. scripts/hooks/ 整目录（engine+gates+lib+plan/validate 依赖件一并带）
+    # 1. scripts/hooks/ 整目录（engine+gates+lib+validate 依赖件一并带；
+    #    gates.local/ 显式排除——该目录=采纳侧私有住所，永不属 kit）
     $srcHooks = Join-Path $repoRoot 'scripts/hooks'
     $dstHooks = Join-Path $dest 'scripts/hooks'
     if ($PSCmdlet.ShouldProcess($dstHooks, '复制 scripts/hooks 整目录')) {
         New-Item -ItemType Directory -Path $dstHooks -Force | Out-Null
-        Copy-Item (Join-Path $srcHooks '*') $dstHooks -Recurse -Force
+        Get-ChildItem $srcHooks | Where-Object { $_.Name -ne 'gates.local' } |
+            Copy-Item -Destination $dstHooks -Recurse -Force
     }
 
     # 2. .githooks/ shims
@@ -78,7 +80,7 @@ if ($Target) {
 
     Write-Host "========================================================" -ForegroundColor Cyan
     Write-Host "  门禁引擎已铺入 $(Split-Path $dest -Leaf)" -ForegroundColor Green
-    Write-Host "  - 按需裁 .hooksrc（impact-test/pre-push-verify 在无 tests/verify 的仓会自动缺席或调 off）" -ForegroundColor Gray
+    Write-Host "  - 按需裁 .hooksrc（impact-test/pre-push-verify 可用 gate.<id>.command 配仓级命令；未配且无对应件自动缺席）" -ForegroundColor Gray
     Write-Host "  - 棕场接入建议先跑: node scripts/hooks/engine.mjs baseline --dry-run" -ForegroundColor Gray
     Write-Host "========================================================" -ForegroundColor Cyan
     return

@@ -122,7 +122,7 @@ export const gate = {
   defaultLevel: 'warn',
   fixable: true,
   globs: ['*.md'],
-  exclude: ['vertical/**', 'base/**'],
+  exclude: [], // 仓专排除走 gate.toc.exclude 配置（如 vertical/**,base/**）——默认值须仓中性
   async run(ctx) {
     const findings = [];
     for (const p of ctx.files) {

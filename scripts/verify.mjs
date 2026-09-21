@@ -4,7 +4,7 @@
 
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { createPlan, getStagedFiles } from './hooks/plan.mjs';
+import { createPlan, getStagedFiles } from './plan.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 

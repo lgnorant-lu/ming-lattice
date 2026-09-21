@@ -29,7 +29,7 @@ export const gate = {
   defaultLevel: 'warn',
   fixable: true,
   globs: ['*'],
-  exclude: ['vertical/**'],
+  exclude: [], // 仓专排除走 gate.whitespace.exclude 配置（如 vertical/**）——默认值须仓中性
   async run(ctx) {
     const findings = [];
     for (const p of ctx.files) {

@@ -1,4 +1,4 @@
-// scripts/hooks/plan.mjs
+// scripts/plan.mjs
 // ming-skills 门禁影响面计划器 (Affected Impact Planner)
 // 依据暂存区 (pre-commit) 或推送引用 (pre-push) 的变更文件，确定执行门禁任务集合。
 
@@ -238,7 +238,7 @@ export function runCli() {
     } else if (arg === '--files') {
       customFiles = args[++i].split(',').map(s => s.trim()).filter(Boolean);
     } else {
-      console.error('usage: node scripts/hooks/plan.mjs [--stage <pre-commit|pre-push>] [--explain] [--json] [--files <f1,f2>]');
+      console.error('usage: node scripts/plan.mjs [--stage <pre-commit|pre-push>] [--explain] [--json] [--files <f1,f2>]');
       process.exit(2);
     }
   }
@@ -260,6 +260,6 @@ export function runCli() {
   }
 }
 
-if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('scripts/hooks/plan.mjs')) {
+if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('scripts/plan.mjs')) {
   runCli();
 }

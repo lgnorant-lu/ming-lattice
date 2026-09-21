@@ -5,7 +5,9 @@
 requireCommitMsg=true
 
 # 2. Emoji 绝对禁令（严禁在技能、文档与提交中使用 emoji，使用 [禁止]/[警告]/[性能] 等文本标签）
+#    自研文档/技能面作用域（精确文件名 README.md 只认根——deep README 由 docs/**/private/** 覆盖）
 emojiLevel=error
+gate.emoji.globs=private/**,docs/**,README.md
 
 # 3. 编码防污染检查（严禁在 registry/文档/技能中写入 GBK/ANSI 转义乱码）
 #    vertical/** vendored 上游文档编码归上游负责
@@ -19,11 +21,17 @@ gate.secrets.exclude=vertical/**
 gate.secrets.genericLevel=warn
 gate.secrets.b64Level=warn
 
-# 5. 自动化测试金字塔门禁（提交前自动执行 tests/run.mjs --require-all 校验）
+# 5. 自动化测试门禁（提交前命令门——command 键指向 verify affected：
+#    由 scripts/plan.mjs 做影响面计划，docs-only 提交免测放行）
 lintLevel=error
+gate.impact-test.command=node scripts/verify.mjs --profile affected
 
 # 6. AI 署名 trailer 门禁（拦截 Generated with / Co-Authored-By 字段；署名即作者本人）
 trailerLevel=error
+
+# 7. 可自愈门仓专排除（门默认值仓中性——本仓 vendored/上游目录走配置排除）
+gate.whitespace.exclude=vertical/**
+gate.toc.exclude=vertical/**,base/**
 
 # ── chores 族（suggest-only：只提醒不执行，post-merge 触发，永不阻断）──
 chore.registry.watch=registry.yaml

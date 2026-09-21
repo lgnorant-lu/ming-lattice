@@ -87,8 +87,9 @@ status: normative
    - **L2 通用赋值层**（默认 warn，`gate.secrets.genericLevel` 调级）：`api_key|token|secret|password` 等赋值形态 + 香农熵≥3.8 过滤 + 占位符白名单（your-/example/${}/<...> 等）——抓签名层不认识的新服务凭据。
    - **L3 编码层**（`gate.secrets.b64Level`，默认 warn）：UTF-16LE/BE 文件转码重扫（PowerShell 重定向产物常见编码）；可疑文件名（env/config/secret/cred/token）内 base64 长串解码回喂 L1，防 `key | base64` 夹带。
    - 输出只报打码样本（`前4…后4`），永不打印明文密钥；`matchText` 仅存原始命中用于 baseline 身份哈希。
-4. **显式影响面受限测试**：
-   - 由 `scripts/hooks/plan.mjs` 分析暂存快照：纯文档变动直接跳过运行期测试；特定域变动（如路由、CLI、供应链）仅执行对应受影响套件；关键全局配置（`registry.yaml`、`tests/run.mjs` 等）或未知路径则 fail-closed 自动升级全量。
+4. **提交前命令门（impact-test，昂贵门）**：
+   - 通用形态：`gate.impact-test.command` 执行仓级命令，非零退出即拦截（lint-staged 命令配置同构）；未配且无 `tests/run.mjs` 自动缺席。
+   - 本仓实例：`.hooksrc` 配 `command=node scripts/verify.mjs --profile affected`——由 `scripts/plan.mjs` 分析暂存快照做影响面计划：纯文档变动免测放行；特定域变动仅执行受影响套件；关键全局配置或未知路径 fail-closed 升级全量。
 5. **可自愈门（fixable，`run fix` 工作区重写）**：
    - **whitespace**：行尾空白/EOF 换行（`warn` 默认）。
    - **toc**：`## 目录`/`## Table of Contents` 生成节对账——标题收集（跳过 frontmatter/围栏/自身）→ GitHub 锚 slug → 编号列表比对。节体混入散文视为手写内容 warn 跳过不覆盖；`mode=insert` 可为 ≥`minHeadings` 个标题的无壳文档补插目录。配置键：`depth`（默认 3）、`titles`、`mode`（section|insert）、`minHeadings`、`slug`（github|compat），全部支持 `[glob]` 分节逐文件覆盖（见 §3.3）。

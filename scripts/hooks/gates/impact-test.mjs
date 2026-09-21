@@ -1,12 +1,18 @@
 // scripts/hooks/gates/impact-test.mjs
-// 自动化测试影响面分流门（昂贵门——error 命中即被引擎跳过；包装 plan.mjs）
+// 提交前命令门禁（昂贵门——error 命中即被引擎跳过其余昂贵门）
 // 配置：lintLevel（旧键）/ gate.impact-test.level
-//   无 tests/run.mjs 的采纳项目 → available() 返回 false 自动缺席（按需启用活例）
+//   gate.impact-test.command=<完整命令行> —— 覆盖默认；采纳仓配自己的测试/检查命令
+//   默认命令：node tests/run.mjs --require-all；无 tests/run.mjs 且未配 command → available() 缺席
+//   注意：command 是执行面（CI yaml run: 同级惯例）——review .hooksrc diff 时关注该键
+//
+// 本仓实例：.hooksrc 配 gate.impact-test.command=node scripts/verify.mjs --profile affected
+//   ——影响面计划（scripts/plan.mjs）由 verify affected 编排，docs-only 提交免测放行
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
-import { createPlan } from '../plan.mjs';
+import { spawnSync } from 'node:child_process';
+
+const DEFAULT_COMMAND = 'node tests/run.mjs --require-all';
 
 export const gate = {
   id: 'impact-test',
@@ -14,39 +20,19 @@ export const gate = {
   family: 'gate',
   defaultLevel: 'error',
   expensive: true,
-  needsAllFiles: true, // 影响面规划需要完整暂存清单，不吃 globs 短路
+  needsAllFiles: true, // 命令门不吃 globs 短路——有暂存文件即跑
   globs: ['*'],
   exclude: [],
   available(ctx) {
-    return fs.existsSync(path.join(ctx.root, 'tests/run.mjs'));
+    return !!ctx.gateConfig?.command || fs.existsSync(path.join(ctx.root, 'tests/run.mjs'));
   },
   async run(ctx) {
-    const staged = ctx.files;
-    let plan = null;
-    try {
-      plan = createPlan({ stage: 'pre-commit', files: staged });
-    } catch {
-      plan = null;
+    const command = ctx.gateConfig?.command ?? DEFAULT_COMMAND;
+    console.log(`[pre-commit] 执行提交前命令门禁: ${command}`);
+    const r = spawnSync(command, { cwd: ctx.root, stdio: 'inherit', shell: true });
+    if (r.status !== 0) {
+      return [{ gate: 'impact-test', file: '-', message: `提交前命令失败 (${command})，禁止提交！` }];
     }
-
-    if (plan && plan.jobs.length === 0) {
-      console.log(`[pre-commit] 影响面分析 (${plan.categories.join(', ')}): 无需执行运行期测试套件，极速放行！`);
-      return [];
-    }
-
-    const testArgs = ['tests/run.mjs', '--require-all'];
-    if (plan && !plan.fallback && plan.jobs.length > 0) {
-      testArgs.push('--suites', plan.jobs.join(','));
-      console.log(`[pre-commit] 受影响测试调度 (${plan.jobs.length} 个套件: ${plan.jobs.join(', ')})...`);
-    } else {
-      console.log(`[pre-commit] 运行自动化测试全量矩阵 (${plan?.fallback || 'full'})...`);
-    }
-
-    try {
-      execFileSync(process.execPath, testArgs, { cwd: ctx.root, stdio: 'inherit' });
-      return [];
-    } catch {
-      return [{ gate: 'impact-test', file: '-', message: '自动化测试套件校验失败，禁止提交！' }];
-    }
+    return [];
   },
 };

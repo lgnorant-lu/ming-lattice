@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { createPlan, ALL_SUITE_NAMES } from '../../scripts/hooks/plan.mjs';
+import { createPlan, ALL_SUITE_NAMES } from '../../scripts/plan.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 
@@ -70,7 +70,7 @@ export async function run() {
 
   // 9. 命令行 CLI 契约 (--json, --explain, --files)
   const cliRes = spawnSync(process.execPath, [
-    path.join(root, 'scripts/hooks/plan.mjs'),
+    path.join(root, 'scripts/plan.mjs'),
     '--stage', 'pre-commit',
     '--files', 'docs/README.md,scripts/sync.ps1',
     '--json'
@@ -83,7 +83,7 @@ export async function run() {
 
   // 非法参数退出码 2
   const invalidRes = spawnSync(process.execPath, [
-    path.join(root, 'scripts/hooks/plan.mjs'),
+    path.join(root, 'scripts/plan.mjs'),
     '--unknown-arg'
   ], { encoding: 'utf8' });
   assert.equal(invalidRes.status, 2);
