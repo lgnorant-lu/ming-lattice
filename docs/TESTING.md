@@ -31,7 +31,7 @@ node scripts/verify.mjs --profile <quick|affected|full|release>
 | 路由效果评估 | `tests/evals/route-effects.json` 的独立任务契约；验证 mode/domain/action/recipe、实际加载集合和禁止动作 |
 | 词法层单测 | S3 词法召回不变量：none→ask 升级、永不置域/dispatch、否定排除、skillDocs 缺席降级、停用词与证据下限、确定性重放 |
 | 技能召回覆盖 | 44 ready 技能点名召回 + engineering skillTriggers 域内精召 + 每域 defaultRecipe 可解 |
-| 召回评估门禁 | `tests/evals/recall-corpus/` 三层语料（A 回归/B 实战/C 负空间）+ baseline 快照回归门；B 层由 `harvest-misses.mjs` 从 opt-in hint 日志收割草稿待人审 |
+| 召回评估门禁 | `tests/evals/recall-corpus/` 三层语料（A 回归/B 实战/C 负空间）+ baseline 快照回归门；B 层由 `harvest-misses.mjs` 从 hint 日志收割草稿待人审（来源：opt-in `--hint-log` 或默认开 `.logs/route-misses.jsonl` 弱判定台账） |
 | 路由安全回归 | 只读模式、多包名、否定和引用、词边界、实际配方、可用性、未知契约安全退回 |
 | 适配器契约 | 模式映射、候选与正文分离；分类永不授予 case-init 权限 |
 | 可观测事件契约 | 独立 NDJSON 通道、事件字段、相关 ID、非负耗时及 prompt/密钥脱敏；stdout JSON 不变 |

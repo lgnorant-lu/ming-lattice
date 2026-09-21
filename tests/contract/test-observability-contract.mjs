@@ -56,6 +56,51 @@ export function run() {
     assert.ok(!lines[0].includes('ghp_sensitive_fixture'));
     assert.ok(!lines[0].includes('/home/private'));
 
+    // 弱判定台账（miss ledger）：弱判定写明文 JSONL、强判定不写、off 关闭
+    const missLog = path.join(temp, 'route-misses.jsonl');
+    const weakHint = '今天天气不错出去走走吃什么好呢';
+    const weakRun = spawnSync(process.execPath, [
+      path.join(root, 'scripts/route-core.mjs'), '--miss-log', missLog, weakHint
+    ], { cwd: root, encoding: 'utf8', timeout: 10000 });
+    assert.equal(weakRun.status, 0, weakRun.stderr);
+    const weakDecision = JSON.parse(weakRun.stdout);
+    assert.notEqual(weakDecision.action, 'dispatch');
+    const missLines = fs.readFileSync(missLog, 'utf8').trim().split('\n');
+    assert.equal(missLines.length, 1);
+    const miss = JSON.parse(missLines[0]);
+    assert.equal(miss.hint, weakHint);
+    assert.equal(miss.action, weakDecision.action);
+    assert.ok(Array.isArray(miss.reason_codes));
+
+    const strongRun = spawnSync(process.execPath, [
+      path.join(root, 'scripts/route-core.mjs'), '--miss-log', missLog, '为 Rust 编写性质测试'
+    ], { cwd: root, encoding: 'utf8', timeout: 10000 });
+    assert.equal(strongRun.status, 0, strongRun.stderr);
+    const strongDecision = JSON.parse(strongRun.stdout);
+    if (strongDecision.action === 'dispatch' && strongDecision.confidence === 'high') {
+      assert.equal(fs.readFileSync(missLog, 'utf8').trim().split('\n').length, 1, 'strong dispatch must not log');
+    }
+
+    const offRun = spawnSync(process.execPath, [
+      path.join(root, 'scripts/route-core.mjs'), '--miss-log', 'off', weakHint
+    ], { cwd: root, encoding: 'utf8', timeout: 10000 });
+    assert.equal(offRun.status, 0, offRun.stderr);
+    assert.equal(fs.readFileSync(missLog, 'utf8').trim().split('\n').length, 1, 'miss-log off must not log');
+
+    const envOffLog = path.join(temp, 'env-off.jsonl');
+    const envOffRun = spawnSync(process.execPath, [
+      path.join(root, 'scripts/route-core.mjs'), weakHint
+    ], { cwd: root, encoding: 'utf8', timeout: 10000,
+      env: { ...process.env, MING_SKILLS_MISS_LOG: 'off' } });
+    assert.equal(envOffRun.status, 0, envOffRun.stderr);
+    assert.doesNotMatch(envOffRun.stderr, /route_miss_log_failed/, 'env=off must not attempt ledger write');
+    const envCustom = spawnSync(process.execPath, [
+      path.join(root, 'scripts/route-core.mjs'), weakHint
+    ], { cwd: root, encoding: 'utf8', timeout: 10000,
+      env: { ...process.env, MING_SKILLS_MISS_LOG: envOffLog } });
+    assert.equal(envCustom.status, 0, envCustom.stderr);
+    assert.equal(fs.readFileSync(envOffLog, 'utf8').trim().split('\n').length, 1, 'env var sets ledger path');
+
     const manifestEventFile = path.join(temp, 'manifest-events.ndjson');
     const manifestResult = spawnSync(process.execPath, [path.join(root, 'scripts/build-router-manifest.mjs'), '--check'], {
       cwd: root,

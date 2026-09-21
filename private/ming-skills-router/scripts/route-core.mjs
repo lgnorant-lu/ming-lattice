@@ -339,14 +339,38 @@ export function route(hint) {
   return Decide(hint, manifest);
 }
 
+// 弱判定台账默认路径：<repoRoot>/.logs/route-misses.jsonl（gitignored，本地明文，
+// 语义通道证据收割源——"该路由没路由准"的真实语料；--miss-log off / MING_SKILLS_MISS_LOG=off 关闭）
+const DEFAULT_MISS_LOG = path.resolve(fileURLToPath(import.meta.url), '../../../..', '.logs', 'route-misses.jsonl');
+
+function isWeakDecision(decision) {
+  return decision.action !== 'dispatch' || decision.confidence !== 'high';
+}
+
+function appendMissLog(file, record) {
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.appendFileSync(file, JSON.stringify(record) + '\n', 'utf8');
+  } catch {
+    console.error('route_miss_log_failed: output unavailable');
+  }
+}
+
 function parseCliArgs(args) {
   const hint = [];
   let eventFile = process.env.MING_SKILLS_EVENT_FILE;
   let hintLog = process.env.MING_SKILLS_HINT_LOG; // opt-in 本地明文 hint 日志（B 层语料收割源；默认关闭）
+  let missLog = process.env.MING_SKILLS_MISS_LOG; // undefined → 走默认台账路径
   let workUnitId = process.env.MING_SKILLS_WORK_UNIT_ID;
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
-    if (arg === '--event-file') {
+    if (arg === '--miss-log') {
+      if (!args[index + 1]) throw new Error('usage: --miss-log requires a path or "off"');
+      missLog = args[++index];
+    } else if (arg.startsWith('--miss-log=')) {
+      missLog = arg.slice('--miss-log='.length);
+      if (!missLog) throw new Error('usage: --miss-log requires a path or "off"');
+    } else if (arg === '--event-file') {
       if (!args[index + 1]) throw new Error('usage: --event-file requires a path');
       eventFile = args[++index];
     } else if (arg.startsWith('--event-file=')) {
@@ -368,7 +392,7 @@ function parseCliArgs(args) {
       hint.push(arg);
     }
   }
-  return { hint: hint.join(' '), eventFile, hintLog, workUnitId };
+  return { hint: hint.join(' '), eventFile, hintLog, missLog, workUnitId };
 }
 
 function elapsedMs(startedAt) {
@@ -406,9 +430,24 @@ export function runRouteCli(args = process.argv.slice(2)) {
         console.error('route_observability_failed: event output unavailable');
       }
     }
+    // 弱判定台账：action≠dispatch 或 confidence≠high → 记一条（语义通道证据源）
+    const missLog = options.missLog ?? DEFAULT_MISS_LOG;
+    if (missLog !== 'off' && isWeakDecision(decision)) {
+      appendMissLog(missLog, {
+        at: new Date().toISOString(), hint: options.hint,
+        domain: decision.domain, confidence: decision.confidence,
+        action: decision.action, reason_codes: decision.reasons
+      });
+    }
     return 0;
   } catch (error) {
     const hint = options?.hint ?? args.filter(arg => !arg.startsWith('--')).join(' ');
+    const missLog = options?.missLog ?? DEFAULT_MISS_LOG;
+    if (missLog !== 'off') {
+      appendMissLog(missLog, {
+        at: new Date().toISOString(), hint, action: 'failed', error: error.message
+      });
+    }
     if (options?.eventFile) {
       try {
         emitEvent(createRouteFailedEvent({

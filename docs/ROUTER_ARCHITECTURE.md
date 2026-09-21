@@ -20,6 +20,7 @@ registry + 本地 SKILL.md 身份 -> 构建时 availability
                            -> 宿主另行检查权限、资源与加载限制
 可选 --event-file       -> route.decided / route.failed NDJSON（不进入 stdout，hint 仅存 hash）
 可选 --hint-log         -> 本地明文 hint 旁路（opt-in，B 层 miss 语料收割源，与脱敏事件分离）
+可选 --miss-log         -> 弱判定台账（默认 .logs/route-misses.jsonl 开；action≠dispatch 或 confidence≠high 才记，明文 JSONL 供 harvest-misses.mjs 收割；"off" 关闭，env MING_SKILLS_MISS_LOG 同义）
 ```
 
 领域与配方仍在 [build-router-manifest.mjs](../scripts/build-router-manifest.mjs) 策划维护，尚未从任意 Skill description 自动推导。registry 决定条目与部署启用，构建检查入口身份并记录可用性；`compose.yaml` 是测试方法组合参考，当前不作为编译输入。不能把三者说成已经自动统一。

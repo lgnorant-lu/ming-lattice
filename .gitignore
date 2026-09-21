@@ -36,3 +36,6 @@ config/router-embeddings.json
 
 # 门禁引擎个人覆盖层（.hooksrc 为共享配置，.local 为个人豁免——永不入仓）
 .hooksrc.local
+
+# 路由弱判定台账（miss ledger——语义通道证据收割源，本地明文）
+.logs/
