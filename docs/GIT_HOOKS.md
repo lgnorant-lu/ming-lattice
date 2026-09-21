@@ -67,21 +67,16 @@ status: normative
 - **索引保真不变量**：staged 源下 gate 经 `ctx.read` 读 `git show :path` 索引 blob，原生门禁止 `fs.read` 工作区；`run ci`/`baseline` 走 `git ls-files` + 工作区读（CI 读已提交态，无污染问题）。
 
 ### 2.1 `commit-msg` 检查项
-1. **主题格式**：`<type>(<scope>): <中文描述>`
-   - 正则：`^(feat|fix|chore|docs|style|refactor|test|perf|revert|collect|sync|merge)(\([a-z0-9-_/*.]+\))?: .+` —— **恒为 error，不可降级**。
-2. **Type 白名单**：
-   - `feat`: 新增技能、自研测试体系、新规范
-   - `fix`: 修复路径、SKILL.md 描述、脚本 Bug、编码乱码
-   - `chore`: 上游仓库增量拉取、pin 更新、工具链维护
-   - `docs`: 文档、地图、架构总纲更新
-   - `style`: 格式、缩进排版优化
-   - `refactor`: 结构重构、目录调整
-   - `test`: 测试用例、验证脚本补充
-   - `perf`: 性能优化（如缓存命中加速）
-   - `collect`: 采集新的垂直参考仓库
-   - `sync`: 部署分发配置调整
-3. **Emoji 绝对禁令**：检测提交主题是否包含 Unicode Emoji 字符，严格按 `.hooksrc` 拦截（默认 `error`）。
-4. **乱码特征拦截**：检测提交说明是否因终端编码错误混入 GBK 乱码字符。
+1. **主题格式**：`<type>(<scope>): <subject>`
+   - 正则：`^(<type>)(\([a-z0-9-_/*.]+\))?: .+`——type 词表来自 `gate.commit-msg.types`（kit 默认 Conventional 11 型，本仓 `.hooksrc` 配 12 型含仓专 `collect`/`sync`/`merge`）；**恒为 error，不可降级**。
+   - `Merge `/`Revert ` 开头直接放行（合并/回滚提交豁免）。
+2. **Type 白名单**：词表权威 = `.hooksrc` 的 `gate.commit-msg.types`；语义注释见 `docs/STANDARDS.md §1.2`。
+3. **Trailer 禁令**：`gate.commit-msg.bannedTrailers`（CSV 正则，整体替换——kit 默认空表，禁尾是仓级政策）+ `gate.commit-msg.extraTrailers`（追加）。本仓配 `^Generated with\b,^Co-Authored-By\s*:`（清史后署名政策）。CSV 内 regex 不可含逗号，多条用 `|` 交替或分列。
+4. **Emoji/乱码**：检测提交主题的 Unicode Emoji（`emojiLevel`，kit 默认 warn——本仓 `error`）与 GBK 乱码字符（`mojibakeLevel`，默认 `error`）。
+5. **其余配置键**：`gate.commit-msg.subjectMaxLen`（主题长度上限，warn 级，0=不限）、`gate.commit-msg.pattern`/`patternHint`（正则整体覆盖+报错文案）、`requireCommitMsg=false`（整门关闭）。
+
+> [!TIP]
+> **写作辅助（git 原生机制）**：仓根 `.gitmessage` 存在时，install-hooks 自动 `git config commit.template .gitmessage`——提交模板文件约定，与 `core.hooksPath` 同车道，内容各仓自写（`#` 行提交时剥离）。
 
 ### 2.2 `pre-commit` 检查项
 1. **大文件防御门禁（50MB 阈值）**：

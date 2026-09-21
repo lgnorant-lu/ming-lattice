@@ -69,9 +69,12 @@ if ($Target) {
         }
     }
 
-    # 5. hooksPath + integrity 存值
+    # 5. hooksPath + integrity 存值（+ commit.template 文件约定：目标仓有 .gitmessage 即指向）
     if ($PSCmdlet.ShouldProcess($dest, 'git config core.hooksPath=.githooks')) {
         git -C $dest config core.hooksPath .githooks
+        if (Test-Path (Join-Path $dest '.gitmessage')) {
+            git -C $dest config commit.template .gitmessage
+        }
         $node = Get-Command node -ErrorAction SilentlyContinue
         if ($node) {
             # Push-Location 必做：engine repoRoot() 按 cwd 解析——不带 cwd 会把 trust
@@ -118,9 +121,12 @@ if (-not (Test-Path $hooksDir)) {
     }
 }
 
-# 配置 git hooksPath
+# 配置 git hooksPath（+ commit.template 文件约定：.gitmessage 存在即指向）
 if ($PSCmdlet.ShouldProcess($repoRoot, 'git config core.hooksPath=.githooks')) {
     git -C $repoRoot config core.hooksPath .githooks
+    if (Test-Path (Join-Path $repoRoot '.gitmessage')) {
+        git -C $repoRoot config commit.template .gitmessage
+    }
 
     # 写入 gates/ 完整性存值（若 node 可用；失败不阻断安装）
     $node = Get-Command node -ErrorAction SilentlyContinue

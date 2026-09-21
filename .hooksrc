@@ -1,8 +1,11 @@
 # .hooksrc — ming-skills Git Hook 分级配置文件
 # 等级语义: error (阻断提交) | warn (打印警告不阻断) | off (跳过该检查)
 
-# 1. 提交格式 (feat/fix/chore/docs/style/refactor/test/perf/revert/collect/sync)
+# 1. 提交格式（本仓词表=Conventional 11 型 + 仓专 collect/sync/merge；
+#    署名禁令=本仓清史后政策——kit 默认空表，此处整体替换注入；CSV 正则不可含逗号）
 requireCommitMsg=true
+gate.commit-msg.types=feat,fix,chore,docs,style,refactor,test,perf,revert,collect,sync,merge
+gate.commit-msg.bannedTrailers=^Generated with\b,^Co-Authored-By\s*:
 
 # 2. Emoji 绝对禁令（严禁在技能、文档与提交中使用 emoji，使用 [禁止]/[警告]/[性能] 等文本标签）
 #    自研文档/技能面作用域（精确文件名 README.md 只认根——deep README 由 docs/**/private/** 覆盖）

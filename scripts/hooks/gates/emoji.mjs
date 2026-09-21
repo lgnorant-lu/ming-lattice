@@ -27,7 +27,7 @@ export const gate = {
   configKeys: [],
   stages: ['pre-commit'],
   family: 'gate',
-  defaultLevel: 'error',
+  defaultLevel: 'warn', // 风格政策非阻断默认——需强制的仓经 emojiLevel=error / gate.emoji.level 升级
   // 默认全域（staged 源只扫增量提交）；仓专作用域走 gate.emoji.globs 配置
   globs: DEFAULT_GLOBS,
   exclude: [],

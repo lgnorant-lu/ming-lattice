@@ -24,7 +24,7 @@ export const LEGACY_ALIASES = {
   trailerLevel: 'commit-msg', // trailer 是 commit-msg 门的子检查
 };
 
-function parseIniFile(filePath, into = {}, sections = []) {
+export function parseIniFile(filePath, into = {}, sections = []) {
   if (!fs.existsSync(filePath)) return { into, sections };
   let current = null;
   for (const line of fs.readFileSync(filePath, 'utf8').split(/\r?\n/)) {

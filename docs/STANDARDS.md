@@ -23,6 +23,9 @@ status: normative
 ```
 
 ### 1.2 Type 白名单
+
+> 词表权威 = `.hooksrc` 的 `gate.commit-msg.types`（本仓=Conventional 11 型 + 仓专 3 型，门禁实时消费）；本表是语义注释，改词表先改 `.hooksrc`。
+
 | Type | 语义说明 | 适用场景示例 |
 |---|---|---|
 | `feat` | 新增功能/技能 | 新增自研测试包、UI 范式、新部署模块 |
@@ -33,8 +36,10 @@ status: normative
 | `refactor` | 重构与优化 | 目录结构调整、脚本模块化重构 |
 | `test` | 测试与验证 | 新增自动化测试脚本、测试桩数据补充 |
 | `perf` | 性能提升 | 缓存检测优化、增量 Fetch 加速 |
+| `revert` | 回滚提交 | 撤销既有提交（`Revert "..."` 头亦放行） |
 | `collect` | 垂直生态采集 | 引入新的外部 Vendored 参考仓库 |
 | `sync` | 客户端部署同步 | 调整 `.cc-switch/skills` 部署目标映射 |
+| `merge` | 分支合并提交 | 合并主题沿用 `merge:` 前缀（`Merge branch x` 直接放行） |
 
 ### 1.3 提交铁律
 1. **Emoji 绝对禁令**：全仓库（文档、技能、代码、Commit Message）**严禁使用任何 Unicode Emoji 装饰符**。一律使用 `[禁止]`、`[警告]`、`[性能]`、`[契约]` 等结构化文本标签代替。

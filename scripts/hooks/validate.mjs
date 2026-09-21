@@ -2,54 +2,42 @@
 // ming-skills 提交信息规范与 Emoji/乱码校验器 (纯 Node.js 实现, 零外部依赖)
 // 
 // 规则契约:
-//   <type>(<scope>): <中文描述>
-// type 白名单: feat/fix/chore/docs/style/refactor/test/perf/revert/collect/sync/merge
-// scope: 允许小写字母/数字/连字符/下划线/斜杠/星号, 如 feat(testing-rust), fix(registry)
-// Emoji 禁令: 依据 .hooksrc 配置 (默认 error 级拦截)
+//   <type>(<scope>): <subject>
+// type 白名单: Conventional 11 型（仓专型走 gate.commit-msg.types 覆盖）
+// scope: 允许小写字母/数字/连字符/下划线/斜杠/星号, 如 feat(cli), fix(registry)
+// Emoji/乱码: 依据 .hooksrc 配置（emoji 默认 warn——风格政策非阻断默认）
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { parseIniFile } from './lib/config.mjs';
 
+// 仓中性词表：Conventional Commits 主流 11 型（仓专型走 gate.commit-msg.types 配置）
 export const COMMIT_TYPES = [
-  'feat', 'fix', 'chore', 'docs', 'style',
-  'refactor', 'test', 'perf', 'revert', 'collect', 'sync', 'merge'
+  'build', 'chore', 'ci', 'docs', 'feat', 'fix',
+  'perf', 'refactor', 'revert', 'style', 'test'
 ];
 
-export const SUBJECT_PATTERN = /^(feat|fix|chore|docs|style|refactor|test|perf|revert|collect|sync|merge)(\([a-z0-9-_/*.]+\))?: .+/;
+export const SUBJECT_PATTERN = /^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9-_/*.]+\))?: .+/;
 
 export const MERGE_SUBJECT_PATTERN = /^(Merge\b|Revert\b)/;
 
 /**
- * 读取 .hooksrc 配置文件
+ * 读取 .hooksrc 配置文件（委托 lib/config.mjs 统一解析器——
+ * 行内注释剥离/分节跳过语义与引擎路径一致；.hooksrc.local 同样合并）
  */
 export function loadHookConfig(root = process.cwd()) {
-  const configPath = path.join(root, '.hooksrc');
   const defaults = {
-    emojiLevel: 'error',
+    emojiLevel: 'warn',
     mojibakeLevel: 'error',
     secretLevel: 'error',
     lintLevel: 'error',
     trailerLevel: 'error',
     requireCommitMsg: 'true'
   };
-  if (!fs.existsSync(configPath)) return defaults;
-  try {
-    const raw = fs.readFileSync(configPath, 'utf8');
-    const lines = raw.split(/\r?\n/);
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) continue;
-      const eq = trimmed.indexOf('=');
-      if (eq > 0) {
-        const key = trimmed.slice(0, eq).trim();
-        const val = trimmed.slice(eq + 1).trim();
-        defaults[key] = val;
-      }
-    }
-  } catch (e) {
-    // ignore
-  }
-  return defaults;
+  const kv = {};
+  parseIniFile(path.join(root, '.hooksrc'), kv);
+  parseIniFile(path.join(root, '.hooksrc.local'), kv);
+  return { ...defaults, ...kv };
 }
 
 /**
@@ -84,12 +72,39 @@ export function hasMojibake(text) {
 
 /**
  * 禁止出现在提交信息中的署名/trailer 字段
- * 约定: 本仓署名即作者本人, 不附 AI 工具署名行 (2026-09-17 清史后门禁化)
+ * 仓中性默认空——禁尾是仓级政策（如 AI 署名禁令），经 gate.commit-msg.bannedTrailers
+ * （整体替换）/ extraTrailers（追加）配置注入；值=CSV 正则（regex 内不可含逗号，
+ * 多条用 | 交替或分列多值）
  */
-export const BANNED_TRAILER_PATTERNS = [
-  { re: /^Generated with\b/im, label: 'Generated with' },
-  { re: /^Co-Authored-By\s*:/im, label: 'Co-Authored-By' }
-];
+export const BANNED_TRAILER_PATTERNS = [];
+
+/**
+ * commit-msg 策略装配（spec 模型物化——gate 与 CLI 两路共用装配点，单点防漂移）
+ * legacy: loadHookConfig 平铺键（emojiLevel/trailerLevel/requireCommitMsg 等旧键组）
+ * gcfg:   gate.commit-msg.* 裸键对象（引擎路径传 cfg.gates['commit-msg']；
+ *         CLI 路径由调用方从平铺键提取 'gate.commit-msg.' 前缀子集）
+ */
+export function commitMsgPolicy(legacy = {}, gcfg = {}) {
+  const policy = { ...legacy };
+  if (gcfg.types) policy.types = String(gcfg.types).split(',').map(s => s.trim()).filter(Boolean);
+  // types 覆盖但未给 pattern 时：从 types 合成主题正则（默认 pattern 的 type 列表是烧死的）
+  if (policy.types && !gcfg.pattern) {
+    policy.subjectPattern = new RegExp(`^(${policy.types.join('|')})(\\([a-z0-9-_/*.]+\\))?: .+`);
+    policy.patternHint = policy.patternHint ?? `<type>(<scope>): <subject> — type∈{${policy.types.join('/')}}`;
+  }
+  if (gcfg.pattern) {
+    try { policy.subjectPattern = new RegExp(gcfg.pattern); }
+    catch { policy.patternInvalid = gcfg.pattern; }
+  }
+  if (gcfg.patternHint) policy.patternHint = gcfg.patternHint;
+  if (gcfg.subjectMaxLen) policy.subjectMaxLen = gcfg.subjectMaxLen;
+  const csvRegex = src => String(src).split(',').map(s => s.trim()).filter(Boolean)
+    .map(s => { try { return { re: new RegExp(s, 'im'), label: s }; } catch { return null; } })
+    .filter(Boolean);
+  if (gcfg.bannedTrailers) policy.bannedTrailers = csvRegex(gcfg.bannedTrailers);
+  if (gcfg.extraTrailers) policy.extraTrailers = csvRegex(gcfg.extraTrailers);
+  return policy;
+}
 
 /**
  * 校验提交信息全文不含被禁 trailer 字段
@@ -100,10 +115,10 @@ export function validateTrailer(message, opts = {}) {
   if (trailerLevel === 'off' || typeof message !== 'string' || message.length === 0) {
     return { ok: true, reason: '', warnings };
   }
-  const patterns = [...BANNED_TRAILER_PATTERNS, ...(opts.extraTrailers ?? [])];
+  const patterns = [...(opts.bannedTrailers ?? BANNED_TRAILER_PATTERNS), ...(opts.extraTrailers ?? [])];
   for (const { re, label } of patterns) {
     if (re.test(message)) {
-      const msg = `提交信息包含被禁 trailer 字段 "${label}"（本仓署名即作者本人，不附 AI 工具署名行）`;
+      const msg = `提交信息包含被禁 trailer 字段 "${label}"`;
       if (trailerLevel === 'error') {
         return { ok: false, reason: msg, warnings };
       }
@@ -117,13 +132,13 @@ export function validateTrailer(message, opts = {}) {
  * 校验提交主题
  */
 export function validateSubject(subject, opts = {}) {
-  const emojiLevel = opts.emojiLevel ?? 'error';
+  const emojiLevel = opts.emojiLevel ?? 'warn';
   const mojibakeLevel = opts.mojibakeLevel ?? 'error';
-  // 策略词表可经 opts 覆盖（引擎门从 gate.commit-msg.* 注入；缺省=本仓规范）
+  // 策略词表可经 opts 覆盖（引擎门从 gate.commit-msg.* 注入；缺省=仓中性规范）
   const types = opts.types ?? COMMIT_TYPES;
   const subjectPattern = opts.subjectPattern ?? SUBJECT_PATTERN;
   const subjectMaxLen = Number(opts.subjectMaxLen ?? 0);
-  const patternHint = opts.patternHint ?? '<type>(<scope>): <中文描述>';
+  const patternHint = opts.patternHint ?? '<type>(<scope>): <subject>';
   const warnings = [];
 
   if (!subject || subject.length === 0) {
@@ -132,7 +147,7 @@ export function validateSubject(subject, opts = {}) {
 
   // 1. Emoji 检查
   if (emojiLevel !== 'off' && hasEmoji(subject)) {
-    const msg = '提交主题包含 Emoji 装饰符（ming-skills 规范严禁 Emoji，请使用 [禁止]/[警告]/[性能] 等文本标签）';
+    const msg = '提交主题包含 Emoji 装饰符（规范建议以 [禁止]/[警告] 等文本标签替代）';
     if (emojiLevel === 'error') {
       return { ok: false, reason: msg };
     }
@@ -157,7 +172,7 @@ export function validateSubject(subject, opts = {}) {
   if (!subjectPattern.test(subject)) {
     return {
       ok: false,
-      reason: `提交格式不符合规范: "${subject}"\n期望格式: ${patternHint}\n示例: feat(testing-rust): 新增 Miri 内存与未定义行为检查规范`
+      reason: `提交格式不符合规范: "${subject}"\n期望格式: ${patternHint}\n示例: feat(cli): add --watch flag`
     };
   }
 
@@ -191,7 +206,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(im
     const rawMsg = fs.readFileSync(msgFile, 'utf8');
     const subject = extractSubject(rawMsg);
     const config = loadHookConfig();
-    const res = validateSubject(subject, config);
+    // 提取 gate.commit-msg.* 前缀子集为裸键对象——与引擎路径共用 commitMsgPolicy 装配
+    const gcfg = {};
+    for (const [k, v] of Object.entries(config)) {
+      if (k.startsWith('gate.commit-msg.')) gcfg[k.slice('gate.commit-msg.'.length)] = v;
+    }
+    const policy = commitMsgPolicy(config, gcfg);
+    const res = validateSubject(subject, policy);
 
     if (!res.ok) {
       console.error('\n==================== [ming-skills 提交门禁拦截] ====================');
@@ -200,7 +221,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(im
       process.exit(1);
     }
 
-    const trailerRes = validateTrailer(rawMsg, config);
+    const trailerRes = validateTrailer(rawMsg, policy);
     if (!trailerRes.ok) {
       console.error('\n==================== [ming-skills 提交门禁拦截] ====================');
       console.error(`[REJECT] ${trailerRes.reason}`);

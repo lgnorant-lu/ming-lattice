@@ -3,7 +3,19 @@
 // 覆盖: Commit Type 校验, Scope 格式, Emoji 过滤, Mojibake 拦截, 合并放行
 
 import assert from 'node:assert/strict';
-import { validateSubject, validateTrailer, extractSubject, hasEmoji, hasMojibake } from '../../scripts/hooks/validate.mjs';
+import path from 'node:path';
+import { validateSubject, validateTrailer, extractSubject, hasEmoji, hasMojibake, loadHookConfig, commitMsgPolicy } from '../../scripts/hooks/validate.mjs';
+
+const root = path.resolve(import.meta.dirname, '../..');
+// 走真实装配路径（与引擎门/CLI 同一 commitMsgPolicy 装配点）：
+// 本仓 .hooksrc 注入 12 型词表 + AI 署名禁尾——断言对象是"本仓生效 spec"而非裸默认
+const legacy = loadHookConfig(root);
+const gcfg = Object.fromEntries(
+  Object.entries(legacy).filter(([k]) => k.startsWith('gate.commit-msg.'))
+    .map(([k, v]) => [k.slice('gate.commit-msg.'.length), v])
+);
+const repoPolicy = commitMsgPolicy(legacy, gcfg);
+const strict = { ...repoPolicy, emojiLevel: 'error', mojibakeLevel: 'error' };
 
 export function run() {
   console.log('[TEST UNIT] scripts/hooks/validate.mjs...');
@@ -45,9 +57,12 @@ export function run() {
   ];
 
   for (const c of validCases) {
-    const res = validateSubject(c, { emojiLevel: 'error', mojibakeLevel: 'error' });
+    const res = validateSubject(c, strict);
     assert.equal(res.ok, true, `合法用例被误拒: "${c}" - 原因: ${res.reason}`);
   }
+  // 装配完整性回测：本仓词表确含仓专型（否则上面的 collect/sync 用例是假绿）
+  assert.ok(repoPolicy.types.includes('collect') && repoPolicy.types.includes('merge'),
+    'repoPolicy 应含仓专词表（.hooksrc gate.commit-msg.types）');
 
   // 5. validateSubject negative cases
   const invalidCases = [
@@ -60,22 +75,23 @@ export function run() {
   ];
 
   for (const inv of invalidCases) {
-    const res = validateSubject(inv.subject, { emojiLevel: 'error', mojibakeLevel: 'error' });
+    const res = validateSubject(inv.subject, strict);
     assert.equal(res.ok, false, `非法用例被放行: "${inv.subject}"`);
     if (inv.match) {
       assert.ok(res.reason.includes(inv.match), `错误信息不符: "${res.reason}" 未包含 "${inv.match}"`);
     }
   }
 
-  // 6. validateTrailer — AI 署名字段门禁 (2026-09-17 清史后设立)
+  // 6. validateTrailer — 署名禁令走本仓装配 policy（禁尾=仓级政策注入非烧死默认）
   const cleanMsg = 'feat(x): 正常提交\n\n正文无署名行';
-  assert.equal(validateTrailer(cleanMsg).ok, true);
-  assert.equal(validateTrailer('feat(x): a\n\nGenerated with [Devin](https://devin.ai)').ok, false);
-  assert.equal(validateTrailer('feat(x): a\n\nCo-Authored-By: Devin <bot@x>').ok, false);
-  assert.equal(validateTrailer('feat(x): a\n\nCo-Authored-By: Claude <noreply@anthropic.com>').ok, false);
-  assert.equal(validateTrailer('feat(x): a\n\nCo-Authored-By: Human <h@x>').ok, false, '字段级拦截不区分署名对象');
+  assert.equal(validateTrailer(cleanMsg, repoPolicy).ok, true);
+  assert.equal(validateTrailer('feat(x): a\n\nGenerated with [Devin](https://devin.ai)', repoPolicy).ok, false);
+  assert.equal(validateTrailer('feat(x): a\n\nCo-Authored-By: Devin <bot@x>', repoPolicy).ok, false);
+  assert.equal(validateTrailer('feat(x): a\n\nCo-Authored-By: Claude <noreply@anthropic.com>', repoPolicy).ok, false);
+  assert.equal(validateTrailer('feat(x): a\n\nCo-Authored-By: Human <h@x>', repoPolicy).ok, false, '字段级拦截不区分署名对象');
+  assert.ok(repoPolicy.bannedTrailers.length >= 2, 'repoPolicy 应含署名禁尾（.hooksrc bannedTrailers）');
   assert.equal(validateTrailer(cleanMsg, { trailerLevel: 'off' }).ok, true);
-  const wr = validateTrailer('feat(x): a\n\nCo-Authored-By: Devin <b@x>', { trailerLevel: 'warn' });
+  const wr = validateTrailer('feat(x): a\n\nCo-Authored-By: Devin <b@x>', { ...repoPolicy, trailerLevel: 'warn' });
   assert.equal(wr.ok, true);
   assert.equal(wr.warnings.length, 1);
   assert.equal(validateTrailer('').ok, true);

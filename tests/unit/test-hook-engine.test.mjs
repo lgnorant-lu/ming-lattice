@@ -900,5 +900,70 @@ export async function run() {
     }
   }
 
-  console.log('  -> hook-engine: 19 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度/键空间对账/post-checkout/采纳元数据/消融修复/link-rot）');
+  // 20. commit-msg spec 模型化：解析器归一 + commitMsgPolicy 装配 + 仓中性默认
+  {
+    const { loadHookConfig, commitMsgPolicy, validateTrailer, validateSubject, COMMIT_TYPES, BANNED_TRAILER_PATTERNS } =
+      await import('../../scripts/hooks/validate.mjs');
+
+    // —— 解析器归一（validate.mjs 委托 parseIniFile——blog-tui 降级缺陷回测）——
+    const cdir = fs.mkdtempSync(path.join(os.tmpdir(), 'ming-vcfg-'));
+    try {
+      fs.writeFileSync(path.join(cdir, '.hooksrc'), 'trailerLevel=error   # 行内注释\nemojiLevel=error\n');
+      fs.writeFileSync(path.join(cdir, '.hooksrc.local'), 'emojiLevel=warn\n');
+      const lc = loadHookConfig(cdir);
+      assert.equal(lc.trailerLevel, 'error', '行内注释剥离（老解析器污染回测）');
+      assert.equal(lc.emojiLevel, 'warn', 'local 合并');
+    } finally { fs.rmSync(cdir, { recursive: true, force: true }); }
+
+    // —— commitMsgPolicy 装配 ——
+    const p1 = commitMsgPolicy({}, { types: 'feat,fix,collect' });
+    assert.deepEqual(p1.types, ['feat', 'fix', 'collect'], 'types 覆盖');
+    assert.ok(p1.subjectPattern.test('collect: x'), 'types→pattern 合成');
+    assert.ok(!p1.subjectPattern.test('chore: x'), '合成正则只吃覆盖词表');
+    const p2 = commitMsgPolicy({}, { bannedTrailers: '^Foo\\b,^Bar\\s*:', extraTrailers: '^Signed' });
+    assert.equal(p2.bannedTrailers.length, 2, 'bannedTrailers 替换两值');
+    assert.equal(p2.extraTrailers.length, 1, 'extraTrailers 追加');
+    const p3 = commitMsgPolicy({}, { pattern: '([' });
+    assert.equal(p3.patternInvalid, '([', '非法正则标记');
+
+    // —— 仓中性默认（kit 不再烧本仓政策）——
+    assert.equal(COMMIT_TYPES.length, 11, '默认词表=Conventional 11');
+    assert.ok(!COMMIT_TYPES.includes('collect'), '仓专 collect 出默认');
+    assert.equal(BANNED_TRAILER_PATTERNS.length, 0, '默认禁尾空');
+    assert.equal(validateTrailer('x\n\nCo-Authored-By: a@b', {}).ok, true, '空禁尾下标准 trailer 放行');
+    const emo = validateSubject('feat: add 😀 thing', {});
+    assert.equal(emo.ok, true, 'emoji 默认 warn 不阻断');
+    assert.equal(emo.warnings.length, 1, 'emoji warn 仍提示');
+    assert.equal(validateSubject('wip: x', {}).ok, false, 'wip 不在 Conventional 词表');
+
+    // —— e2e：引擎 commit-msg 双仓对比 ——
+    const e1 = tempRepo(); // 本仓形态：12 型 + AI 署名禁令
+    const e2 = tempRepo(); // 未配置采纳者：仓中性
+    try {
+      for (const [d, cfg] of [
+        [e1, ['lintLevel=off', 'secretLevel=off', 'gate.commit-msg.types=feat,fix,collect',
+          'gate.commit-msg.bannedTrailers=^Co-Authored-By\\s*:'].join('\n')],
+        [e2, 'lintLevel=off\nsecretLevel=off\n'],
+      ]) {
+        fs.cpSync(path.join(root, 'scripts/hooks'), path.join(d, 'scripts/hooks'), { recursive: true });
+        fs.writeFileSync(path.join(d, '.hooksrc'), cfg);
+      }
+      const eng = d => path.join(d, 'scripts/hooks/engine.mjs');
+      const cm = (d, msg) => {
+        fs.writeFileSync(path.join(d, 'msg.txt'), msg);
+        return spawnSync(process.execPath, [eng(d), 'commit-msg', 'msg.txt'], { cwd: d, encoding: 'utf8' });
+      };
+      assert.equal(cm(e1, 'collect: vendored repo').status, 0, '配置仓 collect 放行');
+      assert.equal(cm(e2, 'collect: vendored repo').status, 1, '未配置仓 collect 拦截（仓中性）');
+      const b1 = cm(e1, 'fix: x\n\nCo-Authored-By: a@b.c');
+      assert.equal(b1.status, 1, '配置仓署名禁令拦截');
+      const b2 = cm(e2, 'fix: x\n\nCo-Authored-By: a@b.c');
+      assert.equal(b2.status, 0, '未配置仓标准 trailer 放行（政策不烧死）');
+    } finally {
+      fs.rmSync(e1, { recursive: true, force: true });
+      fs.rmSync(e2, { recursive: true, force: true });
+    }
+  }
+
+  console.log('  -> hook-engine: 20 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度/键空间对账/post-checkout/采纳元数据/消融修复/link-rot/commit-spec模型化）');
 }
