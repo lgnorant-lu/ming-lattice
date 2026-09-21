@@ -10,6 +10,8 @@ import { globToRegExp, matchAnyGlobs } from '../../scripts/hooks/lib/matcher.mjs
 import { buildDeclarativeGates } from '../../scripts/hooks/lib/declarative.mjs';
 import { findingId, writeBaseline, loadBaseline, freshFindings } from '../../scripts/hooks/lib/baseline.mjs';
 import { shouldSkip } from '../../scripts/hooks/lib/git-state.mjs';
+import { checkAdoptionHealth, orphanGateIds } from '../../scripts/hooks/lib/integrity.mjs';
+import { HOOK_STAGES, REPO_ENGINE_REF, shimScript, shimEngineRef } from '../../scripts/hooks/lib/shims.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 
@@ -349,5 +351,47 @@ export async function run() {
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
   }
 
-  console.log('  -> hook-engine: 9 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix）');
+  // 10. 采纳层自检（shim 模板对账 / 引用可达 / 孤儿配置键）
+  {
+    // 模板与仓内真实 .githooks 锁定一致（约定回环）
+    for (const stage of HOOK_STAGES) {
+      const p = path.join(root, '.githooks', stage);
+      if (!fs.existsSync(p)) continue;
+      const text = fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n');
+      assert.equal(text, shimScript(stage, REPO_ENGINE_REF), `.githooks/${stage} 与规范模板不一致`);
+      assert.equal(shimEngineRef(text), REPO_ENGINE_REF);
+    }
+    assert.equal(shimEngineRef('#!/bin/sh\nexit 0\n'), null, '非本引擎 shim 不提取');
+    // 本仓当前健康态应零 finding
+    assert.deepEqual(checkAdoptionHealth(root), [], '本仓 shim 应健康');
+
+    // 合成仓：漂移 shim + 断链引用 + 外来 hook 尊重
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ming-adopt-'));
+    try {
+      const gdir = path.join(dir, '.githooks');
+      const eng = path.join(dir, 'scripts/hooks');
+      fs.mkdirSync(gdir, { recursive: true });
+      fs.mkdirSync(eng, { recursive: true });
+      fs.writeFileSync(path.join(eng, 'engine.mjs'), '// stub\n');
+      fs.writeFileSync(path.join(gdir, 'pre-commit'), shimScript('pre-commit').replace('pre-commit\n', 'pre-push\n'));
+      fs.writeFileSync(path.join(gdir, 'post-merge'), shimScript('post-merge', '/nonexistent/store/engine.mjs'));
+      fs.writeFileSync(path.join(gdir, 'commit-msg'), '#!/bin/sh\nexec some-other-tool "$1"\n');
+      const findings = checkAdoptionHealth(dir);
+      assert.equal(findings.length, 2, `应抓 2 项漂移，实际 ${JSON.stringify(findings)}`);
+      assert.ok(findings.some(f => f.file === '.githooks/pre-commit' && f.message.includes('漂移')));
+      assert.ok(findings.some(f => f.file === '.githooks/post-merge' && f.message.includes('不可达')));
+      assert.ok(!findings.some(f => f.file === '.githooks/commit-msg'), '外来 hook 不被告警');
+      // 修正后恢复零 finding
+      fs.writeFileSync(path.join(gdir, 'pre-commit'), shimScript('pre-commit'));
+      fs.writeFileSync(path.join(gdir, 'post-merge'), shimScript('post-merge', path.join(eng, 'engine.mjs').replace(/\\/g, '/')));
+      assert.deepEqual(checkAdoptionHealth(dir), [], '修复后应零 finding');
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+
+    // 孤儿配置键：.hooksrc 指向未装载的门
+    assert.deepEqual(orphanGateIds({ secrets: { level: 'warn' }, ghost: { level: 'error' } }, new Set(['secrets'])), ['ghost']);
+    assert.deepEqual(orphanGateIds({}, new Set(['x'])), []);
+    assert.deepEqual(orphanGateIds(undefined, new Set()), []);
+  }
+
+  console.log('  -> hook-engine: 10 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检）');
 }

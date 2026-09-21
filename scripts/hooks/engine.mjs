@@ -24,7 +24,7 @@ import { loadHookEngineConfig, resolveLevel, parseSkipSet, LEVELS } from './lib/
 import { repoRoot, fileSource, batchMeta, listUnstagedOverlap, makeGit } from './lib/files.mjs';
 import { detectGitState, shouldSkip } from './lib/git-state.mjs';
 import { loadBaseline, freshFindings, writeBaseline, baselinePath } from './lib/baseline.mjs';
-import { checkIntegrity, writeTrust } from './lib/integrity.mjs';
+import { checkIntegrity, writeTrust, checkAdoptionHealth, orphanGateIds } from './lib/integrity.mjs';
 import { buildDeclarativeGates } from './lib/declarative.mjs';
 import { buildChores } from './lib/chores.mjs';
 import { matchAnyGlobs } from './lib/matcher.mjs';
@@ -43,6 +43,7 @@ async function loadNativeGates() {
     for (const name of fs.readdirSync(dir).filter(n => n.endsWith('.mjs')).sort()) {
       const mod = await import(pathToFileURL(path.join(dir, name)).href);
       if (mod.gate) gates.push(mod.gate);
+      else console.warn(`[engine] [WARN] ${dir === NATIVE_GATES_DIR ? 'gates' : 'gates.local'}/${name} 未导出 gate 对象——已跳过`);
     }
   }
   return gates;
@@ -71,10 +72,21 @@ async function runStage(stage, opts = {}) {
     if (st === 'changed') {
       console.warn('[engine] [WARN] gates/ 目录内容与上次确认不一致（分支切换或手工改动）——确认无误请执行: node scripts/hooks/engine.mjs trust');
     }
+    // 采纳层健康：.githooks shim 模板对账 + 引擎引用可达性
+    for (const f of checkAdoptionHealth(root)) {
+      console.warn(`[engine] [WARN] ${f.file} — ${f.message}`);
+    }
   }
 
   const nativeGates = await loadNativeGates();
   const declGates = buildDeclarativeGates(cfg);
+  // .hooksrc gate.<id>.* 孤儿键对账——配置指向未装载的门（改名/删除残留）
+  if (integrityLevel !== 'off') {
+    const loadedIds = new Set([...nativeGates, ...declGates].map(g => g.id));
+    for (const id of orphanGateIds(cfg.gates, loadedIds)) {
+      console.warn(`[engine] [WARN] .hooksrc 孤儿键: gate.${id}.* 指向未装载的门`);
+    }
+  }
   const chores = buildChores(cfg);
   const skip = parseSkipSet();
   const gitState = detectGitState(root);
