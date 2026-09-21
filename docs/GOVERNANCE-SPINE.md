@@ -112,13 +112,13 @@ status: normative
 | `docs/SKILL-INDEX.md` | 投影+声明混合 | registry | `check-skill-index.mjs` | 套件内 | — |
 | `distill/INDEX.yaml` | SoT | — | `check-index.mjs` | 套件内 | — |
 | `distill/<proj>/*.md` | 投影（经验条目） | INDEX | 同上 | — | — |
-| `.hooksrc`(+分节) | 声明带 SoT | — | 孤儿键检查 | hook-engine 组 | `.hooksrc.tmpl`<->键空间待账 |
+| `.hooksrc`(+分节) | 声明带 SoT | — | 孤儿键+checkKeyspace | hook-engine 组 15 | — |
 | `.githooks/*` | 投影 | `lib/shims.mjs` | `checkAdoptionHealth` | 第 10 组 | — |
-| `gates/*.mjs` | 门本体 | 导出元数据（模块即 SoT） | 完整性 hash+未导出 warn | 各套件 | `configKeys` 元数据待补 |
+| `gates/*.mjs` | 门本体 | 导出元数据（模块即 SoT：id/stages/configKeys 等） | 完整性 hash+未导出 warn+checkKeyspace | 各套件 | — |
 | `gates.local/*` | 门本体（仓私有） | 同上 | 同上 | 目标仓自测 | — |
 | router manifest | 全生成带 | `build-router-manifest.mjs` | `manifest-freshness` | 套件内 | — |
 | `scripts/hooks/engine.mjs` | 门宿主 | — | integrityLevel 自检族 | hook-engine 组 | install/doctor 生命周期件 |
-| `.hooksrc.tmpl` | 投影（键空间） | 门 `configKeys`（待补） | tmpl 对账（待立） | — | 键空间无集中 SoT |
+| `.hooksrc.tmpl` | 投影（键空间） | 门 `configKeys` 自描述字段 | `checkKeyspace`（integrity 族） | hook-engine 组 15 | 通用键+声明式键+chore 键并集对账 |
 | `distill/_proposals/*` | 候审档 | frontmatter status/reviewAfter | `gates/review-after.mjs` + `cadence=7d` | hook-engine 组 14 | warn 提醒非阻断 |
 | observability schema | SoT（事件层） | `docs/schemas/observability-event.schema.json` | 契约测试 | observability 套件 | hook 事件未接线（待消费方） |
 | `## 目录` 节（各仓） | 节内嵌带 | 文档标题集 | `gates/toc.mjs` | hook-engine 第 12 组 | — |

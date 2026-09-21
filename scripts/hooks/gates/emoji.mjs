@@ -24,6 +24,7 @@ function inScope(p, globs) {
 
 export const gate = {
   id: 'emoji',
+  configKeys: [],
   stages: ['pre-commit'],
   family: 'gate',
   defaultLevel: 'error',

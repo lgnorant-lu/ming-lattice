@@ -117,6 +117,7 @@ function gateParams(ctx, p) {
 
 export const gate = {
   id: 'toc',
+  configKeys: ['depth', 'titles', 'mode', 'minHeadings', 'slug'],
   stages: ['pre-commit'],
   family: 'gate',
   defaultLevel: 'warn',

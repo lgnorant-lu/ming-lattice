@@ -145,6 +145,8 @@ lintLevel=error         # error | warn | off（默认 error: lint 失败阻断�
 
 **等级解析序**：`gate.<id>.level` > 旧键别名（`emojiLevel→emoji` / `mojibakeLevel→mojibake` / `secretLevel→secrets` / `lintLevel→impact-test` / `trailerLevel→commit-msg`）> 门默认级。`.hooksrc.local`（gitignore）在 `.hooksrc` 之上覆盖。
 
+**键空间对账**（integrityLevel 族，warn 不阻断）：`.hooksrc`/`.hooksrc.local`/`.hooksrc.tmpl` 中的 `gate.<id>.<key>`、`chore.<id>.<key>` 对账真实键空间——通用键（`level`/`globs`/`exclude`/`cadence`）+ 原生门 `configKeys` 自描述字段 + 声明式键（`pattern`/`message`/`once`）+ chore 键（`watch`/`message`/`once`）。拼错键（如 `gate.toc.dept`）与 tmpl 文档漂移都会告警——配置指向不存在的键不再静默失效。
+
 ### 3.1 baseline 冻结（棕场接入）
 
 `node scripts/hooks/engine.mjs baseline` 把当前全部违规写入 `.hooks-baseline.json`（存 hash 不存明文；身份=`sha1(gate|file|sha1(matchText))`，行号不入身份）。之后引擎只拦**新增**违规——老欠账冻结入档、新增零容忍。文件改名相当于新文件，需重跑 baseline 再冻结。入仓共享冻结。

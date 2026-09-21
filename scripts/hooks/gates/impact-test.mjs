@@ -16,6 +16,7 @@ const DEFAULT_COMMAND = 'node tests/run.mjs --require-all';
 
 export const gate = {
   id: 'impact-test',
+  configKeys: ['command'],
   stages: ['pre-commit'],
   family: 'gate',
   defaultLevel: 'error',

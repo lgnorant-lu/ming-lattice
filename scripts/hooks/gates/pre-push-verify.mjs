@@ -13,6 +13,7 @@ const DEFAULT_COMMAND = 'node scripts/verify.mjs --profile full';
 
 export const gate = {
   id: 'pre-push-verify',
+  configKeys: ['command'],
   stages: ['pre-push'],
   family: 'gate',
   defaultLevel: 'error',

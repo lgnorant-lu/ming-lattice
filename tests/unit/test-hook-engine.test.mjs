@@ -599,5 +599,56 @@ export async function run() {
     } finally { fs.rmSync(edir, { recursive: true, force: true }); }
   }
 
-  console.log('  -> hook-engine: 14 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度）');
+  // 15. 键空间对账：checkKeyspace（tmpl↔configKeys + .hooksrc 拼错键捕获）
+  {
+    const { checkKeyspace } = await import('../../scripts/hooks/lib/integrity.mjs');
+    const fakeGates = [
+      { id: 'toc', configKeys: ['depth', 'titles', 'mode'] },
+      { id: 'empty-gate' }, // 无 configKeys = 仅通用键
+    ];
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ming-keys-'));
+    try {
+      // 合法面：原生 configKeys + 通用键 + 声明式键（未知 id）+ chore 键 → 零 findings
+      fs.writeFileSync(path.join(dir, '.hooksrc'), [
+        'gate.toc.depth=2', 'gate.toc.level=warn', 'gate.toc.cadence=7d',
+        'gate.empty-gate.level=off',
+        'gate.my-decl.pattern=TODO', 'gate.my-decl.once=true', 'gate.my-decl.message=x',
+        'chore.deps.watch=package-lock.json', 'chore.deps.message=同步',
+      ].join('\n'));
+      assert.deepEqual(checkKeyspace(dir, fakeGates), [], '合法键面零告警');
+
+      // 违例面：原生门错键 + 通用键外键 + 声明式非法键 + chore 非法键 + 拼错键
+      fs.writeFileSync(path.join(dir, '.hooksrc.local'), [
+        'gate.toc.dept=2',           // 拼错（depth→dept）——静默失效的真实缺口
+        'gate.empty-gate.depth=2',   // 无 configKeys 的门吃私键
+        'gate.my-decl.weight=1',     // 声明式门不认识 weight
+        'chore.deps.depth=3',        // chore 不认识 depth
+      ].join('\n'));
+      const kf = checkKeyspace(dir, fakeGates);
+      assert.equal(kf.length, 4, `4 条违例，实际: ${kf.map(f => f.message).join(';')}`);
+      assert.ok(kf.every(f => f.file === '.hooksrc.local'), '归属文件正确');
+      assert.ok(kf[0].message.includes('toc.dept') && kf[0].message.includes('configKeys'), '原生错键指向 configKeys');
+      assert.ok(kf[3].message.includes('chore'), 'chore 错键提示 chore 键空间');
+
+      // tmpl 同法对账 + 未知 id 当声明式处理
+      fs.writeFileSync(path.join(dir, '.hooksrc.tmpl'), '# gate.toc.mode=insert\ngate.toc.mood=x\n');
+      const tf = checkKeyspace(dir, fakeGates);
+      assert.equal(tf.length, 5, 'tmpl 违例并入');
+      assert.ok(tf.some(f => f.file === '.hooksrc.tmpl' && f.message.includes('toc.mood')), 'tmpl 错键捕获');
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+
+    // meta：出厂十门均带 configKeys 自描述字段（模块即 SoT）
+    for (const f of fs.readdirSync(path.join(root, 'scripts/hooks/gates')).filter(x => x.endsWith('.mjs'))) {
+      const { gate } = await import(`../../scripts/hooks/gates/${f}`);
+      assert.ok(Array.isArray(gate.configKeys), `${f} 应导出 configKeys 数组`);
+    }
+    // 本仓三文件实跑零违例（防止配置面与实现对账漂移）
+    const natives = [];
+    for (const f of fs.readdirSync(path.join(root, 'scripts/hooks/gates')).filter(x => x.endsWith('.mjs'))) {
+      natives.push((await import(`../../scripts/hooks/gates/${f}`)).gate);
+    }
+    assert.deepEqual(checkKeyspace(root, natives), [], '本仓配置面与键空间对账零漂移');
+  }
+
+  console.log('  -> hook-engine: 15 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度/键空间对账）');
 }

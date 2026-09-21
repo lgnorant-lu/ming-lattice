@@ -12,6 +12,7 @@ import { extractSubject, validateSubject, validateTrailer, loadHookConfig } from
 
 export const gate = {
   id: 'commit-msg',
+  configKeys: ['types', 'subjectMaxLen', 'extraTrailers', 'pattern', 'patternHint'],
   stages: ['commit-msg'],
   family: 'gate',
   defaultLevel: 'error',

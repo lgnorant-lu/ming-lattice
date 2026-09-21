@@ -111,3 +111,43 @@ export function checkAdoptionHealth(root) {
 export function orphanGateIds(cfgGates, gateIds) {
   return Object.keys(cfgGates ?? {}).filter(id => !gateIds.has(id));
 }
+
+// ---------- 键空间对账：.hooksrc*/.hooksrc.tmpl 中的 gate.X.Y / chore.X.Y vs 真实键空间 ----------
+// 键空间三源：通用键（引擎消费：level/globs/exclude/cadence）+ 原生门 configKeys
+// （模块即 SoT 自描述字段）+ 声明式键（pattern/message/once——id 非原生门时）。
+// 对偶：孤儿键查"配置指向不存在的门"，本检查查"文档/配置指向不存在的键"——
+// 顺带覆盖 .hooksrc 拼错键静默失效（gate.toc.dept=3 无声不生效）。
+const UNIVERSAL_KEYS = new Set(['level', 'globs', 'exclude', 'cadence']);
+const DECL_KEYS = new Set(['pattern', 'message', 'once']);
+const CHORE_KEYS = new Set(['watch', 'message', 'once']);
+const KEY_MENTION_RE = /\b(gate|chore)\.([A-Za-z0-9-]+)\.([A-Za-z0-9]+)/g;
+
+export function checkKeyspace(root, gates) {
+  const nativeById = new Map(gates.map(g => [g.id, g]));
+  const findings = [];
+  for (const rel of ['.hooksrc', '.hooksrc.local', '.hooksrc.tmpl']) {
+    const fp = path.join(root, rel);
+    if (!fs.existsSync(fp)) continue;
+    const seen = new Set();
+    for (const m of fs.readFileSync(fp, 'utf8').matchAll(KEY_MENTION_RE)) {
+      const [, ns, id, key] = m;
+      const sig = `${ns}.${id}.${key}`;
+      if (seen.has(sig)) continue;
+      seen.add(sig);
+      if (UNIVERSAL_KEYS.has(key)) continue;
+      if (ns === 'chore') {
+        if (!CHORE_KEYS.has(key)) {
+          findings.push({ file: rel, message: `chore.${id}.${key} 不在键空间（chore: watch/message/once + 通用键）` });
+        }
+        continue;
+      }
+      const g = nativeById.get(id);
+      const allowed = g ? new Set(g.configKeys ?? []) : DECL_KEYS;
+      if (!allowed.has(key)) {
+        const src = g ? `门 ${id} configKeys` : '声明式键空间';
+        findings.push({ file: rel, message: `gate.${id}.${key} 不在键空间（${src}: ${[...allowed].join('/') || '仅通用键'}）` });
+      }
+    }
+  }
+  return findings;
+}

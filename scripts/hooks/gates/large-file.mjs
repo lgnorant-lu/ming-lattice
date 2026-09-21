@@ -6,6 +6,7 @@ const DEFAULT_MAX_MB = 50;
 
 export const gate = {
   id: 'large-file',
+  configKeys: ['maxMB'],
   stages: ['pre-commit'],
   family: 'gate',
   defaultLevel: 'error',

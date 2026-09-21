@@ -99,6 +99,7 @@ function scanL1(content, file, layer, findings, forcedLevel) {
 
 export const gate = {
   id: 'secrets',
+  configKeys: ['genericLevel', 'b64Level'],
   stages: ['pre-commit'],
   family: 'gate',
   defaultLevel: 'error',

@@ -8,6 +8,7 @@ const TEXT_EXT = /\.(md|yaml|yml|json|ps1|js|mjs|ts|txt|toml|py|sh|bat)$/i;
 
 export const gate = {
   id: 'mojibake',
+  configKeys: [],
   stages: ['pre-commit'],
   family: 'gate',
   defaultLevel: 'error',

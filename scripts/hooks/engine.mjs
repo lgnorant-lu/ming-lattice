@@ -24,7 +24,7 @@ import { loadHookEngineConfig, resolveLevel, resolveGateConfigFor, parseSkipSet,
 import { repoRoot, fileSource, batchMeta, listUnstagedOverlap, makeGit } from './lib/files.mjs';
 import { detectGitState, shouldSkip } from './lib/git-state.mjs';
 import { loadBaseline, freshFindings, writeBaseline, baselinePath } from './lib/baseline.mjs';
-import { checkIntegrity, writeTrust, checkAdoptionHealth, orphanGateIds, lastRunAt, stampRun } from './lib/integrity.mjs';
+import { checkIntegrity, writeTrust, checkAdoptionHealth, orphanGateIds, checkKeyspace, lastRunAt, stampRun } from './lib/integrity.mjs';
 import { buildDeclarativeGates } from './lib/declarative.mjs';
 import { buildChores } from './lib/chores.mjs';
 import { matchAnyGlobs } from './lib/matcher.mjs';
@@ -96,6 +96,10 @@ async function runStage(stage, opts = {}) {
         if (m && !loadedIds.has(m[1]))
           console.warn(`[engine] [WARN] .hooksrc [${sec.glob}] 孤儿键: gate.${m[1]}.* 指向未装载的门`);
       }
+    }
+    // 键空间对账：.hooksrc*/.hooksrc.tmpl 的 gate.X.Y/chore.X.Y vs configKeys+通用键+声明式键
+    for (const f of checkKeyspace(root, nativeGates)) {
+      console.warn(`[engine] [WARN] ${f.file} — ${f.message}`);
     }
   }
   const chores = buildChores(cfg);

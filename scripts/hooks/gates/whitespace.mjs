@@ -24,6 +24,7 @@ export function fixContent(text) {
 
 export const gate = {
   id: 'whitespace',
+  configKeys: [],
   stages: ['pre-commit'],
   family: 'gate',
   defaultLevel: 'warn',
