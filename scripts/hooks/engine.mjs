@@ -20,7 +20,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { loadHookEngineConfig, resolveLevel, parseSkipSet, LEVELS } from './lib/config.mjs';
+import { loadHookEngineConfig, resolveLevel, resolveGateConfigFor, parseSkipSet, LEVELS } from './lib/config.mjs';
 import { repoRoot, fileSource, batchMeta, listUnstagedOverlap, makeGit } from './lib/files.mjs';
 import { detectGitState, shouldSkip } from './lib/git-state.mjs';
 import { loadBaseline, freshFindings, writeBaseline, baselinePath } from './lib/baseline.mjs';
@@ -81,10 +81,21 @@ async function runStage(stage, opts = {}) {
   const nativeGates = await loadNativeGates();
   const declGates = buildDeclarativeGates(cfg);
   // .hooksrc gate.<id>.* 孤儿键对账——配置指向未装载的门（改名/删除残留）
+  // + [glob] 分节诊断（畸形节告警 + 节内孤儿键——同族对账延伸至覆盖层）
   if (integrityLevel !== 'off') {
     const loadedIds = new Set([...nativeGates, ...declGates].map(g => g.id));
     for (const id of orphanGateIds(cfg.gates, loadedIds)) {
       console.warn(`[engine] [WARN] .hooksrc 孤儿键: gate.${id}.* 指向未装载的门`);
+    }
+    for (const w of cfg.sectionWarnings ?? []) {
+      console.warn(`[engine] [WARN] .hooksrc ${w}`);
+    }
+    for (const sec of cfg.sections ?? []) {
+      for (const k of Object.keys(sec.entries)) {
+        const m = k.match(/^gate\.([^.]+)\./);
+        if (m && !loadedIds.has(m[1]))
+          console.warn(`[engine] [WARN] .hooksrc [${sec.glob}] 孤儿键: gate.${m[1]}.* 指向未装载的门`);
+      }
     }
   }
   const chores = buildChores(cfg);
@@ -161,6 +172,8 @@ async function runStage(stage, opts = {}) {
         continue;
       }
       ctx.gateConfig = cfg.gates[g.id] ?? {};
+      // 分节解析：gateConfig 维持全局视图（旧门零改动）；gateConfigFor(file) 按 [glob] 节链解析
+      ctx.gateConfigFor = f => resolveGateConfigFor(cfg, g.id, f);
       // 配置覆盖：gate.X.globs 整体替换感兴趣域；gate.X.exclude 在门默认排除上追加
       const cfgGlobs = ctx.gateConfig.globs?.split(',').map(s => s.trim()).filter(Boolean);
       const cfgExclude = ctx.gateConfig.exclude?.split(',').map(s => s.trim()).filter(Boolean) ?? [];
@@ -249,7 +262,7 @@ async function cmdBaseline(dryRun = false) {
     const interested = files.filter(f => matchAnyGlobs(f, g.globs ?? ['*']) && !matchAnyGlobs(f, g.exclude ?? []));
     if (!interested.length) continue;
     try {
-      const rows = await g.run({ root, files: interested, read: src.read, meta: src.meta, gateConfig: cfg.gates[g.id] ?? {} });
+      const rows = await g.run({ root, files: interested, read: src.read, meta: src.meta, gateConfig: cfg.gates[g.id] ?? {}, gateConfigFor: f => resolveGateConfigFor(cfg, g.id, f) });
       findings.push(...rows);
     } catch (e) {
       console.warn(`[baseline] ${g.id} 扫描异常: ${e.message}`);
@@ -290,7 +303,7 @@ async function cmdFix(dryRun = false) {
     const scope = files.filter(f => matchAnyGlobs(f, globs ?? ['*']) && !matchAnyGlobs(f, exclude));
     if (!scope.length) continue;
     try {
-      const fixed = await g.fix({ root, files: scope, gateConfig: gcfg, dryRun });
+      const fixed = await g.fix({ root, files: scope, gateConfig: gcfg, gateConfigFor: f => resolveGateConfigFor(cfg, g.id, f), dryRun });
       for (const p of fixed ?? []) {
         console.log(`[fix] ${g.id}: ${p} ${dryRun ? '将被修复' : '已修复（请 git add 重新暂存）'}`); total++;
       }

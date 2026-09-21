@@ -62,6 +62,27 @@ trailerLevel=error        # → gate.commit-msg.level（AI 尾巴等）
 # chore.deps.watch=package-lock.json,package.json
 # chore.deps.message=依赖清单变更——建议 npm ci
 
+# ── toc 门（## 目录 生成节对账，fixable——run fix 重写/插壳）──
+# gate.toc.level=warn              # 等级
+# gate.toc.globs=*.md              # 域硬边界（默认全部 md；vertical/base 默认排除）
+# gate.toc.depth=3                 # 收录最大标题级（编号=收集序，>depth 占位跳号）
+# gate.toc.titles=目录,Table of Contents   # 目录节标题精确集
+# gate.toc.mode=section            # section=只刷已有壳 | insert=达标文档补插壳
+# gate.toc.minHeadings=3           # insert 模式门槛
+# gate.toc.slug=github             # github=GitHub 锚算法 | compat=tocgen 旧算法
+
+# ── [glob] 分节覆盖（域内调参，editorconfig 语义）──
+# 全局段之后 [glob] 节头开启路径覆盖域；glob 相对仓根；后写节覆盖先写节；
+# .hooksrc.local 的节接在主文件节之后（天然 local 赢）。
+# 节内仅 gate.*/chore.* 键（其余键与空节走 integrityLevel 告警）；
+# 节只能调参不能扩域——globs 域外文件先改全局 globs。
+# 示例：
+# [docs/adr/**.md]
+# gate.toc.depth=2
+#
+# [docs/progress/**]
+# gate.toc.level=off
+
 # ── 引擎级配置 ──
 # integrityLevel=warn    # gates/ 目录 hash 变化提示等级（warn|off）
 # baseline.path=<路径>   # 基线文件位置覆盖（默认 .hooks-baseline.json）

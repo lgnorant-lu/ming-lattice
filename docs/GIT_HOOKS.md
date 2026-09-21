@@ -89,6 +89,9 @@ status: normative
    - 输出只报打码样本（`前4…后4`），永不打印明文密钥；`matchText` 仅存原始命中用于 baseline 身份哈希。
 4. **显式影响面受限测试**：
    - 由 `scripts/hooks/plan.mjs` 分析暂存快照：纯文档变动直接跳过运行期测试；特定域变动（如路由、CLI、供应链）仅执行对应受影响套件；关键全局配置（`registry.yaml`、`tests/run.mjs` 等）或未知路径则 fail-closed 自动升级全量。
+5. **可自愈门（fixable，`run fix` 工作区重写）**：
+   - **whitespace**：行尾空白/EOF 换行（`warn` 默认）。
+   - **toc**：`## 目录`/`## Table of Contents` 生成节对账——标题收集（跳过 frontmatter/围栏/自身）→ GitHub 锚 slug → 编号列表比对。节体混入散文视为手写内容 warn 跳过不覆盖；`mode=insert` 可为 ≥`minHeadings` 个标题的无壳文档补插目录。配置键：`depth`（默认 3）、`titles`、`mode`（section|insert）、`minHeadings`、`slug`（github|compat），全部支持 `[glob]` 分节逐文件覆盖（见 §3.3）。
 
 > [!NOTE]
 > **测试快照语义说明**：静态扫描严格基于暂存区 index blob 校验；而自动化测试套件在当前工作树环境执行。若检测到工作树存在未暂存的修改，`check.mjs` 会输出黄色警告提示开发者仔细核对提交差异。
@@ -147,10 +150,34 @@ lintLevel=error         # error | warn | off（默认 error: lint 失败阻断�
 - `SKIP=<gate1>,<gate2> git commit ...`：临时豁免点名门（pre-commit/overcommit 生态惯例名）；`required` 级不吃 SKIP。
 - **gates/ 完整性提示**：`engine.mjs` 每次运行比对 `gates/` 目录 hash 与 `.git/hook-engine-state.json` 存值，不一致时打 warn（透明性特性——变化可见，不阻断）；确认无误后 `node scripts/hooks/engine.mjs trust` 再确认。`integrityLevel=off` 可关。
 - **CI 增量扫描**：`node scripts/hooks/engine.mjs run check --range=origin/main...HEAD`——PR 相对基线分支的变更扫描（gitleaks `--log-opts` 同语义），checkout 后无暂存区概念的 CI 环境用此入口。
-- **自愈**：`node scripts/hooks/engine.mjs run fix`——`fixable` 门（当前 whitespace：行尾空白/EOF 换行）重写工作区文件并报告清单；**不碰 index**，re-stage 由用户确认（刻意避开 lint-staged stash 路线的数据丢失前科）。`run fix --dry-run` 走同一遍历路径只报告不写盘。
+- **自愈**：`node scripts/hooks/engine.mjs run fix`——`fixable` 门（whitespace：行尾空白/EOF 换行；toc：目录节重写/插壳）重写工作区文件并报告清单；**不碰 index**，re-stage 由用户确认（刻意避开 lint-staged stash 路线的数据丢失前科）。`run fix --dry-run` 走同一遍历路径只报告不写盘。
 - **baseline 预览**：`node scripts/hooks/engine.mjs baseline --dry-run`——按门分组预告将冻结的违规数，不写 `.hooks-baseline.json`。
 - **采纳层自检**（与 gates/ 完整性同级，随 `integrityLevel` 开关）：① `.githooks/` shim 与 `lib/shims.mjs` 规范模板对账——手改/模板更新即 warn（外来 hook 无 `engine.mjs` 引用者尊重不碰）；② shim 内引擎引用可达性——store 搬家/引擎缺失即 warn（相对式与绝对烘焙两种引用都验）；③ `.hooksrc` 的 `gate.<id>.*` 孤儿键——配置指向未装载的门（改名/删除残留）即 warn；④ `gates/`、`gates.local/` 下未导出 `gate` 对象的 `.mjs` 文件在加载时 warn（防"写了没生效"静默）。检查者即被检查者，住在引擎装载路径上而非独立门。
 - **移植到其他仓**：`pwsh scripts/install-hooks.ps1 -Target <repo>`——铺入 `scripts/hooks/`（engine+gates+lib+依赖件）+ `.githooks/` shim + `.hooksrc`（模板，不覆盖已有）+ `.gitignore` 补 `.hooksrc.local` + hooksPath + integrity 存值。支持 `-WhatIf` 预演（原生 SupportsShouldProcess）；检测到目标已有 `core.hooksPath` 时**拒绝静默切换**（需先平移旧检查到 `gates.local/` 再加 `-Force`——blog-tui 事故的制度化防线）。项目私有门入 `scripts/hooks/gates.local/`；`impact-test`/`pre-push-verify` 在无对应件的仓自动缺席（`available()` 守卫）。第二采纳者实证：blog-tui。
+
+### 3.3 `[glob]` 分节覆盖（域内调参）
+
+`.hooksrc` 全局段之后可用 `[glob]` 节头按路径域调参（editorconfig 语义：glob 相对仓根，**后写节覆盖先写节**；`.hooksrc.local` 的节接在主文件节之后，天然"local 赢"）：
+
+```ini
+gate.toc.level=warn
+gate.toc.globs=docs/**.md,README.md   # 全局 globs = 域硬边界（进不进）
+gate.toc.depth=3
+
+[docs/adr/**.md]                       # 分节 = 域内调参
+gate.toc.depth=2
+gate.toc.minHeadings=2
+
+[docs/progress/**]
+gate.toc.level=off                     # 整域关闭该门
+```
+
+契约面：
+
+- 节内仅允许 `gate.<id>.*`/`chore.<id>.*` 键——其他键与零有效键节走 `integrityLevel` 告警（畸形节诊断）；节内 `gate.X.*` 指向未装载的门同样报孤儿键。
+- 键语义统一**后写赢**（含 `exclude`——节内替换而非累加；全局 `gate.X.exclude` 在门默认排除上追加的语义不变，那是"门默认值 vs 配置"的合并层，与节链无关）。
+- 节只能调参，不能把 `globs` 域外文件拉进门——想扩域先改全局 `globs`。
+- 门侧接入：旧门零改动（`ctx.gateConfig` 全局视图不变）；需要逐文件差异的门读 `ctx.gateConfigFor(file)`（engine/baseline/fix 三处 ctx 均已接线），toc 门是首个消费方。
 
 ---
 

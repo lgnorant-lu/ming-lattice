@@ -121,7 +121,7 @@ status: normative
 | `.hooksrc.tmpl` | 投影（键空间） | 门 `configKeys`（待补） | tmpl 对账（待立） | — | 键空间无集中 SoT |
 | `distill/_proposals/*` | 候审档 | frontmatter status/reviewAfter | reviewAfter chore（待立） | — | 生命周期无机器执行 |
 | observability schema | SoT（事件层） | `docs/schemas/observability-event.schema.json` | 契约测试 | observability 套件 | hook 事件未接线（待消费方） |
-| `## 目录` 节（各仓） | 节内嵌带 | 文档标题集 | `gates/toc.mjs`（待立） | 待立 | 114 壳存量 |
+| `## 目录` 节（各仓） | 节内嵌带 | 文档标题集 | `gates/toc.mjs` | hook-engine 第 12 组 | — |
 
 ## 10. 自反哺矩阵
 

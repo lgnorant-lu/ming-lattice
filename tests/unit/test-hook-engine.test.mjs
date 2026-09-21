@@ -393,5 +393,110 @@ export async function run() {
     assert.deepEqual(orphanGateIds(undefined, new Set()), []);
   }
 
-  console.log('  -> hook-engine: 10 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检）');
+  // 11. [glob] 分节解析：editorconfig 序（后写赢）+ local 节接主文件节 + 畸形节诊断 + resolveGateConfigFor
+  {
+    const { resolveGateConfigFor } = await import('../../scripts/hooks/lib/config.mjs');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ming-sec-'));
+    try {
+      fs.writeFileSync(path.join(dir, '.hooksrc'), [
+        'gate.toc.level=warn',
+        'gate.toc.depth=3',
+        '[docs/adr/**]',
+        'gate.toc.depth=2',
+        'gate.toc.minHeadings=2',
+        '[docs/**]',
+        'gate.toc.mode=insert',
+        '[bad/**]',
+        'plain.key=x',
+        'gate.ghost.level=warn',
+      ].join('\n'));
+      fs.writeFileSync(path.join(dir, '.hooksrc.local'), '[docs/adr/**]\ngate.toc.depth=4\n');
+      const cfg = loadHookEngineConfig(dir);
+      assert.equal(cfg.sections.length, 4, '主文件 3 节 + local 1 节');
+      assert.equal(cfg.sections[3].glob, 'docs/adr/**', 'local 节接在主文件节之后');
+      // 命中序：全局 depth=3 → [docs/**] 命中不涉 depth → [docs/adr/**](main) depth=2 → [docs/adr/**](local) depth=4
+      const adr = resolveGateConfigFor(cfg, 'toc', 'docs/adr/x.md');
+      assert.equal(adr.depth, '4', '后写节覆盖先写节（local 赢）');
+      assert.equal(adr.minHeadings, '2', '节内其他键一并合并');
+      assert.equal(adr.mode, 'insert', '[docs/**] 也命中 adr 路径');
+      // 非命中文件只吃全局 + 命中节
+      const plain = resolveGateConfigFor(cfg, 'toc', 'docs/guide.md');
+      assert.equal(plain.depth, '3', '非 adr 文件不回退到 adr 节');
+      assert.equal(plain.mode, 'insert');
+      // 其他门的键不受 toc 节影响
+      assert.equal(resolveGateConfigFor(cfg, 'emoji', 'docs/adr/x.md').depth, undefined);
+      // 畸形节诊断：[bad/**] 的 plain.key 非法 + 空节不算 gate 键
+      assert.ok(cfg.sectionWarnings.some(w => w.includes('bad/**') && w.includes('plain.key')), '非 gate.* 键被告警');
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  }
+
+  // 12. toc 门：节检测/形状校验/漂移/手写跳过/insert/slug/分节 off
+  {
+    const { gate: tocGate, parseDoc, generateItems, slugGithub } = await import('../../scripts/hooks/gates/toc.mjs');
+    const titles = new Set(['目录', 'Table of Contents']);
+    // 解析面：目录标题不入 headings，节体吃到 --- 为止，H1 不收录
+    const d = parseDoc('# T\n\n## 目录\n1. [A](#a)\n\n---\n\n## Alpha\nx\n### Beta\n', titles);
+    assert.equal(d.toc.headIdx, 2);
+    assert.deepEqual(d.toc.body, ['1. [A](#a)', '', '---']);
+    assert.deepEqual(d.headings.map(h => h.text), ['Alpha', 'Beta'], '目录自身不入列');
+    assert.equal(d.h1Idx, 0);
+    // github slug：标点剥除 + CJK 保留
+    assert.equal(slugGithub('Beta: Two!'), 'beta-two');
+    assert.equal(slugGithub('C++ Guide / ref'), 'c-guide-ref');
+    assert.equal(slugGithub('中文 标题'), '中文-标题');
+    // 编号=收集序（tocgen 跳号怪癖：depth=2 时 H3 占位）
+    const d2 = parseDoc('# T\n## A\n### B\n## C\n', titles);
+    assert.deepEqual(generateItems(d2.headings, 2, slugGithub), ['1. [A](#a)', '3. [C](#c)'], 'H3 占位跳号');
+    assert.deepEqual(generateItems(d2.headings, 3, slugGithub), ['1. [A](#a)', '  2. [B](#b)', '3. [C](#c)']);
+
+    const mkCtx = (files, read, extra = {}) => ({ files, read, gateConfig: {}, ...extra });
+    // 新鲜节 → 零 finding
+    const fresh = '# T\n\n## 目录\n1. [A](#a)\n  2. [B](#b)\n\n---\n\n## A\n### B\n';
+    assert.deepEqual(await tocGate.run(mkCtx(['a.md'], () => fresh)), [], '新鲜节零 finding');
+    // 过期节 → toc-drift
+    const stale = '# T\n\n## 目录\n1. [Old](#old)\n\n---\n\n## A\n### B\n';
+    const f1 = await tocGate.run(mkCtx(['a.md'], () => stale));
+    assert.equal(f1.length, 1);
+    assert.equal(f1[0].matchText, 'toc-drift');
+    // 手写内容混入节体 → warn 跳过不漂移
+    const manual = '# T\n\n## 目录\n1. [A](#a)\n\n手写说明文字\n\n---\n\n## A\n### B\n';
+    const f2 = await tocGate.run(mkCtx(['a.md'], () => manual));
+    assert.equal(f2.length, 1);
+    assert.equal(f2[0].matchText, 'toc-shape', '散文节体报形状告警');
+    // 无壳文档：section 模式静默；insert 模式达标报 toc-missing
+    const shell = '# T\n## A\n### B\n## C\n';
+    assert.deepEqual(await tocGate.run(mkCtx(['a.md'], () => shell)), [], '默认不强制插壳');
+    const f3 = await tocGate.run(mkCtx(['a.md'], () => shell, { gateConfig: { mode: 'insert' } }));
+    assert.equal(f3.length, 1);
+    assert.equal(f3[0].matchText, 'toc-missing');
+    // minHeadings 不达标不报
+    const f4 = await tocGate.run(mkCtx(['a.md'], () => '# T\n## A\n', { gateConfig: { mode: 'insert', minHeadings: '3' } }));
+    assert.equal(f4.length, 0);
+    // 分节 off：gateConfigFor 返回 level=off → 跳过
+    const f5 = await tocGate.run({ files: ['a.md'], read: () => stale, gateConfig: {}, gateConfigFor: () => ({ level: 'off' }) });
+    assert.equal(f5.length, 0, '节内 level=off 逐文件关闭');
+    // fix：重写过期节 + dryRun 不写盘 + 手写节不碰
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ming-toc-'));
+    try {
+      fs.writeFileSync(path.join(dir, 'a.md'), stale);
+      fs.writeFileSync(path.join(dir, 'm.md'), manual);
+      const fx = await tocGate.fix({ root: dir, files: ['a.md', 'm.md'], gateConfig: {}, dryRun: true });
+      assert.deepEqual(fx, ['a.md'], 'dry-run 只报将修');
+      assert.equal(fs.readFileSync(path.join(dir, 'a.md'), 'utf8'), stale, 'dry-run 不写盘');
+      const fx2 = await tocGate.fix({ root: dir, files: ['a.md', 'm.md'], gateConfig: {}, dryRun: false });
+      assert.deepEqual(fx2, ['a.md'], '手写节不修复');
+      const after = fs.readFileSync(path.join(dir, 'a.md'), 'utf8');
+      assert.ok(after.includes('1. [A](#a)\n  2. [B](#b)\n\n---'), '节体被重写为生成形');
+      assert.deepEqual(await tocGate.run(mkCtx(['a.md'], () => after)), [], '修复后零 finding（幂等）');
+      // insert 修复：H1 后插壳
+      fs.writeFileSync(path.join(dir, 'n.md'), '# T\n\n## A\n### B\n## C\n');
+      const fx3 = await tocGate.fix({ root: dir, files: ['n.md'], gateConfig: { mode: 'insert' }, dryRun: false });
+      assert.deepEqual(fx3, ['n.md']);
+      const n = fs.readFileSync(path.join(dir, 'n.md'), 'utf8');
+      assert.ok(n.includes('## 目录\n1. [A](#a)'), 'H1 后插入目录节');
+      assert.ok(n.indexOf('## 目录') < n.indexOf('## A'), '目录在正文标题前');
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  }
+
+  console.log('  -> hook-engine: 12 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门）');
 }
