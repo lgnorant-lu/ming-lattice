@@ -121,6 +121,7 @@ status: normative
 | `scripts/hooks/engine.mjs` | 门宿主 | — | integrityLevel 自检族 | hook-engine 组 | install/doctor 生命周期件 |
 | `.hooksrc.tmpl` | 投影（键空间） | 门 `configKeys` 自描述字段 | `checkKeyspace`（integrity 族） | hook-engine 组 15 | 通用键+声明式键+chore 键并集对账 |
 | `distill/_proposals/*` | 候审档 | frontmatter status/reviewAfter | `gates/review-after.mjs` + `cadence=7d` | hook-engine 组 14 | warn 提醒非阻断 |
+| 文档外链 | 工作区内容 | markdown/文本 http(s) URL | `gates/link-rot.mjs` + `cadence=7d` | hook-engine 组 19 | 非阻断 stage 限定（post-merge/post-checkout）；localhost 注入测试禁真网络 |
 | observability schema | SoT（事件层） | `docs/schemas/observability-event.schema.json` | 契约测试 | observability 套件 | hook 事件未接线（待消费方） |
 | `## 目录` 节（各仓） | 节内嵌带 | 文档标题集 | `gates/toc.mjs` | hook-engine 第 12 组 | — |
 
@@ -144,7 +145,6 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 
 - `## 门控清单` 生成节——toc 节机制第二消费方，落地时抽 `regen-section` lib（`engine.mjs list` 已供数据源）
 - doc-claims 门——反引号路径存在性对账，等第二个 doc-断言漂移实例
-- link-rot——外链死链，贵检查走 cadence，等真实痛点
 - hook 事件接线——observability schema 扩 `hook.*`，等下游消费方
 - 持续型 fitness function——审计陈旧度，我们的节奏是事件驱动
 

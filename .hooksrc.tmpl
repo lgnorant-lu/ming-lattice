@@ -86,7 +86,14 @@ trailerLevel=error        # → gate.commit-msg.level（AI 尾巴等）
 # ── 周期维度（review-after 到期提醒 + cadence 节流）──
 # gate.review-after.globs=<globs>   # 扫描域（默认空——不配不跑）；提取 reviewAfter: YYYY-MM-DD 到期 warn
 # gate.review-after.cadence=7d      # TTL 节流：<n>d|h|m|s；state.json lastRun 盖戳，到期才跑
-# cadence 是引擎级通用键——任何门/chore 可配（如 gate.link-rot.cadence=7d）
+# cadence 是引擎级通用键——任何门/chore 可配
+#
+# ── 死链检查（link-rot：post-merge/post-checkout 非阻断，网络 IO 靠 cadence 节流）──
+# gate.link-rot.globs=docs/**,*.md   # 扫描域（默认空——不配不跑）
+# gate.link-rot.cadence=7d           # 建议周期节流；每次全量探测贵
+# gate.link-rot.ignore=localhost,example.com   # 子串过滤（占位符/内网域）
+# gate.link-rot.maxUrls=50           # 单次上限，超出截断提示
+# gate.link-rot.timeoutMs=5000       # 单 URL 超时
 
 # ── 命令门（impact-test 提交前 / pre-push-verify 推送前）──
 # gate.<id>.command=<完整命令行>   # 仓级命令覆盖默认（CI yaml run: 同级执行面——review diff 关注）

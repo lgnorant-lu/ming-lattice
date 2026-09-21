@@ -51,7 +51,7 @@ status: normative
 
 `scripts/hooks/engine.mjs` 是统一调度器；门禁规则分两源：
 
-- **原生码门** `scripts/hooks/gates/*.mjs`：导出 `gate` 对象 `{id, stages, defaultLevel, expensive?, needsAllFiles?, globs?, exclude?, available?(ctx), run(ctx)→findings[]}`。secrets/mojibake/emoji/large-file/commit-msg/impact-test/pre-push-verify/whitespace/toc/review-after 十门为出厂目录。
+- **原生码门** `scripts/hooks/gates/*.mjs`：导出 `gate` 对象 `{id, stages, defaultLevel, expensive?, needsAllFiles?, globs?, exclude?, available?(ctx), run(ctx)→findings[]}`。secrets/mojibake/emoji/large-file/commit-msg/impact-test/pre-push-verify/whitespace/toc/review-after/link-rot 十一门为出厂目录。
 - **声明式正则门** `.hooksrc` 内 `gate.<id>.<key>` 平铺键——覆盖"单模式+单消息"长尾检查，零代码：
   ```ini
   gate.no-debugger.level=error
@@ -100,8 +100,11 @@ status: normative
    - **whitespace**：行尾空白/EOF 换行（`warn` 默认）。
    - **toc**：`## 目录`/`## Table of Contents` 生成节对账——标题收集（跳过 frontmatter/围栏/自身）→ GitHub 锚 slug → 编号列表比对。节体混入散文视为手写内容 warn 跳过不覆盖；`mode=insert` 可为 ≥`minHeadings` 个标题的无壳文档补插目录。配置键：`depth`（默认 3）、`titles`、`mode`（section|insert）、`minHeadings`、`slug`（github|compat），全部支持 `[glob]` 分节逐文件覆盖（见 §3.3）。
 6. **候审档到期提醒（review-after，周期维度门）**：
-   - 与文件变更无关的时间驱动检查：`gate.review-after.globs` 命中文件内 `reviewAfter: YYYY-MM-DD` 到期（≤今天）即 warn；默认 globs 空 = off-until-configured。挂 `pre-commit`/`post-merge` 双 stage 非阻断。
+   - 与文件变更无关的时间驱动检查：`gate.review-after.globs` 命中文件内 `reviewAfter: YYYY-MM-DD` 到期（≤今天）即 warn；默认 globs 空 = off-until-configured。挂 `pre-commit`/`post-merge`/`post-checkout` 三 stage 非阻断。
    - **`gate.<id>.cadence=<n>d|h|m|s` 引擎级节流键**：任何门/chore 可配；`state.json` 的 `lastRun` 盖戳，周期内跳过（`cadence 未到跳过`）。周期检查搭 stage 便车、不引入调度器——本仓 `review-after` 配 `7d`。
+7. **死链检查（link-rot，周期维度门）**：
+   - 扫 `gate.link-rot.globs` 域内工作区文件提取 http(s) URL → HEAD 探测（405/501 回退 GET，跟随重定向）：`404/410` 判死链 warn；其余 4xx/5xx/超时/网络错误判不可达 warn；`401/403` 视为可达。全部 URL 网络错误时合并单条"疑似离线"不刷屏。
+   - 只挂 `post-merge`/`post-checkout` 非阻断 stage——网络检查永不阻断提交；`expensive: true`（已有 error 命中时跳过）。配置键：`maxUrls`（默认 50）、`timeoutMs`（默认 5000）、`ignore`（子串过滤）；本仓 `cadence=7d`。
 
 > [!NOTE]
 > **测试快照语义说明**：静态扫描严格基于暂存区 index blob 校验；而自动化测试套件在当前工作树环境执行。若检测到工作树存在未暂存的修改，`check.mjs` 会输出黄色警告提示开发者仔细核对提交差异。

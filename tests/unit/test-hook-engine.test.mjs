@@ -791,5 +791,108 @@ export async function run() {
     } finally { fs.rmSync(edir, { recursive: true, force: true }); }
   }
 
-  console.log('  -> hook-engine: 18 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度/键空间对账/post-checkout/采纳元数据/消融修复）');
+  // 19. link-rot 门：URL 提取/探测分类（localhost 注入——禁真网络）+ run() 接线 + cadence e2e
+  {
+    const { extractLinks, checkLink, scanLinks, gate: linkRot } = await import('../../scripts/hooks/gates/link-rot.mjs');
+    const http = await import('node:http');
+
+    // —— lib-core：提取（oracle=语法边界）——
+    const links = extractLinks([
+      'see [doc](https://a.com/m).',      // md 链接 + ). 尾
+      'bare https://b.io/y, https://b.io/y', // 逗号尾 + 重复出现
+      'mailto:c@d.com #anchor ./rel',      // 非 http(s) 全跳
+      'http://c.org/x',                    // http 也算
+    ].join('\n'));
+    assert.deepEqual(links.map(l => l.url),
+      ['https://a.com/m', 'https://b.io/y', 'https://b.io/y', 'http://c.org/x'], '提取+尾标点剥离');
+    assert.equal(links[0].line, 1, '行号携带');
+    // scanLinks：glob 域过滤 + ignore 子串 + 去重保首见位置
+    const sdir = fs.mkdtempSync(path.join(os.tmpdir(), 'ming-scan-'));
+    try {
+      fs.mkdirSync(path.join(sdir, 'docs'), { recursive: true });
+      fs.mkdirSync(path.join(sdir, 'src'), { recursive: true });
+      fs.writeFileSync(path.join(sdir, 'docs/a.md'), 'https://u1.dev/a\nhttps://u1.dev/a\nhttp://skip.me/x\n');
+      fs.writeFileSync(path.join(sdir, 'src/b.js'), 'https://u2.dev/b\n');
+      const seen = scanLinks(sdir, ['docs/a.md', 'src/b.js'], ['docs/**'], ['skip.me']);
+      assert.deepEqual([...seen.keys()], ['https://u1.dev/a'], 'glob 域+ignore+去重');
+      assert.equal(seen.get('https://u1.dev/a').line, 1, '首见行号');
+    } finally { fs.rmSync(sdir, { recursive: true, force: true }); }
+
+    // —— localhost server 注入（oracle=HTTP 状态语义，确定性无真网络）——
+    const server = http.createServer((req, res) => {
+      if (req.url === '/hang') return; // 永不响应——客户端超时路径（无 sleep）
+      if (req.url === '/redir') { res.writeHead(302, { location: '/ok' }); return res.end(); }
+      if (req.url === '/head405' && req.method === 'HEAD') { res.writeHead(405); return res.end(); }
+      const code = { '/ok': 200, '/head405': 200, '/dead': 404, '/gone': 410, '/err': 500, '/auth': 403 }[req.url] ?? 404;
+      res.writeHead(code); res.end();
+    });
+    await new Promise(r => server.listen(0, '127.0.0.1', r));
+    const port = server.address().port;
+    try {
+      const base = `http://127.0.0.1:${port}`;
+      assert.equal(await checkLink(`${base}/ok`, 3000), 'ok');
+      assert.equal(await checkLink(`${base}/redir`, 3000), 'ok', '跟随重定向');
+      assert.equal(await checkLink(`${base}/dead`, 3000), 'dead');
+      assert.equal(await checkLink(`${base}/gone`, 3000), 'dead');
+      assert.equal(await checkLink(`${base}/err`, 3000), 'unreachable');
+      assert.equal(await checkLink(`${base}/auth`, 3000), 'ok', '403=可达非rot');
+      assert.equal(await checkLink(`${base}/head405`, 3000), 'ok', 'HEAD 405 回退 GET');
+      assert.equal(await checkLink(`${base}/hang`, 200), 'timeout', '短超时+挂起=timeout');
+      assert.equal(await checkLink('http://127.0.0.1:1/x', 3000), 'error', '拒连=error');
+
+      // —— run() 接线（tempRepo + 真实门对象）——
+      const rdir = tempRepo();
+      try {
+        fs.mkdirSync(path.join(rdir, 'docs'), { recursive: true });
+        fs.writeFileSync(path.join(rdir, 'docs/x.md'), `${base}/dead\n${base}/ok\n`);
+        execFileSync('git', ['add', '.'], { cwd: rdir });
+        let f = await linkRot.run({ root: rdir, gateConfig: { globs: 'docs/**' } });
+        assert.equal(f.length, 1, '仅死链报出');
+        assert.ok(f[0].message.includes('死链') && f[0].file === 'docs/x.md', 'file+死链语义');
+        f = await linkRot.run({ root: rdir, gateConfig: { globs: 'docs/**', ignore: '127.0.0.1' } });
+        assert.equal(f.length, 0, 'ignore 子串全滤');
+        f = await linkRot.run({ root: rdir, gateConfig: { globs: 'docs/**', maxUrls: '1' } });
+        assert.ok(f.some(x => x.message.includes('截断')), 'maxUrls 截断提示');
+        f = await linkRot.run({ root: rdir, gateConfig: {} });
+        assert.equal(f.length, 0, 'off-until-configured');
+      } finally { fs.rmSync(rdir, { recursive: true, force: true }); }
+
+      // 全军覆没 → 单条疑似离线（拒连端口）
+      const ndir = tempRepo();
+      try {
+        fs.writeFileSync(path.join(ndir, 'x.md'), 'http://127.0.0.1:1/a\nhttp://127.0.0.1:1/b\n');
+        execFileSync('git', ['add', '.'], { cwd: ndir });
+        const f = await linkRot.run({ root: ndir, gateConfig: { globs: '**/*.md' } });
+        assert.equal(f.length, 1, '合并单条不刷屏');
+        assert.ok(f[0].message.includes('疑似离线'), '离线语义');
+      } finally { fs.rmSync(ndir, { recursive: true, force: true }); }
+
+      // —— e2e：engine post-merge + cadence 节流 ——
+      const edir = tempRepo();
+      try {
+        fs.cpSync(path.join(root, 'scripts/hooks'), path.join(edir, 'scripts/hooks'), { recursive: true });
+        fs.mkdirSync(path.join(edir, 'docs'), { recursive: true });
+        fs.writeFileSync(path.join(edir, 'docs/x.md'), `${base}/dead\n`);
+        fs.writeFileSync(path.join(edir, '.hooksrc'), [
+          'lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off',
+          'gate.impact-test.level=off', 'gate.review-after.level=off',
+          `gate.link-rot.globs=docs/**`, 'gate.link-rot.cadence=2s', 'gate.link-rot.timeoutMs=3000',
+        ].join('\n'));
+        execFileSync('git', ['add', '.'], { cwd: edir });
+        const engine = path.join(edir, 'scripts/hooks/engine.mjs');
+        // post-checkout 无参直跑：退化 'all' 源（post-merge 无 ORIG_HEAD 会容错静默 return 0）
+        const pm = () => spawnSync(process.execPath, [engine, 'post-checkout'], { cwd: edir, encoding: 'utf8' });
+        let r = pm();
+        assert.ok((r.stdout + r.stderr).includes('link-rot') && (r.stdout + r.stderr).includes('死链'),
+          `post-checkout 首跑死链告警: ${r.stdout}${r.stderr}`);
+        r = pm();
+        assert.ok((r.stdout + r.stderr).includes('cadence 未到跳过: link-rot'), 'cadence 节流生效');
+      } finally { fs.rmSync(edir, { recursive: true, force: true }); }
+    } finally {
+      server.closeAllConnections?.();
+      server.close();
+    }
+  }
+
+  console.log('  -> hook-engine: 19 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度/键空间对账/post-checkout/采纳元数据/消融修复/link-rot）');
 }
