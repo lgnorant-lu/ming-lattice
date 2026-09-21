@@ -16,7 +16,7 @@ const REVIEW_RE = /^reviewAfter\s*:\s*"?(\d{4}-\d{2}-\d{2})"?/m;
 export const gate = {
   id: 'review-after',
   configKeys: [],
-  stages: ['pre-commit', 'post-merge'],
+  stages: ['pre-commit', 'post-merge', 'post-checkout'],
   family: 'gate',
   defaultLevel: 'warn',
   needsAllFiles: true,

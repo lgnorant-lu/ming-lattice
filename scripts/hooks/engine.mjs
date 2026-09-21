@@ -62,6 +62,8 @@ function reportFinding(f, level) {
  * @returns 0 通过 / 1 拦截
  */
 async function runStage(stage, opts = {}) {
+  // post-checkout 文件级检出（flag=0）兜底——shim 已闸控，直跑防御
+  if (stage === 'post-checkout' && opts.checkout?.flag === '0') return 0;
   const root = repoRoot();
   const cfg = loadHookEngineConfig(root);
 
@@ -107,10 +109,15 @@ async function runStage(stage, opts = {}) {
   const gitState = detectGitState(root);
   const blocking = BLOCKING_STAGES.has(stage);
 
-  // 阶段上下文——post-merge 默认 ORIG_HEAD..HEAD 增量文件源
+  // 阶段上下文——post-merge 默认 ORIG_HEAD..HEAD；post-checkout 用 old..new
+  // （clone/零 SHA 退化 'all' 源）；其余 staged
   const defaultSource = stage === 'post-merge'
     ? { source: 'range', range: 'ORIG_HEAD..HEAD' }
-    : { source: 'staged' };
+    : stage === 'post-checkout'
+      ? (opts.checkout?.oldSha && !/^0+$/.test(opts.checkout.oldSha)
+          ? { source: 'range', range: `${opts.checkout.oldSha}..${opts.checkout.newSha || 'HEAD'}` }
+          : { source: 'all' })
+      : { source: 'staged' };
   const src = fileSource(root, opts.fileSource ?? defaultSource);
   const ctx = {
     root,
@@ -124,12 +131,12 @@ async function runStage(stage, opts = {}) {
     files: [],
   };
 
-  if (stage === 'pre-commit' || stage === 'ci' || stage === 'check' || stage === 'post-merge') {
+  if (stage === 'pre-commit' || stage === 'ci' || stage === 'check' || stage === 'post-merge' || stage === 'post-checkout') {
     try {
       ctx.files = src.list();
     } catch (e) {
-      // post-merge 容错：ORIG_HEAD 缺席（非 merge 场景/直跑）时退化为空集
-      if (stage === 'post-merge') return 0;
+      // post-merge/post-checkout 容错：ORIG_HEAD/range 缺席（非 merge 场景/无效 SHA 直跑）时退化
+      if (stage === 'post-merge' || stage === 'post-checkout') return 0;
       throw e;
     }
     if (ctx.files.length === 0 && stage === 'pre-commit') return 0;
@@ -145,8 +152,8 @@ async function runStage(stage, opts = {}) {
     } else {
       ctx.meta = src.meta;
     }
-    // post-merge 容错：ORIG_HEAD 缺席（非 merge 场景直跑）时退化为空集
-    if (stage === 'post-merge' && ctx.files.length === 0) return 0;
+    // post-merge/post-checkout 容错：空增量（无实质检出差异）时退化为空集
+    if ((stage === 'post-merge' || stage === 'post-checkout') && ctx.files.length === 0) return 0;
   }
 
   // baseline：仅文件型阶段应用（commit-msg 等瞬态门不冻结）
@@ -366,6 +373,10 @@ async function main() {
     if (cmd === 'list') return await cmdList();
     if (cmd === 'commit-msg') return await runStage('commit-msg', { msgPath: rest[0] });
     if (cmd === 'post-merge') return await runStage('post-merge');
+    if (cmd === 'post-checkout') {
+      const [oldSha, newSha, flag] = rest;
+      return await runStage('post-checkout', { checkout: { oldSha, newSha, flag } });
+    }
     if (cmd === 'pre-push') {
       const { parsePushLines } = await import('./pre-push.mjs');
       const stdin = fs.readFileSync(0, 'utf8');

@@ -32,6 +32,11 @@ status: normative
 
 [git push]   -> pre-push shim   -> engine.mjs -> pre-push-verify 门（过滤删除分支，verify.mjs --profile full）
 
+[git merge]  -> post-merge shim    -> engine.mjs -> chores/非阻断门（ORIG_HEAD..HEAD 增量）
+
+[git checkout] -> post-checkout shim -> $3=1 才启 node（文件级检出闸控）
+              -> engine.mjs -> 挂 post-checkout 的门/chore（old..new range 增量；clone/零 SHA 退化全量）
+
 [CLI / CI]   -> engine.mjs run check|ci   命名运行组——与 hooks 同一份 .hooksrc 配置
              -> engine.mjs run fix        自愈组（whitespace 等 fixable 门重写工作区，re-stage 由用户确认）
              -> engine.mjs baseline       冻结既有违规（棕场接入钥匙）

@@ -650,5 +650,53 @@ export async function run() {
     assert.deepEqual(checkKeyspace(root, natives), [], '本仓配置面与键空间对账零漂移');
   }
 
-  console.log('  -> hook-engine: 15 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度/键空间对账）');
+  // 16. post-checkout stage：shim flag 闸控 + range 文件源 + flag=0 兜底 + 零 SHA 退化
+  {
+    // shim 模板：flag=1 闸控在 shim 内（文件级检出不启 node）+ exit 0 非阻断 + 三参透传
+    assert.ok(HOOK_STAGES.includes('post-checkout'), 'HOOK_STAGES 含 post-checkout');
+    const pcShim = shimScript('post-checkout');
+    assert.ok(pcShim.includes('[ "$3" = "1" ]'), 'shim 内 flag 闸控');
+    assert.ok(pcShim.includes('"$1" "$2" "$3"'), '三参透传引擎');
+    assert.ok(pcShim.endsWith('exit 0\n'), '非阻断 exit 0');
+    assert.equal(shimEngineRef(pcShim), REPO_ENGINE_REF, '引擎引用可提取');
+    // 本仓 .githooks/post-checkout 与规范模板一致
+    const ourShim = fs.readFileSync(path.join(root, '.githooks/post-checkout'), 'utf8').replace(/\r\n/g, '\n');
+    assert.equal(ourShim, pcShim, '仓内 shim 与规范模板一致');
+
+    // e2e：range 文件源 + flag 兜底 + 零 SHA 退化 'all'
+    const cdir = tempRepo();
+    try {
+      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(cdir, 'scripts/hooks'), { recursive: true });
+      fs.writeFileSync(path.join(cdir, '.hooksrc'), [
+        'lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off',
+        'gate.impact-test.level=off', 'gate.pre-push-verify.level=off', 'gate.review-after.level=off',
+        'chore.sub.watch=deps/lock.json', 'chore.sub.stages=post-checkout', 'chore.sub.message=指针变更',
+      ].join('\n'));
+      const g = (...a) => execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...a], { cwd: cdir, encoding: 'utf8' }).trim();
+      fs.mkdirSync(path.join(cdir, 'deps'), { recursive: true });
+      fs.writeFileSync(path.join(cdir, 'deps/lock.json'), '{"v":1}\n');
+      g('add', '.'); g('commit', '-qm', 'a');
+      const shaA = g('rev-parse', 'HEAD');
+      fs.writeFileSync(path.join(cdir, 'deps/lock.json'), '{"v":2}\n');
+      g('add', '.'); g('commit', '-qm', 'b');
+      const shaB = g('rev-parse', 'HEAD');
+      const engine = path.join(cdir, 'scripts/hooks/engine.mjs');
+      const co = (...args) => spawnSync(process.execPath, [engine, 'post-checkout', ...args], { cwd: cdir, encoding: 'utf8' });
+
+      let r = co(shaA, shaB, '1');
+      assert.equal(r.status, 0);
+      assert.ok((r.stdout + r.stderr).includes('deps/lock.json'), `range 增量应命中 chore: ${r.stdout}${r.stderr}`);
+
+      r = co(shaA, shaB, '0');
+      assert.equal(r.status, 0);
+      assert.ok(!(r.stdout + r.stderr).includes('deps/lock.json'), 'flag=0 文件级检出兜底跳过');
+
+      // 零 SHA（clone 形态）→ 'all' 源退化，仍命中
+      r = co('0'.repeat(40), shaB);
+      assert.equal(r.status, 0);
+      assert.ok((r.stdout + r.stderr).includes('deps/lock.json'), '零 SHA 退化 all 源仍命中');
+    } finally { fs.rmSync(cdir, { recursive: true, force: true }); }
+  }
+
+  console.log('  -> hook-engine: 16 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度/键空间对账/post-checkout）');
 }

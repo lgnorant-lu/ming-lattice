@@ -37,10 +37,11 @@ gate.toc.exclude=vertical/**,base/**
 gate.review-after.globs=distill/_proposals/*.md
 gate.review-after.cadence=7d
 
-# ── chores 族（suggest-only：只提醒不执行，post-merge 触发，永不阻断）──
+# ── chores 族（suggest-only：只提醒不执行，默认 post-merge；chore.<id>.stages 可挂 post-checkout）──
 chore.registry.watch=registry.yaml
 chore.registry.message=registry.yaml 已变更——建议 pwsh scripts/sync.ps1 -DryRun 预览部署差异
 chore.submodule.watch=base/reverse-skill
+chore.submodule.stages=post-merge,post-checkout
 chore.submodule.message=submodule 指针已更新——执行 git submodule update --init 同步基座
 chore.hooks.watch=scripts/hooks/**,.githooks/**
 chore.hooks.message=门禁引擎/shim 已变更——确认无误后执行 node scripts/hooks/engine.mjs trust 再确认完整性

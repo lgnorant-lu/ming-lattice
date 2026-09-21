@@ -57,7 +57,7 @@ trailerLevel=error        # → gate.commit-msg.level（AI 尾巴等）
 # ── chores 族（suggest-only 非阻断自动化，post-merge 等阶段提醒，永不执行命令）──
 # chore.<id>.watch=<globs CSV>   监看文件（变更即提醒）
 # chore.<id>.message=<文案>      提醒内容（自动附触发文件清单）
-# chore.<id>.stages=<CSV>        挂载阶段（默认 post-merge）
+# chore.<id>.stages=<CSV>        挂载阶段（默认 post-merge；post-checkout=分支切换时 diff 增量）
 # 示例：
 # chore.deps.watch=package-lock.json,package.json
 # chore.deps.message=依赖清单变更——建议 npm ci

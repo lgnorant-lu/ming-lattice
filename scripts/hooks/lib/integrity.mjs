@@ -119,7 +119,7 @@ export function orphanGateIds(cfgGates, gateIds) {
 // 顺带覆盖 .hooksrc 拼错键静默失效（gate.toc.dept=3 无声不生效）。
 const UNIVERSAL_KEYS = new Set(['level', 'globs', 'exclude', 'cadence']);
 const DECL_KEYS = new Set(['pattern', 'message', 'once']);
-const CHORE_KEYS = new Set(['watch', 'message', 'once']);
+const CHORE_KEYS = new Set(['watch', 'message', 'once', 'stages']);
 const KEY_MENTION_RE = /\b(gate|chore)\.([A-Za-z0-9-]+)\.([A-Za-z0-9]+)/g;
 
 export function checkKeyspace(root, gates) {
