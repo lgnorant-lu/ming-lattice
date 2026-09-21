@@ -86,12 +86,16 @@ export function loadHookEngineConfig(root) {
  * （editorconfig 序：后写节覆盖先写节；local 节天然排在主文件节之后）
  */
 export function resolveGateConfigFor(cfg, gateId, file) {
-  const out = { ...(cfg.gates[gateId] ?? {}) };
+  // chore 门 id 带 'chore:' 前缀——归一化到 cfg.chores[bare] + chore.X 节键
+  const isChore = gateId.startsWith('chore:');
+  const bare = isChore ? gateId.slice(6) : gateId;
+  const out = { ...((isChore ? cfg.chores : cfg.gates)[bare] ?? {}) };
+  const prefix = isChore ? 'chore' : 'gate';
   for (const sec of cfg.sections ?? []) {
     if (!matchAnyGlobs(file, [sec.glob])) continue;
     for (const [k, v] of Object.entries(sec.entries)) {
-      const m = k.match(/^gate\.([^.]+)\.(.+)$/);
-      if (m && m[1] === gateId) out[m[2]] = v;
+      const m = k.match(/^([a-z]+)\.([^.]+)\.(.+)$/);
+      if (m && m[1] === prefix && m[2] === bare) out[m[3]] = v;
     }
   }
   return out;
@@ -102,7 +106,10 @@ export function resolveGateConfigFor(cfg, gateId, file) {
  * SKIP 环境变量：跳过非 required 门（返回 'off' 语义由调用方处理）
  */
 export function resolveLevel(id, defaultLevel, cfg) {
-  const direct = cfg.gates[id]?.level;
+  // chore 门 id 带 'chore:' 前缀——配置在 cfg.chores[bare]
+  const isChore = id.startsWith('chore:');
+  const bare = isChore ? id.slice(6) : id;
+  const direct = (isChore ? cfg.chores : cfg.gates)[bare]?.level;
   if (direct && LEVELS.includes(direct)) return direct;
   for (const [legacyKey, gateId] of Object.entries(LEGACY_ALIASES)) {
     if (gateId === id && cfg.flat[legacyKey] !== undefined) {

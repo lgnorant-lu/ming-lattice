@@ -174,8 +174,11 @@ async function runStage(stage, opts = {}) {
     for (const g of list) {
       const level = resolveLevel(g.id, g.defaultLevel ?? 'warn', cfg);
       if (level === 'off') continue;
+      // chore 门 id 带 'chore:' 前缀——配置桶与裸键归一化（level/cadence/gateConfig 同口径）
+      const bareId = g.chore ? g.id.slice(6) : g.id;
+      const cfgBucket = g.chore ? (cfg.chores ?? {}) : cfg.gates;
       // cadence 节流（周期维度：<n>d|h|m|s，state.json lastRun 盖戳；非法值告警并按每次跑处理）
-      const cadenceRaw = cfg.gates[g.id]?.cadence ?? cfg.chores[g.id]?.cadence;
+      const cadenceRaw = cfgBucket[bareId]?.cadence;
       let cadenceMs = null;
       if (cadenceRaw !== undefined) {
         cadenceMs = parseCadence(cadenceRaw);
@@ -186,7 +189,7 @@ async function runStage(stage, opts = {}) {
           continue;
         }
       }
-      if (skip.has(g.id) && level !== 'required') {
+      if ((skip.has(g.id) || skip.has(bareId)) && level !== 'required') {
         console.log(`[engine] SKIP 豁免: ${g.id}`);
         continue;
       }
@@ -194,7 +197,7 @@ async function runStage(stage, opts = {}) {
         console.log(`[engine] skipIf 命中跳过: ${g.id}`);
         continue;
       }
-      ctx.gateConfig = cfg.gates[g.id] ?? {};
+      ctx.gateConfig = cfgBucket[bareId] ?? {};
       // 分节解析：gateConfig 维持全局视图（旧门零改动）；gateConfigFor(file) 按 [glob] 节链解析
       ctx.gateConfigFor = f => resolveGateConfigFor(cfg, g.id, f);
       // 配置覆盖：gate.X.globs 整体替换感兴趣域；gate.X.exclude 在门默认排除上追加

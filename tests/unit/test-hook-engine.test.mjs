@@ -734,5 +734,62 @@ export async function run() {
     } finally { fs.rmSync(adir, { recursive: true, force: true }); }
   }
 
-  console.log('  -> hook-engine: 17 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度/键空间对账/post-checkout/采纳元数据）');
+  // 18. 消融审计修复回测：chore: 前缀归一化（level/cadence/gateConfigFor）+ decl 键面完整
+  {
+    const { checkKeyspace } = await import('../../scripts/hooks/lib/integrity.mjs');
+    const { resolveGateConfigFor } = await import('../../scripts/hooks/lib/config.mjs');
+    // resolveLevel：chore.deps.level=off 生效（修复前死键——id 'chore:deps' 查 cfg.gates 落空）
+    const lc = { gates: {}, chores: { deps: { level: 'off' } }, flat: {}, sections: [] };
+    assert.equal(resolveLevel('chore:deps', 'warn', lc), 'off', 'chore.level 归一化生效');
+    assert.equal(resolveLevel('chore:other', 'warn', lc), 'warn', '未配走默认');
+    // resolveGateConfigFor：chore 桶 + chore.X 节键
+    const sc = { gates: {}, chores: { deps: { cadence: '7d', watch: 'x' } },
+      sections: [{ glob: 'docs/**', entries: { 'chore.deps.cadence': '1d' } }] };
+    assert.equal(resolveGateConfigFor(sc, 'chore:deps', 'docs/a.md').cadence, '1d', '节内 chore 键覆盖');
+    assert.equal(resolveGateConfigFor(sc, 'chore:deps', 'src/a.md').cadence, '7d', '节外全局值');
+
+    // checkKeyspace：decl stages/skipIf 合法（修复前误报）；chore.stages 合法
+    const kdir = fs.mkdtempSync(path.join(os.tmpdir(), 'ming-keys2-'));
+    try {
+      fs.writeFileSync(path.join(kdir, '.hooksrc'),
+        'gate.d.stages=post-merge\ngate.d.skipIf=merge\nchore.c.stages=post-checkout\n');
+      assert.deepEqual(checkKeyspace(kdir, []), [], 'decl stages/skipIf + chore.stages 合法不误报');
+    } finally { fs.rmSync(kdir, { recursive: true, force: true }); }
+
+    // e2e：chore cadence 真实生效 + chore.level=off 关闭 + SKIP 裸 id
+    const edir = tempRepo();
+    try {
+      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(edir, 'scripts/hooks'), { recursive: true });
+      fs.writeFileSync(path.join(edir, '.hooksrc'), [
+        'lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off',
+        'gate.impact-test.level=off', 'gate.review-after.level=off',
+        'chore.c.watch=t.txt', 'chore.c.stages=pre-commit', 'chore.c.cadence=2s', 'chore.c.message=提醒件',
+      ].join('\n'));
+      fs.writeFileSync(path.join(edir, 't.txt'), 'x\n');
+      execFileSync('git', ['add', '.'], { cwd: edir });
+      const engine = path.join(edir, 'scripts/hooks/engine.mjs');
+      const pc = (env = {}) => spawnSync(process.execPath, [engine, 'pre-commit'], { cwd: edir, encoding: 'utf8', env: { ...process.env, ...env } });
+
+      let r = pc();
+      assert.ok((r.stdout + r.stderr).includes('提醒件'), `chore 首跑应提醒: ${r.stdout}${r.stderr}`);
+      const sf = path.join(edir, '.git/hook-engine-state.json');
+      assert.ok(JSON.parse(fs.readFileSync(sf, 'utf8')).lastRun['chore:c'], 'chore 盖戳键=bare 前缀 id');
+
+      r = pc();
+      assert.ok((r.stdout + r.stderr).includes('cadence 未到跳过: chore:c'), 'chore cadence 节流生效（修复前死键）');
+
+      // SKIP 裸 id（不带 chore: 前缀）也豁免
+      const st = JSON.parse(fs.readFileSync(sf, 'utf8')); st.lastRun = {}; fs.writeFileSync(sf, JSON.stringify(st));
+      r = pc({ SKIP: 'c' });
+      assert.ok((r.stdout + r.stderr).includes('SKIP 豁免: chore:c'), 'SKIP 裸 id 豁免 chore');
+
+      // chore.level=off 关闭（修复前死键——warn 恒提醒）
+      fs.writeFileSync(path.join(edir, '.hooksrc'),
+        fs.readFileSync(path.join(edir, '.hooksrc'), 'utf8') + '\nchore.c.level=off\n');
+      r = pc();
+      assert.ok(!(r.stdout + r.stderr).includes('提醒件'), 'chore.level=off 应静默');
+    } finally { fs.rmSync(edir, { recursive: true, force: true }); }
+  }
+
+  console.log('  -> hook-engine: 18 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度/键空间对账/post-checkout/采纳元数据/消融修复）');
 }

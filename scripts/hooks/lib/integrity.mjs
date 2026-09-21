@@ -118,7 +118,7 @@ export function orphanGateIds(cfgGates, gateIds) {
 // 对偶：孤儿键查"配置指向不存在的门"，本检查查"文档/配置指向不存在的键"——
 // 顺带覆盖 .hooksrc 拼错键静默失效（gate.toc.dept=3 无声不生效）。
 const UNIVERSAL_KEYS = new Set(['level', 'globs', 'exclude', 'cadence']);
-const DECL_KEYS = new Set(['pattern', 'message', 'once']);
+const DECL_KEYS = new Set(['pattern', 'message', 'once', 'stages', 'skipIf']);
 const CHORE_KEYS = new Set(['watch', 'message', 'once', 'stages']);
 const KEY_MENTION_RE = /\b(gate|chore)\.([A-Za-z0-9-]+)\.([A-Za-z0-9]+)/g;
 
