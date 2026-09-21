@@ -7,8 +7,8 @@ status: descriptive
 # SKILL-INDEX — 全部 skill 精要索引（路由参考）
 
 > 用途：第一层路由参考——AI/用户在任务开始时按此表选 skill。description 才是外层触发依据（Claude Code 按 frontmatter description 惰性加载）；本表是人工可读的精要版。
-> 生成：2026-08-18 · 覆盖：基座 20 部署模块 + 垂直 94 参考 + 私有 32
-> 后续增补：2026-09-16 指纹专项（vertical fingerprintjs/ja4/creepjs + private antibot-fingerprint-paradigm/arch-core-paradigm）
+> 生成：2026-08-18 · 覆盖：基座 20 部署模块 + 垂直 96 参考 + 私有 32
+> 后续增补：2026-09-16 指纹专项（vertical fingerprintjs/ja4/creepjs + private antibot-fingerprint-paradigm/arch-core-paradigm）；2026-09-21 社区 Agent Skill 轮（vertical apk-reverse-community/birdview）
 > 后续增补：2026-09-18 工程元规范族小节补全（engineering/* 10 包）+ ming-skills-router + config-core-paradigm 登记
 > 后续增补：2026-09-21 MCP 工具链与 Frida 生态小节补登（18 个 2026-08-18 采集项漏登记）· 契约门禁 scripts/check-skill-index.mjs 落地
 
@@ -37,7 +37,7 @@ status: descriptive
 | macos-reverse | macOS/Mach-O 逆向 | macos/mach-o/objective-c/swift | macOS 或跨平台工具 |
 | supply-chain-security | 供应链安全（SBOM/SCA/CI-CD） | 供应链/sbom/sca/依赖投毒 | 按需 |
 
-## 二、垂直参考（94 个, vendored）
+## 二、垂直参考（96 个, vendored）
 
 ### JS / Web 逆向（9）
 
@@ -195,6 +195,13 @@ status: descriptive
 | frida-mcp-skills | frida-mcp 配套操作 skill（Frida 17 安全使用 + 脚本生命周期卫生） | reference | frida-mcp |
 | frida-gadget-helper | 傻瓜式 gadget 注入（含预编译 libgadget-rusda.so 25M + xfinjectd + PDF 教程） | reference | Android 设备 |
 | rusda | Frida patch（魔改 server/gadget, 开源版） | reference | Android |
+
+### 社区 Agent Skill 采集（2026-09-21, LINUX DO 推广帖）
+
+| 仓库 | 一句话定位 | 筛选结论 | 前置依赖 |
+|---|---|---|---|
+| apk-reverse-community | 社区爆红 APK 逆向 Agent Skill（528★/2天；gate/rule 驱动工艺：R1-R4 覆写规则+G1-G4 门+症状索引+两振规则+done 六条+doctor.py；30 scripts+tool-verification 判词档） | reference（与基座 apk-reverse 同名不同物——限定名；deployable 包装候审） | jadx/apktool/Frida/adb |
+| birdview | 证据链架构图+约束图工具（559★；L1 数据契约+L2 TS 渲染+L3 协作方法：modes 激活/displayed-plan 确认门/map revision 绑 git SHA） | reference（架构与约束主题参考；真仓试用候审） | Node |
 
 ## 二点五、三方向专项采集（2026-08-18, 三份调研报告决策）
 

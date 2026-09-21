@@ -1227,6 +1227,32 @@ vertical:
     checkCache:
       lastCheckedAt: 2026-09-16
       lastRemoteHead: 10aa672
+
+  # ── 社区 Agent Skill 采集轮 2026-09-21(LINUX DO 推广帖) ──────────────
+  - name: apk-reverse-community
+    repo: https://github.com/newliver666/apk-reverse.git
+    path: vertical/apk-reverse-community
+    pin: bea9955
+    acquiredAt: 2026-09-21
+    enabled: true
+    domain: apk
+    note: 社区爆红 Agent Skill(528★/2天)——gate/rule 驱动工艺(R1-R4 覆写规则+G1-G4 门+症状索引+两振规则+done 六条)+30 scripts+tool-verification 判词档;与基座 apk-reverse(tool-index 驱动)互补不重复;skills/apk-reverse 为包根
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-09-21
+      lastRemoteHead: bea9955
+  - name: birdview
+    repo: https://github.com/Qiuner/birdview.git
+    path: vertical/birdview
+    pin: d9e9da0
+    acquiredAt: 2026-09-21
+    enabled: true
+    domain: misc
+    note: 证据链架构图+约束图工具(559★)——L1 数据契约(architecture.schema)+L2 TS 渲染+L3 协作方法(modes/确认门/map revision 绑 git SHA);managed-block 安装=节内嵌带同构;架构与约束主题参考件
+    deploy: {}
+    checkCache:
+      lastCheckedAt: 2026-09-21
+      lastRemoteHead: d9e9da0
 deployable:
   # 部署包装层 (SKILL.md 改写件: 改名/描述精要/路径修复), 内容 symlink 指向 vertical 源
   - name: hello-js-reverse
