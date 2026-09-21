@@ -133,19 +133,14 @@ foreach ($sectionName in @('base', 'vertical')) {
 }
 
 # 缓存回写 registry 文件（updatePolicy 之外仅更新 checkCache 段）
+# 回写 registry: 用 [regex]::Match（Select-String 逐行, 不支持跨行块匹配）
+$opt = [System.Text.RegularExpressions.RegexOptions]::Singleline
 $regText = Get-Content $RegistryPath -Raw
 foreach ($item in @($reg.base) + @($reg.vertical)) {
     if ($null -eq $item.checkCache) { continue }
-    if ($item.checkCache.lastRemoteHead -eq $item.pin) {
-        # pin 未变时无需回写（缓存值 == pin, 下次读取时新鲜度由日期判断）
-    }
-}
-# 回写 registry: 用 [regex]::Match（Select-String 逐行, 不支持跨行块匹配）
-$opt = [System.Text.RegularExpressions.RegexOptions]::Singleline
-foreach ($item in @($reg.base) + @($reg.vertical)) {
-    if ($null -eq $item.checkCache) { continue }
     # 块边界: 下一个 "- name:" 条目行 / 非缩进行(段结束) / 文本尾 —— 不能用 ^\S(段内都是缩进行会吞整段)
-    $re = "(?m)^(\s+-\s+name: " + [regex]::Escape($item.name) + ".*?)(?=\n\s+-\s+name:|\n\S|\z)"
+    # 名边界: 名后必须行尾（允许尾空白+注释）——否则前缀名(foo)会劫持更早出现的长名(foo-extended)块
+    $re = "(?m)^(\s+-\s+name: " + [regex]::Escape($item.name) + "(?=[^\S\n]*(?:#[^\n]*)?$).*?)(?=\n\s+-\s+name:|\n\S|\z)"
     $m = [regex]::Match($regText, $re, $opt)
     if (-not $m.Success) { continue }
     $block = $m.Groups[1].Value

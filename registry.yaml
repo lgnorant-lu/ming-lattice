@@ -11,7 +11,7 @@
 # 字段说明:
 #   targets     : 目标客户端部署根目录（key = 客户端名, value = 目录绝对路径）
 #   updatePolicy: { ttlDays: 缓存有效天数, fetchMode: 元数据拉取模式 }
-#   base        : 基座（submodule 跟踪 upstream, 按模块部署）; pin = tag
+#   base        : 基座（submodule 跟踪 upstream, 按模块部署）; pin = commit SHA
 #   vertical    : 垂直参考（vendored, 保留 .git）; pin = upstream commit(短 hash)
 #     domain    : 资产域（合法值域见下方 domains: 登记表——新值先入表再使用）
 #     deploy    : 部署映射 { 客户端: bool }（空 = 仅参考不部署）

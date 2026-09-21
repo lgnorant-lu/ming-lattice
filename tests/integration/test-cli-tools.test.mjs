@@ -55,6 +55,7 @@ async function runScenario(scenario) {
     fs.writeFileSync(path.join(source, 'references/rules.md'), 'fixture-rule\n');
     const entry = '  - name: sample-skill\n    path: private/sample-skill\n    enabled: true\n    deploy:\n      test: true\n';
     let body = `schemaVersion: "1.1"\ntargets:\n  test: "${target}"\nprivate:\n${entry}`;
+    let remoteHead = '';
     if (scenario === 'duplicate-name') body += entry;
     if (scenario === 'cross-section-duplicate') body += `vertical:\n  - name: sample-skill\n    path: private/sample-skill\n    repo: https://example.invalid/repo.git\n    pin: abc1234\n    enabled: true\n    deploy:\n      test: true\n`;
     if (scenario === 'duplicate-key') body = body.replace('    enabled: true', '    enabled: false\n    enabled: true');
@@ -68,6 +69,22 @@ async function runScenario(scenario) {
     if (scenario === 'empty-description') fs.writeFileSync(path.join(source, 'SKILL.md'), '---\nname: sample-skill\ndescription: ""\n---\n');
     if (scenario === 'update-dry-run') {
       body += 'vertical:\n  - name: example\n    path: vertical/example\n    repo: https://example.invalid/repo.git\n    pin: abc1234\n    enabled: true\n    deploy: {}\n';
+    }
+    if (scenario === 'update-writeback') {
+      // 本机 git 仓当远端：fetch 路径真实走通但零网络
+      const remote = path.join(temp, 'remote-src');
+      fs.mkdirSync(remote);
+      await spawnAsync('git', ['init', '-b', 'main', '-q'], { cwd: remote });
+      await spawnAsync('git', ['-C', remote, 'config', 'user.email', 't@t']);
+      await spawnAsync('git', ['-C', remote, 'config', 'user.name', 't']);
+      fs.writeFileSync(path.join(remote, 'f.txt'), 'fixture\n');
+      await spawnAsync('git', ['-C', remote, 'add', '-A']);
+      await spawnAsync('git', ['-C', remote, 'commit', '-qm', 'init']);
+      remoteHead = (await spawnAsync('git', ['-C', remote, 'rev-parse', '--short', 'HEAD'])).stdout.trim();
+      fs.mkdirSync(path.join(root, 'vertical'), { recursive: true });
+      await spawnAsync('git', ['clone', '-q', remote, path.join(root, 'vertical', 'foo')]);
+      // 长名条目先于短名条目——前缀名 foo 的回写不得劫持 foo-extended 的块
+      body += `vertical:\n  - name: foo-extended\n    path: vertical/foo-extended\n    repo: ${remote}\n    pin: abc1234\n    enabled: true\n    deploy: {}\n  - name: foo\n    path: vertical/foo\n    repo: ${remote}\n    pin: abc1234\n    enabled: true\n    deploy: {}\n`;
     }
     const registry = path.join(root, 'registry.yaml');
     fs.writeFileSync(registry, body);
@@ -115,6 +132,20 @@ async function runScenario(scenario) {
       assert.match(result.stdout, /NOT_CHECKED/);
       assert.doesNotMatch(result.stdout, /\[OK\]/);
       assert.deepEqual(tree(root), before);
+    } else if (scenario === 'update-writeback') {
+      const result = await invoke('update.ps1', '-Force');
+      assert.equal(result.status, 0, result.stderr);
+      const text = fs.readFileSync(registry, 'utf8');
+      // foo 自身块必须带 checkCache——前缀名(foo)回写不得劫持更早出现的长名(foo-extended)块
+      const fooBlock = text.match(/ {2}- name: foo\n[\s\S]*?(?=\n {2}- name:|\n\S|$)/);
+      const extBlock = text.match(/ {2}- name: foo-extended\n[\s\S]*?(?=\n {2}- name:|\n\S|$)/);
+      assert.ok(extBlock && fooBlock, 'vertical entry blocks parseable');
+      assert.match(extBlock[0], new RegExp(`lastRemoteHead: ${remoteHead}`), 'foo-extended keeps its own cache');
+      assert.match(fooBlock[0], new RegExp(`lastRemoteHead: ${remoteHead}`), 'foo gets its own cache');
+      // 二次运行: foo 有 .git 且 remote==local → cache 命中路径零网络
+      const second = await invoke('update.ps1');
+      assert.equal(second.status, 0, second.stderr);
+      assert.match(second.stdout, /foo \[cache\]/);
     } else {
       const lint = await invoke('lint.ps1', '-Json');
       if (scenario !== 'disabled') {
@@ -139,7 +170,7 @@ export async function run() {
     'dry-run', 'deploy', 'missing', 'duplicate-name',
     'cross-section-duplicate', 'duplicate-key', 'unknown-client',
     'disabled', 'name-mismatch', 'empty-description',
-    'update-dry-run', 'preserve-wrapper', 'unknown-wrapper',
+    'update-dry-run', 'update-writeback', 'preserve-wrapper', 'unknown-wrapper',
     'missing-wrapper-source', 'missing-special-source'
   ];
 
