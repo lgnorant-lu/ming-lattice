@@ -161,6 +161,20 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - verify-cache strict 模式——纯诊断永 exit 0，等 CI 化/门化需求
 - update.ps1 余项——TOCTOU 回写覆盖、main\|master 分支限定、DETECT-FAIL 与 sourceGone 同桶、shallow 边界 log 缺失，均等痛点实例
 
+**候审（2026-09-22 设计迭代轮新增，详情见 _proposals/2026-09-22-explore-converge-loop-paradigm.md 及会话设计链）**：
+
+- route-observer Stage-0 纯观测 spike——stdin->decide->append 三段薄壳；`.sessions/` 会话态已消融砍掉（session_seq 离线可导出，状态文件只服务 Stage-1 实时决策）；`.logs/route-observed.jsonl` schema 含 v命名空间/transcript指针/elapsed_ms
+- route-table 生成器——DOMAIN_DEFS->AGENTS.md 常驻区投影，复用生成+check 门纪律；description<->trigger parity lint 同源
+- Stage-1 advisory——冷却/会话上限/歧义自检措辞已设计，须台账数据先证价值再开工
+- 任务级上下文清单——file+reason jsonl 声明式（借 Trellis implement.jsonl 实证模式），替代"task 轴信号检测"原思路
+- docs-architecture 范式提案——轴语法(受众x阶段x问题)+槽位绑定(managed_by 托管态)+档位=覆盖矩形+pack 机制+llms.txt 双投影；素材齐待写
+- ming-l 增补提案——三属性轴(persistence/delivery/maturity)+对偶生长律+通道定律；须先过第二次异质实例压测（候选 BMAD-Speckit-SDD-Flow）
+- .logs/ 账本治理——每个 jsonl 台账需声明行（schema/消费方/留存），入本表 §9
+- 多 hook 组合面——UserPromptSubmit 多 hook 的顺序/延迟叠加/stdout 拼接语义未勘查
+- 框架反馈环——使用侧信号回流维护侧（observer 模式泛化；human 侧=-Force/改史采集；agent 侧=transcript 对账）
+- 管控层治理矩阵——工件类xinventory/policy/telemetry/actuation 四职能，先手维护表起步
+- L 中枢串联——主轴框架间插件式互联，明确过早仅留槽
+
 **已删（消融结论，防复建）**：
 
 - 引用模型三件套（install/uninstall/doctor）——install-hooks.ps1 已是完整生命周期，拷贝模型重跑即更新
