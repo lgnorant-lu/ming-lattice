@@ -124,10 +124,16 @@ export function run() {
     assert.equal(rec8.hint, '看看 协议');
     assert.equal(rec8.src, 'claude-hook');
 
-    // 9) src 标识可换宿主
+    // 9) src 标识可换宿主（env 与 --src 双通道；--src 缺值不致命）
     const run9 = spawnObserver({ input: JSON.stringify(payload), env: { ...logEnv, MING_SKILLS_OBSERVE_SRC: 'other-hook' } });
     assert.equal(run9.status, 0);
     assert.equal(readLedger(log).at(-1).src, 'other-hook');
+    const run9b = spawnObserver({ input: JSON.stringify(payload), args: ['--src', 'devin-hook'], env: logEnv });
+    assert.equal(run9b.status, 0);
+    assert.equal(readLedger(log).at(-1).src, 'devin-hook');
+    const run9c = spawnObserver({ input: JSON.stringify(payload), args: ['--src'], env: logEnv });
+    assert.equal(run9c.status, 0);
+    assert.equal(readLedger(log).at(-1).src, 'claude-hook', 'missing --src value keeps default');
 
     console.log('  -> stdout-empty, exit-0, full-decision, truncation, rotation and adapter checks passed');
   } finally {

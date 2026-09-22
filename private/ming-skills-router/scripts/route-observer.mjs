@@ -8,6 +8,9 @@
 // 挂法（Claude Code settings.json）：
 //   "hooks": { "UserPromptSubmit": [{ "hooks": [{ "type": "command",
 //     "command": "node D:/dogepy/skills-collection/scripts/route-observer.mjs" }] }] }
+// 挂法（Devin CLI .devin/hooks.v1.json）：
+//   { "UserPromptSubmit": [{ "matcher": "", "hooks": [{ "type": "command",
+//     "command": "node D:/dogepy/skills-collection/scripts/route-observer.mjs --src devin-hook" }] }] }
 // 其他宿主：同形 stdin JSON 即可，字段提取是宽容多名的（见 FIELD_CANDIDATES）。
 //
 // 配置：MING_SKILLS_OBSERVE_LOG=<path|off>（默认 <repoRoot>/.logs/route-observed.jsonl）
@@ -84,14 +87,26 @@ function readStdin() {
 export async function runObserverCli(args = process.argv.slice(2)) {
   const startedAt = process.hrtime.bigint();
   const elapsedMs = () => Number(process.hrtime.bigint() - startedAt) / 1e6;
-  const src = process.env.MING_SKILLS_OBSERVE_SRC || 'claude-hook';
+  let src = process.env.MING_SKILLS_OBSERVE_SRC || 'claude-hook';
   const logFile = process.env.MING_SKILLS_OBSERVE_LOG ?? DEFAULT_LOG;
   if (logFile === 'off') return 0;
+  const positionals = [];
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index];
+    if (arg === '--src') {
+      // 缺值不致命：保持默认 src，observer 永不为参数问题非零退出
+      if (args[index + 1] && !args[index + 1].startsWith('--')) src = args[++index];
+    } else if (arg.startsWith('--src=')) {
+      src = arg.slice('--src='.length) || src;
+    } else {
+      positionals.push(arg);
+    }
+  }
 
   const record = baseRecord(src);
   try {
     let raw = await readStdin();
-    if (!raw && args.length) raw = JSON.stringify({ prompt: args.join(' ') }); // 手动冒烟入口
+    if (!raw && positionals.length) raw = JSON.stringify({ prompt: positionals.join(' ') }); // 手动冒烟入口
     if (!raw.trim()) {
       record.error = 'empty_stdin';
     } else {
