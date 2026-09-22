@@ -155,6 +155,11 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - deploy-drift chore 门——registry deploy 声明 vs .cc-switch 实际 symlink 的对账，等手动删链/换机漂移实例（sync -DryRun 现可手动显影）
 - unsuffixed-name 的 layer 歧义——name 后缀=类型面与 layer=领域面分位后，无后缀名的 layer 取值靠人判断，等真实歧义例
 - registry 治理段拆分——layers/domains/candidates 与资产条目同文件，增长至对账成本显著时考虑分离
+- lint 反向孤儿检测——现仅 registry→fs 单向（孤儿 deployable 目录、build-deployable `$map` 多余键不可见），等真实孤儿实例
+- emit-operational-event 静默死——五调用点全吞 stderr（telemetry 不阻塞业务是取舍），等 observability 消费方要可诊断性
+- sync void-junction 负路径——穿透验证机制在，虚空链接负例断言未建
+- verify-cache strict 模式——纯诊断永 exit 0，等 CI 化/门化需求
+- update.ps1 余项——TOCTOU 回写覆盖、main\|master 分支限定、DETECT-FAIL 与 sourceGone 同桶、shallow 边界 log 缺失，均等痛点实例
 
 **已删（消融结论，防复建）**：
 
@@ -164,6 +169,7 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - `store.gates` 采纳键——`.hooksrc` level≠off 即采纳
 - TOC 标记对/所有权印记/frontmatter 文档内联配置
 - CODEOWNERS 类 path→owner 映射
+- `scripts/fix-pins.ps1`、`register-candidates.ps1`、`register-ruyi.ps1`——一次性迁移脚本滞留成活雷（绝对路径硬编码；register-ruyi 仍写已废 `domain: ruyi/web`，重跑即犯词表门；fix-pins 重跑换错名）。消融零依赖，git 史可回溯
 
 ## 12. 本文档边界
 

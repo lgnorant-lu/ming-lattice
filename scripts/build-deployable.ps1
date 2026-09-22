@@ -110,4 +110,5 @@ elseif ($Module -contains 'malware-ioc-extraction') {
     throw 'missing_deployable_source: malware-ioc-extraction'
 }
 
-Write-Host "`ndeployable 构建完成: $((Get-ChildItem $dep -Directory).Count) 个条目"
+$depCount = (Test-Path $dep) ? @(Get-ChildItem $dep -Directory).Count : 0
+Write-Host "`ndeployable 构建完成: $depCount 个条目"

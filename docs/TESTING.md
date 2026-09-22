@@ -42,7 +42,7 @@ node scripts/verify.mjs --profile <quick|affected|full|release>
 | Lint 契约 | 验证 lint.ps1 文本模式、-Json 模式及 lint.checked 结构化运行事件断言 |
 | Hook 影响面计划器 | 显式路径规则、未知路径 fail-closed、任务并集、单调性保证及 pre-push ref 解析 |
 | YAML/registry | 标量、列表和真实 registry 可解析；隔离集成另验证重复键及部署结构 |
-| CLI 隔离集成 | 临时仓库中真实部署内容、DryRun 状态不变、无效配置拒绝、包装重建不覆盖正文（有界并发池调度） |
+| CLI 隔离集成 | 临时仓库中真实部署内容、DryRun/WhatIf 状态不变、无效配置拒绝、包装重建不覆盖正文且排除 vendored .git、checkCache 回写与 TTL 过期、外仓 hooks 脚手架守卫（有界并发池调度） |
 | Hook 暂存区集成 | 临时 Git 仓库的 staged/unstaged 分离、工作文件已删、Unicode 和空格路径；不提交 |
 | Hook 引擎单测 | INI 归组与 .local 覆盖、旧键别名、matcher glob 语义、声明式门构建、baseline 冻结/新增判别、SKIP/required 等级、端到端退出码契约 |
 | Manifest 新鲜度 | `--check` 比较两份清单，忽略生成时间；只读，不自动修复 |

@@ -86,6 +86,22 @@ async function runScenario(scenario) {
       // 长名条目先于短名条目——前缀名 foo 的回写不得劫持 foo-extended 的块
       body += `vertical:\n  - name: foo-extended\n    path: vertical/foo-extended\n    repo: ${remote}\n    pin: abc1234\n    enabled: true\n    deploy: {}\n  - name: foo\n    path: vertical/foo\n    repo: ${remote}\n    pin: abc1234\n    enabled: true\n    deploy: {}\n`;
     }
+    if (scenario === 'update-ttl-expiry') {
+      // 过期缓存须走 fetch 而非命中——lastRemoteHead 与本地一致，仅日期陈旧，
+      // 隔离 TTL 为唯一过期触发因子
+      const remote = path.join(temp, 'remote-src');
+      fs.mkdirSync(remote);
+      await spawnAsync('git', ['init', '-b', 'main', '-q'], { cwd: remote });
+      await spawnAsync('git', ['-C', remote, 'config', 'user.email', 't@t']);
+      await spawnAsync('git', ['-C', remote, 'config', 'user.name', 't']);
+      fs.writeFileSync(path.join(remote, 'f.txt'), 'fixture\n');
+      await spawnAsync('git', ['-C', remote, 'add', '-A']);
+      await spawnAsync('git', ['-C', remote, 'commit', '-qm', 'init']);
+      remoteHead = (await spawnAsync('git', ['-C', remote, 'rev-parse', '--short', 'HEAD'])).stdout.trim();
+      fs.mkdirSync(path.join(root, 'vertical'), { recursive: true });
+      await spawnAsync('git', ['-C', remote, 'clone', '-q', '.', path.join(root, 'vertical', 'foo')]);
+      body += `vertical:\n  - name: foo\n    path: vertical/foo\n    repo: ${remote}\n    pin: abc1234\n    enabled: true\n    deploy: {}\n    checkCache:\n      lastCheckedAt: 2020-01-01\n      lastRemoteHead: ${remoteHead}\n`;
+    }
     const registry = path.join(root, 'registry.yaml');
     fs.writeFileSync(registry, body);
     const invoke = (script, ...args) => spawnAsync('pwsh', ['-NoProfile', '-File', path.join(project, 'scripts', script),
@@ -101,9 +117,11 @@ async function runScenario(scenario) {
       const upstream = path.join(root, 'vertical/hello-js-reverse-skill');
       const wrapper = path.join(root, 'deployable/hello-js-reverse');
       fs.mkdirSync(path.join(upstream, 'scripts'), { recursive: true });
+      fs.mkdirSync(path.join(upstream, '.git'), { recursive: true });
       fs.mkdirSync(wrapper, { recursive: true });
       fs.writeFileSync(path.join(upstream, 'SKILL.md'), 'upstream-original');
       fs.writeFileSync(path.join(upstream, 'scripts/tool.js'), 'upstream-resource');
+      fs.writeFileSync(path.join(upstream, '.git/HEAD'), 'ref: refs/heads/main\n');
       fs.writeFileSync(path.join(wrapper, 'SKILL.md'), 'locally-reviewed-wrapper');
       const original = tree(upstream);
       for (let repeat = 0; repeat < 2; repeat++) {
@@ -112,6 +130,8 @@ async function runScenario(scenario) {
         assert.equal(result.status, 0, result.stderr);
         assert.equal(fs.readFileSync(path.join(wrapper, 'SKILL.md'), 'utf8'), 'locally-reviewed-wrapper');
         assert.equal(fs.readFileSync(path.join(wrapper, 'scripts/tool.js'), 'utf8'), 'upstream-resource');
+        assert.ok(fs.lstatSync(path.join(wrapper, 'scripts')).isSymbolicLink(), 'wrapper links upstream entries');
+        assert.ok(!fs.existsSync(path.join(wrapper, '.git')), 'vendored .git must never reach deployable');
         assert.deepEqual(tree(upstream), original);
       }
     } else if (scenario === 'dry-run' || scenario === 'deploy') {
@@ -146,6 +166,63 @@ async function runScenario(scenario) {
       const second = await invoke('update.ps1');
       assert.equal(second.status, 0, second.stderr);
       assert.match(second.stdout, /foo \[cache\]/);
+    } else if (scenario === 'update-ttl-expiry') {
+      // 不带 -Force：checkCache 日期陈旧 → 仍须走 fetch 并回写
+      const result = await invoke('update.ps1');
+      assert.equal(result.status, 0, result.stderr);
+      assert.match(result.stdout, /\[OK\] foo \[fetch\]/, 'stale checkCache must bypass fast path');
+      assert.doesNotMatch(result.stdout, /foo \[cache\]/);
+      const text = fs.readFileSync(registry, 'utf8');
+      const fooBlock = text.match(/ {2}- name: foo\n[\s\S]*?(?=\n {2}- name:|\n\S|$)/);
+      assert.ok(fooBlock);
+      assert.doesNotMatch(fooBlock[0], /lastCheckedAt: 2020-01-01/, 'stale checkCache must be rewritten');
+      assert.match(fooBlock[0], new RegExp(`lastRemoteHead: ${remoteHead}`));
+    } else if (scenario === 'build-whatif') {
+      const upstream = path.join(root, 'vertical/hello-js-reverse-skill');
+      fs.mkdirSync(path.join(upstream, 'scripts'), { recursive: true });
+      fs.writeFileSync(path.join(upstream, 'SKILL.md'), 'upstream-skill');
+      fs.writeFileSync(path.join(upstream, 'scripts/tool.js'), 'x');
+      const beforeWhatIf = tree(root);
+      const result = await spawnAsync('pwsh', ['-NoProfile', '-File', path.join(project, 'scripts/build-deployable.ps1'),
+        '-RepoRoot', root, '-Module', 'hello-js-reverse', '-WhatIf'], { timeout: 30000 });
+      assert.equal(result.status, 0, result.stderr);
+      assert.deepEqual(tree(root), beforeWhatIf, '-WhatIf must not create deployable/ or links');
+    } else if (scenario === 'install-hooks-whatif' || scenario === 'install-hooks-guard') {
+      // 外仓脚手架：目标为独立 git 仓——隔离验证对外变异边界
+      const foreign = path.join(root, 'foreign-repo');
+      fs.mkdirSync(foreign, { recursive: true });
+      await spawnAsync('git', ['init', '-q', foreign]);
+      await spawnAsync('git', ['-C', foreign, 'config', 'user.email', 't@t']);
+      await spawnAsync('git', ['-C', foreign, 'config', 'user.name', 't']);
+      const installer = path.join(project, 'scripts/install-hooks.ps1');
+      if (scenario === 'install-hooks-whatif') {
+        const beforeForeign = tree(foreign);
+        const result = await spawnAsync('pwsh', ['-NoProfile', '-File', installer, '-Target', foreign, '-WhatIf'], { timeout: 30000 });
+        assert.equal(result.status, 0, result.stderr);
+        assert.deepEqual(tree(foreign), beforeForeign, '-WhatIf must leave foreign repo untouched');
+        const hp = await spawnAsync('git', ['-C', foreign, 'config', 'core.hooksPath']);
+        assert.notEqual(hp.stdout.trim(), '.githooks', '-WhatIf must not set core.hooksPath');
+      } else {
+        // 既有 hooksPath → 拒绝（防顶换旧体系）； -Force → 放行但不删旧件
+        fs.mkdirSync(path.join(foreign, 'legacy-hooks'));
+        fs.writeFileSync(path.join(foreign, 'legacy-hooks/pre-commit'), '#!/bin/sh\nexit 0\n');
+        await spawnAsync('git', ['-C', foreign, 'config', 'core.hooksPath', 'legacy-hooks']);
+        const denied = await spawnAsync('pwsh', ['-NoProfile', '-File', installer, '-Target', foreign], { timeout: 30000 });
+        assert.notEqual(denied.status, 0, 'foreign hooksPath must refuse without -Force');
+        assert.match(denied.stderr + denied.stdout, /hooksPath/);
+        const ok = await spawnAsync('pwsh', ['-NoProfile', '-File', installer, '-Target', foreign, '-Force'], { timeout: 60000 });
+        assert.equal(ok.status, 0, ok.stderr);
+        assert.ok(fs.existsSync(path.join(foreign, '.githooks')), 'shims deployed');
+        assert.ok(fs.existsSync(path.join(foreign, 'scripts/hooks/engine.mjs')), 'engine deployed');
+        assert.ok(!fs.existsSync(path.join(foreign, 'scripts/hooks/gates.local')), 'gates.local must never ship in kit');
+        const hp = await spawnAsync('git', ['-C', foreign, 'config', 'core.hooksPath']);
+        assert.equal(hp.stdout.trim(), '.githooks');
+        const gitDir = (await spawnAsync('git', ['-C', foreign, 'rev-parse', '--absolute-git-dir'])).stdout.trim();
+        const state = JSON.parse(fs.readFileSync(path.join(gitDir, 'hook-engine-state.json'), 'utf8'));
+        assert.ok(state.adoption?.sourceRepo && state.adoption?.sourceRev, 'adoption metadata recorded');
+        assert.match(fs.readFileSync(path.join(foreign, '.gitignore'), 'utf8'), /^\.hooksrc\.local$/m);
+        assert.ok(fs.existsSync(path.join(foreign, 'legacy-hooks/pre-commit')), 'legacy hooks preserved, only repointed');
+      }
     } else {
       const lint = await invoke('lint.ps1', '-Json');
       if (scenario !== 'disabled') {
@@ -170,8 +247,9 @@ export async function run() {
     'dry-run', 'deploy', 'missing', 'duplicate-name',
     'cross-section-duplicate', 'duplicate-key', 'unknown-client',
     'disabled', 'name-mismatch', 'empty-description',
-    'update-dry-run', 'update-writeback', 'preserve-wrapper', 'unknown-wrapper',
-    'missing-wrapper-source', 'missing-special-source'
+    'update-dry-run', 'update-writeback', 'update-ttl-expiry', 'preserve-wrapper', 'unknown-wrapper',
+    'missing-wrapper-source', 'missing-special-source', 'build-whatif',
+    'install-hooks-whatif', 'install-hooks-guard'
   ];
 
   // 有界并发池 (并发上限 4)
