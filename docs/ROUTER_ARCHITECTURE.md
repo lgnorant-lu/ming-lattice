@@ -21,6 +21,7 @@ registry + 本地 SKILL.md 身份 -> 构建时 availability
 可选 --event-file       -> route.decided / route.failed NDJSON（不进入 stdout，hint 仅存 hash）
 可选 --hint-log         -> 本地明文 hint 旁路（opt-in，B 层 miss 语料收割源，与脱敏事件分离）
 可选 --miss-log         -> 弱判定台账（默认 .logs/route-misses.jsonl 开；action≠dispatch 或 confidence≠high 才记，明文 JSONL 供 harvest-misses.mjs 收割；"off" 关闭，env MING_SKILLS_MISS_LOG 同义）
+可选 route-observer     -> Stage-0 纯观测 hook（UserPromptSubmit stdin -> Decide -> .logs/route-observed.jsonl 全量决策；stdout 恒空、exit 恒 0，永不注入/阻塞）
 ```
 
 领域与配方仍在 [build-router-manifest.mjs](../scripts/build-router-manifest.mjs) 策划维护，尚未从任意 Skill description 自动推导。registry 决定条目与部署启用，构建检查入口身份并记录可用性；`compose.yaml` 是测试方法组合参考，当前不作为编译输入。不能把三者说成已经自动统一。
@@ -48,6 +49,7 @@ registry + 本地 SKILL.md 身份 -> 构建时 availability
 - `allowCaseInit` 恒为 false。输出限制由宿主继续落实，纯函数和一份禁止列表不是安全沙箱。
 - 候选名称与正文加载分离；ask/handoff 不加载执行配方，review/plan/explain 的限制必须传给下游。
 - 可观测事件是 CLI 外层的可选旁路；事件只记录 `hint_hash`，不记录完整 prompt、密钥或错误文本。使用 `--event-file` 和可选 `--work-unit-id` 开启。
+- `route-observer.mjs` 是 Stage-0 纯观测 hook：stdin 吃 UserPromptSubmit payload，本地跑 `Decide`，把**全量**决策 append 到 `.logs/route-observed.jsonl`（明文截断 1000 字符；>1MB 单代轮换；`MING_SKILLS_OBSERVE_LOG=off` 关闭）。事件 schema 见 [route-observed schema](schemas/route-observed.schema.json)。stdout 恒空、exit 恒 0——advisory 通道 fail-silent，观察者故障不得阻塞 prompt。字段提取是宽容多名的（`prompt|hint|message` 等），新宿主只需产出同形 stdin JSON。挂载示例见脚本头注释。
 - registry 供应链门禁通过 `scripts/check-supply-chain.mjs` 离线检查来源 provenance、pin、锁文件和部署入口；结合 `--check-freshness` 提供 SBOM 与 SCA 深度比对防篡改。
 
 与 v1 的变更理由见 [ADR-0005](adr/ADR-0005-review-safe-routing.md)。

@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "route-observed.schema.json",
+  "title": "Route Observed Event (Stage-0 observer ledger)",
+  "description": ".logs/route-observed.jsonl 每行一个事件：全量路由决策观测，供离线 precision/recall 与 transcript 对账。与 route-misses.jsonl（只记弱判定）分工不同。",
+  "type": "object",
+  "required": ["v", "ts", "src", "elapsed_ms"],
+  "additionalProperties": true,
+  "properties": {
+    "v": { "const": "route-observed/1", "description": "事件 schema 版本（命名空间/序号）" },
+    "ts": { "type": "string", "format": "date-time" },
+    "src": { "type": "string", "description": "来源适配器标识，如 claude-hook" },
+    "session": { "type": ["string", "null"], "description": "会话分组键；session_seq 离线可导出故不落" },
+    "transcript": { "type": ["string", "null"], "description": "transcript 路径指针，供离线 agree/override 对账" },
+    "cwd": { "type": ["string", "null"], "description": "项目级聚合维度" },
+    "hint": { "type": "string", "description": "prompt 明文截断（<=1000 字符）；本地明文台账，gitignored" },
+    "hint_len": { "type": "integer", "minimum": 0, "description": "原始 prompt 长度（截断前）" },
+    "decision": { "type": "object", "description": "Decide() 全量输出（RouteDecision v2），非仅弱判定" },
+    "elapsed_ms": { "type": "number", "minimum": 0, "description": "观测器自身耗时（decide+append 前）" },
+    "error": {
+      "type": "string",
+      "enum": ["empty_stdin", "bad_stdin_json", "bad_stdin_shape", "decide_failed", "observer_failed"],
+      "description": "存在即异常记录；此时 decision 可能缺席"
+    },
+    "error_type": { "type": "string" },
+    "bytes": { "type": "integer", "minimum": 0, "description": "损坏输入的字节数（bad_stdin_* 时）" }
+  }
+}

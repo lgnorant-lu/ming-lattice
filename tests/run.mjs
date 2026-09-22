@@ -19,6 +19,7 @@ import { run as runLexicalLayer } from './unit/test-lexical-layer.test.mjs';
 import { run as runHookEngine } from './unit/test-hook-engine.test.mjs';
 import { run as runLintContract } from './contract/test-lint-contract.mjs';
 import { run as runHookPlannerContract } from './contract/test-hook-planner.mjs';
+import { run as runRouteObserver } from './contract/test-route-observer.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const startedAt = process.hrtime.bigint();
@@ -69,6 +70,7 @@ export const allSuites = [
   { name: 'registry-parity', tier: 'contract', run: runRegistryParity },
   { name: 'lint-contract', tier: 'contract', pwsh: true, run: runLintContract },
   { name: 'hook-planner', tier: 'contract', run: runHookPlannerContract },
+  { name: 'route-observer', tier: 'contract', run: runRouteObserver },
   { name: 'route-effects', tier: 'eval', run: runRouteEffects },
   { name: 'lexical-layer', tier: 'unit', run: runLexicalLayer },
   { name: 'hook-engine', tier: 'unit', git: true, run: runHookEngine },

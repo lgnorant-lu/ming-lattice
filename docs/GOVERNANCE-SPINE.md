@@ -127,6 +127,8 @@ status: normative
 | `distill/_proposals/*` | 候审档 | frontmatter status/reviewAfter | `gates/review-after.mjs` + `cadence=7d` | hook-engine 组 14 | warn 提醒非阻断 |
 | 文档外链 | 工作区内容 | markdown/文本 http(s) URL | `gates/link-rot.mjs` + `cadence=7d` | hook-engine 组 19 | 非阻断 stage 限定（post-merge/post-checkout）；localhost 注入测试禁真网络 |
 | observability schema | SoT（事件层） | `docs/schemas/observability-event.schema.json` | 契约测试 | observability 套件 | hook 事件未接线（待消费方） |
+| `.logs/route-misses.jsonl` | 台账（弱判定语料） | route-core `--miss-log` 写入约定 | observability 套件断言强弱分桶 | 同上 | 本地明文，gitignored；消费=harvest-misses |
+| `.logs/route-observed.jsonl` | 台账（全量决策观测） | `docs/schemas/route-observed.schema.json` | route-observer 契约套件 | route-observer 套件 | 明文截断 1000 字符、>1MB 单代轮换；消费方=离线 precision/recall 对账（未建） |
 | `## 目录` 节（各仓） | 节内嵌带 | 文档标题集 | `gates/toc.mjs` | hook-engine 第 12 组 | — |
 
 ## 10. 自反哺矩阵
@@ -163,13 +165,13 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 
 **候审（2026-09-22 设计迭代轮新增，详情见 _proposals/2026-09-22-explore-converge-loop-paradigm.md 及会话设计链）**：
 
-- route-observer Stage-0 纯观测 spike——stdin->decide->append 三段薄壳；`.sessions/` 会话态已消融砍掉（session_seq 离线可导出，状态文件只服务 Stage-1 实时决策）；`.logs/route-observed.jsonl` schema 含 v命名空间/transcript指针/elapsed_ms
+- route-observer Stage-0 —— **spike 已落地**（`route-observer.mjs` + 契约套件 route-observer + schema 入档）；余项：settings.json 实际挂载 + harvest 离线对账消费方未建。`.sessions/` 会话态维持消融结论（session_seq 离线可导出，状态文件只服务 Stage-1 实时决策）
 - route-table 生成器——DOMAIN_DEFS->AGENTS.md 常驻区投影，复用生成+check 门纪律；description<->trigger parity lint 同源
 - Stage-1 advisory——冷却/会话上限/歧义自检措辞已设计，须台账数据先证价值再开工
 - 任务级上下文清单——file+reason jsonl 声明式（借 Trellis implement.jsonl 实证模式），替代"task 轴信号检测"原思路
 - docs-architecture 范式提案——轴语法(受众x阶段x问题)+槽位绑定(managed_by 托管态)+档位=覆盖矩形+pack 机制+llms.txt 双投影；素材齐待写
 - ming-l 增补提案——三属性轴(persistence/delivery/maturity)+对偶生长律+通道定律；须先过第二次异质实例压测（候选 BMAD-Speckit-SDD-Flow）
-- .logs/ 账本治理——每个 jsonl 台账需声明行（schema/消费方/留存），入本表 §9
+- ~~.logs/ 账本治理~~——**已清偿**（2026-09-22：route-misses/route-observed 双台账入 §9 声明行）；后续新 jsonl 沿用同约定
 - 多 hook 组合面——UserPromptSubmit 多 hook 的顺序/延迟叠加/stdout 拼接语义未勘查
 - 框架反馈环——使用侧信号回流维护侧（observer 模式泛化；human 侧=-Force/改史采集；agent 侧=transcript 对账）
 - 管控层治理矩阵——工件类xinventory/policy/telemetry/actuation 四职能，先手维护表起步
