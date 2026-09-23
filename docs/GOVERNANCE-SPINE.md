@@ -178,9 +178,12 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - 图内层节点刻面——工件图节点不止契约对账，还有根本性多维分类：域分类(九域)/层级分类(声明-机制-数据)/纵横域分类(cross-cutting)；与发散-规束提案的"边视图"汇合，后话待图机制立项时一并裁决
 - ~~targets 本机路径入 SoT~~——**已清偿**（2026-09-23：`registry.yaml` targets 改 `%USERPROFILE%` env 占位 + `sync.ps1` 读入点统一 ExpandEnvironmentVariables，DryRun 实测展开正确）
 - lint 硬编码门覆盖面缺口——现 lint 扫 SKILL.md/scripts 的 `C:\Users\xxx` 类路径，但 registry.yaml（targets）这类 SoT 配置不在扫面内（本次即漏网实例）；门扩面或 SoT 契约校验二选一
+- 物化漂移待裁决 2 条——fetch DryRun 实测：`jadx-mcp-server`（HEAD=19bd9c1 pin=4e6d890）与 `awesome-re-mcp`（HEAD=973be20 pin=e400b88）本地 clone 与 pin 不一致；fetch 默认只报不动，`--reconcile` 对齐裁决待下（可能有本地改动）
+- vendor-paradigm skill（候选位）——清单即锁/内容即产物/孤本例外 三原则的跨场景范式化；本仓 4 处同型实例（vertical/distill/.logs/xfqtrace 外置）+ vendir/Bazel/Go-modules 外部先例已查实；待本轮实现跑稳后回填实证再转正
 - deployable/areclaw-* POSIX 命令文档——包装文档内 grep/sort/comm//tmp 示例与本机 grep-guard 冲突（vendored 包装层内容，agent 执行时可自适应；如需消除再改）
-- ~~xfinjectd 第二拷贝~~——**已清偿**（2026-09-23 上游实证：`LunFengChen/frida-gadget-helper` 公开仓 pin ee38b11 自带 xfinjectd，blob SHA `4298aa0e`/`299f3149` 逐字节同源——vendored=镜像零新增暴露，保留）
-- vendored LICENSE 覆盖缺口——96 vendored 中 32 个无 LICENSE 文件（frida-gadget-helper/rusda/ruyipage 族/Crack-JS-Spider 等），严格合规角度无许可=无权再分发；社区惯例容忍但属灰区。与"本仓 LICENSE 选型"同案裁决
+- ~~xfinjectd 第二拷贝~~——**已清偿**（2026-09-23 上游实证：`LunFengChen/frida-gadget-helper` 公开仓 pin ee38b11 自带 xfinjectd，blob SHA `4298aa0e`/`299f3149` 逐字节同源——vendored=镜像零新增暴露，保留；随后该仓随 vertical 物化化整体出史）
+- ~~vertical vendored 字节入库~~——**已清偿**（2026-09-23 `f5ba0f95`→`25ff03c`：vertical 转**物化区**——远端仅存索引(repo+pin 全 40 位回填)，`scripts/fetch.mjs` 一键物化，`vendor-boundary` 门把守 staged∩vertical ⊆ sourceGone 白名单；4 孤本(ruyi 下架族)保留入库；`.git` 188M→9M；史中另清出 35 个 gitlink 误入库残留——铁律#1 事故的历史实体）
+- vendored LICENSE 覆盖缺口——96 vendored 中 32 个无 LICENSE 文件；**物化制落地后再分发面已缩至 4 个 ruyi 孤本**（远端仅存链接不分发字节，灰区自然消解大半）；残留问题=孤本无上游许可 + 本仓自身 LICENSE 选型待定
 - githook 族 skill 增补商讨设计组件——门规变更/新门设计的讨论通道设计件（用户口述方向，细节待成形）
 - author-identity 门（外部先例已查实）——`git var GIT_AUTHOR_IDENT` 取生效身份 → 哨兵名单拦截(t@t/test@test/fixture@*/空) 或白名单域校验；先例：spuder git-hooks(author+committer 双查)、chump pre-commit-git-identity(夹具身份烙进正式仓的事故修复门)、Git::MoreHooks mailmap 校验、conform(GPG签名+身份+org 对账)。本仓适用形态：单作者仓——策略=身份必须 ∈ {noreply}，防止 QQ 邮箱回流公开史。注意 author≠committer 语义（amend/cherry-pick/-s signoff 用 committer 侧）
 - PII/卫生扫描门（外部先例）——staged-diff `--diff-filter=ACMR` 只扫新增行：个人邮箱域/电话/私网 IP/家目录路径(/Users,/home,/C:\Users)；`.pii-allow` 允许清单文件先例(cmk/connections)与 .hooksrc.local 哲学同构；hmrc 双通道(filename+filecontent+二进制扩展名排除)可参考。与既有 secrets 门互补（secrets 管密钥，PII 管个人数据）
