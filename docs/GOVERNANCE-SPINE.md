@@ -205,6 +205,7 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - base/reverse-skill 子模块本地补丁——git status 常驻 `m` **实证=2 个上游文件被本地删除**：`src-hunter/references/payloader/waf-bypass.md`(6501行)+`playbooks/path-traversal.md`(1297行) 共 -7798 行攻击性 payload 参考——疑似早期安全裁剪但意图无证；裁决选项：checkout 还原（对齐上游只读契约）或保留（有意裁减则该入 registry note 声明）
 - hook 引擎 fail-open 结构观察——门抛异常→warn 放行（引擎既定策略，透明性>阻断）；vendor-boundary 已自带 fail-closed 硬化，引擎层策略本身留作观察项
 - 物化副作用观察——vendored 仓自带 `.claude/skills/` 会浮现为宿主可用技能面（game-security-skills 10 个实例：anti-cheat/dma-attack 等）；物化=技能面扩张是特性还是噪音待定
+- **AST 源码扫描器→skill 孵化候选**（2026-09-23 自 IV8 seam-ledger 萃取）——现状：IV8 `build_seam_ledger.py` 用行正则扫 Rust install 点，已暴露一整类文本启发缺陷（字面量误抓/括号计数遇字符串字面量破/封闭fn回扫漂）；决策迁 tree-sitter CST 前端（dev deps 两个 wheel，`scan_rs_ast` 产同构 hit + 双扫 diff 契约迁移）。skill 化潜力=「审计器自身用语法树而非文本匹配」是跨仓通用范式（门/审计器/结构断言都该这么写），但**需先跨生态调研**（rust/python/js/go 各语法生态的 tree-sitter 语法覆盖度、仓内既有扫描面盘点、多语言统一 hit schema 是否成立）再立包——不急，仅记录方向
 
 **已删（消融结论，防复建）**：
 
