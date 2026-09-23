@@ -12,8 +12,6 @@
 !vertical/**
 # 豁免后重拦：vendored .git 元数据（本地保留供 update 增量 fetch，父仓不跟踪）
 vertical/*/.git/
-# 豁免后重拦：harness 本机配置永不入仓（areclaw 曾带入泄漏）
-**/.claude/settings.local.json
 
 # 本地运行与临时产物
 *.log

@@ -75,7 +75,7 @@ test('quality overlays survive a testing-first review', () => {
 
 test('engineering and protocol domains have executable routing definitions', () => {
   assert.equal(Decide('优化可观测性与数据契约', manifest).domain, 'engineering');
-  const decision = Decide('流量窗口切片 重放判官', manifest);
+  const decision = Decide('xfqtrace 流量窗口切片', manifest);
   assert.equal(decision.domain, 'protocol');
   assert.ok(decision.active_recipe.skills.includes('ui-oracle-protocol'));
   assert.equal(adapt(decision).allowCaseInit, false);

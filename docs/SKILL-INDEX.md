@@ -7,7 +7,7 @@ status: descriptive
 # SKILL-INDEX — 全部 skill 精要索引（路由参考）
 
 > 用途：第一层路由参考——AI/用户在任务开始时按此表选 skill。description 才是外层触发依据（Claude Code 按 frontmatter description 惰性加载）；本表是人工可读的精要版。
-> 生成：2026-08-18 · 覆盖：基座 20 部署模块 + 垂直 96 参考 + 私有 31
+> 生成：2026-08-18 · 覆盖：基座 20 部署模块 + 垂直 96 参考 + 私有 32
 > 后续增补：2026-09-16 指纹专项（vertical fingerprintjs/ja4/creepjs + private antibot-fingerprint-paradigm/arch-core-paradigm）；2026-09-21 社区 Agent Skill 轮（vertical apk-reverse-community/birdview）
 > 后续增补：2026-09-18 工程元规范族小节补全（engineering/* 10 包）+ ming-skills-router + config-core-paradigm 登记
 > 后续增补：2026-09-21 MCP 工具链与 Frida 生态小节补登（18 个 2026-08-18 采集项漏登记）· 契约门禁 scripts/check-skill-index.mjs 落地
@@ -256,6 +256,7 @@ status: descriptive
 | ming-distiller | 项目级经验沉淀与检索双模态入口：distill/ 库 INDEX.yaml 索引 + 懒加载正文 + _proposals 晋升 staging | 已部署 |
 | ui-oracle-protocol | 自研：安卓 UI 控件自动化作为协议逆向 oracle（见二点五） | 已部署 |
 | ui-design-paradigms | 全球数字产品主流 UI/UX 设计范式知识库 (Material 3 / shadcn / Apple HIG / Bento / Swiss / Neubrutalism) | 已部署 |
+| xfqtrace-kit | Android Native 层 trace 工具包 skill 入口 (pip 包公开; 工具本体本地外置不入仓) | 已部署 |
 
 ### 2. 测试规范体系族（testing-family，11 个包）
 

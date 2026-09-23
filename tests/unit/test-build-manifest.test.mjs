@@ -15,7 +15,7 @@ export function run() {
       'testing-scenario-scraper', 'testing-scenario-embed-ffi',
       'docs-core-paradigm', 'docs-presentation-idiom', 'obs-core-paradigm',
       'sec-core-paradigm', 'contract-core-paradigm', 'overlay-core-paradigm',
-      'reverse-skill-router', 'ui-design-paradigms', 'ui-oracle-protocol'
+      'reverse-skill-router', 'ui-design-paradigms', 'ui-oracle-protocol', 'xfqtrace-kit'
     ];
     const registry = { private: names.map(name => ({ name, path: `private/${name}`, enabled: true, deploy: { test: true } })) };
     for (const item of registry.private) {

@@ -1529,6 +1529,12 @@ private:
     note: 自研: UI 控件自动化作为协议逆向 oracle(时间戳对齐+流量窗口切片+重放判官), 配 timestamper.py
     deploy:
       claude: true
+  - name: xfqtrace-kit
+    path: private/xfqtrace-kit
+    enabled: true
+    note: xfqtrace v2.2 skill 入口文档(pip 包 xfqtrace-skills 公开); 工具本体与 recipe 载荷本地外置不入仓
+    deploy:
+      claude: true
   - name: ui-design-paradigms
     path: private/ui-design-paradigms
     enabled: true

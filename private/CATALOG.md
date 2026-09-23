@@ -30,6 +30,7 @@ private/
 ├── antibot-fingerprint-paradigm/      # 反爬指纹对抗分层知识库 (JA3/JA4/h2/JS一致性/判定引擎)
 ├── ui-design-paradigms/               # 全局 UI/UX 设计范式与 Design Tokens
 ├── ui-oracle-protocol/                # UI 控件自动化作为协议逆向 Oracle (timestamper)
+├── xfqtrace-kit/                      # xfqtrace trace 工具包 skill 入口 (pip 公开; 本体本地外置)
 └── blog-content/                      # 博客与技术内容生成管道
 ```
 

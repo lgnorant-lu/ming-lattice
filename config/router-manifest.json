@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-23T01:55:48.475Z",
+  "generatedAt": "2026-09-23T02:06:25.381Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -215,11 +215,13 @@
     "protocol": {
       "description": "私有协议与自动化 UI Oracle 逆向方案",
       "skills": [
-        "ui-oracle-protocol"
+        "ui-oracle-protocol",
+        "xfqtrace-kit"
       ],
       "triggers": [
         "ui-oracle",
         "timestamper",
+        "xfqtrace",
         "流量窗口切片",
         "重放判官",
         "无痕hook",
@@ -636,7 +638,8 @@
       "domain": "protocol",
       "description": "Protocol evidence references; execution requires a separate scope decision",
       "skills": [
-        "ui-oracle-protocol"
+        "ui-oracle-protocol",
+        "xfqtrace-kit"
       ]
     },
     "engineering-meta-catalog": {
@@ -800,7 +803,8 @@
     "testing-workflow-characterize": "ready",
     "testing-workflow-spec": "ready",
     "ui-design-paradigms": "ready",
-    "ui-oracle-protocol": "ready"
+    "ui-oracle-protocol": "ready",
+    "xfqtrace-kit": "ready"
   },
   "skillDocs": {
     "antibot-fingerprint-paradigm": {
@@ -1193,6 +1197,11 @@
     "ui-oracle-protocol": {
       "name": "ui-oracle-protocol",
       "description": "将安卓 UI 控件自动化作为协议逆向的 oracle（时间戳对齐+流量窗口切片）。当需要验证抓包参数猜测、还原加密参数生成时机、确认某个 UI 操作触发了哪些网络请求、对比重放结果、生成\"操作→请求\"映射表时使用。依赖 appium-mcp MCP server（NO_UI=true）、mitmproxy（时间戳脚本）、frida（unpinning）。目标为安卓真机/模拟器上的真实 App。",
+      "triggers": []
+    },
+    "xfqtrace-kit": {
+      "name": "xfqtrace-kit",
+      "description": "Android Native 层 Trace 工具包（xfinject 注入链路 + xfqtrace 引擎 + 无痕 hook backend）。适用于 Android App 协议逆向中的 native 层调用追踪、加密参数生成链路定位、so 层函数插桩、反检测对抗研究。注意：仅限授权研究目标。",
       "triggers": []
     }
   }
