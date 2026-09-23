@@ -49,6 +49,10 @@ gate.link-rot.maxUrls=50
 # 10. vertical 物化区边界（远端仅存索引——staged ∩ vertical/ ⊆ registry sourceGone 白名单）
 gate.vendor-boundary.level=error
 
+# 11. 部署漂移对账（仓专：registry deploy 声明 ⟺ .cc-switch 实际链接；warn 提醒级 + 7d 节流）
+gate.deploy-drift.level=warn
+gate.deploy-drift.cadence=7d
+
 # ── chores 族（suggest-only：只提醒不执行，默认 post-merge；chore.<id>.stages 可挂 post-checkout）──
 chore.registry.watch=registry.yaml
 chore.registry.message=registry.yaml 已变更——建议 pwsh scripts/sync.ps1 -DryRun 预览部署差异

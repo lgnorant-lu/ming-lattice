@@ -611,6 +611,49 @@ export async function run() {
       } finally { fs.rmSync(noreg, { recursive: true, force: true }); }
     }
 
+    // deploy-drift 门（仓专）：registry deploy 声明 ⟺ 客户端链接目录
+    const { gate: ddGate } = await import('../../scripts/hooks/gates.local/deploy-drift.mjs');
+    {
+      const ddir = tempRepo(), tdir = path.join(ddir, 'cc-skills');
+      try {
+        fs.writeFileSync(path.join(ddir, 'registry.yaml'), [
+          'base:',
+          '  - name: reverse-skill',
+          '    modules:',
+          '      apk-reverse: [claude]',
+          '      radare2: [js]',
+          'deployable:',
+          '  - name: wrapped-one',
+          '    path: deployable/wrapped-one',
+          '    deploy:',
+          '      claude: true',
+          'private:',
+          '  - name: local-only',
+          '    path: private/local-only',
+          '    deploy: {}',
+        ].join('\n'));
+        fs.mkdirSync(tdir, { recursive: true });
+        // wrapped-one 已正确链接；apk-reverse 缺链（漂移）；ghost-link 指向本仓但无声明（孤儿链）；外国链接不判
+        fs.symlinkSync(path.join(ddir, 'deployable/wrapped-one'), path.join(tdir, 'wrapped-one'), 'junction');
+        fs.symlinkSync(path.join(ddir, 'deployable/gone'), path.join(tdir, 'ghost-link'), 'junction');
+        fs.symlinkSync('D:/elsewhere/skill', path.join(tdir, 'foreign-skill'), 'junction');
+        const ddCtx = { root: ddir, gateConfig: { target: tdir } };
+        const df = await ddGate.run(ddCtx);
+        const miss = df.filter(f => f.matchText === 'apk-reverse');
+        const orph = df.filter(f => f.matchText === 'ghost-link');
+        assert.equal(miss.length, 1, `缺链应报，实际: ${df.map(f => f.matchText).join(',')}`);
+        assert.equal(orph.length, 1, '指向本仓的无声明链接=孤儿链');
+        assert.ok(!df.some(f => ['wrapped-one', 'foreign-skill', 'local-only', 'radare2'].includes(f.matchText)),
+          '已链接/外国/未声明部署均不判');
+        // 无 registry / 无目标目录 → 不适用静默
+        const bare = tempRepo();
+        try {
+          assert.deepEqual(await ddGate.run({ root: bare, gateConfig: { target: tdir } }), [], '无 registry 不判');
+          assert.deepEqual(await ddGate.run({ root: ddir, gateConfig: { target: path.join(ddir, 'nonexist') } }), [], '无客户端目录不判');
+        } finally { fs.rmSync(bare, { recursive: true, force: true }); }
+      } finally { fs.rmSync(ddir, { recursive: true, force: true }); }
+    }
+
     // e2e：cadence 节流——首跑告警盖戳→次跑跳过→改旧戳再跑复报
     const edir = tempRepo();
     try {

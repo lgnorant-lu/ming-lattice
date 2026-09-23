@@ -582,7 +582,7 @@ vertical:
     pin: e0d4bb8faca6659420cfa86559547e31ab43c3eb
     acquiredAt: 2026-08-18
     enabled: true
-    domain: js
+    domain: mp
     note: 微信小程序逆向 MCP(hello_js 作者, 解包 .wxapkg)
     deploy: {}
     checkCache:
@@ -594,7 +594,7 @@ vertical:
     pin: e647393abbe271b793f5b706a7715c686779223b
     acquiredAt: 2026-08-18
     enabled: true
-    domain: js
+    domain: mp
     note: 微信小程序签名/加密分析 SKILL(AI 反编译+定位签名+mitmproxy, 2026-07-31)
     deploy: {}
 

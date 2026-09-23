@@ -167,6 +167,56 @@ foreach ($s in $sources) {
     }
 }
 
+# ---------- 反向孤儿：fs 有目录但 registry 无条目（命名空间容器豁免） ----------
+$registeredPaths = @{}
+foreach ($base in @($reg.base)) {
+    if ($null -eq $base) { continue }
+    $registeredPaths[($base.path -replace '\\','/')] = $true
+}
+foreach ($sectionName in @('vertical', 'deployable', 'private')) {
+    foreach ($item in @($reg.$sectionName)) {
+        if ($null -eq $item -or -not $item.path) { continue }
+        $registeredPaths[($item.path -replace '\\','/')] = $true
+    }
+}
+# 浅层枚举：vertical/*/deployable/*/private/* ~ private/*/*/*（命名空间最多两层；
+# 已登记包/含 SKILL.md 的目录不下钻——包内 references/scripts 是包的内容不是孤儿）
+$orphanScanDirs = @()
+foreach ($r in @('vertical', 'deployable', 'private')) {
+    $abs = Join-Path $RepoRoot $r
+    if (Test-Path $abs) { $orphanScanDirs += @(Get-ChildItem $abs -Directory -ErrorAction SilentlyContinue) }
+}
+foreach ($p1 in @(Get-ChildItem (Join-Path $RepoRoot 'private') -Directory -ErrorAction SilentlyContinue)) {
+    $rel1 = $p1.FullName.Substring($RepoRoot.Length).TrimStart('\', '/').Replace('\', '/')
+    if ($registeredPaths.ContainsKey($rel1) -or (Test-Path (Join-Path $p1.FullName 'SKILL.md'))) { continue }
+    $orphanScanDirs += @(Get-ChildItem $p1.FullName -Directory -ErrorAction SilentlyContinue)
+    foreach ($p2 in @(Get-ChildItem $p1.FullName -Directory -ErrorAction SilentlyContinue)) {
+        $rel2 = $p2.FullName.Substring($RepoRoot.Length).TrimStart('\', '/').Replace('\', '/')
+        if ($registeredPaths.ContainsKey($rel2) -or (Test-Path (Join-Path $p2.FullName 'SKILL.md'))) { continue }
+        $orphanScanDirs += @(Get-ChildItem $p2.FullName -Directory -ErrorAction SilentlyContinue)
+    }
+}
+foreach ($d in $orphanScanDirs) {
+    $rel = $d.FullName.Substring($RepoRoot.Length).TrimStart('\', '/').Replace('\', '/')
+    if ($registeredPaths.ContainsKey($rel)) { continue }
+    if ($d.Name -match '^[._]') { continue }                       # .claude/_proposals 等惯例目录
+    if (Test-Path (Join-Path $d.FullName 'SKILL.md')) {
+        $issues += [ordered]@{ level = 'W'; name = $d.Name; msg = "孤儿目录：$rel 有 SKILL.md 但 registry 无条目（漏登记）"; file = $d.FullName }
+        continue
+    }
+    # 命名空间容器豁免：某后代已登记或含 SKILL.md 包
+    $isNamespace = $false
+    foreach ($k in $registeredPaths.Keys) { if ($k.StartsWith("$rel/")) { $isNamespace = $true; break } }
+    if (-not $isNamespace) {
+        $isNamespace = [bool](Get-ChildItem $d.FullName -Directory -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $_.FullName 'SKILL.md') } | Select-Object -First 1)
+    }
+    if (-not $isNamespace -and $rel -match '^vertical/') {
+        $issues += [ordered]@{ level = 'W'; name = $d.Name; msg = "孤儿物化目录：$rel 存在但 registry 无条目（残留，可删可补登）"; file = $d.FullName }
+    } elseif (-not $isNamespace) {
+        $issues += [ordered]@{ level = 'W'; name = $d.Name; msg = "孤儿目录：$rel 存在但 registry 无条目"; file = $d.FullName }
+    }
+}
+
 # ---------- 输出 ----------
 $e = @($issues | Where-Object { $_.level -eq 'E' }).Count
 $w = @($issues | Where-Object { $_.level -eq 'W' }).Count

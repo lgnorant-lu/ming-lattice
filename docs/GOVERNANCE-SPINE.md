@@ -153,11 +153,11 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - doc-claims 门——反引号路径存在性对账，等第二个 doc-断言漂移实例
 - hook 事件接线——observability schema 扩 `hook.*`，等下游消费方
 - 持续型 fitness function——审计陈旧度，我们的节奏是事件驱动
-- domain 同义归并——`domains:` 表内 web/js、android/apk 近义重叠，归并须逐案裁决资产语义（登记按现状不修值）
-- deploy-drift chore 门——registry deploy 声明 vs .cc-switch 实际 symlink 的对账，等手动删链/换机漂移实例（sync -DryRun 现可手动显影）
+- domain 同义归并（部分清偿 2026-09-23）——mp 域已归并：wx-mp-mcp/wxminidec 从 js 改 mp（mp=3 自洽小程序域）；android 单例保留（uiautodev=平台自动化≠APK 逆向，真语义）；残留=web/js 近义带（指纹/自动化 vs JS 逆向技术侧有真分界，逐案）
+- ~~deploy-drift 门~~——**已清偿**（2026-09-23：`gates.local/deploy-drift.mjs` 落地——registry deploy.claude+base.modules[claude] 声明 ⟺ 客户端链接目录对账；缺链/孤儿链 warn，外国链接与无 registry/无客户端目录均不适用容忍；`.hooksrc` warn+7d cadence。落地即实证：vendor-paradigm 声明未链接被正确报出，sync 后清账）
 - unsuffixed-name 的 layer 歧义——name 后缀=类型面与 layer=领域面分位后，无后缀名的 layer 取值靠人判断，等真实歧义例
 - registry 治理段拆分——layers/domains/candidates 与资产条目同文件，增长至对账成本显著时考虑分离
-- lint 反向孤儿检测——现仅 registry→fs 单向（孤儿 deployable 目录、build-deployable `$map` 多余键不可见），等真实孤儿实例
+- ~~lint 反向孤儿检测~~——**已清偿**（2026-09-23：lint.ps1 增 fs→registry 反向扫描，浅层枚举不递归物化仓；命名空间容器/已登记包内件/`.`/`_` 前缀目录豁免——实测零孤儿，`private/engineering/testing` 容器正确豁免；`build-deployable $map` 多余键面另案）
 - emit-operational-event 静默死——五调用点全吞 stderr（telemetry 不阻塞业务是取舍），等 observability 消费方要可诊断性
 - sync void-junction 负路径——穿透验证机制在，虚空链接负例断言未建
 - verify-cache strict 模式——纯诊断永 exit 0，等 CI 化/门化需求
@@ -202,7 +202,7 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - apk-reverse deployable 包装——基座 apk-reverse 的部署面补齐（脱壳/重建签名链已有 Frida-Apk-Unpack 等 vertical 支撑）
 - family tuple 数据模型——domain/name/layer 三元组的结构化，等第二真实消费方
 - 全局日志/性能模块——跨仓共性痛点未成形，不立抽象
-- base/reverse-skill 子模块本地补丁——git status 常驻 `m`，上游化推送或还原的裁决未下
+- base/reverse-skill 子模块本地补丁——git status 常驻 `m` **实证=2 个上游文件被本地删除**：`src-hunter/references/payloader/waf-bypass.md`(6501行)+`playbooks/path-traversal.md`(1297行) 共 -7798 行攻击性 payload 参考——疑似早期安全裁剪但意图无证；裁决选项：checkout 还原（对齐上游只读契约）或保留（有意裁减则该入 registry note 声明）
 - hook 引擎 fail-open 结构观察——门抛异常→warn 放行（引擎既定策略，透明性>阻断）；vendor-boundary 已自带 fail-closed 硬化，引擎层策略本身留作观察项
 - 物化副作用观察——vendored 仓自带 `.claude/skills/` 会浮现为宿主可用技能面（game-security-skills 10 个实例：anti-cheat/dma-attack 等）；物化=技能面扩张是特性还是噪音待定
 
