@@ -251,7 +251,7 @@ proposed --promote--> normative --relax--> descriptive
 **绿场启动序列（实证顺序）**：`Meta → Spec → Dev → Verify(spec-fuzz 假想测试) → Plan → 首个里程碑`。
 立法先于立法对象；验证域在写实现前用"假想测试"反验 Spec——测试写不下去处即 Spec 缺陷。
 
-**自指验证**：本范式应能描述它的容器——skills-collection 仓库即实例：registry.yaml=Spec（单一事实源）、STANDARDS.md=Gov、tests/=Verify、PLAYBOOK.md=Know、CLAUDE.md=Meta（"registry 是单一事实源"即立法条款）。范式能无损描述自身所在仓库，是自洽性证据；不能自指的元规则值得怀疑。
+**自指验证**：本范式应能描述它的容器——skills-collection 仓库即实例：registry.yaml=Spec（单一事实源）、STANDARDS.md=Gov、tests/=Verify、PLAYBOOK.md=Know、AGENTS.md=Meta（"registry 是单一事实源"即立法条款）。范式能无损描述自身所在仓库，是自洽性证据；不能自指的元规则值得怀疑。
 
 *注：本仓是**概念实例**（域映射成立），docs/ 未采 `domain:` frontmatter 机读方案——`audit-domains.mjs` 面向采纳方案的文档树，对本仓扫出的 orphan W 是"未采纳"信号而非范式失效。*
 

@@ -46,7 +46,7 @@ docs/                    STANDARDS(工程总纲)/GOVERNANCE-SPINE(工件本体�
 
 ## 合规
 
-- xfqtrace-kit: 双密码(zip AES), 仅授权研究目标; Ruyi 系列 4 仓已下架, 内容持有(sourceGone)
+- Ruyi 系列 4 仓已下架, 内容持有(sourceGone); xfqtrace-kit 实体工具外置 (不入库不分发)
 - 采集时保留上游许可声明; 私有资产不向外分发
 - 提交信息不附 "Generated with Devin" trailer 与 `Co-Authored-By: Devin`——署名即作者本人（2026-09-17 已清史）
 

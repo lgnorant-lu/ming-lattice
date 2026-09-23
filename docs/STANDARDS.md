@@ -31,7 +31,7 @@ status: normative
 | `feat` | 新增功能/技能 | 新增自研测试包、UI 范式、新部署模块 |
 | `fix` | 缺陷修复 | 修复 SKILL.md 路径、修复脚本 Bug、修复字符编码 |
 | `chore` | 生态同步与日常维护 | 上游增量拉取、`registry.yaml` Pin 刷新、配置变更 |
-| `docs` | 文档与架构地图 | 更新 STANDARDS、CLAUDE.md、SKILL-INDEX.md |
+| `docs` | 文档与架构地图 | 更新 STANDARDS、AGENTS.md、SKILL-INDEX.md |
 | `style` | 格式与排版 | Markdown 缩进、空格排版、代码格式微调 |
 | `refactor` | 重构与优化 | 目录结构调整、脚本模块化重构 |
 | `test` | 测试与验证 | 新增自动化测试脚本、测试桩数据补充 |

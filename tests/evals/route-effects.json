@@ -148,14 +148,14 @@
     "id": "protocol-trace-request",
     "kind": "spec",
     "source": "protocol evidence request",
-    "hint": "xfqtrace 流量窗口切片",
+    "hint": "流量窗口切片 重放判官",
     "expected": {
       "mode": "implement",
       "domain": "protocol",
       "action": "dispatch",
       "recipe": "ui-oracle-trace",
       "promptAction": "implement",
-      "loadSkills": ["ui-oracle-protocol", "xfqtrace-kit"],
+      "loadSkills": ["ui-oracle-protocol"],
       "allowCaseInit": false
     }
   },

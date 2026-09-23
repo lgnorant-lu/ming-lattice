@@ -1,10 +1,23 @@
-# sync 备份的旧目标
-.trash/
+# ── 点开头默认全拦截（白名单制）──
+# 任何 . 开头文件/目录默认不入仓：防 .claude/.devin/.env/.mailmap 类本机配置泄漏。
+# 本仓点开头工件仅限下方登记项；vendored 快照(vertical/)整体豁免——其 .claude/.github 属上游内容。
+**/.*
+!.gitignore
+!.gitattributes
+!.gitmessage
+!.gitmodules
+!.hooksrc
+!.hooksrc.tmpl
+!.githooks/
+!vertical/**
+# 豁免后重拦：vendored .git 元数据（本地保留供 update 增量 fetch，父仓不跟踪）
+vertical/*/.git/
+# 豁免后重拦：harness 本机配置永不入仓（areclaw 曾带入泄漏）
+**/.claude/settings.local.json
 
 # 本地运行与临时产物
 *.log
 work/
-/.cache/
 __pycache__/
 *.py[cod]
 
@@ -24,26 +37,14 @@ __pycache__/
 # 现场 trace 产生的大型日志目录
 **/xfqtrace_logs/
 
-# vendored 仓库的 git 元数据（保留 .git 供 update 增量 fetch, 但父仓库不跟踪）
-vertical/*/.git/
-
 # 嵌入工具链依赖与模型缓存（tools/embeddings 隔离包，权重永不进仓）
 tools/embeddings/node_modules/
-tools/embeddings/.cache/
 
 # S4 spike 未过 eval 门禁（emb-only 命中=0）——artifact 暂不提交，工具链可复现
 config/router-embeddings.json
 
-# 门禁引擎个人覆盖层（.hooksrc 为共享配置，.local 为个人豁免——永不入仓）
-.hooksrc.local
-
 # 经验沉淀与候审设计稿——本地内容区，机制在仓内容不入仓（check-index 对本目录容忍缺席）
 distill/
 
-# vendored 采集可能带入的依赖目录与各 harness 本机配置
+# vendored 采集可能带入的依赖目录
 node_modules/
-**/.claude/settings.local.json
-.devin/config.local.json
-
-# 路由弱判定台账（miss ledger——语义通道证据收割源，本地明文）
-.logs/

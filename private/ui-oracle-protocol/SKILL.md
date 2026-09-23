@@ -23,7 +23,7 @@ mitmdump -s scripts/timestamper.py -p 8080
 # 注意：该脚本会向请求/响应注入 X-Oracle-TS 头（对目标服务端可见），
 # 仅限回放/研究链路使用；时间戳为 epoch 毫秒（单调时钟外推，与 frida 端可统一）。
 
-# 4. frida unpinning spawn 目标 App（现有 xfqtrace-kit 或 frida 栈）
+# 4. frida unpinning spawn 目标 App（外部 xfqtrace-kit 或 frida 栈）
 ```
 
 ## 工作流（8 步）
@@ -61,6 +61,6 @@ mitmdump -s scripts/timestamper.py -p 8080
 ## 注意事项
 
 - **时间戳校准**：mitmproxy 的 flow 时间戳（宿主机）与 Frida hook 日志（设备端）统一到同一毫秒级时钟，必要时校准——映射表失真根因。
-- **目标对抗**：App 可能带 root/frida/代理检测，先跑反检测 hook（xfqtrace-hide.kpm / unpinning）；真机与模拟器行为有差异（证书、驱动兼容），结果以真机为准。
+- **目标对抗**：App 可能带 root/frida/代理检测，先跑反检测 hook（hide/unpinning 层）；真机与模拟器行为有差异（证书、驱动兼容），结果以真机为准。
 - **合规**：仅授权研究目标；抓包/重放遵守目标平台条款。
 - 备选栈：uiautomator2 3.7.0（Python 轻量，无 MCP 需 FastMCP 自包）或 LAMDA（root 全家桶，UI+MITM+Frida 一体，8.2k★）——场景需要时再换。

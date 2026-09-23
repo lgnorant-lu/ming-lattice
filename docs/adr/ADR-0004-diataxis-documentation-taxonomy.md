@@ -25,7 +25,7 @@ domain: gov
 |---|---|---|
 | **Explanation（架构阐述）** | 解释设计理念、分层逻辑、为什么这么做 | `docs/ROUTER_ARCHITECTURE.md`, `docs/STANDARDS.md` |
 | **Reference（机读参考）** | 权威事实源、Schema、参数、常量定义 | `docs/schemas/*.json`, `config/router-manifest.json`, `registry.yaml` |
-| **How-to Guides（操作手册）** | 步骤清晰的任务解决流程与操作入口 | `docs/GIT_HOOKS.md`, `docs/TESTING.md`, `CLAUDE.md` |
+| **How-to Guides（操作手册）** | 步骤清晰的任务解决流程与操作入口 | `docs/GIT_HOOKS.md`, `docs/TESTING.md`, `AGENTS.md` |
 | **ADR（架构决策记录）** | 历史上下文、决策依据、后果与防重开凭据 | `docs/adr/ADR-*.md` |
 
 ---
