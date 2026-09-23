@@ -11,14 +11,15 @@ Ming 的 Agent 技能集散与工程中枢（Skills Hub & Monorepo）：统一�
 | 资产层次 | 目录路径 | 规模与构成 | 治理与部署策略 |
 |---|---|---|---|
 | **Base（底座层）** | `base/reverse-skill/` | **1 个基座（20 个已启用模块）**<br>submodule 跟踪 upstream 逆向体系 | 按需通过 `base[].modules` 声明并分发至客户端 |
-| **Vertical（参考层）** | `vertical/` | **94 个垂直参考库**<br>涵盖前端混淆、二进制、移动端与爬虫案例 | 离线 vendored 归档；`deploy:{}` 仅作只读参考 |
+| **Vertical（参考层）** | `vertical/` | **96 个垂直参考库**<br>涵盖前端混淆、二进制、移动端与爬虫案例 | 离线 vendored 归档；`deploy:{}` 仅作只读参考 |
 | **Deployable（包装层）** | `deployable/` | **24 个包装技能**<br>本地封装门面、去重清洗与定制包装 | 映射包装并分发至目标客户端环境 |
-| **Private（自研层）** | `private/` | **29 个核心自研技能**<br>工程元规范族、测试规范体系族、UI 设计范式、路由内核 | 核心自研资产；深度受控部署与规则锁定 |
+| **Private（自研层）** | `private/` | **32 个核心自研技能**<br>工程元规范族、测试规范体系族、UI 设计范式、路由内核 | 核心自研资产；深度受控部署与规则锁定 |
 
-- **Lint 校验源基线**：全仓由 `scripts/lint.ps1` 校验 **167 处入口源**（$20 + 94 + 24 + 29 = 167$），保证 frontmatter、相对引用与入口脚本完整性。
-- **路由编排技能**：由 `config/router-manifest.json` 策划并受控编排 **44 个唯一技能**，分布于 5 大核心领域及 14 条可执行配方。
+- **Lint 校验源基线**：全仓由 `scripts/lint.ps1` 校验 **172 处入口源**（20 基座模块 + 96 + 24 + 32），保证 frontmatter、相对引用与入口脚本完整性。
+- **路由编排技能**：由 `config/router-manifest.json` 策划并受控编排 **47 个唯一技能**，分布于 5 大核心领域及 14 条可执行配方。
 - **供应链依赖基线**：离线 CycloneDX 1.5 SBOM 聚合 **1083 个依赖组件**；SCA 扫描覆盖 **38 个 lockfile**（离线缓存 0 advisory findings）。
-- **自动化质量门禁**：测试套件矩阵包含 **19 个独立测试套件**，覆盖单元、契约、隔离集成、效果评估与性能基准。
+- **自动化质量门禁**：测试套件矩阵包含 **30 个独立测试套件**，覆盖单元、契约、隔离集成、效果评估与性能基准。
+- **本地内容区**：`distill/`（经验沉淀与候审设计稿）与 `.logs/`（路由观测台账）为 gitignored 本地数据面——机制在仓、内容不入仓。
 
 ---
 
@@ -39,9 +40,11 @@ Ming 的 Agent 技能集散与工程中枢（Skills Hub & Monorepo）：统一�
   ▼
 [RouteDecision v2.0.0]
   ├─ allowCaseInit: false (fail-closed 恒定关闭，严禁越权创建工单)
-  ├─ active_recipe: 对应 13 条工程级配方，装配唯一技能清单
+  ├─ active_recipe: 对应 14 条工程级配方，装配唯一技能清单
   └─ adapt() 适配层: 纯映射至宿主 Harness，安全拒绝未知协议
 ```
+
+路由观测走 Stage-0 纯观测通道：`route-observer.mjs` 挂 `UserPromptSubmit` hook（Claude Code / Devin CLI 同形 stdin 契约），本地跑 `Decide` 并把**全量决策**追加至 `.logs/route-observed.jsonl`——stdout 恒空、exit 恒 0，永不注入或阻塞 prompt。积累的真实语料供离线 precision/recall 对账，决定 Stage-1 advisory 是否值得启用。
 
 ### 核心领域分布
 
@@ -88,7 +91,7 @@ node scripts/verify.mjs --profile quick
 # 2. 增量模式：由 plan.mjs 分析暂存区并仅运行受影响任务
 node scripts/verify.mjs --profile affected
 
-# 3. 全量模式：17 个测试套件全量回归 + 严格离线供应链检查 (pre-push 默认)
+# 3. 全量模式：30 个测试套件全量回归 + 严格离线供应链检查 (pre-push 默认)
 node scripts/verify.mjs --profile full
 
 # 4. 发布模式：全量测试 + SBOM/SCA 深度比对防篡改 (--check-freshness) + Benchmark P95 性能硬阈值
@@ -124,8 +127,8 @@ node scripts/verify.mjs --profile release
 
 | 命令 | 用途 |
 |---|---|
-| `node tests/run.mjs --require-all` | 执行全套 17 个自动化测试套件 |
-| `pwsh -File scripts/lint.ps1` | 全仓 162 处校验源静态规范与完整性检查 |
+| `node tests/run.mjs --require-all` | 执行全套 30 个自动化测试套件 |
+| `pwsh -File scripts/lint.ps1` | 全仓 172 处校验源静态规范与完整性检查 |
 | `pwsh -File scripts/sync.ps1 -DryRun` | 预览技能部署分发情况（只读无副作用） |
 | `pwsh -File scripts/sync.ps1` | 部署已启用的技能到客户端（Windows 优先使用 symlink） |
 | `node scripts/check-supply-chain.mjs --strict` | 运行离线严格模式供应链来源与制品校验 |
@@ -134,8 +137,9 @@ node scripts/verify.mjs --profile release
 
 ### 5.3 文档导航
 
-- **[TESTING.md](docs/TESTING.md)**：17 个测试套件详细构成、运行方式与内容规范。
+- **[TESTING.md](docs/TESTING.md)**：30 个测试套件详细构成、运行方式与内容规范。
 - **[GIT_HOOKS.md](docs/GIT_HOOKS.md)**：Git Hooks 分层设计、`.hooksrc` 配置与快照一致性说明。
-- **[ROUTER_ARCHITECTURE.md](docs/ROUTER_ARCHITECTURE.md)**：路由决策内核、契约模式与 Harness 适配层设计。
+- **[ROUTER_ARCHITECTURE.md](docs/ROUTER_ARCHITECTURE.md)**：路由决策内核、契约模式、Harness 适配层与 Stage-0 观测通道设计。
+- **[GOVERNANCE-SPINE.md](docs/GOVERNANCE-SPINE.md)**：工件本体清单、源/投影/消费方对账矩阵与候审/消融台账。
 - **[STANDARDS.md](docs/STANDARDS.md)**：测试规范族设计、黄金法则与代码质量约束。
 - **[历史快照] [INVENTORY.md](docs/INVENTORY.md)** / **[SCREENING.md](docs/SCREENING.md)**：2026-08-18 历史采集与审阅基线记录。

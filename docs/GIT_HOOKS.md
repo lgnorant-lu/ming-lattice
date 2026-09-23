@@ -106,7 +106,7 @@ status: normative
 
 ### 2.3 `pre-push` 检查项
 1. **推送引用分析**：读取 `stdin` 中的 `<local-ref> <local-sha> <remote-ref> <remote-sha>`，过滤远端分支删除等无代码推送行为。
-2. **全量本地门禁**：调用 `node scripts/verify.mjs --profile full`，执行全部 17 个测试套件及严格模式离线供应链门禁。由于 Git hooks 可被客户端绕过，最终安全底线由远端 CI 和主干分支保护规则把关。
+2. **全量本地门禁**：调用 `node scripts/verify.mjs --profile full`，执行全部 30 个测试套件及严格模式离线供应链门禁。由于 Git hooks 可被客户端绕过，最终安全底线由远端 CI 和主干分支保护规则把关。
 
 ### 2.4 发布 freshness 与本地缓存
 

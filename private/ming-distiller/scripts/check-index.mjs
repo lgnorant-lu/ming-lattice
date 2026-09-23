@@ -71,7 +71,12 @@ function parseFrontmatter(file) {
 }
 
 // ── 主校验 ──
-if (!fs.existsSync(INDEX_PATH)) { add('E', 'distill/INDEX.yaml 不存在'); }
+// distill/ 自 2026-09-22 起为本地内容区（gitignored）：机制在仓、内容不入仓。
+// 目录缺席 = 本机无沉淀内容，跳过分校验；存在才做 INDEX<->条目对账。
+if (!fs.existsSync(INDEX_PATH)) {
+  console.log('distill-index: distill/ 缺席（本地内容区未初始化）——跳过校验');
+  process.exit(0);
+}
 else {
   const indexText = fs.readFileSync(INDEX_PATH, 'utf8');
   // schemaVersion 活化——字段须在场且为当前契约版（write-only 仪式字段不设）

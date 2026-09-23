@@ -114,8 +114,8 @@ status: normative
 |---|---|---|---|---|---|
 | `registry.yaml` | SoT | —（人眼锚） | lint/check-skill 结构校验 | manifest 测试族 | 各层计数曾被 SKILL-INDEX 反查 |
 | `docs/SKILL-INDEX.md` | 投影+声明混合 | registry | `check-skill-index.mjs` | 套件内 | — |
-| `distill/INDEX.yaml` | SoT | — | `check-index.mjs` | 套件内 | — |
-| `distill/<proj>/*.md` | 投影（经验条目） | INDEX | 同上 | — | — |
+| `distill/INDEX.yaml` | SoT（本地内容区） | — | `check-index.mjs`（目录缺席容忍跳过） | 套件内 | 2026-09-22 起 gitignored——机制在仓内容不入仓 |
+| `distill/<proj>/*.md` | 投影（经验条目，本地） | INDEX | 同上 | — | 同上 |
 | `.hooksrc`(+分节) | 声明带 SoT | — | 孤儿键+checkKeyspace | hook-engine 组 15 | — |
 | `.githooks/*` | 投影 | `lib/shims.mjs` | `checkAdoptionHealth` | 第 10 组 | — |
 | `state.json` `adoption` | 采纳被动记录 | install-hooks.ps1 写入 | `engine list` 落后对账 | 第 17 组 | — |
@@ -124,7 +124,7 @@ status: normative
 | router manifest | 全生成带 | `build-router-manifest.mjs` | `manifest-freshness` | 套件内 | — |
 | `scripts/hooks/engine.mjs` | 门宿主 | — | integrityLevel 自检族 | hook-engine 组 | install/doctor 生命周期件 |
 | `.hooksrc.tmpl` | 投影（键空间） | 门 `configKeys` 自描述字段 | `checkKeyspace`（integrity 族） | hook-engine 组 15 | 通用键+声明式键+chore 键并集对账 |
-| `distill/_proposals/*` | 候审档 | frontmatter status/reviewAfter | `gates/review-after.mjs` + `cadence=7d` | hook-engine 组 14 | warn 提醒非阻断 |
+| `distill/_proposals/*` | 候审档（本地） | frontmatter status/reviewAfter | `gates/review-after.mjs` + `cadence=7d` | hook-engine 组 14 | warn 提醒非阻断；随 distill/ 不入仓 |
 | 文档外链 | 工作区内容 | markdown/文本 http(s) URL | `gates/link-rot.mjs` + `cadence=7d` | hook-engine 组 19 | 非阻断 stage 限定（post-merge/post-checkout）；localhost 注入测试禁真网络 |
 | observability schema | SoT（事件层） | `docs/schemas/observability-event.schema.json` | 契约测试 | observability 套件 | hook 事件未接线（待消费方） |
 | `.logs/route-misses.jsonl` | 台账（弱判定语料） | route-core `--miss-log` 写入约定 | observability 套件断言强弱分桶 | 同上 | 本地明文，gitignored；消费=harvest-misses |
@@ -142,7 +142,7 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 | ming-l-paradigm | 全反哺 | scaffold-domains + audit-domains 套件 |
 | testing-*-idiom 族 | 半反哺 | 测试写法部分契合，无对账检查 |
 | contract-core-paradigm | 半反哺 | 契约测试族存在但未按其 schema 规范组织 |
-| docs-*-idiom | 未反哺 | README/文档未按其排版规则审计 |
+| docs-*-idiom | 半反哺 | 2026-09-22 README 按其规则刷新（数字漂移清零+新件导航）；docs/ 树全量排版审计未做 |
 | arch-core-paradigm | 未反哺 | 无架构边界自检 |
 
 ## 11. 候审与已删记录

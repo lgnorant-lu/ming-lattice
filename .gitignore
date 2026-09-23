@@ -37,5 +37,13 @@ config/router-embeddings.json
 # 门禁引擎个人覆盖层（.hooksrc 为共享配置，.local 为个人豁免——永不入仓）
 .hooksrc.local
 
+# 经验沉淀与候审设计稿——本地内容区，机制在仓内容不入仓（check-index 对本目录容忍缺席）
+distill/
+
+# vendored 采集可能带入的依赖目录与各 harness 本机配置
+node_modules/
+**/.claude/settings.local.json
+.devin/config.local.json
+
 # 路由弱判定台账（miss ledger——语义通道证据收割源，本地明文）
 .logs/
