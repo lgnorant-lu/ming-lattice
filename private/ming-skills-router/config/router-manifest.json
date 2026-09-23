@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-23T02:06:25.381Z",
+  "generatedAt": "2026-09-23T08:05:21.365Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -263,6 +263,7 @@
         "config-core-paradigm",
         "overlay-core-paradigm",
         "arch-core-paradigm",
+        "vendor-paradigm",
         "review-core-paradigm",
         "explore-core-paradigm",
         "depth-core-paradigm",
@@ -414,7 +415,14 @@
         "iceberg",
         "root cause",
         "5 whys",
-        "层级归因"
+        "层级归因",
+        "vendoring",
+        "物化",
+        "materialization",
+        "lockfile",
+        "第三方依赖",
+        "gitlink",
+        "孤本"
       ],
       "qualityGateTriggers": [
         "质量门禁",
@@ -510,6 +518,21 @@
           "架构边界",
           "ffi边界",
           "strangler"
+        ],
+        "vendor-paradigm": [
+          "vendor",
+          "vendoring",
+          "物化",
+          "materialization",
+          "lockfile",
+          "第三方依赖",
+          "依赖入库",
+          "third_party",
+          "gitlink",
+          "submodule",
+          "孤本",
+          "orphan",
+          "sourceGone"
         ],
         "review-core-paradigm": [
           "消融",
@@ -804,6 +827,7 @@
     "testing-workflow-spec": "ready",
     "ui-design-paradigms": "ready",
     "ui-oracle-protocol": "ready",
+    "vendor-paradigm": "ready",
     "xfqtrace-kit": "ready"
   },
   "skillDocs": {
@@ -1198,6 +1222,25 @@
       "name": "ui-oracle-protocol",
       "description": "将安卓 UI 控件自动化作为协议逆向的 oracle（时间戳对齐+流量窗口切片）。当需要验证抓包参数猜测、还原加密参数生成时机、确认某个 UI 操作触发了哪些网络请求、对比重放结果、生成\"操作→请求\"映射表时使用。依赖 appium-mcp MCP server（NO_UI=true）、mitmproxy（时间戳脚本）、frida（unpinning）。目标为安卓真机/模拟器上的真实 App。",
       "triggers": []
+    },
+    "vendor-paradigm": {
+      "name": "vendor-paradigm",
+      "description": "第三方内容入库范式元规则——清单即锁/内容即产物/孤本例外声明三原则 + 四件套（锁清单/物化器/边界门/孤本位）+ vendored-vs-物化判据。当讨论 vendoring、第三方依赖入库、参考仓集合管理、大文件该不该进 git、lockfile 选型、上游消失应对、gitlink/submodule 事故时使用。触发词：vendor, vendoring, 物化, materialization, lockfile, 第三方依赖, 依赖入库, third_party, gitlink, subtree, submodule, 孤本, orphan, sourceGone。",
+      "triggers": [
+        "vendor",
+        "vendoring",
+        "物化",
+        "materialization",
+        "lockfile",
+        "第三方依赖",
+        "依赖入库",
+        "third_party",
+        "gitlink",
+        "submodule",
+        "孤本",
+        "orphan",
+        "sourceGone"
+      ]
     },
     "xfqtrace-kit": {
       "name": "xfqtrace-kit",

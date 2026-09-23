@@ -1,5 +1,6 @@
-// scripts/hooks/gates/vendor-boundary.mjs
+// scripts/hooks/gates.local/vendor-boundary.mjs
 // vertical/ 物化区边界门——远端仅存索引的仓储不变量执行件。
+// 仓专门（硬依赖本仓 registry.yaml 契约）——故驻 gates.local/ 而非随 kit 分发的 gates/。
 //
 // 不变量：staged ∩ vertical/ ⊆ { registry.vertical[].path | sourceGone=true }
 //   白名单由 registry 的 sourceGone 字段派生（孤本=上游已下架、须本仓承载字节的例外），

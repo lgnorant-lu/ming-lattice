@@ -15,7 +15,7 @@ vertical/*/.git/
 
 # ── vertical/ 物化区（远端仅存索引，字节由 scripts/fetch.mjs 物化）──
 # 默认全忽略；sourceGone 孤本（上游已下架的全网孤本）白名单入库——
-# 与 gates/vendor-boundary.mjs 同源：白名单由 registry sourceGone 字段派生，两处须一致
+# 与 gates.local/vendor-boundary.mjs 同源：白名单由 registry sourceGone 字段派生，两处须一致
 vertical/*/
 !vertical/ruyipage-js/
 !vertical/ruyipage-go/

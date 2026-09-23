@@ -11,6 +11,7 @@ status: descriptive
 > 后续增补：2026-09-16 指纹专项（vertical fingerprintjs/ja4/creepjs + private antibot-fingerprint-paradigm/arch-core-paradigm）；2026-09-21 社区 Agent Skill 轮（vertical apk-reverse-community/birdview）
 > 后续增补：2026-09-18 工程元规范族小节补全（engineering/* 10 包）+ ming-skills-router + config-core-paradigm 登记
 > 后续增补：2026-09-21 MCP 工具链与 Frida 生态小节补登（18 个 2026-08-18 采集项漏登记）· 契约门禁 scripts/check-skill-index.mjs 落地
+> 后续增补：2026-09-23 vendor-paradigm 转正（物化制实战萃取）；vendor-boundary 门迁 gates.local/
 
 ## 一、基座模块（已部署, 20 个）
 
@@ -276,7 +277,7 @@ status: descriptive
 | **testing-scenario-cli** | 场景特化 | 命令行与脚本工具契约：参数退出码矩阵、可注入FS/Env、幂等性与防半成品 | cli-test, command-line-testing, exit-codes, golden-files |
 | **testing-scenario-scraper** | 场景特化 | 采集爬虫与清洗管道：离线 Fixture 优先、领域不变量、选择器健康度、活网仅作探针 | scraper-testing, crawler-test, selector-health, fixture-parsing |
 
-### 3. 工程元规范族（engineering/* 根级 14 包）
+### 3. 工程元规范族（engineering/* 根级 15 包）
 
 > 惯例：`metadata.layer` + `compose` 自声明装配；`*-paradigm` 带 references/sources.md 文献链 + Compose 节。导引见 `private/engineering/README.md`。
 
@@ -290,6 +291,7 @@ status: descriptive
 | config-core-paradigm | 跨场景配置归一化元规则：十轴模型 + 组合解析 + 旗标生命周期 + 复杂度时钟 | 已部署 |
 | overlay-core-paradigm | 跨场景 B 级质量属性横切不变量：性能/隐私/韧性/成本/兼容/无障碍 | 已部署 |
 | arch-core-paradigm | 架构边界元规则：六边形/Ports-Adapters 最小形态 + FFI 迁移接缝 | 已部署 |
+| vendor-paradigm | 第三方内容入库范式：清单即锁/内容即产物/孤本例外 + vendored-vs-物化判据 + 物化器契约坑表 | 已部署 |
 | review-core-paradigm | 跨场景评审元规则：消融摘除存活性 + 独立上下文 critic + 人筛回喂 + 证据收尾 | 已部署 |
 | explore-core-paradigm | 发散探索元规则：升降模型 + 五算子换轨（VS尾部采样/异策略/形态学/premortem/ToT）+ disagree续探agree承诺判据 | 已部署 |
 | depth-core-paradigm | 审计下潜深度裁决：动态序贯下潜（层级假设→区分度探针→后验收敛）+ 静态先验绊线 + 可行动性停止判据 | 已部署 |

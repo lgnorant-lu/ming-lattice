@@ -576,7 +576,7 @@ export async function run() {
     } finally { fs.rmSync(rdir, { recursive: true, force: true }); }
 
     // vendor-boundary 门：staged∩vertical  ⊆ registry sourceGone 白名单——非孤本拦截/孤本放行/域外不扫
-    const { gate: vbGate } = await import('../../scripts/hooks/gates/vendor-boundary.mjs');
+    const { gate: vbGate } = await import('../../scripts/hooks/gates.local/vendor-boundary.mjs');
     const vdir = tempRepo();
     try {
       fs.writeFileSync(path.join(vdir, 'registry.yaml'), [
