@@ -179,6 +179,15 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - ~~targets 本机路径入 SoT~~——**已清偿**（2026-09-23：`registry.yaml` targets 改 `%USERPROFILE%` env 占位 + `sync.ps1` 读入点统一 ExpandEnvironmentVariables，DryRun 实测展开正确）
 - lint 硬编码门覆盖面缺口——现 lint 扫 SKILL.md/scripts 的 `C:\Users\xxx` 类路径，但 registry.yaml（targets）这类 SoT 配置不在扫面内（本次即漏网实例）；门扩面或 SoT 契约校验二选一
 - deployable/areclaw-* POSIX 命令文档——包装文档内 grep/sort/comm//tmp 示例与本机 grep-guard 冲突（vendored 包装层内容，agent 执行时可自适应；如需消除再改）
+- xfinjectd 第二拷贝——`vertical/frida-gadget-helper/` 内含 xfqtrace 同族注入器二进制（4.6MB）+ libgadget-rusda.so(25.6MB)，在 vendored 层公开史中；若按"工具脱离"口径处理需 filter-repo 再跑该路径（或确认上游公开可留）
+- vendored LICENSE 覆盖缺口——96 vendored 中 32 个无 LICENSE 文件（frida-gadget-helper/rusda/ruyipage 族/Crack-JS-Spider 等），严格合规角度无许可=无权再分发；社区惯例容忍但属灰区。与"本仓 LICENSE 选型"同案裁决
+- githook 族 skill 增补商讨设计组件——门规变更/新门设计的讨论通道设计件（用户口述方向，细节待成形）
+- author-identity 门（外部先例已查实）——`git var GIT_AUTHOR_IDENT` 取生效身份 → 哨兵名单拦截(t@t/test@test/fixture@*/空) 或白名单域校验；先例：spuder git-hooks(author+committer 双查)、chump pre-commit-git-identity(夹具身份烙进正式仓的事故修复门)、Git::MoreHooks mailmap 校验、conform(GPG签名+身份+org 对账)。本仓适用形态：单作者仓——策略=身份必须 ∈ {noreply}，防止 QQ 邮箱回流公开史。注意 author≠committer 语义（amend/cherry-pick/-s signoff 用 committer 侧）
+- PII/卫生扫描门（外部先例）——staged-diff `--diff-filter=ACMR` 只扫新增行：个人邮箱域/电话/私网 IP/家目录路径(/Users,/home,/C:\Users)；`.pii-allow` 允许清单文件先例(cmk/connections)与 .hooksrc.local 哲学同构；hmrc 双通道(filename+filecontent+二进制扩展名排除)可参考。与既有 secrets 门互补（secrets 管密钥，PII 管个人数据）
+- 大文件门——pre-commit check-added-large-files 同型(staged 阈值, 默认 500KB)；本仓 vendored 大二进制合法入库故须配 exempt 路径(vertical/)或高阈值 warn 级
+- repo-health 门——repolinter(todogroup/New Relic 在用)+conform license 策略先例：根必需文件在场断言(LICENSE/SECURITY.md/README)、社区健康文件覆盖；本仓 LICENSE 缺席即此类门的活靶
+- ~~DCO/Signed-off-by~~——已评估不适用：多贡献者 IP 证明机制，单作者仓无受益面；记录防复建。commit 签名(GPG/SSH/sigstore)另案候审——公开仓供应链价值真实存在
+- evil-merge 检测——merge commit tree≠双亲干净合并=走私变更面(Glyndor workflow 先例)；当前线性史单人仓不适用，分叉协作启用时再立
 - 文档簇引用规则门（图内化的实例面）——外部先例已查实：需求追踪矩阵(DO-178C/ISO26262/NASA SWE-059: 双向链接+孤儿=finding+粒度声明式)、Diataxis 四象限交叉引用规则(how-to<->explanation 可互指不可混体)、contextlint(文档依赖图/孤儿/环检测)、nodex(typed edges: supersedes/implements/covers/references 固定词表+pre-commit 门)、defines-provenance(DEFINES/DEPENDS_ON 声明式溯源)、gno audit(只读审计+稳定 finding id+exit 0/4/5)。开放位=簇x簇允许边矩阵作为通用治理原语+提交时自动排除临时文件引用；机制层(文档图/孤儿/断链)全部有现成实现可借
 - L 中枢串联——主轴框架间插件式互联，明确过早仅留槽
 
