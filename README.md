@@ -11,7 +11,7 @@ Ming 的 Agent 技能集散与工程中枢（Skills Hub & Monorepo）：统一�
 | 资产层次 | 目录路径 | 规模与构成 | 治理与部署策略 |
 |---|---|---|---|
 | **Base（底座层）** | `base/reverse-skill/` | **1 个基座（20 个已启用模块）**<br>submodule 跟踪 upstream 逆向体系 | 按需通过 `base[].modules` 声明并分发至客户端 |
-| **Vertical（参考层）** | `vertical/` | **96 个垂直参考库**<br>涵盖前端混淆、二进制、移动端与爬虫案例 | 离线 vendored 归档；`deploy:{}` 仅作只读参考 |
+| **Vertical（参考层）** | `vertical/` | **96 个垂直参考库**<br>涵盖前端混淆、二进制、移动端与爬虫案例 | **物化区：远端仅存索引（repo+pin），本地 `node scripts/fetch.mjs` 一键物化**；`deploy:{}` 仅作只读参考 |
 | **Deployable（包装层）** | `deployable/` | **24 个包装技能**<br>本地封装门面、去重清洗与定制包装 | 映射包装并分发至目标客户端环境 |
 | **Private（自研层）** | `private/` | **32 个核心自研技能**<br>工程元规范族、测试规范体系族、UI 设计范式、路由内核 | 核心自研资产；深度受控部署与规则锁定 |
 
@@ -129,6 +129,7 @@ node scripts/verify.mjs --profile release
 |---|---|
 | `node tests/run.mjs --require-all` | 执行全套 30 个自动化测试套件 |
 | `pwsh -File scripts/lint.ps1` | 全仓 172 处校验源静态规范与完整性检查 |
+| `node scripts/fetch.mjs` | 物化 vertical 参考层（按 registry pin 浅取；`--dry-run` 预览 / `--only <名>` 单项 / `--reconcile` 对齐漂移） |
 | `pwsh -File scripts/sync.ps1 -DryRun` | 预览技能部署分发情况（只读无副作用） |
 | `pwsh -File scripts/sync.ps1` | 部署已启用的技能到客户端（Windows 优先使用 symlink） |
 | `node scripts/check-supply-chain.mjs --strict` | 运行离线严格模式供应链来源与制品校验 |

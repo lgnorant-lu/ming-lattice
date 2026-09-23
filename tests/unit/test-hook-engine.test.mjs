@@ -575,6 +575,27 @@ export async function run() {
       assert.deepEqual(await raGate.run({ root: rdir, gateConfig: {} }), [], '未配 globs=off');
     } finally { fs.rmSync(rdir, { recursive: true, force: true }); }
 
+    // vendor-boundary 门：staged∩vertical  ⊆ registry sourceGone 白名单——非孤本拦截/孤本放行/域外不扫
+    const { gate: vbGate } = await import('../../scripts/hooks/gates/vendor-boundary.mjs');
+    const vdir = tempRepo();
+    try {
+      fs.writeFileSync(path.join(vdir, 'registry.yaml'), [
+        'vertical:',
+        '  - name: gone-one',
+        '    path: vertical/gone-one',
+        '    sourceGone: true',
+        '  - name: fetchable',
+        '    path: vertical/fetchable',
+        '    repo: https://github.com/x/y.git',
+      ].join('\n'));
+      const vbCtx = { root: vdir, files: ['vertical/gone-one/a.js', 'vertical/fetchable/b.js', 'private/c.md'] };
+      const vf = await vbGate.run(vbCtx);
+      assert.equal(vf.length, 1, `仅非孤本 vertical 命中，实际: ${vf.map(f => f.file).join(',')}`);
+      assert.equal(vf[0].file, 'vertical/fetchable/b.js');
+      assert.ok(vf[0].message.includes('物化区'));
+      assert.deepEqual(await vbGate.run({ root: vdir, files: ['private/c.md'] }), [], '域外不扫');
+    } finally { fs.rmSync(vdir, { recursive: true, force: true }); }
+
     // e2e：cadence 节流——首跑告警盖戳→次跑跳过→改旧戳再跑复报
     const edir = tempRepo();
     try {

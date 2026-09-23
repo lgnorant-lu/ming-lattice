@@ -99,7 +99,7 @@ vertical:
   - name: js-reverse-715494637
     repo: https://github.com/715494637/reverse-skill.git
     path: vertical/js-reverse-715494637
-    pin: a3e116e
+    pin: a3e116e3c0c57075a096db696240fed20b73cfa6
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -110,7 +110,7 @@ vertical:
   - name: hello-js-reverse-skill
     repo: https://github.com/WhiteNightShadow/hello_js_reverse_skill.git
     path: vertical/hello-js-reverse-skill
-    pin: c5f14bd
+    pin: c5f14bdfd6405a824e1b16cf8d5490350e711156
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -121,7 +121,7 @@ vertical:
   - name: xbs-reverse-skill
     repo: https://github.com/lwjjike/xbsReverseSkill.git
     path: vertical/xbs-reverse-skill
-    pin: 5688300
+    pin: 5688300f0f94ceda20fdf7f7ba2dde6899ec6064
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -132,7 +132,7 @@ vertical:
   - name: ai-reverse-toolkit
     repo: https://github.com/zhizhuodemao/ai-reverse-toolkit.git
     path: vertical/ai-reverse-toolkit
-    pin: 02799de
+    pin: 02799de7420ea78c57bf7af8cc0f2d38fef017bd
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -143,7 +143,7 @@ vertical:
   - name: jshook-skill
     repo: https://github.com/wuji66dde/jshook-skill.git
     path: vertical/jshook-skill
-    pin: ffbd3e8
+    pin: ffbd3e87c4e3f4631a51b45393a919216f38a2ba
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -154,7 +154,7 @@ vertical:
   - name: codex-reverse-skills
     repo: https://github.com/firstrui/codex-reverse-skills.git
     path: vertical/codex-reverse-skills
-    pin: c586c90
+    pin: c586c90588141a6e0efb8aa4050d16e6b6d4b97c
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -165,7 +165,7 @@ vertical:
   - name: js-reverse-ops
     repo: https://github.com/DQmyth/js-reverse-ops.git
     path: vertical/js-reverse-ops
-    pin: 17076e2
+    pin: 17076e28c1772f6989dab8ec9eee3cfca9351059
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -176,7 +176,7 @@ vertical:
   - name: re-skill-mcp
     repo: https://github.com/ZhuSheng-0807/reverse-engineering-skill.git
     path: vertical/re-skill-mcp
-    pin: e2ade50
+    pin: e2ade50eac48b4842127cf7e2f0cc46928a0f2d3
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -187,7 +187,7 @@ vertical:
   - name: iwen-scraping
     repo: https://github.com/xiao-heng/iwen-scraping.git
     path: vertical/iwen-scraping
-    pin: 4e34565
+    pin: 4e3456551d9bb531c026bb03345dc553b514d26f
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -200,7 +200,7 @@ vertical:
   - name: reverse-skills-p4nda0s
     repo: https://github.com/P4nda0s/reverse-skills.git
     path: vertical/reverse-skills-p4nda0s
-    pin: a2baa31
+    pin: a2baa31c58a3567977188414da68c8c842057152
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -211,7 +211,7 @@ vertical:
   - name: binary-re-arm64
     repo: https://github.com/2389-research/binary-re.git
     path: vertical/binary-re-arm64
-    pin: 42aee90
+    pin: 42aee9063f3f3d52616700df3aa16df82b848604
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -222,7 +222,7 @@ vertical:
   - name: reveng-static
     repo: https://github.com/th3vib3coder/RevEng.git
     path: vertical/reveng-static
-    pin: d66dd93
+    pin: d66dd939d8b67436d5bb735f7f2110a30d4f4504
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -233,7 +233,7 @@ vertical:
   - name: rust-reverse-engineering-skill
     repo: https://github.com/jingjing2222/rust-reverse-engineering-skill.git
     path: vertical/rust-reverse-engineering-skill
-    pin: 03e19a7
+    pin: 03e19a73a4f615056cca9e21ac8a8f078ec554aa
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -244,7 +244,7 @@ vertical:
   - name: malware-re-skills
     repo: https://github.com/hackersifu/reverse-engineering-skills.git
     path: vertical/malware-re-skills
-    pin: 5e67564
+    pin: 5e675640e0ec94372298c57bb335ecf047360688
     acquiredAt: 2026-08-18
     enabled: true
     domain: mw
@@ -256,7 +256,7 @@ vertical:
   - name: android-reverse-claude-skill
     repo: https://github.com/incogbyte/android-reverse-engineering-claude-skill.git
     path: vertical/android-reverse-claude-skill
-    pin: 68ba6ce
+    pin: 68ba6ced8ef38ee1bba7899c1b44cb74578351f0
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
@@ -267,7 +267,7 @@ vertical:
   - name: ios-reverse-claude-skill
     repo: https://github.com/incogbyte/iOS-reverse-engineering-claude-skill.git
     path: vertical/ios-reverse-claude-skill
-    pin: ced3523
+    pin: ced35231baa4506e2087efb1bf3aa1ef53101ea1
     acquiredAt: 2026-08-18
     enabled: true
     domain: ios
@@ -278,7 +278,7 @@ vertical:
   - name: areclaw
     repo: https://github.com/TheQmaks/areclaw.git
     path: vertical/areclaw
-    pin: 4eb5d2f
+    pin: 4eb5d2feb39481f5a374e874b7af32190c298d28
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
@@ -290,7 +290,7 @@ vertical:
   - name: open-reverselab
     repo: https://github.com/LING71671/open-reverselab.git
     path: vertical/open-reverselab
-    pin: 79641ba
+    pin: 79641bab7f0ce9227265872f8e97623b3fad64ee
     acquiredAt: 2026-08-18
     enabled: true
     domain: kb
@@ -301,7 +301,7 @@ vertical:
   - name: ctf-skills
     repo: https://github.com/ljagiello/ctf-skills.git
     path: vertical/ctf-skills
-    pin: 36c72e5
+    pin: 36c72e53a96a035791821caff7440882ea0f5c57
     acquiredAt: 2026-08-18
     enabled: true
     domain: ctf
@@ -312,7 +312,7 @@ vertical:
   - name: re-skill-retro
     repo: https://github.com/vgrichina/re-skill.git
     path: vertical/re-skill-retro
-    pin: 64c3bff
+    pin: 64c3bffb54ae4b9d99804a03fa4f179f4dd080c5
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
@@ -323,7 +323,7 @@ vertical:
   - name: game-security-skills
     repo: https://github.com/gmh5225/awesome-game-security.git
     path: vertical/game-security-skills
-    pin: 8f650f3
+    pin: 8f650f3b345d34850303d06de04414bb4648bb50
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
@@ -335,7 +335,7 @@ vertical:
   - name: trailofbits-skills
     repo: https://github.com/trailofbits/skills.git
     path: vertical/trailofbits-skills
-    pin: 14e5a10
+    pin: 14e5a1070020c5d101e8362756f3201fb677b467
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
@@ -347,7 +347,7 @@ vertical:
   - name: claude-code-pentest
     repo: https://github.com/Orizon-eu/claude-code-pentest.git
     path: vertical/claude-code-pentest
-    pin: f1cf16f
+    pin: f1cf16f691fbc5d87aa6ed421a945f1af3fc7af7
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
@@ -359,7 +359,7 @@ vertical:
   - name: ida-claude-plugins
     repo: https://github.com/HexRaysSA/ida-claude-code-plugins.git
     path: vertical/ida-claude-plugins
-    pin: 82d6625
+    pin: 82d6625b103775d3e861ff506a5339397841b1e8
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -371,7 +371,7 @@ vertical:
   - name: jadx-mcp-server
     repo: https://github.com/Qtty/jadx-mcp-server.git
     path: vertical/jadx-mcp-server
-    pin: 4e6d890
+    pin: 4e6d890d1d3753d2bb47d492a9523ef98874df85
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
@@ -384,7 +384,7 @@ vertical:
   - name: frida-mcp
     repo: https://github.com/dnakov/frida-mcp.git
     path: vertical/frida-mcp
-    pin: f8003c7
+    pin: f8003c7de69ca8fc13a019f0c9b6abcc61b1717c
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
@@ -396,7 +396,7 @@ vertical:
   - name: ghidra-mcp-lauriewired
     repo: https://github.com/LaurieWired/GhidraMCP.git
     path: vertical/ghidra-mcp-lauriewired
-    pin: 27f316f
+    pin: 27f316f80139e2d5dec882519a1bdf4aa46ac04c
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
@@ -408,7 +408,7 @@ vertical:
   - name: radare2-mcp
     repo: https://github.com/radareorg/radare2-mcp.git
     path: vertical/radare2-mcp
-    pin: 87f43e9
+    pin: 87f43e9b6f9b3b709ff21b11ecf3c54dd3b6a76b
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
@@ -420,7 +420,7 @@ vertical:
   - name: jadx-mcp-plugin
     repo: https://github.com/mobilehackinglab/Jadx-MCP-Plugin.git
     path: vertical/jadx-mcp-plugin
-    pin: b6493ee
+    pin: b6493ee742592f801c3e06213d4e3be5f00ba26e
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
@@ -432,7 +432,7 @@ vertical:
   - name: apktool-mcp-server
     repo: https://github.com/zinja-coder/apktool-mcp-server.git
     path: vertical/apktool-mcp-server
-    pin: 12bb331
+    pin: 12bb33134af905923a0a58643dcc35fd694ad6f6
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
@@ -444,7 +444,7 @@ vertical:
   - name: burp-mcp-portswigger
     repo: https://github.com/PortSwigger/mcp-server.git
     path: vertical/burp-mcp-portswigger
-    pin: 642e6fa
+    pin: 642e6fa31c63db3886a353fcd7ed62037e0ceed5
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
@@ -456,7 +456,7 @@ vertical:
   - name: wire-mcp
     repo: https://github.com/0xKoda/WireMCP.git
     path: vertical/wire-mcp
-    pin: 7f45f8b
+    pin: 7f45f8b2b4adeb76be8c6227eefb38533fdd6b1e
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
@@ -468,7 +468,7 @@ vertical:
   - name: mcp-for-security
     repo: https://github.com/cyproxio/mcp-for-security.git
     path: vertical/mcp-for-security
-    pin: 51dd537
+    pin: 51dd537f5829470ebe508afd33186bd1a0459256
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
@@ -480,7 +480,7 @@ vertical:
   - name: x64dbg-mcp
     repo: https://github.com/Wasdubya/x64dbgMCP.git
     path: vertical/x64dbg-mcp
-    pin: e7474e5
+    pin: e7474e57d34aacf533d29e5778361637afef936a
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
@@ -492,7 +492,7 @@ vertical:
   - name: har-mcp
     repo: https://github.com/tjamet/har-mcp.git
     path: vertical/har-mcp
-    pin: 2bf2e0c
+    pin: 2bf2e0ceb39eaafe2938703c48292793d68c797a
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
@@ -504,7 +504,7 @@ vertical:
   - name: harvest-mcp
     repo: https://github.com/oscaromsn/harvest-mcp.git
     path: vertical/harvest-mcp
-    pin: 13cda0a
+    pin: 13cda0a208520e3f119775d3eeade7f77b5beac2
     acquiredAt: 2026-08-18
     enabled: true
     domain: mcp
@@ -516,7 +516,7 @@ vertical:
   - name: garlic
     repo: https://github.com/neocanable/garlic.git
     path: vertical/garlic
-    pin: 6ea9787
+    pin: 6ea978724ba10ebde45edacf6bd86b60c12ac3bd
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
@@ -540,7 +540,7 @@ vertical:
   - name: web-reverse-iv8
     repo: https://github.com/Nan857/web-reverse-iv8.git
     path: vertical/web-reverse-iv8
-    pin: 9777340
+    pin: 9777340dea09f671ba4b94c5db4558b8d28fb735
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -552,7 +552,7 @@ vertical:
   - name: decode-js
     repo: https://github.com/echo094/decode-js.git
     path: vertical/decode-js
-    pin: 6cacb63
+    pin: 6cacb633ceedf0812fe31f951ba8f41ffb431ca1
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -564,7 +564,7 @@ vertical:
   - name: jsc_deobfuscator
     repo: https://github.com/hasherezade/jsc_deobfuscator.git
     path: vertical/jsc_deobfuscator
-    pin: 6970e4a
+    pin: 6970e4af35c35e77ac8c09ba0887bb79c7b12f97
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -579,7 +579,7 @@ vertical:
   - name: wx-mp-mcp
     repo: https://github.com/WhiteNightShadow/wx-mp-mcp.git
     path: vertical/wx-mp-mcp
-    pin: e0d4bb8
+    pin: e0d4bb8faca6659420cfa86559547e31ab43c3eb
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -591,7 +591,7 @@ vertical:
   - name: wxminidec
     repo: https://github.com/killmonday/wxminidec.git
     path: vertical/wxminidec
-    pin: e647393
+    pin: e647393abbe271b793f5b706a7715c686779223b
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -605,7 +605,7 @@ vertical:
   - name: awesome-re-mcp
     repo: https://github.com/crowdere/Awesome-RE-MCP.git
     path: vertical/awesome-re-mcp
-    pin: e400b88
+    pin: e400b882965ef61302718c7fe7c4f1e2861bd664
     acquiredAt: 2026-08-18
     enabled: true
     domain: misc
@@ -617,7 +617,7 @@ vertical:
   - name: r2garlic
     repo: https://github.com/radareorg/r2garlic.git
     path: vertical/r2garlic
-    pin: a429871
+    pin: a4298713b80c7089ca7ba60b64cf13c7dcf20be5
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -629,7 +629,7 @@ vertical:
   - name: js-deobfuscator
     repo: https://github.com/kuizuo/js-deobfuscator.git
     path: vertical/js-deobfuscator
-    pin: 21598ad
+    pin: 21598ad5865a9e29b5c50c94f629a2e7528c7fbd
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -641,7 +641,7 @@ vertical:
   - name: view8
     repo: https://github.com/suleram/View8.git
     path: vertical/view8
-    pin: 4a27e9b
+    pin: 4a27e9b2e79a737d9d61ac326b0b6f0c73ea1c23
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -655,7 +655,7 @@ vertical:
   - name: blutter
     repo: https://github.com/worawit/blutter.git
     path: vertical/blutter
-    pin: 4a60ac6
+    pin: 4a60ac648bf448c5a7596437243bcd0b9376fdf0
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
@@ -667,7 +667,7 @@ vertical:
   - name: camoufox-cli
     repo: https://github.com/Bin-Huang/camoufox-cli.git
     path: vertical/camoufox-cli
-    pin: 4d86686
+    pin: 4d86686d8034e93910473671ee34453dee173cb2
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -679,7 +679,7 @@ vertical:
   - name: frida-skills
     repo: https://github.com/Rudra-ravi/frida-skills.git
     path: vertical/frida-skills
-    pin: 62c7806
+    pin: 62c78065aefa3e6a5d906df15fee4f071a946967
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -691,7 +691,7 @@ vertical:
   - name: frida-mcp-agent
     repo: https://github.com/1193776794/frida-mcp.git
     path: vertical/frida-mcp-agent
-    pin: 3766675
+    pin: 376667522b21f96e6098b891e00dd22fc6f242fe
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
@@ -703,7 +703,7 @@ vertical:
   - name: frida-mcp-skills
     repo: https://github.com/yfe404/frida-mcp-skills.git
     path: vertical/frida-mcp-skills
-    pin: d3f7350
+    pin: d3f73500fe2202ec09d01057a3e2835bfeae1d4f
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -717,7 +717,7 @@ vertical:
   - name: frida-gadget-helper
     repo: https://github.com/LunFengChen/frida-gadget-helper.git
     path: vertical/frida-gadget-helper
-    pin: ee38b11
+    pin: ee38b11d5e18212e898c369ff3b52798ee876bf9
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -729,7 +729,7 @@ vertical:
   - name: rusda
     repo: https://github.com/taisuii/rusda.git
     path: vertical/rusda
-    pin: 00f4889
+    pin: 00f48896b9e47417707c786974e5ef9ba0e50fc4
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -742,7 +742,7 @@ vertical:
   - name: appium-mcp
     repo: https://github.com/appium/appium-mcp.git
     path: vertical/appium-mcp
-    pin: b38a1f5
+    pin: b38a1f5c3f0ea5ee4386b74ff841ed4887fba3be
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
@@ -756,7 +756,7 @@ vertical:
   - name: ruyipage
     repo: https://github.com/LoseNine/ruyipage.git
     path: vertical/ruyipage
-    pin: cc93bde
+    pin: cc93bdef00fa2936387c899220ec70317ca8a2e1
     acquiredAt: 2026-08-18
     enabled: true
     domain: web
@@ -768,7 +768,7 @@ vertical:
   - name: ruyipage-skill
     repo: https://github.com/LoseNine/ruyipage-skill.git
     path: vertical/ruyipage-skill
-    pin: 5f00b6d
+    pin: 5f00b6d3c803ae95be684b5dedb8c2c284432906
     acquiredAt: 2026-08-18
     enabled: true
     domain: web
@@ -780,7 +780,7 @@ vertical:
   - name: ruyi-trace-analyzer
     repo: https://github.com/LoseNine/Firefox-FingerPrint-Analyzer.git
     path: vertical/ruyi-trace-analyzer
-    pin: c32bf8a
+    pin: c32bf8ad86905a7cb0a35170dd1190ba0276dfe3
     acquiredAt: 2026-08-18
     enabled: true
     domain: web
@@ -792,7 +792,7 @@ vertical:
   - name: firefox-fingerprintBrowser
     repo: https://github.com/LoseNine/firefox-fingerprintBrowser.git
     path: vertical/firefox-fingerprintBrowser
-    pin: 401a2d2
+    pin: 401a2d24bf17ab3acb4bc1832f7a543a90f52d0d
     acquiredAt: 2026-08-18
     enabled: true
     domain: web
@@ -846,7 +846,7 @@ vertical:
   - name: AI_JS_DEBUGGER
     repo: https://github.com/Valerian7/AI_JS_DEBUGGER.git
     path: vertical/AI_JS_DEBUGGER
-    pin: e748a44
+    pin: e748a443aa62b33240e212d1f7bf813c87ab4f65
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -858,7 +858,7 @@ vertical:
   - name: devtools-detecter
     repo: https://github.com/LoseNine/devtools-detecter.git
     path: vertical/devtools-detecter
-    pin: c72cac0
+    pin: c72cac0cd189c6d7b14b8ea42ceca3b46cc9ed99
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -870,7 +870,7 @@ vertical:
   - name: pjstealth
     repo: https://github.com/LoseNine/pjstealth.git
     path: vertical/pjstealth
-    pin: 420c8cb
+    pin: 420c8cb3eaa2c77fc09c579b4e99e0d2460224ba
     acquiredAt: 2026-08-18
     enabled: true
     domain: web
@@ -882,7 +882,7 @@ vertical:
   - name: FingerPrintJSBrowser
     repo: https://github.com/LoseNine/FingerPrintJSBrowser.git
     path: vertical/FingerPrintJSBrowser
-    pin: 7edbc74
+    pin: 7edbc74fa497bffc165468ccc28a81407523f5d7
     acquiredAt: 2026-08-18
     enabled: true
     domain: web
@@ -896,7 +896,7 @@ vertical:
   - name: Restore-JS
     repo: https://github.com/LoseNine/Restore-JS.git
     path: vertical/Restore-JS
-    pin: a4a629c
+    pin: a4a629c6f99d8e4ee08264a902a30a6df3829f13
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -908,7 +908,7 @@ vertical:
   - name: Crack-JS-Spider
     repo: https://github.com/LoseNine/Crack-JS-Spider.git
     path: vertical/Crack-JS-Spider
-    pin: 9d36933
+    pin: 9d36933c032b47498e09f2451624ebfd2645b825
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -922,7 +922,7 @@ vertical:
   - name: ast-hook-for-js-RE
     repo: https://github.com/LoseNine/ast-hook-for-js-RE.git
     path: vertical/ast-hook-for-js-RE
-    pin: 1a5f1a4
+    pin: 1a5f1a4e6a76ad3f7627559d0a04af26d439fef1
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -934,7 +934,7 @@ vertical:
   - name: unveilr
     repo: https://github.com/LoseNine/unveilr.git
     path: vertical/unveilr
-    pin: ce76e69
+    pin: ce76e699a333fe18c3ec3c5cdf6794d49a9d2297
     acquiredAt: 2026-08-18
     enabled: true
     domain: mp
@@ -946,7 +946,7 @@ vertical:
   - name: v_jstools
     repo: https://github.com/LoseNine/v_jstools.git
     path: vertical/v_jstools
-    pin: 86eb180
+    pin: 86eb180b1313e8358e77b21f1b12aa1749640a0d
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -958,7 +958,7 @@ vertical:
   - name: Frida-Apk-Unpack
     repo: https://github.com/LoseNine/Frida-Apk-Unpack.git
     path: vertical/Frida-Apk-Unpack
-    pin: b25ac27
+    pin: b25ac276ca73fdd4ee9cadb1da3a13844b1ef5eb
     acquiredAt: 2026-08-18
     enabled: true
     domain: apk
@@ -970,7 +970,7 @@ vertical:
   - name: CthulhuJs
     repo: https://github.com/LoseNine/CthulhuJs.git
     path: vertical/CthulhuJs
-    pin: 28999a4
+    pin: 28999a4132ed21e5fada078c93600abb0a83fb5d
     acquiredAt: 2026-08-18
     enabled: true
     domain: web
@@ -982,7 +982,7 @@ vertical:
   - name: brotector
     repo: https://github.com/LoseNine/brotector.git
     path: vertical/brotector
-    pin: 98b3309
+    pin: 98b330999e9928a226ca0c8254dddf909d1583bd
     acquiredAt: 2026-08-18
     enabled: true
     domain: web
@@ -994,7 +994,7 @@ vertical:
   - name: Cloudflare-Bybass-CDP-Chromium
     repo: https://github.com/LoseNine/Cloudflare-Bybass-CDP-Chromium.git
     path: vertical/Cloudflare-Bybass-CDP-Chromium
-    pin: a1ae399
+    pin: a1ae39901c5a238d9190485ae64b1eb0a6c9210d
     acquiredAt: 2026-08-18
     enabled: true
     domain: web
@@ -1008,7 +1008,7 @@ vertical:
   - name: woxiangyangzhimao-skills
     repo: https://github.com/woxiangyangzhimao/skills.git
     path: vertical/woxiangyangzhimao-skills
-    pin: c01cd6a
+    pin: c01cd6a6a066b782f929a81c6a60b9383fbbea5a
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -1020,7 +1020,7 @@ vertical:
   - name: firefox-reverse
     repo: https://github.com/WhiteNightShadow/firefox-reverse.git
     path: vertical/firefox-reverse
-    pin: 4152483
+    pin: 41524830d703fdc9f2680ec5dd5bac794df92fa7
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -1032,7 +1032,7 @@ vertical:
   - name: camoufox-reverse-mcp
     repo: https://github.com/WhiteNightShadow/camoufox-reverse-mcp.git
     path: vertical/camoufox-reverse-mcp
-    pin: 92c822f
+    pin: 92c822fcd5db61ca3cad3e00b0b929d60e961eec
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -1044,7 +1044,7 @@ vertical:
   - name: jsir
     repo: https://github.com/google/jsir.git
     path: vertical/jsir
-    pin: 7ea4e01
+    pin: 7ea4e01e14d19e50d2b90bb29fa64718e66e5779
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -1058,7 +1058,7 @@ vertical:
   - name: Mergen
     repo: https://github.com/NaC-L/Mergen.git
     path: vertical/Mergen
-    pin: 71fc607
+    pin: 71fc60766d3d74bd38693c1503087a074aa70a66
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -1070,7 +1070,7 @@ vertical:
   - name: d810-ng
     repo: https://github.com/w00tzenheimer/d810-ng.git
     path: vertical/d810-ng
-    pin: 2e59ab4
+    pin: 2e59ab4ce18e5e82911880137d1285d95279981a
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -1082,7 +1082,7 @@ vertical:
   - name: hrtng
     repo: https://github.com/KasperskyLab/hrtng.git
     path: vertical/hrtng
-    pin: eb6b9c2
+    pin: eb6b9c203a5f3a84c90d982ebf8981683233f231
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -1094,7 +1094,7 @@ vertical:
   - name: vmprotect-research
     repo: https://github.com/Rasetsuu/vmprotect-research.git
     path: vertical/vmprotect-research
-    pin: 899774d
+    pin: 899774db8957a1e216063e4a70674d76fe30d907
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -1106,7 +1106,7 @@ vertical:
   - name: VTIL2
     repo: https://github.com/pop-rip/vtil2.git
     path: vertical/VTIL2
-    pin: 242d331
+    pin: 242d331fdbe4e596fe79234f2abea2aa8de87e21
     acquiredAt: 2026-08-18
     enabled: true
     domain: bin
@@ -1118,7 +1118,7 @@ vertical:
   - name: synchrony
     repo: https://github.com/relative/synchrony.git
     path: vertical/synchrony
-    pin: 710e9f6
+    pin: 710e9f6c21ceea0cddf178eb863ef678f5d9d6ee
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -1130,7 +1130,7 @@ vertical:
   - name: sccp_js
     repo: https://github.com/hsk/sccp_js.git
     path: vertical/sccp_js
-    pin: cbf03b7
+    pin: cbf03b7d39de3f519bf10a81e5424a9a17d3c7d9
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -1142,7 +1142,7 @@ vertical:
   - name: obfuscator-io-deobfuscator
     repo: https://github.com/ben-sb/obfuscator-io-deobfuscator.git
     path: vertical/obfuscator-io-deobfuscator
-    pin: 42efc01
+    pin: 42efc019d375f3cc266887ec36e929905836639c
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -1156,7 +1156,7 @@ vertical:
   - name: jshookmcp
     repo: https://github.com/vmoranv/jshookmcp.git
     path: vertical/jshookmcp
-    pin: e5191ee
+    pin: e5191ee820a489e869d0fc4102ae129260b15cfc
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -1168,7 +1168,7 @@ vertical:
   - name: xtrace
     repo: https://github.com/linn0x/xtrace.git
     path: vertical/xtrace
-    pin: aeb8167
+    pin: aeb8167565ca613062b47823b48eb08b6731c701
     acquiredAt: 2026-08-18
     enabled: true
     domain: js
@@ -1180,7 +1180,7 @@ vertical:
   - name: uiautodev
     repo: https://github.com/codeskyblue/uiautodev.git
     path: vertical/uiautodev
-    pin: 3da93ec
+    pin: 3da93ecd983d53dba5152851173f1b03d68e2431
     acquiredAt: 2026-08-18
     enabled: true
     domain: android
@@ -1194,7 +1194,7 @@ vertical:
   - name: fingerprintjs
     repo: https://github.com/fingerprintjs/fingerprintjs.git
     path: vertical/fingerprintjs
-    pin: 6006ce5
+    pin: 6006ce5fce7c8b8ed2534418b82e9fb2a6f737ac
     acquiredAt: 2026-09-16
     enabled: true
     domain: web
@@ -1206,7 +1206,7 @@ vertical:
   - name: ja4
     repo: https://github.com/FoxIO-LLC/ja4.git
     path: vertical/ja4
-    pin: d3dedaf
+    pin: d3dedafd6d3ac27a37107183533fc7274c5f4ea9
     acquiredAt: 2026-09-16
     enabled: true
     domain: web
@@ -1218,7 +1218,7 @@ vertical:
   - name: creepjs
     repo: https://github.com/abrahamjuliot/creepjs.git
     path: vertical/creepjs
-    pin: 10aa672
+    pin: 10aa6724cd33a1015db1574211890518cd04f0cc
     acquiredAt: 2026-09-16
     enabled: true
     domain: web
@@ -1232,7 +1232,7 @@ vertical:
   - name: apk-reverse-community
     repo: https://github.com/newliver666/apk-reverse.git
     path: vertical/apk-reverse-community
-    pin: bea9955
+    pin: bea9955eb68a3098bef0a6b9846bf65b2b82e830
     acquiredAt: 2026-09-21
     enabled: true
     domain: apk
@@ -1244,7 +1244,7 @@ vertical:
   - name: birdview
     repo: https://github.com/Qiuner/birdview.git
     path: vertical/birdview
-    pin: d9e9da0
+    pin: d9e9da074b0b42d870af8fbb50d4117cfbbb9026
     acquiredAt: 2026-09-21
     enabled: true
     domain: misc

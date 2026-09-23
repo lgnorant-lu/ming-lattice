@@ -10,7 +10,17 @@
 !.hooksrc.tmpl
 !.githooks/
 !vertical/**
-# 豁免后重拦：vendored .git 元数据（本地保留供 update 增量 fetch，父仓不跟踪）
+# 豁免后重拦：vendored .git 元数据（本地保留供 fetch 增量，父仓不跟踪）
+vertical/*/.git/
+
+# ── vertical/ 物化区（远端仅存索引，字节由 scripts/fetch.mjs 物化）──
+# 默认全忽略；sourceGone 孤本（上游已下架的全网孤本）白名单入库——
+# 与 gates/vendor-boundary.mjs 同源：白名单由 registry sourceGone 字段派生，两处须一致
+vertical/*/
+!vertical/ruyipage-js/
+!vertical/ruyipage-go/
+!vertical/ruyipage-dev/
+!vertical/ruyi-mcp/
 vertical/*/.git/
 
 # 本地运行与临时产物

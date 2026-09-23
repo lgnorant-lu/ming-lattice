@@ -41,10 +41,13 @@ gate.review-after.globs=distill/_proposals/*.md
 gate.review-after.cadence=7d
 
 # 9. 死链检查（周期维度：post-merge/post-checkout 非阻断；cadence 节流 7 天）
-gate.link-rot.globs=docs/**,private/**/*.md,README.md,AGENTS.md,CLAUDE.md
+gate.link-rot.globs=docs/**,private/**/*.md,README.md,AGENTS.md
 gate.link-rot.cadence=7d
 gate.link-rot.ignore=localhost,127.0.0.1,example.com
 gate.link-rot.maxUrls=50
+
+# 10. vertical 物化区边界（远端仅存索引——staged ∩ vertical/ ⊆ registry sourceGone 白名单）
+gate.vendor-boundary.level=error
 
 # ── chores 族（suggest-only：只提醒不执行，默认 post-merge；chore.<id>.stages 可挂 post-checkout）──
 chore.registry.watch=registry.yaml

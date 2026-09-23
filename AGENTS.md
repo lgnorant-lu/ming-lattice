@@ -9,7 +9,7 @@ registry.yaml            唯一事实源: base(基座模块)/vertical(参考)/de
 .hooksrc                 Git Hook 分级门禁配置 (Emoji/乱码/密钥/lint 等级)
 .githooks/               Git Hooks 拦截脚本 (commit-msg, pre-commit)
 base/reverse-skill/      路由基座 (上游 submodule; 带**有意本地补丁**——skills/SKILL.md PRE-CHECK 第0步 fail-closed 路由硬化 + field-journal 沉淀, 勿当脏态清理)
-vertical/                vendored 仓库 (参考/源码, 带 .git metadata, 默认不部署)
+vertical/                物化区: 远端仅存索引(gitignored), 本地经 scripts/fetch.mjs 按 pin 物化; sourceGone 孤本例外入库
 deployable/              部署包装 (SKILL.md 改写 + symlink 指向 vertical/base 源)
 private/                 私有与自研内容 (路由、质量规范、UI/协议工具及个人资产)
 distill/                 项目级经验沉淀库【本地内容区·gitignored 不入仓】INDEX.yaml 机读索引 + <project>/ 条目 + _proposals 晋升staging——机制在仓(ming-distiller+check-index), 内容本地
@@ -26,11 +26,12 @@ docs/                    STANDARDS(工程总纲)/GOVERNANCE-SPINE(工件本体�
 - **激活 Claude**: `.cc-switch/skills` → 符号链接补到 `~/.claude/skills`（Claude 启动时快照, 重启生效）
 - **更新检测**: `pwsh scripts/update.ps1`（支持 `-DryRun` 演练；缓存优先, TTL 7 天; `sourceGone: true` 条目零网络跳过）
 - **质量检查**: `pwsh scripts/lint.ps1`（部署模块必须有 SKILL.md, 硬编码路径检查）
-- **新增采集**: 下载 tarball → 拷入 vertical/ → 注册 registry → 恢复 .git metadata → 提交
+- **物化参考层**: `node scripts/fetch.mjs`（`--dry-run` 预览 / `--only <名>` 单项 / `--reconcile` 对齐漂移；含 base submodule 引导）
+- **新增采集**: registry 登记条目(repo+pin 全 40 位 SHA) → `node scripts/fetch.mjs --only <名>` 物化验证 → 提交 registry 行（**vertical/ 永不入库**——vendor-boundary 门会拦）
 
 ## 铁律（历史踩坑, 详见 docs/PLAYBOOK.md）
 
-1. **先 add 文件再恢复 .git**——目录带 .git 直接 git add 会变 gitlink(mode 160000)
+1. **vertical/ 是物化区永不入库**——远端仅存索引(repo+pin), 字节由 `scripts/fetch.mjs` 物化; 例外=sourceGone 孤本(上游已下架须承载字节)。想提交 vertical/ 文件先想是否该标 sourceGone
 2. **cwd 陷阱**——在 vertical/ 里跑 `vertical/<name>` 会建出 vertical/vertical/ 孤儿目录
 3. **判定下架要三方一致**——codeload main+master + github 页面全 404 才算死; 瞬时 404 会复活(Restore-JS 案例)
 4. **脚本用 pwsh 7 跑**——powershell 5.1 解析 UTF-8 中文注释会错乱
@@ -46,8 +47,8 @@ docs/                    STANDARDS(工程总纲)/GOVERNANCE-SPINE(工件本体�
 
 ## 合规
 
-- Ruyi 系列 4 仓已下架, 内容持有(sourceGone); xfqtrace-kit 实体工具外置 (不入库不分发)
-- 采集时保留上游许可声明; 私有资产不向外分发
+- Ruyi 系列 4 仓已下架, 内容持有(sourceGone 孤本入库); xfqtrace-kit 实体工具外置 (不入库不分发)
+- vertical 远端仅存索引即天然不再分发上游字节; 孤本/采集物保留上游许可声明; 私有资产不向外分发
 - 提交信息不附 "Generated with Devin" trailer 与 `Co-Authored-By: Devin`——署名即作者本人（2026-09-17 已清史）
 
 ## 本机系统护栏（2026-09-17 内存事故后落地）

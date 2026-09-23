@@ -51,7 +51,7 @@ foreach ($sectionName in @('vertical', 'deployable', 'private')) {
     foreach ($item in @($reg.$sectionName)) {
         if ($null -eq $item) { continue }
         $kind = if ($sectionName -eq 'vertical' -and @($item.deploy.Values | Where-Object { $_ -eq $true }).Count -eq 0) { 'ref' } else { 'module' }
-        $sources += [ordered]@{ name = $item.name; src = Join-Path $RepoRoot $item.path; enabled = $item.enabled; kind = $kind }
+        $sources += [ordered]@{ name = $item.name; src = Join-Path $RepoRoot $item.path; enabled = $item.enabled; kind = $kind; repo = $item.repo; gone = $item.sourceGone }
     }
 }
 
@@ -67,6 +67,17 @@ foreach ($s in $sources) {
         if ($s.kind -eq 'module') {
             $issues += [ordered]@{ level = 'E'; name = $s.name; msg = 'SKILL.md 缺失（部署模块必须）'; file = $skillMd }
             continue
+        }
+        # 物化区缺席容忍: vertical ref 条目目录不存在且有 repo → 远端仅存索引, 字节由 fetch 物化
+        if (-not (Test-Path $s.src)) {
+            if ($s.repo -and $s.gone -ne $true) {
+                $issues += [ordered]@{ level = 'I'; name = $s.name; msg = '未物化（远端仅索引, node scripts/fetch.mjs 待跑）'; file = $skillMd }
+                continue
+            }
+            if ($s.gone -eq $true) {
+                $issues += [ordered]@{ level = 'E'; name = $s.name; msg = '孤本目录缺失（sourceGone 条目必须入库承载字节）'; file = $skillMd }
+                continue
+            }
         }
         # 参考源: 宽松——递归找 SKILL.md 或 CLAUDE.md/README.md（排除 .git）
         $nestedSkill = Get-ChildItem $s.src -Recurse -Depth 2 -Filter 'SKILL.md' -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '\\\.git\\' } | Select-Object -First 1
