@@ -180,7 +180,8 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - lint 硬编码门覆盖面缺口——现 lint 扫 SKILL.md/scripts 的 `C:\Users\xxx` 类路径，但 registry.yaml（targets）这类 SoT 配置不在扫面内（本次即漏网实例）；门扩面或 SoT 契约校验二选一
 - ~~物化漂移 2 条~~——**已清偿**（2026-09-23：`jadx-mcp-server` merge-base 为空——两无共同祖先根提交，pin `4e6d890`(2026-08) 是上游重建新树、本地 `19bd9c1`(2025-08) 是旧线 tip=落后非领先，无本地改动可失 → `--reconcile` 对齐 pin；`awesome-re-mcp` fetch 物化补齐；`game-security-skills` rathena.txt 16MiB 截断（真身 78.8MB）`--reconcile` 重建清偿——终态 92 就绪/4 孤本/0 漂移）
 - ~~filter-repo 收尾 reset --hard 清空 vendored 工作树~~——**已清偿**（2026-09-23：改史后新 HEAD 不含 vertical/*，父仓 reset 把"原跟踪现消失"文件全删，17 仓部分掏空仅剩未跟踪残渣+内层 .git。教训=改史后须按 registry 全量重建物化区。fetch.mjs 由此获三层检测：ls-tree -l 存在性+尺寸双查(截断可抓)/有索引再 status -uno/?? 残留容忍；附修 execFileSync maxBuffer=64M——44k 文件仓 ls-tree 输出超默认 1MB 会 ENOBUFS 被 catch 吞成"就绪"假阴。语义：缺文件→自动重建、尺寸/M 不符→drift 待 --reconcile、未跟踪→容忍）
-- vendor-paradigm skill（候选位）——清单即锁/内容即产物/孤本例外 三原则的跨场景范式化；本仓 4 处同型实例（vertical/distill/.logs/xfqtrace 外置）+ vendir/Bazel/Go-modules 外部先例已查实；待本轮实现跑稳后回填实证再转正
+- ~~vendor-paradigm skill~~——**已转正**（2026-09-23 `03e3bc7`：实体包 `private/engineering/vendor-paradigm/` + DOMAIN_DEFS/域 triggers/skillTriggers/SKILL-INDEX 四处接线；三事故实证全部写入 SKILL.md 坑表——reset 清空工作树/maxBuffer 假阴/ls-tree 对齐空格）
+- ~~vendor-boundary 归属层~~——**已裁决**（2026-09-23：迁 `gates.local/`——硬依赖 registry.yaml 契约的仓专门不随共享 kit 分发；副作用=脱离 trust 完整性存值域，仓专门本来就该仓自管）
 - deployable/areclaw-* POSIX 命令文档——包装文档内 grep/sort/comm//tmp 示例与本机 grep-guard 冲突（vendored 包装层内容，agent 执行时可自适应；如需消除再改）
 - ~~xfinjectd 第二拷贝~~——**已清偿**（2026-09-23 上游实证：`LunFengChen/frida-gadget-helper` 公开仓 pin ee38b11 自带 xfinjectd，blob SHA `4298aa0e`/`299f3149` 逐字节同源——vendored=镜像零新增暴露，保留；随后该仓随 vertical 物化化整体出史）
 - ~~vertical vendored 字节入库~~——**已清偿**（2026-09-23 `f5ba0f95`→`25ff03c`：vertical 转**物化区**——远端仅存索引(repo+pin 全 40 位回填)，`scripts/fetch.mjs` 一键物化，`vendor-boundary` 门把守 staged∩vertical ⊆ sourceGone 白名单；4 孤本(ruyi 下架族)保留入库；`.git` 188M→9M；史中另清出 35 个 gitlink 误入库残留——铁律#1 事故的历史实体）
@@ -194,6 +195,16 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - evil-merge 检测——merge commit tree≠双亲干净合并=走私变更面(Glyndor workflow 先例)；当前线性史单人仓不适用，分叉协作启用时再立
 - 文档簇引用规则门（图内化的实例面）——外部先例已查实：需求追踪矩阵(DO-178C/ISO26262/NASA SWE-059: 双向链接+孤儿=finding+粒度声明式)、Diataxis 四象限交叉引用规则(how-to<->explanation 可互指不可混体)、contextlint(文档依赖图/孤儿/环检测)、nodex(typed edges: supersedes/implements/covers/references 固定词表+pre-commit 门)、defines-provenance(DEFINES/DEPENDS_ON 声明式溯源)、gno audit(只读审计+稳定 finding id+exit 0/4/5)。开放位=簇x簇允许边矩阵作为通用治理原语+提交时自动排除临时文件引用；机制层(文档图/孤儿/断链)全部有现成实现可借
 - L 中枢串联——主轴框架间插件式互联，明确过早仅留槽
+- 远端推送待授权——`ming-skills-router` 远端 URL 未给 + 推令未下；本地已全绿待推。配套：旧仓 `ming-skills` 删除缺 `delete_repo` scope（gh auth refresh 或 web UI）；备份 `skills-collection-pre-vendorindex.bundle`（179M，含改史前全量旧史）去留自定
+- 三方盘点评估已做、裁决"暂不动"（2026-09-23）——硬依赖 8 仓（ctf-skills 98 链等）+ 孤本 4 必留；建议删候选 8：jadx-mcp-server/jadx-mcp-plugin（jadx CLI 本体已装+garlic 上位）、ida-claude-plugins/d810-ng/hrtng（IDA 不在链）、ghidra-mcp-lauriewired（未就绪）、awesome-re-mcp（自标过时）、burp-mcp-portswigger（自标不用）；待裁 6：x64dbg-mcp/apktool-mcp-server/wire-mcp/har-mcp/harvest-mcp/mcp-for-security（工具未就绪但域可能有用）。用户裁"暂都留"——记录防重审，重启动时以此清单为基线
+- birdview 实仓试用——候选仓（项目级经验沉淀双模态入口）待真实蒸馏循环实证，首选 blog-tui 场景
+- TOOL-VERDICTS<->vertical 覆盖 diff——tool-index 就绪面（jadx/apktool/frida/r2 系/node/jshookmcp）与 96 vertical 的供需对账未跑成表
+- apk-reverse deployable 包装——基座 apk-reverse 的部署面补齐（脱壳/重建签名链已有 Frida-Apk-Unpack 等 vertical 支撑）
+- family tuple 数据模型——domain/name/layer 三元组的结构化，等第二真实消费方
+- 全局日志/性能模块——跨仓共性痛点未成形，不立抽象
+- base/reverse-skill 子模块本地补丁——git status 常驻 `m`，上游化推送或还原的裁决未下
+- hook 引擎 fail-open 结构观察——门抛异常→warn 放行（引擎既定策略，透明性>阻断）；vendor-boundary 已自带 fail-closed 硬化，引擎层策略本身留作观察项
+- 物化副作用观察——vendored 仓自带 `.claude/skills/` 会浮现为宿主可用技能面（game-security-skills 10 个实例：anti-cheat/dma-attack 等）；物化=技能面扩张是特性还是噪音待定
 
 **已删（消融结论，防复建）**：
 
