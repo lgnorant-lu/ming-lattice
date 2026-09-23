@@ -178,7 +178,8 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - 图内层节点刻面——工件图节点不止契约对账，还有根本性多维分类：域分类(九域)/层级分类(声明-机制-数据)/纵横域分类(cross-cutting)；与发散-规束提案的"边视图"汇合，后话待图机制立项时一并裁决
 - ~~targets 本机路径入 SoT~~——**已清偿**（2026-09-23：`registry.yaml` targets 改 `%USERPROFILE%` env 占位 + `sync.ps1` 读入点统一 ExpandEnvironmentVariables，DryRun 实测展开正确）
 - lint 硬编码门覆盖面缺口——现 lint 扫 SKILL.md/scripts 的 `C:\Users\xxx` 类路径，但 registry.yaml（targets）这类 SoT 配置不在扫面内（本次即漏网实例）；门扩面或 SoT 契约校验二选一
-- 物化漂移待裁决 2 条——fetch DryRun 实测：`jadx-mcp-server`（HEAD=19bd9c1 pin=4e6d890）与 `awesome-re-mcp`（HEAD=973be20 pin=e400b88）本地 clone 与 pin 不一致；fetch 默认只报不动，`--reconcile` 对齐裁决待下（可能有本地改动）
+- ~~物化漂移 2 条~~——**已清偿**（2026-09-23：`jadx-mcp-server` merge-base 为空——两无共同祖先根提交，pin `4e6d890`(2026-08) 是上游重建新树、本地 `19bd9c1`(2025-08) 是旧线 tip=落后非领先，无本地改动可失 → `--reconcile` 对齐 pin；`awesome-re-mcp` fetch 物化补齐；`game-security-skills` rathena.txt 16MiB 截断（真身 78.8MB）`--reconcile` 重建清偿——终态 92 就绪/4 孤本/0 漂移）
+- ~~filter-repo 收尾 reset --hard 清空 vendored 工作树~~——**已清偿**（2026-09-23：改史后新 HEAD 不含 vertical/*，父仓 reset 把"原跟踪现消失"文件全删，17 仓部分掏空仅剩未跟踪残渣+内层 .git。教训=改史后须按 registry 全量重建物化区。fetch.mjs 由此获三层检测：ls-tree -l 存在性+尺寸双查(截断可抓)/有索引再 status -uno/?? 残留容忍；附修 execFileSync maxBuffer=64M——44k 文件仓 ls-tree 输出超默认 1MB 会 ENOBUFS 被 catch 吞成"就绪"假阴。语义：缺文件→自动重建、尺寸/M 不符→drift 待 --reconcile、未跟踪→容忍）
 - vendor-paradigm skill（候选位）——清单即锁/内容即产物/孤本例外 三原则的跨场景范式化；本仓 4 处同型实例（vertical/distill/.logs/xfqtrace 外置）+ vendir/Bazel/Go-modules 外部先例已查实；待本轮实现跑稳后回填实证再转正
 - deployable/areclaw-* POSIX 命令文档——包装文档内 grep/sort/comm//tmp 示例与本机 grep-guard 冲突（vendored 包装层内容，agent 执行时可自适应；如需消除再改）
 - ~~xfinjectd 第二拷贝~~——**已清偿**（2026-09-23 上游实证：`LunFengChen/frida-gadget-helper` 公开仓 pin ee38b11 自带 xfinjectd，blob SHA `4298aa0e`/`299f3149` 逐字节同源——vendored=镜像零新增暴露，保留；随后该仓随 vertical 物化化整体出史）

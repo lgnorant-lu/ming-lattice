@@ -39,10 +39,29 @@ export const gate = {
   globs: ['vertical/**'],
   exclude: [],
   async run(ctx) {
-    const regPath = path.join(ctx.root, 'registry.yaml');
-    const text = ctx.read ? (ctx.read('registry.yaml') ?? fs.readFileSync(regPath, 'utf8')) : fs.readFileSync(regPath, 'utf8');
-    const allowed = orphanPaths(text);
+    // 普适硬规则（先于孤本白名单）：任何 vertical/**/.git 内件永不入仓——
+    // 内层仓的 hooks/config 可含凭据，gitfile 则把物化目录偷渡成 submodule 指针。
+    const dotGit = /(^|\/)\.git(\/|$)/;
     const findings = [];
+    for (const p of ctx.files) {
+      const norm = p.replace(/\\/g, '/');
+      if (norm.startsWith('vertical/') && dotGit.test(norm)) {
+        findings.push({ gate: 'vendor-boundary', file: p, message: '禁止提交 vertical/**/.git 内件（内层仓元数据不属本仓内容面）' });
+      }
+    }
+
+    // registry 契约判定：文件不存在 = 门不适用（下游复用 kit 的仓无此契约，静默跳过）；
+    // 存在但读不到 = fail-closed 显式 finding（如 staged 删除 registry 的极端场景）。
+    const regPath = path.join(ctx.root, 'registry.yaml');
+    let text = null;
+    try { text = ctx.read?.('registry.yaml') ?? fs.readFileSync(regPath, 'utf8'); } catch { /* 下方分支裁决 */ }
+    if (text == null) {
+      if (!fs.existsSync(regPath)) return findings;
+      findings.push({ gate: 'vendor-boundary', file: 'registry.yaml', message: 'registry.yaml 存在但不可读——孤本白名单无法对账（fail-closed）' });
+      return findings;
+    }
+
+    const allowed = orphanPaths(text);
     for (const p of ctx.files) {
       const norm = p.replace(/\\/g, '/');
       if (!norm.startsWith('vertical/')) continue;

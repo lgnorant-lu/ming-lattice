@@ -594,7 +594,22 @@ export async function run() {
       assert.equal(vf[0].file, 'vertical/fetchable/b.js');
       assert.ok(vf[0].message.includes('物化区'));
       assert.deepEqual(await vbGate.run({ root: vdir, files: ['private/c.md'] }), [], '域外不扫');
+      // .git 段普适拒绝——孤本前缀不能放行内层仓元数据（hooks/config 可含凭据）
+      const dotGit = await vbGate.run({ root: vdir, files: ['vertical/gone-one/.git/config', 'vertical/gone-one/.git/hooks/x'] });
+      assert.equal(dotGit.length, 2, '孤本内 .git 内件仍须拦截');
+      assert.ok(dotGit.every(f => f.message.includes('.git')), '命中信息应点名 .git');
+      // 孤本目录本体作 gitlink 提交（恰好等于 path，无 / 后缀）→ 拦截
+      const link = await vbGate.run({ root: vdir, files: ['vertical/gone-one'] });
+      assert.equal(link.length, 1, '孤本 gitlink 指针不得入仓');
     } finally { fs.rmSync(vdir, { recursive: true, force: true }); }
+
+    // registry.yaml 缺席 → 门不适用静默跳过（下游复用 kit 的仓无此契约）
+    {
+      const noreg = tempRepo();
+      try {
+        assert.deepEqual(await vbGate.run({ root: noreg, files: ['vertical/anything/x.js'] }), [], '无 registry 不判');
+      } finally { fs.rmSync(noreg, { recursive: true, force: true }); }
+    }
 
     // e2e：cadence 节流——首跑告警盖戳→次跑跳过→改旧戳再跑复报
     const edir = tempRepo();

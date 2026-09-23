@@ -5,14 +5,14 @@
 #   - updatePolicy: 更新检测策略（TTL 内缓存命中 → 零网络）
 #   - 每个 vertical 条目: pin(本地内容对应 upstream commit) + acquiredAt(采集日期)
 #     + checkCache(lastCheckedAt/lastRemoteHead, 由 update.ps1 维护)
-#   - vendored 仓库保留 .git（blob:none 过滤元数据）, update.ps1 用 git fetch 增量检测
+#   - vertical/ 为物化区：远端仅存索引，字节由 scripts/fetch.mjs 按 pin 物化（.git 随之建立），update.ps1 用 git fetch 增量检测
 #     无需每次全量计算
 #
 # 字段说明:
 #   targets     : 目标客户端部署根目录（key = 客户端名, value = 目录绝对路径）
 #   updatePolicy: { ttlDays: 缓存有效天数, fetchMode: 元数据拉取模式 }
 #   base        : 基座（submodule 跟踪 upstream, 按模块部署）; pin = commit SHA
-#   vertical    : 垂直参考（vendored, 保留 .git）; pin = upstream commit(短 hash)
+#   vertical    : 垂直参考（物化区, fetch.mjs 按需建 .git）; pin = upstream commit(全 40 位)
 #     domain    : 资产域（合法值域见下方 domains: 登记表——新值先入表再使用）
 #     deploy    : 部署映射 { 客户端: bool }（空 = 仅参考不部署）
 

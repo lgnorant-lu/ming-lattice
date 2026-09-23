@@ -105,7 +105,7 @@ pwsh scripts/update.ps1 -Name decode-js
    ```powershell
    pwsh scripts/lint.ps1    # 必须 ERROR=0
    ```
-6. **原子提交**：执行 `chore: 上游生态增量拉取与 registry pin 刷新`。
+6. **原子提交**：执行 `chore: 上游生态增量拉取与 registry pin 刷新`——**提交只含 registry.yaml 的 pin/acquiredAt 行**；vertical/ 物化区字节永不入库（vendor-boundary 门强制）。
 
 ### 3.3 客户端分发与部署（Sync Dry-run）
 ```powershell

@@ -22,7 +22,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// FETCH_ROOT 覆盖仅服务于测试隔离（fixtures 仓根）；常规使用恒为本仓根
+const REPO_ROOT = process.env.FETCH_ROOT
+  ? path.resolve(process.env.FETCH_ROOT)
+  : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REGISTRY_PATH = path.join(REPO_ROOT, 'registry.yaml');
 
 // ── 参数解析（fail-closed，与全仓 CLI 同构） ──
@@ -61,6 +64,7 @@ function parseRegistry(text) {
 
 const git = (cwd, gargs, opts = {}) => execFileSync('git', gargs, {
   cwd, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'],
+  maxBuffer: 64 * 1024 * 1024,   // ls-tree -l 大仓(4w+文件)输出数 MB，默认 1MB 会 ENOBUFS
   env: { ...process.env, GIT_LFS_SKIP_SMUDGE: '1', ...opts.env },
 });
 
@@ -72,17 +76,81 @@ const headOf = dir => {
 const entries = parseRegistry(fs.readFileSync(REGISTRY_PATH, 'utf8'));
 const targets = entries.filter(e => !only || only.has(e.name));
 
-const results = { fetched: [], skippedPin: [], skippedGone: [], skippedNoRepo: [], drifted: [], failed: [] };
+// --only 静默空集防御：名字打错不能无声退出 0
+if (only) {
+  const known = new Set(entries.map(e => e.name));
+  const unknown = [...only].filter(n => !known.has(n));
+  if (unknown.length) console.error(`[WARN] --only 未匹配条目: ${unknown.join(', ')}`);
+  if (!targets.length) { console.error('no matching registry entries'); process.exit(2); }
+}
+
+const results = { fetched: [], skippedPin: [], skippedGone: [], skippedDisabled: [], skippedNoRepo: [], notRepo: [], drifted: [], remoteAligned: [], failed: [] };
 
 for (const e of targets) {
   if (e.sourceGone === 'true') { results.skippedGone.push(e.name); continue; }
+  if (e.enabled === 'false') { results.skippedDisabled.push(e.name); continue; }
   if (!e.repo || !e.pin) { results.skippedNoRepo.push(e.name); continue; }
   const dir = path.join(REPO_ROOT, e.path || `vertical/${e.name}`);
 
+  let repairOnly = false;
   if (fs.existsSync(dir)) {
+    if (!fs.existsSync(path.join(dir, '.git'))) {
+      // 非 git 目录（游离文件残留/手工拷贝）：不收养不覆盖，报人工裁决
+      results.notRepo.push(`${e.name} (存在非 git 目录——清空或迁走后重跑)`);
+      continue;
+    }
     const head = headOf(dir);
-    if (head === e.pin) { results.skippedPin.push(e.name); continue; }
-    if (head && !flags.has('--reconcile')) {
+    // remote URL 对账：registry 是 SoT——上游改名/迁移后本地 stale remote 静默对齐
+    try {
+      const url = git(dir, ['remote', 'get-url', 'origin']).trim();
+      if (url !== e.repo) {
+        if (flags.has('--dry-run')) results.remoteAligned.push(`${e.name} [计划: ${url} → ${e.repo}]`);
+        else { git(dir, ['remote', 'set-url', 'origin', e.repo]); results.remoteAligned.push(e.name); }
+      }
+    } catch {
+      if (flags.has('--dry-run')) results.remoteAligned.push(`${e.name} [计划: remote add]`);
+      else git(dir, ['remote', 'add', 'origin', e.repo]);
+    }
+    if (head === e.pin) {
+      // 工作树完整性：HEAD 对≠就绪——ls-tree 列 HEAD 树逐一验存在（与索引形态无关，
+      // vendored 克隆索引有填/空两种历史形态，空索引下 diff/status 全员误报 D）。
+      //   缺文件           → 可安全自动重建（本地无可失之物）
+      //   有改动(M/截断)   → 可能是本地工作或写截断，只报不毁，走 --reconcile 对齐语义
+      //   ?? 未跟踪残留（build/ 等）属良性，不参与判定。
+      let missing = false, dirty = false;
+      try {
+        // ls-tree -l 带 blob 尺寸：存在性 + 大小双查——截断/半写文件（写中断事故面）也能抓。
+        // lstatSync 不随 symlink（Windows 占位文本/unix 链均与树 size 一致）；gitlink 只验存在。
+        const tree = git(dir, ['ls-tree', '-r', '-l', '-z', 'HEAD']);
+        for (const rec of tree.split('\0')) {
+          if (!rec) continue;
+          const tab = rec.indexOf('\t');
+          const meta = rec.slice(0, tab).trim().split(/\s+/);   // size 列前有对齐空格
+          const rel = rec.slice(tab + 1);
+          const fp = path.join(dir, rel);
+          if (meta[1] === 'commit') {          // gitlink：只验目录在
+            if (!fs.existsSync(fp)) { missing = true; break; }
+            continue;
+          }
+          try {
+            const st = fs.lstatSync(fp);
+            if (!st.isFile() && !st.isSymbolicLink()) { missing = true; break; }
+            if (meta[3] !== '-' && st.size !== Number(meta[3])) { dirty = true; break; }  // 尺寸不符=改/截断，走 drift
+          } catch { missing = true; break; }
+        }
+        // 有索引再查 status -uno：捕捉同尺寸改动（索引非空时 D/M 皆真实；?? 良性不算）
+        if (!missing && git(dir, ['ls-files']).trim()) {
+          dirty = !!git(dir, ['status', '--porcelain', '-uno']).trim();
+        }
+      } catch { /* 读不出时按就绪处理 */ }
+      if (!missing && !dirty) { results.skippedPin.push(e.name); continue; }
+      if (dirty && !flags.has('--reconcile')) {
+        results.drifted.push(`${e.name} (pin一致但工作树有改动——--reconcile 覆盖对齐)`);
+        continue;
+      }
+      repairOnly = true;
+      if (flags.has('--dry-run')) { results.fetched.push(`${e.name} [计划: 重建工作树]`); continue; }
+    } else if (head && !flags.has('--reconcile')) {
       results.drifted.push(`${e.name} (HEAD=${head.slice(0, 7)} pin=${e.pin.slice(0, 7)})`);
       continue;
     }
@@ -91,8 +159,14 @@ for (const e of targets) {
   if (flags.has('--dry-run')) { results.fetched.push(`${e.name} [计划]`); continue; }
 
   try {
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    if (!fs.existsSync(path.join(dir, '.git'))) {
+    if (repairOnly) {
+      // 空工作树修复：对象在本地（blob:none 时 promisor 懒取），reset --hard 重建字节
+      git(dir, ['reset', '-q', '--hard', e.pin]);
+      results.fetched.push(`${e.name} [重建]`);
+      continue;
+    }
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
       git(dir, ['init', '-q']);
       git(dir, ['remote', 'add', 'origin', e.repo]);
     }
@@ -103,7 +177,7 @@ for (const e of targets) {
       // pin 不在浅可达面（服务端未开 allowReachableSHA1InWant 或 pin 悬死）→ 回退全量
       git(dir, ['fetch', '--no-tags', 'origin']);
     }
-    git(dir, ['checkout', '-q', '--detach', e.pin]);
+    git(dir, ['checkout', '-qf', '--detach', e.pin]);
     results.fetched.push(e.name);
   } catch (err) {
     results.failed.push(`${e.name} (${String(err.stderr || err.message).split('\n')[0]})`);
@@ -121,9 +195,12 @@ console.log('\n── fetch 报告 ──');
 fmt('物化完成', results.fetched);
 fmt('已就绪(pin一致)', results.skippedPin);
 fmt('孤本跳过(sourceGone)', results.skippedGone);
+fmt('禁用跳过(enabled)', results.skippedDisabled);
 fmt('缺 repo/pin 跳过', results.skippedNoRepo);
+fmt('非仓库目录(需人工)', results.notRepo);
+fmt('remote 已对齐', results.remoteAligned);
 fmt('漂移(需 --reconcile)', results.drifted);
 fmt('失败', results.failed);
 
-const bad = results.drifted.length + results.failed.length;
+const bad = results.drifted.length + results.failed.length + results.notRepo.length;
 process.exit(bad ? 1 : 0);

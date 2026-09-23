@@ -20,6 +20,7 @@ import { run as runHookEngine } from './unit/test-hook-engine.test.mjs';
 import { run as runLintContract } from './contract/test-lint-contract.mjs';
 import { run as runHookPlannerContract } from './contract/test-hook-planner.mjs';
 import { run as runRouteObserver } from './contract/test-route-observer.mjs';
+import { run as runFetchCli } from './unit/test-fetch.test.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const startedAt = process.hrtime.bigint();
@@ -74,6 +75,7 @@ export const allSuites = [
   { name: 'route-effects', tier: 'eval', run: runRouteEffects },
   { name: 'lexical-layer', tier: 'unit', run: runLexicalLayer },
   { name: 'hook-engine', tier: 'unit', git: true, run: runHookEngine },
+  { name: 'fetch-cli', tier: 'unit', git: true, run: runFetchCli },
   { name: 'skill-recall', tier: 'eval', run: runSkillRecall },
   { name: 'recall-eval', tier: 'eval', run: () => node('tests/evals/eval-recall.mjs', '--gate') },
   { name: 'route-safety', tier: 'contract', run: () => node('--test', 'tests/contract/test-route-safety.test.mjs') },

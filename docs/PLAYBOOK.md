@@ -10,31 +10,19 @@ status: descriptive
 
 ## 一、采集入库（最高频）
 
-### 1.1 新仓库入库标准流程（顺序铁律）
+### 1.1 新仓库入库标准流程（物化制——vertical/ 永不入库）
 
 ```bash
-# 1) 下载 tarball 到 /tmp 解压（不要 git clone 进 vertical/）
-# 2) 拷入 vertical/<name> 并 git add（此时绝不能有 .git！）
-# 3) 注册 registry（用 python 脚本, 不用 PowerShell 写中文）
-# 4) 恢复 .git metadata（git init + remote add + fetch blob:none）
-# 5) commit
+# 1) registry.yaml 登记条目（python 改, 不用 PowerShell 写中文）：
+#      name + repo(HTTPS) + path=vertical/<name> + pin(全40位SHA) + acquiredAt + domain + note
+# 2) 物化验证: node scripts/fetch.mjs --only <name>
+# 3) commit——只有 registry.yaml 一行进仓；vertical/ 字节永不入库
+#    （vendor-boundary 门会拦非孤本路径，git add -f 也过不去）
 ```
 
-**为什么先 add 再建 .git**：目录带 .git 时 git add 会强制创建 gitlink（mode 160000），.gitignore 拦不住。git rm --cached + 删 .git + 重 add 才能解，恶心。
+**历史教训（勿回退到旧流程）**：旧制是"拷入 + git add + 恢复 .git"——目录带 .git 直接 add 会强制建 gitlink（mode 160000），.gitignore 拦不住，曾 35 次误入史（2026-09 物化制落地时随 vendored 史一并剥除）。现在 .git 元数据由 fetch.mjs 物化时自然建立，**本地 vertical/&lt;name&gt; 是活 clone**，update.ps1 的增量检测照常可用。
 
-**metadata 恢复模板**（注意 cwd 必须在仓库根，不是 vertical/）：
-
-```bash
-git init -q vertical/<name>
-git -C vertical/<name> remote add origin https://github.com/<owner>/<repo>.git
-git -C vertical/<name> fetch -q --depth 1 --filter=blob:none origin main 2>/dev/null \
-  || git -C vertical/<name> fetch -q --depth 1 --filter=blob:none origin master 2>/dev/null
-# 判断用 FETCH_HEAD 而非 HEAD（HEAD 在 update-ref 前不存在, 会误判失败）
-git -C vertical/<name> update-ref refs/heads/main FETCH_HEAD
-git -C vertical/<name> symbolic-ref HEAD refs/heads/main
-```
-
-fetch 瞬时 TLS 失败（代理不稳）→ 外层 for try 1..3 + 双分支重试。
+**孤儿例外**：上游已下架的孤本（sourceGone: true）是本仓唯一承载字节的 vertical 内容——先入 registry 标 `sourceGone: true`，vendor-boundary 白名单由该字段派生放行。物化目录里的 `.git` 内件仍全局拦截。
 
 ### 1.2 判断仓库死了没（三方一致）
 
