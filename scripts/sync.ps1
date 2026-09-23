@@ -40,6 +40,10 @@ try {
     if (-not (Test-Path $RegistryPath)) { throw "registry 不存在: $RegistryPath" }
     $reg = Read-SkillRegistry -RegistryPath $RegistryPath
     $targets = $reg.targets
+    # targets 值支持 %VAR% 环境变量占位——SoT 不烙本机绝对路径，部署目标随环境展开
+    foreach ($k in @($targets.Keys)) {
+        if ($targets[$k] -is [string]) { $targets[$k] = [Environment]::ExpandEnvironmentVariables($targets[$k]) }
+    }
     $trash = Join-Path $RepoRoot '.trash'
 
 # ---------- 收集部署单元 ----------

@@ -1,6 +1,6 @@
 # PULSE 实例案例索引
 
-`product-system-demo/design/`（本机 `D:\dogepy\Blogs\product-system-demo\design\`）是本方法的完整实例：虚构产品 PULSE（自主韧性系统）从"黑客风格、产品系统方向"一句话 brief 走到可建 spec 的全过程，24 文档 ~8500 行。
+`product-system-demo/design/`（本机 Blogs 工作区仓）是本方法的完整实例：虚构产品 PULSE（自主韧性系统）从"黑客风格、产品系统方向"一句话 brief 走到可建 spec 的全过程，24 文档 ~8500 行。
 
 ## 文件地图
 

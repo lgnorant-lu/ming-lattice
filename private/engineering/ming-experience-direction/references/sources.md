@@ -2,7 +2,7 @@
 
 ## 一手实例源
 
-- `product-system-demo/design/`（D:\dogepy\Blogs\product-system-demo）——方法萃取的完整实例，PULSE 案 24 文档。置信度：本仓一手工程产物。
+- `product-system-demo/design/`（本机 Blogs 工作区仓）——方法萃取的完整实例，PULSE 案 24 文档。置信度：本仓一手工程产物。
 
 ## 方法论正典（元模型先例）
 

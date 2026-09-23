@@ -176,6 +176,9 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - 框架反馈环——使用侧信号回流维护侧（observer 模式泛化；human 侧=-Force/改史采集；agent 侧=transcript 对账）
 - 管控层治理矩阵——工件类xinventory/policy/telemetry/actuation 四职能，先手维护表起步
 - 图内层节点刻面——工件图节点不止契约对账，还有根本性多维分类：域分类(九域)/层级分类(声明-机制-数据)/纵横域分类(cross-cutting)；与发散-规束提案的"边视图"汇合，后话待图机制立项时一并裁决
+- ~~targets 本机路径入 SoT~~——**已清偿**（2026-09-23：`registry.yaml` targets 改 `%USERPROFILE%` env 占位 + `sync.ps1` 读入点统一 ExpandEnvironmentVariables，DryRun 实测展开正确）
+- lint 硬编码门覆盖面缺口——现 lint 扫 SKILL.md/scripts 的 `C:\Users\xxx` 类路径，但 registry.yaml（targets）这类 SoT 配置不在扫面内（本次即漏网实例）；门扩面或 SoT 契约校验二选一
+- deployable/areclaw-* POSIX 命令文档——包装文档内 grep/sort/comm//tmp 示例与本机 grep-guard 冲突（vendored 包装层内容，agent 执行时可自适应；如需消除再改）
 - 文档簇引用规则门（图内化的实例面）——外部先例已查实：需求追踪矩阵(DO-178C/ISO26262/NASA SWE-059: 双向链接+孤儿=finding+粒度声明式)、Diataxis 四象限交叉引用规则(how-to<->explanation 可互指不可混体)、contextlint(文档依赖图/孤儿/环检测)、nodex(typed edges: supersedes/implements/covers/references 固定词表+pre-commit 门)、defines-provenance(DEFINES/DEPENDS_ON 声明式溯源)、gno audit(只读审计+稳定 finding id+exit 0/4/5)。开放位=簇x簇允许边矩阵作为通用治理原语+提交时自动排除临时文件引用；机制层(文档图/孤儿/断链)全部有现成实现可借
 - L 中枢串联——主轴框架间插件式互联，明确过早仅留槽
 

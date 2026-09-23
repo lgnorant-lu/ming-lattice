@@ -23,8 +23,8 @@ updatePolicy:
   ttlDays: 7            # checkCache 有效天数; 有效期内 update.ps1 不发起网络请求
   fetchMode: blob:none  # vendored .git 元数据模式（commit/tree, 不含 blob）
 targets:
-  claude: C:\Users\Lenovo\.cc-switch\skills
-  # codex: C:\Users\Lenovo\.codex\skills    # 需要时启用并安装对应客户端
+  claude: "%USERPROFILE%/.cc-switch/skills"   # env 占位由 sync.ps1 展开——SoT 不烙本机路径
+  # codex: "%USERPROFILE%/.codex/skills"      # 需要时启用并安装对应客户端
 
 # 层别登记表（元组管理）——SKILL.md metadata.layer 的合法值域。
 # 新类别先入此表再使用；check-skill 对未登记值告警。ming-* 前缀另须条目级 metaSystem: true 声明。

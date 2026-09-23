@@ -7,10 +7,10 @@
 //
 // 挂法（Claude Code settings.json）：
 //   "hooks": { "UserPromptSubmit": [{ "hooks": [{ "type": "command",
-//     "command": "node D:/dogepy/skills-collection/scripts/route-observer.mjs" }] }] }
+//     "command": "node <repo>/scripts/route-observer.mjs" }] }] }
 // 挂法（Devin CLI .devin/hooks.v1.json）：
 //   { "UserPromptSubmit": [{ "matcher": "", "hooks": [{ "type": "command",
-//     "command": "node D:/dogepy/skills-collection/scripts/route-observer.mjs --src devin-hook" }] }] }
+//     "command": "node <repo>/scripts/route-observer.mjs --src devin-hook" }] }] }
 // 其他宿主：同形 stdin JSON 即可，字段提取是宽容多名的（见 FIELD_CANDIDATES）。
 //
 // 配置：MING_SKILLS_OBSERVE_LOG=<path|off>（默认 <repoRoot>/.logs/route-observed.jsonl）
