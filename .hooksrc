@@ -24,6 +24,12 @@ gate.secrets.exclude=vertical/**
 gate.secrets.genericLevel=warn
 gate.secrets.b64Level=warn
 
+# 4b. 个人数据卫生（与 secrets 互补：secrets 管密钥，pii 管个人标识）
+#     家目录路径(C:\Users\xxx /Users/xxx)=error、CN 个人邮箱域=error、
+#     /home/xxx 与手机号=warn（CTF/示例合法密度高，fixture 名白名单在内）
+gate.pii.level=error
+gate.pii.exclude=vertical/**
+
 # 5. 自动化测试门禁（提交前命令门——command 键指向 verify affected：
 #    由 scripts/plan.mjs 做影响面计划，docs-only 提交免测放行）
 lintLevel=error

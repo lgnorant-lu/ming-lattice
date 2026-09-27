@@ -51,7 +51,7 @@ status: normative
 
 `scripts/hooks/engine.mjs` 是统一调度器；门禁规则分两源：
 
-- **原生码门** `scripts/hooks/gates/*.mjs`：导出 `gate` 对象 `{id, stages, defaultLevel, expensive?, needsAllFiles?, globs?, exclude?, available?(ctx), run(ctx)→findings[]}`。secrets/mojibake/emoji/large-file/commit-msg/impact-test/pre-push-verify/whitespace/toc/review-after/link-rot 十一门为出厂目录。
+- **原生码门** `scripts/hooks/gates/*.mjs`：导出 `gate` 对象 `{id, stages, defaultLevel, expensive?, needsAllFiles?, globs?, exclude?, available?(ctx), run(ctx)→findings[]}`。secrets/mojibake/emoji/large-file/commit-msg/impact-test/pre-push-verify/whitespace/toc/review-after/link-rot/pii 十二门为出厂目录。
 - **声明式正则门** `.hooksrc` 内 `gate.<id>.<key>` 平铺键——覆盖"单模式+单消息"长尾检查，零代码：
   ```ini
   gate.no-debugger.level=error
@@ -88,6 +88,11 @@ status: normative
    - **L2 通用赋值层**（默认 warn，`gate.secrets.genericLevel` 调级）：`api_key|token|secret|password` 等赋值形态 + 香农熵≥3.8 过滤 + 占位符白名单（your-/example/${}/<...> 等）——抓签名层不认识的新服务凭据。
    - **L3 编码层**（`gate.secrets.b64Level`，默认 warn）：UTF-16LE/BE 文件转码重扫（PowerShell 重定向产物常见编码）；可疑文件名（env/config/secret/cred/token）内 base64 长串解码回喂 L1，防 `key | base64` 夹带。
    - 输出只报打码样本（`前4…后4`），永不打印明文密钥；`matchText` 仅存原始命中用于 baseline 身份哈希。
+3b. **个人数据卫生（pii，与 secrets 互补——secrets 管密钥，pii 管个人标识）**：
+   - 家目录路径：`C:\Users\<名>\` 与 macOS `/Users/<名>/` 报 error；`/home/<名>/` 报 warn（CTF/示例合法密度高）。
+   - CN 个人邮箱域（qq/foxmail/163/126/139/sina/sohu/aliyun/yeah/189）报 error；gmail/outlook 等国际域不扫（示例合法密度太高）。
+   - 中国手机号 `1[3-9]xxxxxxxxx` 报 warn；私网 IP 显式弃扫；fixture 名白名单（user/test/alice/ctf 等）内置豁免。
+   - 配置：`gate.pii.level` / `gate.pii.exclude`（本仓 `.hooksrc` 排除 `vertical/**`）。
 4. **提交前命令门（impact-test，昂贵门）**：
    - 通用形态：`gate.impact-test.command` 执行仓级命令，非零退出即拦截（lint-staged 命令配置同构）；未配且无 `tests/run.mjs` 自动缺席。
    - 本仓实例：`.hooksrc` 配 `command=node scripts/verify.mjs --profile affected`——由 `scripts/plan.mjs` 分析暂存快照做影响面计划：纯文档变动免测放行；特定域变动仅执行受影响套件；关键全局配置或未知路径 fail-closed 升级全量。

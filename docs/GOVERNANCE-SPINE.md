@@ -159,7 +159,7 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - registry 治理段拆分——layers/domains/candidates 与资产条目同文件，增长至对账成本显著时考虑分离
 - ~~lint 反向孤儿检测~~——**已清偿**（2026-09-23：lint.ps1 增 fs→registry 反向扫描，浅层枚举不递归物化仓；命名空间容器/已登记包内件/`.`/`_` 前缀目录豁免——实测零孤儿，`private/engineering/testing` 容器正确豁免；`build-deployable $map` 多余键面另案）
 - emit-operational-event 静默死——五调用点全吞 stderr（telemetry 不阻塞业务是取舍），等 observability 消费方要可诊断性
-- sync void-junction 负路径——穿透验证机制在，虚空链接负例断言未建
+- ~~sync void-junction 负路径~~——**已清偿**（2026-09-27：test-cli-tools 增 `sync-void-junction` 场景——预置死 junction 先验虚空(Test-Path 穿透=False)→sync 检出"非本仓旧链"删建治愈→SKILL.md 可解析断言落地；verify-fail exit-1 分支系运中腐化兜底（校验全在部署前），黑盒不可达不伪造）
 - verify-cache strict 模式——纯诊断永 exit 0，等 CI 化/门化需求
 - update.ps1 余项——TOCTOU 回写覆盖、main\|master 分支限定、DETECT-FAIL 与 sourceGone 同桶、shallow 边界 log 缺失，均等痛点实例
 
@@ -177,7 +177,7 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - 管控层治理矩阵——工件类xinventory/policy/telemetry/actuation 四职能，先手维护表起步
 - 图内层节点刻面——工件图节点不止契约对账，还有根本性多维分类：域分类(九域)/层级分类(声明-机制-数据)/纵横域分类(cross-cutting)；与发散-规束提案的"边视图"汇合，后话待图机制立项时一并裁决
 - ~~targets 本机路径入 SoT~~——**已清偿**（2026-09-23：`registry.yaml` targets 改 `%USERPROFILE%` env 占位 + `sync.ps1` 读入点统一 ExpandEnvironmentVariables，DryRun 实测展开正确）
-- lint 硬编码门覆盖面缺口——现 lint 扫 SKILL.md/scripts 的 `C:\Users\xxx` 类路径，但 registry.yaml（targets）这类 SoT 配置不在扫面内（本次即漏网实例）；门扩面或 SoT 契约校验二选一
+- ~~lint 硬编码门覆盖面缺口~~——**已清偿**（2026-09-27：lint.ps1 增 SoT 配置面扫描——registry.yaml/.hooksrc/.hooksrc.tmpl 硬编码用户路径检出，`C:\Users\xxx` 报 E、Linux 绝对路径报 W；假 registry 负例实测咬门）
 - ~~物化漂移 2 条~~——**已清偿**（2026-09-23：`jadx-mcp-server` merge-base 为空——两无共同祖先根提交，pin `4e6d890`(2026-08) 是上游重建新树、本地 `19bd9c1`(2025-08) 是旧线 tip=落后非领先，无本地改动可失 → `--reconcile` 对齐 pin；`awesome-re-mcp` fetch 物化补齐；`game-security-skills` rathena.txt 16MiB 截断（真身 78.8MB）`--reconcile` 重建清偿——终态 92 就绪/4 孤本/0 漂移）
 - ~~filter-repo 收尾 reset --hard 清空 vendored 工作树~~——**已清偿**（2026-09-23：改史后新 HEAD 不含 vertical/*，父仓 reset 把"原跟踪现消失"文件全删，17 仓部分掏空仅剩未跟踪残渣+内层 .git。教训=改史后须按 registry 全量重建物化区。fetch.mjs 由此获三层检测：ls-tree -l 存在性+尺寸双查(截断可抓)/有索引再 status -uno/?? 残留容忍；附修 execFileSync maxBuffer=64M——44k 文件仓 ls-tree 输出超默认 1MB 会 ENOBUFS 被 catch 吞成"就绪"假阴。语义：缺文件→自动重建、尺寸/M 不符→drift 待 --reconcile、未跟踪→容忍）
 - ~~vendor-paradigm skill~~——**已转正**（2026-09-23 `03e3bc7`：实体包 `private/engineering/vendor-paradigm/` + DOMAIN_DEFS/域 triggers/skillTriggers/SKILL-INDEX 四处接线；三事故实证全部写入 SKILL.md 坑表——reset 清空工作树/maxBuffer 假阴/ls-tree 对齐空格）
@@ -188,7 +188,7 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - vendored LICENSE 覆盖缺口——96 vendored 中 32 个无 LICENSE 文件；**物化制落地后再分发面已缩至 4 个 ruyi 孤本**（远端仅存链接不分发字节，灰区自然消解大半）；残留问题=孤本无上游许可 + 本仓自身 LICENSE 选型待定
 - githook 族 skill 增补商讨设计组件——门规变更/新门设计的讨论通道设计件（用户口述方向，细节待成形）
 - author-identity 门（外部先例已查实）——`git var GIT_AUTHOR_IDENT` 取生效身份 → 哨兵名单拦截(t@t/test@test/fixture@*/空) 或白名单域校验；先例：spuder git-hooks(author+committer 双查)、chump pre-commit-git-identity(夹具身份烙进正式仓的事故修复门)、Git::MoreHooks mailmap 校验、conform(GPG签名+身份+org 对账)。本仓适用形态：单作者仓——策略=身份必须 ∈ {noreply}，防止 QQ 邮箱回流公开史。注意 author≠committer 语义（amend/cherry-pick/-s signoff 用 committer 侧）
-- PII/卫生扫描门（外部先例）——staged-diff `--diff-filter=ACMR` 只扫新增行：个人邮箱域/电话/私网 IP/家目录路径(/Users,/home,/C:\Users)；`.pii-allow` 允许清单文件先例(cmk/connections)与 .hooksrc.local 哲学同构；hmrc 双通道(filename+filecontent+二进制扩展名排除)可参考。与既有 secrets 门互补（secrets 管密钥，PII 管个人数据）
+- ~~PII/卫生扫描门~~——**已清偿**（2026-09-27：`gates/pii.mjs` 共享门落地——staged blob 索引保真扫描；家目录路径 `C:\Users\x`/`/Users/x`=error、`/home/x`=warn、CN 个人邮箱域(qq/foxmail/163 等)=error、手机号=warn、私网 IP 显式弃扫（文档合法密度太高）；fixture 名白名单内置；`.hooksrc` 接线 `gate.pii.level=error`+`exclude=vertical/**`；e2e 实测暂存含 qq 邮箱文件被拦 exit 1）
 - 大文件门——pre-commit check-added-large-files 同型(staged 阈值, 默认 500KB)；本仓 vendored 大二进制合法入库故须配 exempt 路径(vertical/)或高阈值 warn 级
 - repo-health 门——repolinter(todogroup/New Relic 在用)+conform license 策略先例：根必需文件在场断言(LICENSE/SECURITY.md/README)、社区健康文件覆盖；本仓 LICENSE 缺席即此类门的活靶
 - ~~DCO/Signed-off-by~~——已评估不适用：多贡献者 IP 证明机制，单作者仓无受益面；记录防复建。commit 签名(GPG/SSH/sigstore)另案候审——公开仓供应链价值真实存在

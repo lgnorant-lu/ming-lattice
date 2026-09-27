@@ -187,6 +187,21 @@ async function runScenario(scenario) {
         '-RepoRoot', root, '-Module', 'hello-js-reverse', '-WhatIf'], { timeout: 30000 });
       assert.equal(result.status, 0, result.stderr);
       assert.deepEqual(tree(root), beforeWhatIf, '-WhatIf must not create deployable/ or links');
+    } else if (scenario === 'sync-void-junction') {
+      // 虚空链接断言: dst 预置为指向不存在目标的 junction——穿透验证(Test-Path SKILL.md)
+      // 必须看穿死链（先验其虚空），sync 检出"非本仓旧链"后删建治愈
+      const dstLink = path.join(target, 'sample-skill');
+      const dead = path.join(root, 'dead-target');
+      fs.mkdirSync(dead, { recursive: true });
+      fs.symlinkSync(dead, dstLink, 'junction');
+      fs.rmSync(dead, { recursive: true, force: true });
+      assert.equal(fs.existsSync(path.join(dstLink, 'SKILL.md')), false,
+        'precondition: void junction must not resolve SKILL.md');
+      const result = await invoke('sync.ps1');
+      assert.equal(result.status, 0, result.stderr);
+      assert.equal(fs.readFileSync(path.join(dstLink, 'SKILL.md'), 'utf8'),
+        fs.readFileSync(path.join(source, 'SKILL.md'), 'utf8'),
+        'void junction must be healed into a working deployment');
     } else if (scenario === 'install-hooks-whatif' || scenario === 'install-hooks-guard') {
       // 外仓脚手架：目标为独立 git 仓——隔离验证对外变异边界
       const foreign = path.join(root, 'foreign-repo');
@@ -249,7 +264,7 @@ export async function run() {
     'disabled', 'name-mismatch', 'empty-description',
     'update-dry-run', 'update-writeback', 'update-ttl-expiry', 'preserve-wrapper', 'unknown-wrapper',
     'missing-wrapper-source', 'missing-special-source', 'build-whatif',
-    'install-hooks-whatif', 'install-hooks-guard'
+    'install-hooks-whatif', 'install-hooks-guard', 'sync-void-junction'
   ];
 
   // 有界并发池 (并发上限 4)

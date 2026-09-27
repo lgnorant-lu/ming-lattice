@@ -237,8 +237,36 @@ export async function run() {
     }));
     assert.equal(l0.length, 3, `L0 文件名层命中数 ${l0.length}`);
     assert.ok(l0.every(f => f.matchText.startsWith('keyfile:')), 'L0 身份用文件名');
+  }
 
-    // commit-msg 策略词表注入：types/subjectMaxLen/extraTrailers
+  // 7b. pii 卫生门：家目录路径/个人邮箱域=error，/home/与手机号=warn，fixture 名豁免
+  {
+    const { gate: pii } = await import('../../scripts/hooks/gates/pii.mjs');
+    const mkCtx = (fileMap) => ({ files: Object.keys(fileMap), gateConfig: {}, read: p => fileMap[p] });
+    const files = {
+      // 分层命中
+      'a.md': '路径 C:\\Users\\realperson\\docs 写死\n',   // Windows 家目录 → error
+      'b.md': '见 /Users/' + 'alice-dev/.config 配置\n',   // macOS 家目录 → error（拆开防本文件被 pii 门自拦）
+      'c.md': 'mail me at some.one@' + 'qq.com thx\n',     // CN 个人邮箱 → error
+      'd.md': '日志在 /home/' + 'deployer/app.log\n',      // /home/ 具名 → warn
+      'e.md': '联系电话 ' + '139' + '12345678\n',          // CN 手机号 → warn
+      // 豁免面
+      'f.md': '示例路径 C:\\Users\\test\\ 或 /Users/user/\n', // fixture 名豁免
+      'g.md': '/home/ctf/flag 与 /home/alice/ 均为示例\n',   // fixture 名豁免
+      'h.md': 'noreply@github.com / user@example.com\n',   // 非个人域不报
+      'i.md': '端口 2222 私网 192.168.1.1 部署\n',          // 私网 IP 显式弃扫
+      'j.md': '短号 1234567890 不足 11 位\n',              // 非手机号形不报
+    };
+    const f = await pii.run(mkCtx(files));
+    const err = f.filter(x => x.level === 'error');
+    const warn = f.filter(x => x.level === 'warn');
+    assert.equal(err.length, 3, `error 命中=家目录2+邮箱1，实际 ${err.map(x => x.message).join(';')}`);
+    assert.equal(warn.length, 2, `warn 命中=/home/+手机，实际 ${warn.map(x => x.message).join(';')}`);
+    assert.ok(f.every(x => !/^f|g|h|i|j\.md$/.test(x.file)), 'fixture/白名单/弃扫面不得命中');
+  }
+
+  // commit-msg 策略词表注入：types/subjectMaxLen/extraTrailers
+  {
     const { gate: cmsg } = await import('../../scripts/hooks/gates/commit-msg.mjs');
     const dir = tempRepo();
     try {

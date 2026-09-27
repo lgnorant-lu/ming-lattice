@@ -26,6 +26,10 @@ trailerLevel=error        # → gate.commit-msg.level（AI 尾巴等）
 # ── secrets 门多层调优 ──
 # gate.secrets.genericLevel=warn   # L2 通用赋值层（key/token=值+熵检+占位符白名单）：warn|error|off
 # gate.secrets.b64Level=warn       # L3 base64 夹带解码（仅可疑文件名）：warn|error|off
+
+# ── pii 个人数据卫生门 ──
+# gate.pii.level=error             # 家目录路径/CN个人邮箱域=error；/home/与手机号=warn；fixture 名白名单内置
+# gate.pii.exclude=a/**            # 追加排除 glob（vendored/文档示例目录走此键）
 # gate.secrets.exclude=a/**,b/**   # 追加排除 glob（默认空——仓专目录走此键）
 
 # ── commit-msg 策略词表（采纳项目改配置不改代码；kit 默认=Conventional 11 型+空禁尾表）──

@@ -167,6 +167,22 @@ foreach ($s in $sources) {
     }
 }
 
+# ---------- SoT 配置面：registry.yaml/.hooksrc 等治理配置的硬编码用户路径 ----------
+# 背景: registry targets 曾烙 C:\Users\xxx 本机路径（已改 %USERPROFILE% 占位）——
+# SKILL.md/scripts 扫描面不覆盖 SoT 配置，此类缺陷漏网过，须独立断言防回归
+foreach ($sotFile in @($RegistryPath, (Join-Path $RepoRoot '.hooksrc'), (Join-Path $RepoRoot '.hooksrc.tmpl'))) {
+    if (-not (Test-Path -LiteralPath $sotFile -PathType Leaf)) { continue }
+    $sotContent = Get-Content -LiteralPath $sotFile -Raw -Encoding UTF8 -ErrorAction SilentlyContinue
+    if ([string]::IsNullOrWhiteSpace($sotContent)) { continue }
+    $sotName = Split-Path $sotFile -Leaf
+    if ($sotContent -match 'C:\\Users\\[^\\]+\\') {
+        $issues += [ordered]@{ level = 'E'; name = $sotName; msg = "SoT 配置含硬编码用户路径(应改 %USERPROFILE% 等环境占位): $($Matches[0])"; file = $sotFile }
+    }
+    elseif ($sotContent -match '/home/[^/]+/|/root/') {
+        $issues += [ordered]@{ level = 'W'; name = $sotName; msg = "SoT 配置含 Linux 绝对路径: $($Matches[0])"; file = $sotFile }
+    }
+}
+
 # ---------- 反向孤儿：fs 有目录但 registry 无条目（命名空间容器豁免） ----------
 $registeredPaths = @{}
 foreach ($base in @($reg.base)) {
