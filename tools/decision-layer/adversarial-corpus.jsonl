@@ -1,0 +1,15 @@
+{"id":"adv-001","query":"how do I reverse this obfuscated javascript","expect":{"domain":"reverse","anySkills":["js-reverse","reverse-engineering","reverse-skill-router"]},"tier":"ADV","lang":"en","note":"实测盲区：EN reverse 不命中 reverse 域，baseline ask/testing-js-idiom"}
+{"id":"adv-002","query":"decompile this dex and show me the call graph","expect":{"domain":"reverse","anySkills":["apk-reverse","mobile-reverse","reverse-engineering"]},"tier":"ADV","lang":"en","note":"跨语种：EN 反编译意图"}
+{"id":"adv-003","query":"hook the ssl pinning in this android app","expect":{"domain":"reverse","anySkills":["apk-reverse","mobile-reverse","ui-oracle-protocol"]},"tier":"ADV","lang":"en","note":"EN frida/ssl pinning hook"}
+{"id":"adv-004","query":"渗透测试目标站点有风控验证码怎么绕","expect":{"domain":"reverse","anySkills":["antibot-fingerprint-paradigm","reverse-skill-router","firmware-pentest"]},"tier":"ADV","lang":"zh","note":"CJK 复合词：渗透测试不应命中 testing 域"}
+{"id":"adv-005","query":"帮我测试一下这个渗透工具的误报率","expect":{"domain":"testing","anySkills":["testing-core-oracle","testing-scenario-scraper"]},"tier":"ADV","lang":"zh","note":"反向陷阱：渗透工具+测试意图，属 testing 看语义"}
+{"id":"adv-006","query":"analyze the suspicious behavior of this malware sample","expect":{"domain":"reverse","anySkills":["malware-analysis","reverse-engineering"]},"tier":"ADV","lang":"en","note":"EN 恶意软件分析"}
+{"id":"adv-007","query":"fuzz this parser for crashes","expect":{"domain":"testing","anySkills":["testing-core-oracle","testing-go-idiom","testing-python-idiom","testing-rust-idiom"]},"tier":"ADV","lang":"en","note":"EN fuzz 测试意图"}
+{"id":"adv-008","query":"write table-driven tests for this go parser","expect":{"domain":"testing","anySkills":["testing-go-idiom","testing-core-oracle"]},"tier":"ADV","lang":"en","note":"EN go 测试"}
+{"id":"adv-009","query":"我想给我的 SaaS 工具找早期用户该发哪个社区","expect":{"domain":"none","action":"handoff"},"tier":"ADV","lang":"zh","note":"Karmit 型推广意图：OOS-adjacent 应弃权"}
+{"id":"adv-010","query":"帮我看看这个网站要不要做无障碍适配","expect":{"domain":"none","action":"handoff"},"tier":"ADV","lang":"zh","note":"a11y 不在技能面，应弃权（ui-design 相邻诱惑）"}
+{"id":"adv-011","query":"这个接口响应太慢帮我看看哪里瓶颈","expect":{"domain":"none","action":"handoff"},"tier":"ADV","lang":"zh","note":"性能排查泛请求，无技能覆盖"}
+{"id":"adv-012","query":"review 一下这个 PR 有没有破坏现有功能","expect":{"domain":"testing","anySkills":["review-core-paradigm","testing-core-oracle","testing-workflow-spec"]},"tier":"ADV","lang":"mixed","note":"中英混合 review/回归语义"}
+{"id":"adv-013","query":"trace this apk's registration check with frida","expect":{"domain":"reverse","anySkills":["apk-reverse","mobile-reverse","ui-oracle-protocol"]},"tier":"ADV","lang":"en","note":"EN 注册流程分析+frida"}
+{"id":"adv-014","query":"windows 上抓这个 app 的 https 流量","expect":{"domain":"reverse","anySkills":["apk-reverse","mobile-reverse","protocol-reverse","ui-oracle-protocol"]},"tier":"ADV","lang":"zh","note":"中文抓包意图"}
+{"id":"adv-015","query":"这个 npm 包的 supply chain 有没有风险帮我审一下","expect":{"domain":"engineering","anySkills":["sec-core-paradigm","vendor-paradigm","contract-core-paradigm"]},"tier":"ADV","lang":"zh","note":"供应链安全→sec-core/vendor"}
