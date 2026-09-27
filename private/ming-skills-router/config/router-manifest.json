@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-23T08:05:21.365Z",
+  "generatedAt": "2026-09-27T02:17:39.596Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -43,7 +43,6 @@
         "hypothesis",
         "proptest",
         "test framework",
-        "oracle",
         "golden test",
         "spec test",
         "unit test",
@@ -51,11 +50,7 @@
         "property-based",
         "mutation testing",
         "爬虫",
-        "采集",
-        "清洗",
-        "命令行",
         "退出码",
-        "cli",
         "行为快照",
         "锁定行为",
         "ffi",
@@ -63,6 +58,13 @@
         "v8",
         "isolate",
         "跨语言"
+      ],
+      "weakTriggers": [
+        "采集",
+        "清洗",
+        "命令行",
+        "cli",
+        "oracle"
       ],
       "negatives": [
         "脱壳",
@@ -154,10 +156,12 @@
         "栈溢出",
         "利用链",
         "安装包",
-        "小程序",
         "二进制分析",
         "抓包",
         "wasm"
+      ],
+      "weakTriggers": [
+        "小程序"
       ],
       "negatives": [
         "单元测试",
@@ -199,6 +203,9 @@
         "配色",
         "交互规范",
         "布局规范"
+      ],
+      "weakTriggers": [
+        "ui"
       ],
       "negatives": [
         "脱壳",
@@ -273,7 +280,6 @@
         "ming-distiller"
       ],
       "triggers": [
-        "文档",
         "文档体系",
         "仓库文档",
         "readme",
@@ -289,7 +295,6 @@
         "动线",
         "docs-presentation",
         "可观测",
-        "日志",
         "observability",
         "structured logging",
         "wide events",
@@ -305,7 +310,6 @@
         "tolerant-reader",
         "data-contract",
         "字段演进",
-        "配置",
         "配置归一化",
         "环境变量",
         "特性开关",
@@ -313,7 +317,6 @@
         "i18n",
         "config",
         "性能",
-        "安全",
         "隐私",
         "韧性",
         "上下文成本",
@@ -424,13 +427,19 @@
         "gitlink",
         "孤本"
       ],
+      "weakTriggers": [
+        "文档",
+        "日志",
+        "配置",
+        "安全",
+        "ci"
+      ],
       "qualityGateTriggers": [
         "质量门禁",
         "门禁",
         "git hooks",
         "pre-commit",
         "pre-push",
-        "ci",
         "ci/cd",
         "runner",
         "影响面",

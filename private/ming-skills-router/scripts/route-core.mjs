@@ -141,11 +141,14 @@ export function Decide(hint, manifest) {
   const excluded = new Set();
   const explicit = new Map();
   const scores = {};
+  const strongScores = {};
+  const weakTermsHit = {};
   const candidatesByDomain = {};
 
   for (const [name, info] of Object.entries(domains)) {
     if (!isRecord(info) || !isStringArray(info.skills) || !info.skills.every(isSkillName)
       || !isStringArray(info.triggers) || !isStringArray(info.negatives)
+      || (info.weakTriggers !== undefined && !isStringArray(info.weakTriggers))
       || (info.qualityGateTriggers !== undefined && !isStringArray(info.qualityGateTriggers))
       || (info.skillTriggers !== undefined && (!isRecord(info.skillTriggers)
         || !Object.entries(info.skillTriggers).every(([skill, terms]) => isSkillName(skill) && isStringArray(terms))))) {
@@ -163,7 +166,13 @@ export function Decide(hint, manifest) {
       if (neg) scoredText = scoredText.split(neg).join('#'.repeat(neg.length));
     }
     const triggerTerms = [...info.triggers, ...(info.qualityGateTriggers || [])];
-    scores[name] = triggerTerms.filter(term => term !== 'hook' && matches(scoredText, term)).length;
+    // 强词（triggers/qualityGate）单独成轨——dispatch 只认强证据；
+    // 弱词（weakTriggers，replay 实测的泛词）计入召回分与域正向，但裸命中不派工
+    const strong = triggerTerms.filter(term => term !== 'hook' && matches(scoredText, term)).length;
+    const weak = (info.weakTriggers || []).filter(term => term !== 'hook' && matches(scoredText, term));
+    scores[name] = strong + weak.length;
+    strongScores[name] = strong;
+    weakTermsHit[name] = weak;
   }
   for (const skill of excluded) explicit.delete(skill);
   for (const [name, info] of Object.entries(domains)) {
@@ -182,6 +191,7 @@ export function Decide(hint, manifest) {
       return decision;
     }
     scores[domain] = (scores[domain] || 0) + 2;
+    strongScores[domain] = (strongScores[domain] || 0) + 2;
     decision.reasons.push(`explicit_skill_hit: ${skill}`);
   }
 
@@ -212,6 +222,20 @@ export function Decide(hint, manifest) {
     return decision;
   }
   decision.domain = domain;
+  // 弱词单发降级门：域证据只有泛词命中（无强词/显式技能/qualityGate）——
+  // "采集""文档""日志"这类词在延续消息里高频出现，裸命中派发技能是假阳性。
+  // 降级 ask：域判保留、带词法候选，等用户确认（replay 1755 条实测驱动）。
+  const strongEvidence = (strongScores[domain] || 0) > 0 || (domain === 'engineering' && qualityGate);
+  if (!strongEvidence) {
+    decision.confidence = 'low';
+    decision.action = 'ask';
+    decision.candidates = [...new Set([
+      ...lexicalPicks.map(p => p.skill),
+      ...(candidatesByDomain[domain] || [])
+    ])];
+    decision.reasons.push('weak_trigger_only: ' + (weakTermsHit[domain] || []).join(', '));
+    return decision;
+  }
   decision.confidence = scores[domain] >= 2 ? 'high' : 'medium';
   decision.candidates = [...new Set([
     ...(candidatesByDomain[domain] || []),

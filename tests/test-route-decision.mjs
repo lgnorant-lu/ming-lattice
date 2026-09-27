@@ -315,6 +315,80 @@ const GOLDEN_CASES = [
       assert.equal(res.side_effects, 'none');
       assert.ok(res.must_not.includes('initReverseCase'), '复合任务未确认前绝对严禁建单！');
     }
+  },
+
+  // ── 10. 弱触发词降级 (weakTriggers: replay 1755 条实测驱动的泛词分级) ──
+  // 语义：弱词计入域正向分与候选召回，但裸命中（无强词/显式技能/qualityGate）不得 dispatch，
+  // 降级 ask + 域内候选集——"可能是这个域"而非"就是干这个"。
+  {
+    category: '弱词降级',
+    name: '10.1 泛词"采集"裸命中不派工 (replay overfire=175 vs agree=18)',
+    hint: '采集一下昨天的记录整理下',
+    must_include: ['testing-core-oracle'],
+    assert: (res, tc) => {
+      assert.equal(res.domain, 'testing');
+      assert.equal(res.action, 'ask');
+      assert.equal(res.confidence, 'low');
+      assertSubset(tc.must_include, res.candidates, tc.name);
+      assert.ok(res.reasons.some(r => r.startsWith('weak_trigger_only')));
+    }
+  },
+  {
+    category: '弱词降级',
+    name: '10.2 "排查崩溃日志"不误派 (replay r-0000 实案回归)',
+    hint: '查查最近几次电脑崩溃，把日志翻出来排查下',
+    must_include: ['obs-core-paradigm'],
+    assert: (res, tc) => {
+      assert.equal(res.domain, 'engineering');
+      assert.notEqual(res.action, 'dispatch');
+      assertSubset(tc.must_include, res.candidates, tc.name);
+    }
+  },
+  {
+    category: '弱词降级',
+    name: '10.3 "小程序"裸词降级 ask (replay overfire=13 vs agree=4)',
+    hint: '小程序那个东西你怎么看',
+    must_include: ['reverse-skill-router'],
+    assert: (res, tc) => {
+      assert.equal(res.domain, 'reverse');
+      assert.equal(res.action, 'ask');
+      assertSubset(tc.must_include, res.candidates, tc.name);
+    }
+  },
+  {
+    category: '弱词降级',
+    name: '10.4 强词+弱词复合仍 dispatch ("爬虫"强词不受"采集"降级拖累)',
+    hint: '为爬虫采集管道写离线解析测试',
+    must_include: ['testing-scenario-scraper'],
+    assert: (res, tc) => {
+      assert.equal(res.domain, 'testing');
+      assert.equal(res.action, 'dispatch');
+      assertSubset(tc.must_include, res.candidates, tc.name);
+    }
+  },
+  {
+    category: '弱词降级',
+    name: '10.5 显式点名压过弱词门 (explicit_skill_hit 是强证据)',
+    hint: '用 testing-scenario-scraper 处理这个采集任务',
+    must_include: ['testing-scenario-scraper'],
+    assert: (res, tc) => {
+      assert.equal(res.action, 'dispatch');
+      assertSubset(tc.must_include, res.candidates, tc.name);
+    }
+  },
+  {
+    category: '弱词降级',
+    name: '10.6 泛词"ci"降级但"ci/cd"仍是 quality gate',
+    hint: '看下 ci 相关的东西',
+    must_include: [],
+    assert: (res) => {
+      assert.equal(res.action, 'ask');
+      assert.equal(res.confidence, 'low');
+      assert.ok(res.reasons.some(r => r.includes('ci')));
+      const res2 = Decide('ci/cd 流水线质量门检查', manifest);
+      assert.equal(res2.domain, 'engineering');
+      assert.equal(res2.action, 'dispatch');
+    }
   }
 ];
 
@@ -322,7 +396,7 @@ export function run() {
   let passed = 0;
   let failed = 0;
 
-  console.log(`\n========== [ming-skills 路由决策内核 20 条结构化黄金用例集 (高召回断言)] ==========`);
+  console.log(`\n========== [ming-skills 路由决策内核 ${GOLDEN_CASES.length} 条结构化黄金用例集 (高召回断言)] ==========`);
   for (const tc of GOLDEN_CASES) {
     try {
       const decision = Decide(tc.hint, manifest);

@@ -33,11 +33,15 @@ const DOMAIN_DEFS = {
       "测试", "单测", "覆盖率", "测试用例", "测试规范", "测试覆盖", "测试体系", "测试计划",
       "单元测试", "性质测试", "变异测试", "表征测试", "契约测试", "集成测试", "回归测试",
       "tdd", "bdd", "pytest", "cargo test", "miri", "vitest", "jest", "hypothesis",
-      "proptest", "test framework", "oracle", "golden test", "spec test", "unit test", "testing", "property-based", "mutation testing",
+      "proptest", "test framework", "golden test", "spec test", "unit test", "testing", "property-based", "mutation testing",
       // ── eval 挖出的缺门词：场景探测器词升格 + 常用短形补齐 ──
-      "爬虫", "采集", "清洗", "命令行", "退出码", "cli", "行为快照", "锁定行为",
+      "爬虫", "退出码", "行为快照", "锁定行为",
       "ffi", "pyo3", "v8", "isolate", "跨语言"
     ],
+    // ── weakTriggers（replay 1755 条实测）：泛词单发即误派——采集 175:18、清洗 8:3、
+    //    cli 6:0、命令行 3:0、oracle 3:0（overfire:agree）。弱词计入域正向/候选，
+    //    单独命中降级 ask，不 dispatch。
+    weakTriggers: ["采集", "清洗", "命令行", "cli", "oracle"],
     negatives: [
       "脱壳", "反编译", "ida pro", "gdb", "rop", "pwn", "hook_installed", "抓包", "绕过frida",
       "渗透测试", "安全测试", "pentest",
@@ -63,9 +67,11 @@ const DOMAIN_DEFS = {
       "指纹", "ja3", "ja4", "风控", "反爬", "指纹浏览器", "webdriver检测", "tls指纹",
       "headless检测", "bot detection", "fingerprint", "渗透测试", "安全测试", "pentest", "penetration",
       // ── eval 挖出的缺门词：常用短形与场景词补齐 ──
-      "渗透", "反汇编", "反混淆", "栈溢出", "利用链", "安装包", "小程序", "二进制分析", "抓包",
+      "渗透", "反汇编", "反混淆", "栈溢出", "利用链", "安装包", "二进制分析", "抓包",
       "wasm"
     ],
+    // ── weakTriggers：小程序 13:4 overfire 偏斜（泛词，可能是任何小工具）──
+    weakTriggers: ["小程序"],
     negatives: [
       "单元测试", "测试覆盖", "pytest", "cargo test", "tdd", "bdd", "覆盖设计",
       "性质测试", "变异测试", "测试规范", "测试体系", "ui设计", "前端布局"
@@ -81,6 +87,8 @@ const DOMAIN_DEFS = {
       // ── eval 挖出的缺门词：常用短形补齐（"布局"泛词不升——会抢"项目布局"） ──
       "响应式", "配色", "交互规范", "布局规范"
     ],
+    // ── weakTriggers：裸 "ui" 4:0 全误派（任何界面话题都沾边）──
+    weakTriggers: ["ui"],
     negatives: [
       "脱壳", "反编译", "ida", "frida", "漏洞利用", "rop", "pwn", "so逆向"
     ],
@@ -123,14 +131,14 @@ const DOMAIN_DEFS = {
       "ming-distiller"
     ],
     triggers: [
-      "文档", "文档体系", "仓库文档", "readme",
+      "文档体系", "仓库文档", "readme",
       "文档体裁", "diataxis", "adr", "docs-as-code", "架构决策记录",
       "文档排版", "readme排版", "去emoji", "去疲劳", "动线", "docs-presentation",
-      "可观测", "日志", "observability", "structured logging", "wide events", "宽事件", "相关id",
+      "可观测", "observability", "structured logging", "wide events", "宽事件", "相关id",
       "安全元规则", "ast10", "agentic-skills", "supply-chain", "最小权限",
       "数据契约", "schema-evolution", "tolerant-reader", "data-contract", "字段演进",
-      "配置", "配置归一化", "环境变量", "特性开关", "feature flag", "i18n", "config",
-      "性能", "安全", "隐私", "韧性", "上下文成本", "可移植", "overlay",
+      "配置归一化", "环境变量", "特性开关", "feature flag", "i18n", "config",
+      "性能", "隐私", "韧性", "上下文成本", "可移植", "overlay",
       "规范体系", "项目分层", "治理文档", "候审档", "ming-l",
       "新技能", "写技能", "技能包", "skill包", "skill authoring", "frontmatter",
       "体验导演", "叙事设计", "产品体验设计", "scrollytelling", "电影感网页", "沉浸式体验", "设计宪法", "storyboard",
@@ -155,8 +163,12 @@ const DOMAIN_DEFS = {
       // ── vendor 域门：物化/vendoring 裸词意图明确可开门 ──
       "vendoring", "物化", "materialization", "lockfile", "第三方依赖", "gitlink", "孤本"
     ],
+    // ── weakTriggers（replay 实测）：文档 49:11、日志 8:0、配置 8:0、安全 4:1、
+    //    ci 7:0——泛词裸命中全误派（查日志/编辑器配置/整理文档/CI 随口一提都被派工）。
+    //    单独命中降级 ask；与强词同现仍照常计分派工。
+    weakTriggers: ["文档", "日志", "配置", "安全", "ci"],
     qualityGateTriggers: [
-      "质量门禁", "门禁", "git hooks", "pre-commit", "pre-push", "ci", "ci/cd", "runner",
+      "质量门禁", "门禁", "git hooks", "pre-commit", "pre-push", "ci/cd", "runner",
       "影响面", "affected", "sbom", "sca", "freshness", "制品门禁"
     ],
     negatives: [
