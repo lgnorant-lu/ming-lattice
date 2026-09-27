@@ -153,7 +153,7 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - doc-claims 门——反引号路径存在性对账，等第二个 doc-断言漂移实例
 - hook 事件接线——observability schema 扩 `hook.*`，等下游消费方
 - 持续型 fitness function——审计陈旧度，我们的节奏是事件驱动
-- domain 同义归并（部分清偿 2026-09-23）——mp 域已归并：wx-mp-mcp/wxminidec 从 js 改 mp（mp=3 自洽小程序域）；android 单例保留（uiautodev=平台自动化≠APK 逆向，真语义）；残留=web/js 近义带（指纹/自动化 vs JS 逆向技术侧有真分界，逐案）
+- ~~domain 同义归并~~——**已清偿**（2026-09-23 mp 归并：wx-mp-mcp/wxminidec js→mp；android 单例保留=uiautodev 平台自动化≠APK 逆向真语义。**2026-09-27 web/js 残留逐案清偿**：逐成员读 README 定性——camoufox-cli（指纹伪造 CLI）+devtools-detecter（站方反调试检测件，brotector 同族）js→web；保留 js 者均目的侧 JS-RE（camoufox-reverse-mcp/firefox-reverse 指纹壳载逆向目的、iwen-scraping JS-RE 知识库、web-reverse-iv8 JS 参数逆向、xtrace JSVMP tracer、jshookmcp JS 分析）；web 现存 13 件全指纹/自动化/检测件核验无误。分界语义=载体归属"指纹/自动化/检测面"vs"JS 逆向技术面"——目的>载体名>名称词）
 - ~~deploy-drift 门~~——**已清偿**（2026-09-23：`gates.local/deploy-drift.mjs` 落地——registry deploy.claude+base.modules[claude] 声明 ⟺ 客户端链接目录对账；缺链/孤儿链 warn，外国链接与无 registry/无客户端目录均不适用容忍；`.hooksrc` warn+7d cadence。落地即实证：vendor-paradigm 声明未链接被正确报出，sync 后清账）
 - unsuffixed-name 的 layer 歧义——name 后缀=类型面与 layer=领域面分位后，无后缀名的 layer 取值靠人判断，等真实歧义例
 - registry 治理段拆分——layers/domains/candidates 与资产条目同文件，增长至对账成本显著时考虑分离

@@ -670,7 +670,7 @@ vertical:
     pin: 4d86686d8034e93910473671ee34453dee173cb2
     acquiredAt: 2026-08-18
     enabled: true
-    domain: js
+    domain: web
     note: 反检测浏览器 CLI+Skills(C++级指纹伪造 canvas/WebGL/audio)
     deploy: {}
     checkCache:
@@ -861,7 +861,7 @@ vertical:
     pin: c72cac0cd189c6d7b14b8ea42ceca3b46cc9ed99
     acquiredAt: 2026-08-18
     enabled: true
-    domain: js
+    domain: web
     note: 定时性能采样 DevTools 检测 JS 库(对抗面研究参考)
     deploy: {}
     checkCache:
