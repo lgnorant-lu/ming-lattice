@@ -7,6 +7,8 @@ domain: gov
 
 - Status: Proposed
 - Date: 2026-09-28
+- 参考实现: `private/engineering/ming-boundary/`（facts lib + extract-facts + check-boundaries；
+  根级契约实例 `boundaries.yaml`；live 闸门 `tests/run.mjs` boundary-live 套件）
 - 关联: ADR-0006（distill-loop 先例：候选层 staging 后经评审晋升）；
   本地 staging 全证据稿 `distill/_proposals/2026-09-28-project-graph-fact-model.md`
   （355 行，含先例地图与五轮消融原始数据——gitignored，不入仓）

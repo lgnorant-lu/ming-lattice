@@ -1,0 +1,55 @@
+# boundaries.yaml — 仓库边界契约声明（ADR-0008 D3/D4）
+# 消费方: private/engineering/ming-boundary/scripts/check-boundaries.mjs
+# 语义: domains 有序首段锚定；forbidden=命中即违规；allowed=from+via 命中的边
+#       dst 必须在 to 名单内；required=units_in 每个单元至少一条 needs 边
+#       且其目标域 ∈ to_in。dead 链接/引用内建必违规。
+
+version: 1
+
+domains:
+  - name: vendored
+    match: vertical/**|base/**
+  - name: deployed
+    match: deployable/**
+  - name: private
+    match: private/**
+  - name: scripts
+    match: scripts/**
+  - name: tests
+    match: tests/**
+  - name: tools
+    match: tools/**
+  - name: docs
+    match: docs/**
+  - name: local
+    match: distill/**|.logs/**
+
+rules:
+  forbidden:
+    # R5: 自有代码不 import vendored 源（边界纪律，实测=0）
+    - label: own-never-imports-vendored
+      via: import
+      from: [scripts, tools, tests, private, docs]
+      to: [vendored]
+    # R6: private 不回调公共壳层（层倒挂防线，实测=0）
+    - label: private-no-callback-shells
+      via: import
+      from: [private]
+      to: [scripts, tools]
+    # tests 只消费自有面（现状 3 条 tests→private 为合法 impl 直达）
+    - label: tests-own-surface-only
+      via: import
+      from: [tests]
+      to: [vendored, deployed]
+  allowed:
+    # R1 边界半：deployable 链接目标只许 vendored/private（实测 173 边零越界）
+    - label: deployable-link-scope
+      via: link
+      from: [deployed]
+      to: [vendored, private]
+  # required 子句留空 —— deployable 是双子族面：镜像型（符号链接包装 vendored/
+  # private 源）与原生型（registry path 直接指 deployable/<name>，如 areclaw-*）。
+  # "每单元必须有源链接"只对镜像族成立，当前事实面无法在 unit 内区分两族；
+  # 链接侧不变量已由 allowed:deployable-link-scope + 内建 dead-link 检查覆盖。
+  # 待办: registry 增加 family 标记后启用 required 断言。
+  required: []

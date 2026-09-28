@@ -28,7 +28,8 @@ private/engineering/
 ├── depth-core-paradigm/               # [A列-裁决] finding 下潜深度：动态序贯下潜 + 静态先验绊线 + 可行动性停止判据
 ├── ming-l-paradigm/                   # [A列-方法论] Ming-L 九域分层（项目结构规范总图）、粒度分级、候审档
 ├── ming-skill-forge/                  # [A列-方法论] 技能包创作规程 + check-skill.mjs 硬门控
-└── ming-experience-direction/         # [A列-方法论] 体验导演式设计流水线（文档阶梯/宪法/叙事主干/六门过审/媒介预算）
+├── ming-experience-direction/         # [A列-方法论] 体验导演式设计流水线（文档阶梯/宪法/叙事主干/六门过审/媒介预算）
+└── ming-boundary/                     # [组件] 项目图事实提取(JSONL) + boundaries.yaml 边界契约断言 (ADR-0008)
 ```
 
 ---

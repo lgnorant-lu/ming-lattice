@@ -1,4 +1,6 @@
 import { execFileSync, spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { run as runValidateUnit } from './unit/test-validate-hooks.test.mjs';
 import { run as runBuildManifestUnit } from './unit/test-build-manifest.test.mjs';
@@ -21,6 +23,7 @@ import { run as runLintContract } from './contract/test-lint-contract.mjs';
 import { run as runHookPlannerContract } from './contract/test-hook-planner.mjs';
 import { run as runRouteObserver } from './contract/test-route-observer.mjs';
 import { run as runFetchCli } from './unit/test-fetch.test.mjs';
+import { run as runMingBoundary } from './unit/test-ming-boundary.test.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const startedAt = process.hrtime.bigint();
@@ -76,6 +79,17 @@ export const allSuites = [
   { name: 'lexical-layer', tier: 'unit', run: runLexicalLayer },
   { name: 'hook-engine', tier: 'unit', git: true, run: runHookEngine },
   { name: 'fetch-cli', tier: 'unit', git: true, run: runFetchCli },
+  { name: 'ming-boundary', tier: 'unit', run: runMingBoundary },
+  { name: 'boundary-live', tier: 'contract', run: () => {
+    // 真仓事实提取 + 根级 boundaries.yaml 契约评估（ADR-0008 实例化闸门）
+    const factsFile = path.join(os.tmpdir(), `mb-live-${process.pid}.jsonl`);
+    try {
+      node('private/engineering/ming-boundary/scripts/extract-facts.mjs', '--out', factsFile);
+      node('private/engineering/ming-boundary/scripts/check-boundaries.mjs', '--facts', factsFile);
+    } finally {
+      fs.rmSync(factsFile, { force: true });
+    }
+  } },
   { name: 'skill-recall', tier: 'eval', run: runSkillRecall },
   { name: 'recall-eval', tier: 'eval', run: () => node('tests/evals/eval-recall.mjs', '--gate') },
   { name: 'route-safety', tier: 'contract', run: () => node('--test', 'tests/contract/test-route-safety.test.mjs') },

@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-27T02:17:39.596Z",
+  "generatedAt": "2026-09-28T07:59:57.700Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -277,7 +277,8 @@
         "ming-l-paradigm",
         "ming-skill-forge",
         "ming-experience-direction",
-        "ming-distiller"
+        "ming-distiller",
+        "ming-boundary"
       ],
       "triggers": [
         "文档体系",
@@ -654,6 +655,22 @@
           "经验回收",
           "查沉淀",
           "项目复盘"
+        ],
+        "ming-boundary": [
+          "项目图",
+          "project graph",
+          "事实提取",
+          "fact extraction",
+          "边界契约",
+          "boundary contract",
+          "依赖审计",
+          "孤儿符号",
+          "orphan detection",
+          "断链检测",
+          "dead link",
+          "boundaries.yaml",
+          "应然边",
+          "接缝核验"
         ]
       }
     }
@@ -808,6 +825,7 @@
     "js-reverse": "ready",
     "macos-reverse": "ready",
     "malware-analysis": "ready",
+    "ming-boundary": "ready",
     "ming-distiller": "ready",
     "ming-experience-direction": "ready",
     "ming-l-paradigm": "ready",
@@ -990,6 +1008,26 @@
       "name": "malware-analysis",
       "description": "Use when analyzing suspected malware through static, dynamic, and behavioral techniques, including IOC extraction, YARA or Sigma rules, sandboxing, and anti-analysis behavior.",
       "triggers": []
+    },
+    "ming-boundary": {
+      "name": "ming-boundary",
+      "description": "仓库结构事实提取与边界契约断言组件——JSONL 事实流（file/decl/import/link）+ boundaries.yaml 声明式契约（forbidden/allowed/required）+ 纯评估引擎。当涉及项目图、依赖边界审计、孤儿符号检测、断链检测、生成与手写接缝核验、跨文件应消费断言时使用。",
+      "triggers": [
+        "项目图",
+        "project graph",
+        "事实提取",
+        "fact extraction",
+        "边界契约",
+        "boundary contract",
+        "依赖审计",
+        "孤儿符号",
+        "orphan detection",
+        "断链检测",
+        "dead link",
+        "boundaries.yaml",
+        "应然边",
+        "接缝核验"
+      ]
     },
     "ming-distiller": {
       "name": "ming-distiller",

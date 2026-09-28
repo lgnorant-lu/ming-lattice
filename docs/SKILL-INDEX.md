@@ -277,7 +277,7 @@ status: descriptive
 | **testing-scenario-cli** | 场景特化 | 命令行与脚本工具契约：参数退出码矩阵、可注入FS/Env、幂等性与防半成品 | cli-test, command-line-testing, exit-codes, golden-files |
 | **testing-scenario-scraper** | 场景特化 | 采集爬虫与清洗管道：离线 Fixture 优先、领域不变量、选择器健康度、活网仅作探针 | scraper-testing, crawler-test, selector-health, fixture-parsing |
 
-### 3. 工程元规范族（engineering/* 根级 15 包）
+### 3. 工程元规范族（engineering/* 根级 16 包）
 
 > 惯例：`metadata.layer` + `compose` 自声明装配；`*-paradigm` 带 references/sources.md 文献链 + Compose 节。导引见 `private/engineering/README.md`。
 
@@ -298,6 +298,7 @@ status: descriptive
 | ming-l-paradigm | 项目结构域分层元规则：Ming-L 九域全景 x 七动力学 + 规则属性系统 + 域准入判据 + 候审档机制 | 已部署 |
 | ming-skill-forge | 技能包创作元规则：渐进披露预算 + 触发面工艺 + 注册路由接线 + check-skill.mjs 硬门控 | 已部署 |
 | ming-experience-direction | 体验导演式设计流水线：文档阶梯 + 宪法约束源 + 叙事主干 + OQ 状态机 + 六门过审 + 媒介映射预算 | 已部署 |
+| ming-boundary | 项目图事实提取 + 边界契约断言组件：JSONL 事实流 (file/decl/import/link) + boundaries.yaml 声明式 forbidden/allowed/required 评估 (ADR-0008) | 已部署 |
 
 ## 四、案例库（docs/cases/）
 

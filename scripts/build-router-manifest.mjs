@@ -128,7 +128,8 @@ const DOMAIN_DEFS = {
       "ming-l-paradigm",
       "ming-skill-forge",
       "ming-experience-direction",
-      "ming-distiller"
+      "ming-distiller",
+      "ming-boundary"
     ],
     triggers: [
       "文档体系", "仓库文档", "readme",
@@ -195,7 +196,8 @@ const DOMAIN_DEFS = {
       "testing-rust-idiom": ["rust", "rustc", "cargo", "miri", "proptest"],
       "testing-python-idiom": ["python", "pytest", "pyo3", "hypothesis"],
       "testing-js-idiom": ["javascript", "typescript", "node.js", "event loop", "页面事件"],
-      "ming-distiller": ["沉淀", "蒸馏", "distill", "复盘", "retrospective", "经验回收", "查沉淀", "项目复盘"]
+      "ming-distiller": ["沉淀", "蒸馏", "distill", "复盘", "retrospective", "经验回收", "查沉淀", "项目复盘"],
+      "ming-boundary": ["项目图", "project graph", "事实提取", "fact extraction", "边界契约", "boundary contract", "依赖审计", "孤儿符号", "orphan detection", "断链检测", "dead link", "boundaries.yaml", "应然边", "接缝核验"]
     }
   }
 };

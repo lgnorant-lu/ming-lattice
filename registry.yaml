@@ -1509,6 +1509,13 @@ private:
     note: "技能包创作与修订元规则 (渐进披露预算 + 触发面工艺 + 注册路由接线 + check-skill 硬门控)"
     deploy:
       claude: true
+  - name: ming-boundary
+    metaSystem: true
+    path: private/engineering/ming-boundary
+    enabled: true
+    note: "项目图事实提取与边界契约断言组件 (ADR-0008: JSONL 事实 + 声明式 forbidden/allowed/required 契约)"
+    deploy:
+      claude: true
   - name: ming-experience-direction
     metaSystem: true
     path: private/engineering/ming-experience-direction
