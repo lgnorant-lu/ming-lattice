@@ -3,7 +3,7 @@
 // 纯评估：facts(JSONL) × rules(boundaries.yaml|json) → violations
 // 退出码契约: 0=无违规 1=有违规 2=用法/IO错 3=规则schema非法(fail-closed)
 // 用法: node check-boundaries.mjs --facts F.jsonl [--rules boundaries.yaml]
-//       [--json] [--staged a.mjs,b.mjs]
+//       [--json] [--staged a.mjs,b.mjs]  // staged=增量模式：只评边级规则，required 跳过
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -125,7 +125,9 @@ function evaluate(facts, rules, stagedOnly) {
   }
 
   // required：units_in 每个单元至少存在一条 via 边且 dst∈to_in
-  for (const c of R.required || []) {
+  // --staged 增量模式跳过：required 是全称量化（单元集须全图可见），
+  // 子集事实面下必然误报——增量门只评边级规则（forbidden/allowed/builtin）
+  if (!stagedOnly) for (const c of R.required || []) {
     const units = new Map();
     for (const f of facts) {
       if (matchUnits(f.file, c.units_in)) {

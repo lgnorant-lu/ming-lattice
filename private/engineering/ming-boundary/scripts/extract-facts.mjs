@@ -4,7 +4,9 @@
 // 前端：ast-grep（syntactic）→ 缺前端时 fail-closed，--allow-degraded 才降 regex
 // 输出：确定性 JSONL（file→line→kind→name 排序），stdout 或 --out
 // 用法: node extract-facts.mjs [--root DIR] [--out FILE] [--allow-degraded]
-//       [--extract-dirs d1,d2] [--no-content-scan]
+//       [--extract-dirs d1,d2] [--no-content-scan] [--files f1,f2]
+// --files: 只抽给定仓相对路径子集（pre-commit staged 面用；逗号分隔，
+//          文件名含逗号者不支持）。工作区缺席条目静默跳过（无边可抽）
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -91,7 +93,7 @@ function die(msg, code = 2) {
 
 function parseArgs(argv) {
   const a = { root: REPO_ROOT, out: null, allowDegraded: false,
-              extractDirs: CONTENT_DIRS, contentScan: true };
+              extractDirs: CONTENT_DIRS, contentScan: true, files: null };
   for (let i = 2; i < argv.length; i++) {
     const k = argv[i];
     const take = () => argv[++i] ?? die(`${k} 缺参数`);
@@ -100,6 +102,7 @@ function parseArgs(argv) {
     else if (k === '--allow-degraded') a.allowDegraded = true;
     else if (k === '--no-content-scan') a.contentScan = false;
     else if (k === '--extract-dirs') a.extractDirs = take().split(',').filter(Boolean);
+    else if (k === '--files') a.files = take().split(',').filter(Boolean);
     else die(`未知旗标: ${k}`);
   }
   return a;
@@ -216,7 +219,28 @@ function main() {
   if (!fs.existsSync(root)) die(`--root 不存在: ${root}`);
 
   const files = [], links = [];
-  walk(root, root, files, links);
+  if (a.files) {
+    // 显式文件集模式：逐项 lstat——符号链接产 link 事实，常规文件入内容抽面
+    for (const rel0 of a.files) {
+      const rel = rel0.replace(/\\/g, '/');
+      const abs = path.join(root, rel);
+      let st;
+      try { st = fs.lstatSync(abs); } catch { continue; }
+      if (st.isSymbolicLink()) {
+        let target = null, dead = false;
+        try {
+          const real = fs.realpathSync(abs);
+          target = path.relative(root, real).replace(/\\/g, '/');
+          if (target.startsWith('..')) target = abs;
+        } catch { dead = true; }
+        links.push({ rel, to: dead ? null : target, dead });
+      } else if (st.isFile()) {
+        files.push({ rel, ext: path.extname(rel).toLowerCase() });
+      }
+    }
+  } else {
+    walk(root, root, files, links);
+  }
 
   const facts = [];
   const sg = findAstGrep();
@@ -240,10 +264,9 @@ function main() {
     const psFiles = files.filter((f) =>
       PS_EXT.has(f.ext) && a.extractDirs.includes(f.rel.split('/')[0]));
 
-    if (jsFiles.length && !sg) {
-      if (!a.allowDegraded)
-        die(`ast-grep 前端缺失而 js 文件 ${jsFiles.length} 个待抽——` +
-          `fail-closed 拒降级（ADR-0008 D2）；确需降级传 --allow-degraded`, 3);
+    if (jsFiles.length && !sg && !a.allowDegraded) {
+      die(`ast-grep 前端缺失而 js 文件 ${jsFiles.length} 个待抽——` +
+        `fail-closed 拒降级（ADR-0008 D2）；确需降级传 --allow-degraded`, 3);
     } else if (jsFiles.length && sg) {
       const matches = runAstGrep(sg.bin, jsFiles.map((f) => path.join(root, f.rel)));
       const byFile = new Map();

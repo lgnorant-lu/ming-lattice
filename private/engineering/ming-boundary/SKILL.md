@@ -22,7 +22,10 @@ metadata:
 ```
 node scripts/extract-facts.mjs [--root DIR] [--out FILE]
     [--allow-degraded] [--extract-dirs d1,d2] [--no-content-scan]
+    [--files f1,f2]
 ```
+
+`--files`：只抽给定仓相对路径子集（staged 增量面用；符号链接项产 link 事实，工作区缺席项静默跳过）。
 
 产出确定性 JSONL，schema v1：
 
@@ -51,11 +54,15 @@ node scripts/check-boundaries.mjs --facts F.jsonl [--rules boundaries.yaml]
 - 内建：dead link / dead import 恒违规（断裂边无需声明）
 - 退出码：0=干净 / 1=有违规 / 2=用法 IO 错 / 3=规则 schema 非法（fail-closed）
 
-`--staged` 只评 staged 文件发出的边（pre-commit 语义）；required 族永远全树（边存在性是全局性质）。
+`--staged` 增量模式只评 staged 文件发出的**边级规则**（forbidden/allowed/内建 dead）；required 是全称量化（单元集须全图可见），子集事实面下必然误报，故增量模式跳过。
 
 ### 2.3 域分类
 
 `domainOf(rel, domains)` 首段锚定——`private/x/scripts/y.mjs` 归 `private`，中段关键词不参与。domains 有序，先命中先赢。
+
+### 2.4 pre-commit 接线（gates.local/boundary-edge.mjs）
+
+staged 文件集 → `extract-facts --files` → `check-boundaries --facts - --staged` → 违规映射 findings。证据分级：syntactic 违规 error 阻断；regex-degraded 违规降 warn 人工复核（行级正则可能过匹配注释内 import）。boundaries.yaml 缺席的下游仓静默跳过。配置：`gate.boundary-edge.level`（.hooksrc §12）。
 
 ## 3. 红线 / 边界
 
@@ -67,6 +74,7 @@ node scripts/check-boundaries.mjs --facts F.jsonl [--rules boundaries.yaml]
 
 ## 4. 已踩过的坑（摘要）
 
+- `if (!sg) { if (!degraded) die }` 嵌套写法曾把 `--allow-degraded` 降级路径整个吞掉——降级层是死代码（静默 fail-open，抽零边报零违规）。条件链必须互斥平坦
 - `import_statement` 规则漏 `export * from`——shim 靠 re-export 承载，缺 kind 即 required 假阴性
 - class 方法占声明面大头（实测 962/1352），漏 `method_definition` 等于符号面黑洞
 - `import('./x')` 字面量与 `import(expr)` 计算式必须分流——后者标 `dynamic-computed` 而非丢弃

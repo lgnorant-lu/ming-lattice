@@ -30,7 +30,7 @@ function wfile(rel, text) {
 const runNode = (args, env = {}) =>
   spawnSync(process.execPath, args, { encoding: 'utf8', env: { ...process.env, ...env } });
 
-export function run() {
+export async function run() {
   console.log('[TEST UNIT] ming-boundary...');
   tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'mb-root-'));
   try {
@@ -236,7 +236,79 @@ export function run() {
     assert.equal(parsed.count, parsed.violations.length);
     assert.equal(parsed.violations[0].rule, 'forbidden:no-backdep');
 
-    console.log('  6 组断言全过');
+    // 6g. --staged 增量模式：required 全称量化跳过（子集事实面下必然误报）
+    const c5 = chk(reqMiss, ['--staged', 'deployable/d9/SKILL.md']);
+    assert.equal(c5.status, 0, `staged 模式 required 应跳过: ${c5.stdout}`);
+
+    // ---------- 组 7: --files 子集 + boundary-edge 门 ----------
+    // 7a. --files 只抽给定路径；缺席条目静默跳过
+    if (r1.status === 0) {
+      const sub = runNode([EXTRACT, '--root', R,
+        '--files', 'src/a.mjs,docs/note.md,ghost/missing.mjs']);
+      assert.equal(sub.status, 0, `--files 应成功: ${sub.stderr}`);
+      const sf = parseJsonl(sub.stdout);
+      const seen = new Set(sf.map((x) => x.file));
+      assert.ok(seen.has('src/a.mjs') && seen.has('docs/note.md'), '给定文件应有事实');
+      assert.ok(!seen.has('src/b.mjs'), '未列文件不应产事实');
+      assert.ok(![...seen].some((f) => f.startsWith('ghost/')), '缺席条目应跳过');
+      if (junctionOk) {
+        const sl = runNode([EXTRACT, '--root', R, '--files', 'deployable/d1/x']);
+        const lf = parseJsonl(sl.stdout).filter((x) => x.kind === 'link');
+        assert.equal(lf.length, 1, '--files 符号链接项应产 link 事实');
+        assert.equal(lf[0].extra?.to, 'src');
+      }
+    }
+
+    // 7b. boundary-edge 门端到端（fixture 仓 + 真实组件管线）
+    const { gate } = await import('../../scripts/hooks/gates.local/boundary-edge.mjs');
+    const rulesYaml = path.join(R, 'boundaries.yaml');
+    fs.writeFileSync(rulesYaml, [
+      'version: 1',
+      'domains:',
+      '  - name: own',
+      '    match: src/**|scripts/**',
+      '  - name: vendored',
+      '    match: vendored/**',
+      '  - name: deployed',
+      '    match: deployable/**',
+      'rules:',
+      '  forbidden:',
+      '    - label: own-never-imports-vendored',
+      '      via: import',
+      '      from: own',
+      '      to: vendored',
+      '',
+    ].join('\n'));
+    wfile('src/evil.mjs', "import '../vendored/v1/lib.mjs';\n");
+
+    if (r1.status === 0) {
+      // syntactic 证据 → error 级违规
+      const fErr = await gate.run({ root: R, files: ['src/evil.mjs'] });
+      assert.equal(fErr.length, 1, `forbidden 边应产生 1 条违规: ${JSON.stringify(fErr)}`);
+      assert.equal(fErr[0].level, 'error');
+      assert.ok(fErr[0].message.includes('own-never-imports-vendored'));
+      // 干净文件 → 零违规
+      const fOk = await gate.run({ root: R, files: ['src/b.mjs'] });
+      assert.equal(fOk.length, 0, '合法文件应零违规');
+      // regex-degraded 证据 → 降级 warn（前端被禁用模拟）
+      const sgBin = process.env.AST_GREP_BIN;
+      process.env.AST_GREP_BIN = 'D:/nonexistent/sg.exe';
+      try {
+        const fWarn = await gate.run({ root: R, files: ['src/evil.mjs'] });
+        assert.equal(fWarn.length, 1, 'degraded 下违规仍应检出');
+        assert.equal(fWarn[0].level, 'warn', 'regex-degraded 证据应降级 warn');
+      } finally {
+        if (sgBin === undefined) delete process.env.AST_GREP_BIN;
+        else process.env.AST_GREP_BIN = sgBin;
+      }
+    }
+    // 无契约仓 → 静默跳过（门不适用）
+    const R2 = path.join(tmpRoot, 'repo2');
+    fs.mkdirSync(R2, { recursive: true });
+    assert.deepEqual(await gate.run({ root: R2, files: ['x.mjs'] }), [],
+      '无 boundaries.yaml 的仓应跳过');
+
+    console.log('  7 组断言全过');
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }

@@ -59,6 +59,10 @@ gate.vendor-boundary.level=error
 gate.deploy-drift.level=warn
 gate.deploy-drift.cadence=7d
 
+# 12. 结构边界增量门（ming-boundary：staged 新边 x boundaries.yaml 契约
+#     forbidden/allowed/dead 即拦；regex-degraded 证据自动降 warn 人工复核）
+gate.boundary-edge.level=error
+
 # ── chores 族（suggest-only：只提醒不执行，默认 post-merge；chore.<id>.stages 可挂 post-checkout）──
 chore.registry.watch=registry.yaml
 chore.registry.message=registry.yaml 已变更——建议 pwsh scripts/sync.ps1 -DryRun 预览部署差异
