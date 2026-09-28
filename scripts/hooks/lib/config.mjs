@@ -48,6 +48,7 @@ export function parseIniFile(filePath, into = {}, sections = []) {
 
 /**
  * 加载合并后的原始键值（.hooksrc → .hooksrc.local，仅全局段）
+ * kit 公共 API 面：本仓零引用，保留给宿主仓 gates.local 自定义门使用。
  */
 export function loadRawConfig(root) {
   const kv = {};

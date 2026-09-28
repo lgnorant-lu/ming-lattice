@@ -3,6 +3,7 @@
   "comment": "本仓标号命名空间登记——只登记真实使用的族。role=id 参与定义/引用扫描；role=value 仅为词表（术语非族，族须≥2成员token）。通用默认表见 ming-l-paradigm/assets/namespaces.default.json——本仓未采用 L<N>/T<N>/M<N> 等裸字母族。",
   "namespaces": [
     { "prefix": "ADR-<NNNN>", "pattern": "^ADR-\\d{4}$", "domain": "meta", "ordering": "alloc", "role": "id", "note": "决策记录（docs/adr/）" },
-    { "prefix": "JA<N>", "pattern": "^JA\\d+$", "domain": "spec", "ordering": "semver", "role": "value", "note": "JA3/JA4 TLS 指纹词表——事实源 antibot-fingerprint-paradigm" }
+    { "prefix": "JA<N>", "pattern": "^JA\\d+$", "domain": "spec", "ordering": "semver", "role": "value", "note": "JA3/JA4 TLS 指纹词表——事实源 antibot-fingerprint-paradigm" },
+    { "prefix": "AST<NN>", "pattern": "^AST\\d{2}$", "domain": "spec", "ordering": "enum", "role": "value", "note": "OWASP Agentic Security Testing 类目词表（AST01–AST10）——sec-core-paradigm AST 场景文档引用，序号归外部标准" }
   ]
 }

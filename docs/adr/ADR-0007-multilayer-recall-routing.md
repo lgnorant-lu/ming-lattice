@@ -46,7 +46,7 @@ domain: gov
    - 非确定性信号**永不单独触发 dispatch**：dispatch 仍需确定性域分或点名，fail-closed 姿态不破
 
 3. **嵌入层离线化**（ADR-0006 批准方向的具体化，非新裁决）
-   - `scripts/build-embeddings.mjs` 生成 `config/router-embeddings.json`（44×384 ≈ 150KB，提交进仓+freshness 检查，同 manifest 治理）；模型权重走 HF 缓存，gitignore 不进仓
+   - `tools/embeddings/build-embeddings.mjs` 生成 `config/router-embeddings.json`（44×384 ≈ 150KB，提交进仓+freshness 检查，同 manifest 治理）；模型权重走 HF 缓存，gitignore 不进仓
    - 用途一：词表维护——嵌入相似度挖掘 paraphrase 盲区，产出候选触发词/skillTriggers 提案（**人审后入表**，与 distill 晋升同理）
    - 用途二：eval 基线——量化"若运行时嵌入上线能增多少召回"，为未来修正裁决留证据
    - 云端 encoder API 仅作可插拔备选，默认离线；不引入路由运行时
@@ -83,7 +83,7 @@ S3 词法层已入核并验证（`scripts/build-router-manifest.mjs` 产 `skillD
 - **A 层 37/50**：同域技能级消歧弱是结构性短板（测试类查询嵌到正确域但选错技能——description 语义天然彼此接近）；跨域错向案例存在（签名参数→protocol 域、渗透审计→engineering 域）
 - **OOS 分数带重叠**：C 层 top1 cosine max=0.555 > A 层中位 0.491——不存在干净的语义 OOS 阈值；嵌入对"测试"歧义类反而更敏感
 - **裁决**：按"上线以 eval 增量为准入"条款，S4 **不接入运行时**，§31 否决维持且被强化——44 技能+触发词密集语料上，确定性栈召回已超嵌入。嵌入的理论优势（paraphrase 容错）在关键词覆盖良好的前提下未兑现
-- **保留资产**：工具链留仓可复现（`build-embeddings.mjs`/`eval-embeddings.mjs`，模型走 hf-mirror 缓存，权重不进仓）；`router-embeddings.json` artifact 因无消费者暂不提交——B 层实战语料攒大后可重跑翻盘测试，翻盘证据出现前不重议运行时嵌入
+- **保留资产**：工具链留仓可复现（`tools/embeddings/build-embeddings.mjs`/`eval-embeddings.mjs`，模型走 hf-mirror 缓存，权重不进仓）；`router-embeddings.json` artifact 因无消费者暂不提交——B 层实战语料攒大后可重跑翻盘测试，翻盘证据出现前不重议运行时嵌入
 
 ## Consequences
 
