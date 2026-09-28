@@ -47,9 +47,9 @@ rules:
       via: link
       from: [deployed]
       to: [vendored, private]
-  # required 子句留空 —— deployable 是双子族面：镜像型（符号链接包装 vendored/
-  # private 源）与原生型（registry path 直接指 deployable/<name>，如 areclaw-*）。
-  # "每单元必须有源链接"只对镜像族成立，当前事实面无法在 unit 内区分两族；
-  # 链接侧不变量已由 allowed:deployable-link-scope + 内建 dead-link 检查覆盖。
-  # 待办: registry 增加 family 标记后启用 required 断言。
+  # required 子句留空 —— deployable 双族已由 registry family: 字段显式声明
+  # （mirror×16 / authored×9，registry-parity 套件持续互证声明↔fs 实态）。
+  # 剩余缺口：units_in 的单元集由事实推导——"镜像族被掏空成空目录"的缺席型违例
+  # 需要 registry 声明集作为输入（事实面不可见不存在的单元），属 registry-parity
+  # 车道而非本引擎车道。当前链接侧不变量已由 allowed + 内建 dead-link 完备覆盖。
   required: []

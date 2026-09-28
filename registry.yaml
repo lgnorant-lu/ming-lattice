@@ -1255,7 +1255,10 @@ vertical:
       lastRemoteHead: d9e9da0
 deployable:
   # 部署包装层 (SKILL.md 改写件: 改名/描述精要/路径修复), 内容 symlink 指向 vertical 源
+  # family: mirror=内容经符号链接包装 vendored/base/private 源 | authored=目录本体即源
+  #         (registry-parity 套件持续互证 声明↔fs 实态)
   - name: hello-js-reverse
+    family: mirror
     path: deployable/hello-js-reverse
     enabled: true
     domain: js
@@ -1263,6 +1266,7 @@ deployable:
     deploy:
       claude: true
   - name: rust-reverse
+    family: mirror
     path: deployable/rust-reverse
     enabled: true
     domain: bin
@@ -1270,6 +1274,7 @@ deployable:
     deploy:
       claude: true
   - name: android-reverse
+    family: mirror
     path: deployable/android-reverse
     enabled: true
     domain: apk
@@ -1277,6 +1282,7 @@ deployable:
     deploy:
       claude: true
   - name: ios-reverse
+    family: mirror
     path: deployable/ios-reverse
     enabled: true
     domain: ios
@@ -1284,6 +1290,7 @@ deployable:
     deploy:
       claude: true
   - name: rs-js-reverse
+    family: authored
     path: deployable/rs-js-reverse
     enabled: true
     domain: js
@@ -1291,42 +1298,49 @@ deployable:
     deploy:
       claude: true
   - name: ctf-pwn
+    family: mirror
     path: deployable/ctf-pwn
     enabled: true
     domain: ctf
     deploy:
       claude: true
   - name: ctf-web
+    family: mirror
     path: deployable/ctf-web
     enabled: true
     domain: ctf
     deploy:
       claude: true
   - name: ctf-reverse
+    family: mirror
     path: deployable/ctf-reverse
     enabled: true
     domain: ctf
     deploy:
       claude: true
   - name: ctf-crypto
+    family: mirror
     path: deployable/ctf-crypto
     enabled: true
     domain: ctf
     deploy:
       claude: true
   - name: ctf-misc
+    family: mirror
     path: deployable/ctf-misc
     enabled: true
     domain: ctf
     deploy:
       claude: true
   - name: ctf-forensics
+    family: mirror
     path: deployable/ctf-forensics
     enabled: true
     domain: ctf
     deploy:
       claude: true
   - name: xbs-ast-deobfuscation
+    family: mirror
     path: deployable/xbs-ast-deobfuscation
     enabled: true
     domain: js
@@ -1334,6 +1348,7 @@ deployable:
     deploy:
       claude: true
   - name: xbs-verify-patcher
+    family: mirror
     path: deployable/xbs-verify-patcher
     enabled: true
     domain: js
@@ -1341,36 +1356,42 @@ deployable:
     deploy:
       claude: true
   - name: areclaw-analyze-apk
+    family: authored
     path: deployable/areclaw-analyze-apk
     enabled: true
     domain: apk
     deploy:
       claude: true
   - name: areclaw-compare-versions
+    family: authored
     path: deployable/areclaw-compare-versions
     enabled: true
     domain: apk
     deploy:
       claude: true
   - name: areclaw-find-api
+    family: authored
     path: deployable/areclaw-find-api
     enabled: true
     domain: apk
     deploy:
       claude: true
   - name: areclaw-intercept
+    family: authored
     path: deployable/areclaw-intercept
     enabled: true
     domain: apk
     deploy:
       claude: true
   - name: areclaw-register
+    family: authored
     path: deployable/areclaw-register
     enabled: true
     domain: apk
     deploy:
       claude: true
   - name: malware-ioc-extraction
+    family: authored
     path: deployable/malware-ioc-extraction
     enabled: true
     domain: mw
@@ -1378,6 +1399,7 @@ deployable:
     deploy:
       claude: true
   - name: garlic-reverse
+    family: authored
     path: deployable/garlic-reverse
     enabled: true
     domain: apk
@@ -1385,6 +1407,7 @@ deployable:
     deploy:
       claude: true
   - name: web-reverse-iv8
+    family: mirror
     path: deployable/web-reverse-iv8
     enabled: true
     domain: js
@@ -1393,6 +1416,7 @@ deployable:
       claude: true
 
   - name: jsc-deobfuscator
+    family: authored
     path: deployable/jsc-deobfuscator
     enabled: true
     domain: js
@@ -1401,6 +1425,7 @@ deployable:
       claude: true
 
   - name: ruyipage-skill
+    family: mirror
     path: deployable/ruyipage-skill
     enabled: true
     domain: web
@@ -1408,6 +1433,7 @@ deployable:
     deploy:
       claude: true
   - name: reverse-skill-router
+    family: mirror
     path: deployable/reverse-skill-router
     enabled: true
     domain: routing

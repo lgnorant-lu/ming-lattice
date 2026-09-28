@@ -21,7 +21,7 @@ function canonicalView() {
   const reg = JSON.parse(out);
   const view = {};
   for (const sec of SECTIONS) {
-    view[sec] = new Set((reg[sec] || []).map(e => [e.name ?? null, e.path ?? null, e.domain ?? null].join('|')));
+    view[sec] = new Set((reg[sec] || []).map(e => [e.name ?? null, e.path ?? null, e.domain ?? null, e.family ?? null].join('|')));
   }
   return view;
 }
@@ -41,10 +41,38 @@ function liteView() {
     for (const e of block.matchAll(/-\s*name:\s*(\S+)[\s\S]*?(?=\n\s*-\s*name:|$)/g)) {
       const b = e[0];
       const pick = k => unq((b.match(new RegExp(`^\\s*${k}:\\s*(\\S+)`, 'm')) || [null, null])[1]);
-      view[sec].add([unq(e[1]), pick('path'), pick('domain')].join('|'));
+      view[sec].add([unq(e[1]), pick('path'), pick('domain'), pick('family')].join('|'));
     }
   }
   return view;
+}
+
+// deployable family 标记 vs 文件系统实态互证（声明面 = 测量面）：
+//   family:mirror  → 目录内含 ≥1 符号链接/junction
+//   family:authored → 目录内零符号链接
+//   缺 family 声明 → 违例（双族混杂面必须显式归属——deployable 不再是均质假设）
+function familyCheck() {
+  const text = fs.readFileSync(REGISTRY, 'utf8');
+  const m = text.match(/^deployable:\s*$/m);
+  if (!m) return [];
+  const rest = text.slice(m.index + m[0].length);
+  const nextTop = rest.search(/^\S/m);
+  const block = nextTop < 0 ? rest : rest.slice(0, nextTop);
+  const bad = [];
+  for (const e of block.matchAll(/-\s*name:\s*(\S+)[\s\S]*?(?=\n\s*-\s*name:|$)/g)) {
+    const name = e[1];
+    const fam = (e[0].match(/^\s*family:\s*(\S+)/m) || [])[1];
+    const dir = path.join(REPO, 'deployable', name);
+    let linkCount = 0;
+    try {
+      for (const ent of fs.readdirSync(dir, { withFileTypes: true, recursive: true }))
+        if (ent.isSymbolicLink()) linkCount++;
+    } catch { continue; } // 目录缺失交给 lint 面管
+    const actual = linkCount > 0 ? 'mirror' : 'authored';
+    if (fam !== actual)
+      bad.push(`${name}: 声明 family=${fam ?? '(缺)'} 但实测 ${actual}（${linkCount} links）`);
+  }
+  return bad;
 }
 
 export function run() {
@@ -67,4 +95,9 @@ export function run() {
     assert.deepEqual(onlyLite, [], `${sec} 区：lite 视图有而正典无——lite 解析误读`);
   }
   console.log(`  parity 一致：${SECTIONS.map(s => `${s}=${canon[s].size}`).join(' ')}`);
+
+  // deployable family 声明 vs fs 实态（mirror=有链接/authored=零链接）
+  const famBad = familyCheck();
+  assert.deepEqual(famBad, [], `family 声明漂移:\n${famBad.join('\n')}`);
+  console.log('  family 标记与 fs 实态一致（24 deployable）');
 }
