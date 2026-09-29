@@ -1,0 +1,67 @@
+# boundaries.yaml — 结构边界契约起始模板（ming-boundary v1.1，ADR-0008/0009）
+# 采纳三步：① domains 按本仓首段拓扑裁改（有序，先命中先赢）
+#           ② 规则逐条点亮——每条 name/severity/why 是必填纪律（name=finding.ruleId 锚）
+#           ③ exemptions 声明刻意豁免面（vendored/固件/生成物），why 必填
+# 验证: node private/engineering/ming-boundary/scripts/extract-facts.mjs --out /tmp/facts.jsonl
+#       node private/engineering/ming-boundary/scripts/check-boundaries.mjs --facts /tmp/facts.jsonl
+version: 1
+
+# 域=首段锚定的顶层目录分类表。按本仓实际目录结构裁改。
+domains:
+  - name: src
+    match: src/**|lib/**|app/**
+  - name: scripts
+    match: scripts/**
+  - name: tests
+    match: tests/**|test/**|__tests__/**
+  - name: docs
+    match: docs/**|*.md
+  - name: vendor
+    match: vendor/**|third_party/**|node_modules/**
+
+# 词表注册段（fail-closed）：规则引用的边 kind/族/extra 键须先在此或内建集注册
+manifest:
+  node_kinds: [file, dir, decl]
+  edge_kinds: [import, link, docref, mention, declare, export]
+  extra_keys: [to, dead, external, mechanism, shape, docrole, surface, source, mtime, comment, until, negated, symbol, ambiguous, candidates]
+  families: [forbidden, allowed, required, covered, isolated, parity, attrs]
+  extractors: [walk@1, ast-grep, line-regex@1, markdown@1, git-check-ignore@1]
+  find_levels: [error, warn, note]
+
+# 豁免排气阀：∀ 族（required/covered/isolated/parity/attrs）+ builtin 死链检查的
+# 声明式豁免面。why 必填——豁免不带理由即失控点。
+exemptions:
+  - glob: vendor/**
+    why: vendored 上游内容——内部死链属上游维护面
+  - glob: third_party/**
+    why: vendored 上游内容——内部死链属上游维护面
+  - glob: node_modules/**
+    why: 包管理产物——非本仓内容面
+
+rules:
+  # attrs：unit-local 命名断言（staged 安全——pre-commit 即可实查）。起步即活。
+  attrs:
+    - name: no-temp-artifacts
+      severity: warn
+      why: 临时/残骸工件不入仓——.tmp/.bak/.orig/.swp/.rej 一律视为事故遗留
+      units_in: '**'
+      of_kind: file
+      name_not_match: ['*.tmp', '*.bak', '*.orig', '*.swp', '*.rej']
+
+  forbidden:
+    # 样例：自有代码不 import vendored 字节（upstream 漂移静默击穿防线）
+    - name: src-never-imports-vendor
+      severity: error
+      why: vendored 字节是上游采集物——自有代码直链会把升级面绑死在上游结构上
+      via: import
+      from: [src, scripts]
+      to: [vendor]
+
+  # 以下族全图量化——只在全量评估/CI 生效，staged 增量模式自动跳过
+  # （Rego 否定安全律：缺席断言在部分视图下必 fail-open）。点亮示例见
+  # private/engineering/ming-boundary/references/fact-model.md 契约三层节。
+  allowed: []
+  required: []
+  covered: []   # 文档拓扑覆盖：units_in docs → 被 docref 入向边覆盖
+  isolated: []  # 刻意隔离断言：units_in 内不得有关联边（除非 declare/exempt 认领）
+  parity: []    # 声明集⟺实测集对账：declared 列表 vs observed_units_in

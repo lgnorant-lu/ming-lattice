@@ -5,9 +5,11 @@
 // 管线：staged 文件集 → extract-facts --files（ast-grep syntactic，缺失时
 //   --allow-degraded 降 regex）→ check-boundaries --facts - --json（契约评估）
 //   → 违规映射 findings。
-// 证据分级：syntactic 证据的违规 = error（提交阻断）；
-//   regex-degraded 证据的违规 = warn（行级正则可能过匹配注释内 import，
-//   降为非阻断由人复核——fail-closed 于"漏"，fail-open 于"冤"）。
+// 证据分级（fidelity×family 交叉表，v1.1）：
+//   staged 面只评 ∃/unit-local 族（forbidden/allowed/attrs/builtin-dead）——
+//   covered/isolated/parity/required 全称量化由 checker 内部跳过（否定安全律）。
+//   regex-degraded 证据的违规 = warn（行级正则过匹配可能冤——降级封 warn）；
+//   syntactic/exact 证据 = 规则 severity（默认 error）；severity=note 降为 warn。
 // D1 注记：抽取读工作区而非索引 blob——部分暂存分歧由引擎全局警告覆盖
 //   （与 impact-test 测试门同先例：测试套件亦基于工作树执行）。
 // 缺席语义：boundaries.yaml 不存在 → 静默跳过（下游复用 kit 的仓无此契约）；
@@ -32,8 +34,9 @@ export const gate = {
   stages: ['pre-commit'],
   family: 'gate',
   defaultLevel: 'error',
-  // 边事实来源面：自有代码扩展名 + 符号链接着陆面 deployable
-  globs: ['*.mjs', '*.js', '*.cjs', '*.jsx', '*.ps1', '*.psm1', 'deployable/**'],
+  // 边事实来源面：自有代码扩展名 + md 文档（docref 死链 staged 安全）+ 链接着陆面
+  globs: ['*.mjs', '*.js', '*.cjs', '*.jsx', '*.ps1', '*.psm1',
+    '*.md', '*.markdown', '*.mdx', 'deployable/**', '.gitignore'],
   exclude: [],
   async run(ctx) {
     const rulesPath = path.join(ctx.root, 'boundaries.yaml');
@@ -74,12 +77,17 @@ export const gate = {
     return payload.violations.map((v) => {
       const fid = fidelity.get(`${v.file}|${v.line}|${v.kind}`);
       const degraded = fid === 'regex-degraded';
+      // fidelity×family 交叉表：降级证据封顶 warn；规则 severity 贯穿（note→warn）
+      const level = degraded || v.severity === 'warn' || v.severity === 'note'
+        ? 'warn' : 'error';
       return {
         gate: 'boundary-edge',
         file: v.file,
         line: v.line,
-        level: degraded ? 'warn' : 'error',
-        message: `${v.rule}: ${v.src ?? ''}→${v.dst ?? ''} ${v.name ?? ''}` +
+        level,
+        message: `${v.rule}: ${v.src ? v.src + '→' + (v.dst ?? '') + ' ' : ''}` +
+          `${v.observed ?? v.name ?? ''}` +
+          (v.fix ? `；修: ${v.fix}` : '') +
           (degraded ? '（regex-degraded 证据，人工复核）' : ''),
       };
     });

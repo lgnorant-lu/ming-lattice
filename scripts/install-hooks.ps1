@@ -6,7 +6,8 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$Target = '',
-    [switch]$Force
+    [switch]$Force,
+    [switch]$WithBoundary   # 连同 ming-boundary 组件+门+契约模板一起铺（边界断言采纳面）
 )
 
 $ErrorActionPreference = 'Stop'
@@ -69,6 +70,56 @@ if ($Target) {
         }
     }
 
+    # 4.5 ming-boundary 采纳面（-WithBoundary）：组件子树 + gates.local 门 +
+    #     yaml 桥依赖 + 契约起始模板。门自含"无 boundaries.yaml 静默跳过"，
+    #     但模板铺入即激活——不想要契约就别加开关。
+    if ($WithBoundary) {
+        # 4.5a 组件运行面（extractor/checker/lib+adapters——references/SKILL 不随 kit 走）
+        $mbSrc = Join-Path $repoRoot 'private/engineering/ming-boundary/scripts'
+        $mbDst = Join-Path $dest 'private/engineering/ming-boundary/scripts'
+        if ($PSCmdlet.ShouldProcess($mbDst, '铺入 ming-boundary 组件运行面')) {
+            New-Item -ItemType Directory -Path $mbDst -Force | Out-Null
+            Copy-Item (Join-Path $mbSrc '*') $mbDst -Recurse -Force
+        }
+
+        # 4.5b yaml 桥两件套（check-boundaries 解析 .yaml 契约的仓级依赖；
+        #     已存且不同名同内容时警告不覆盖——可能是宿主自有件）
+        $libDst = Join-Path $dest 'scripts/lib'
+        foreach ($f in 'yaml-lite.ps1', 'yaml2json.ps1') {
+            $src = Join-Path $repoRoot "scripts/lib/$f"
+            $dst = Join-Path $libDst $f
+            if (Test-Path $dst) {
+                if ((Get-FileHash $src).Hash -ne (Get-FileHash $dst).Hash) {
+                    Write-Host "[scaffold] [警告] $f 已存在且内容不同——不覆盖，请手工对齐" -ForegroundColor Yellow
+                }
+                continue
+            }
+            if ($PSCmdlet.ShouldProcess($dst, "铺入 $f")) {
+                New-Item -ItemType Directory -Path $libDst -Force | Out-Null
+                Copy-Item $src $dst -Force
+            }
+        }
+
+        # 4.5c 边界门文件（kit 作者件——铺进采纳侧私有住所 gates.local/，升级随 -Force 覆盖流）
+        $gateSrc = Join-Path $repoRoot 'scripts/hooks/gates.local/boundary-edge.mjs'
+        $gateDst = Join-Path $dest 'scripts/hooks/gates.local/boundary-edge.mjs'
+        if ($PSCmdlet.ShouldProcess($gateDst, '铺入 boundary-edge 门')) {
+            New-Item -ItemType Directory -Path (Split-Path $gateDst) -Force | Out-Null
+            Copy-Item $gateSrc $gateDst -Force
+        }
+
+        # 4.5d 契约起始模板——已存在永不覆盖（契约是采纳侧资产，不是 kit 资产）
+        $byDst = Join-Path $dest 'boundaries.yaml'
+        if (-not (Test-Path $byDst)) {
+            if ($PSCmdlet.ShouldProcess($byDst, '铺入 boundaries.yaml 起始模板')) {
+                Copy-Item (Join-Path $repoRoot 'private/engineering/ming-boundary/assets/boundaries.starter.yaml') $byDst
+                Write-Host "[scaffold] boundaries.yaml <- 起始模板（domains 按本仓拓扑裁改后生效）" -ForegroundColor Gray
+            }
+        } else {
+            Write-Host "[scaffold] boundaries.yaml 已存在——跳过（契约归采纳侧）" -ForegroundColor Yellow
+        }
+    }
+
     # 5. hooksPath + integrity 存值（+ commit.template 文件约定：目标仓有 .gitmessage 即指向）
     if ($PSCmdlet.ShouldProcess($dest, 'git config core.hooksPath=.githooks')) {
         git -C $dest config core.hooksPath .githooks
@@ -107,6 +158,9 @@ if ($Target) {
     Write-Host "========================================================" -ForegroundColor Cyan
     Write-Host "  门禁引擎已铺入 $(Split-Path $dest -Leaf)" -ForegroundColor Green
     Write-Host "  - 按需裁 .hooksrc（impact-test/pre-push-verify 可用 gate.<id>.command 配仓级命令；未配且无对应件自动缺席）" -ForegroundColor Gray
+    if ($WithBoundary) {
+        Write-Host "  - ming-boundary 已铺：裁 boundaries.yaml 的 domains 后 extract+check 即生效；建议 ast-grep 在位（缺席降 regex 档）" -ForegroundColor Gray
+    }
     Write-Host "  - 棕场接入建议先跑: node scripts/hooks/engine.mjs baseline --dry-run" -ForegroundColor Gray
     Write-Host "========================================================" -ForegroundColor Cyan
     return

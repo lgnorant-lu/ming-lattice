@@ -1,0 +1,13 @@
+{"v":1,"unit":"README.md","kind":"file","name":"README.md","file":"README.md","fidelity":"exact","scope":"repo","extractor":"walk@1","extra":{"docrole":"readme"}}
+{"v":1,"unit":"README.md","kind":"docref","name":"docs/guide.md","file":"README.md","fidelity":"regex-degraded","scope":"repo","extractor":"markdown@1","line":3,"extra":{"to":"docs/guide.md"}}
+{"v":1,"unit":"docs/","kind":"dir","name":"docs","file":"docs","fidelity":"exact","scope":"repo","extractor":"walk@1"}
+{"v":1,"unit":"docs/guide.md","kind":"file","name":"docs/guide.md","file":"docs/guide.md","fidelity":"exact","scope":"repo","extractor":"walk@1","extra":{"docrole":"api"}}
+{"v":1,"unit":"docs/guide.md","kind":"docref","name":"docs/gone.md","file":"docs/guide.md","fidelity":"regex-degraded","scope":"unresolved","extractor":"markdown@1","line":6,"extra":{"to":"docs/gone.md","dead":true}}
+{"v":1,"unit":"docs/guide.md","kind":"docref","name":"src/tool.ps1","file":"docs/guide.md","fidelity":"regex-degraded","scope":"repo","extractor":"markdown@1","line":6,"extra":{"to":"src/tool.ps1"}}
+{"v":1,"unit":"docs/guide.md","kind":"mention","name":"Invoke-Main","file":"docs/guide.md","fidelity":"regex-degraded","scope":"module","extractor":"markdown@1","line":6,"extra":{"to":"src/tool.ps1#Invoke-Main","symbol":"Invoke-Main"}}
+{"v":1,"unit":"docs/sub/","kind":"dir","name":"sub","file":"docs/sub","fidelity":"exact","scope":"repo","extractor":"walk@1"}
+{"v":1,"unit":"docs/sub/deep.md","kind":"file","name":"docs/sub/deep.md","file":"docs/sub/deep.md","fidelity":"exact","scope":"repo","extractor":"walk@1","extra":{"docrole":"doc"}}
+{"v":1,"unit":"src/","kind":"dir","name":"src","file":"src","fidelity":"exact","scope":"repo","extractor":"walk@1"}
+{"v":1,"unit":"src/tool.ps1","kind":"file","name":"src/tool.ps1","file":"src/tool.ps1","fidelity":"exact","scope":"repo","extractor":"walk@1"}
+{"v":1,"unit":"src/tool.ps1#Invoke-Main","kind":"decl","name":"Invoke-Main","file":"src/tool.ps1","fidelity":"regex-degraded","scope":"file-local","extractor":"line-regex@1","line":1,"extra":{"shape":"function"}}
+{"v":1,"unit":"src/tool.ps1","kind":"import","name":".\\lib\\h.ps1","file":"src/tool.ps1","fidelity":"regex-degraded","scope":"unresolved","extractor":"line-regex@1","line":2,"extra":{"to":"src/lib/h.ps1","mechanism":"dot-source","dead":true}}

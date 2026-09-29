@@ -1,8 +1,12 @@
-# boundaries.yaml — 仓库边界契约声明（ADR-0008 D3/D4）
+# boundaries.yaml — 仓库边界契约声明（ADR-0008 D3/D4；v1.1 规范形）
 # 消费方: private/engineering/ming-boundary/scripts/check-boundaries.mjs
 # 语义: domains 有序首段锚定；forbidden=命中即违规；allowed=from+via 命中的边
 #       dst 必须在 to 名单内；required=units_in 每个单元至少一条 needs 边
 #       且其目标域 ∈ to_in。dead 链接/引用内建必违规。
+# v1.1: +manifest 词表注册段（fail-closed：规则引用未注册 kind/族即 schema 拒）；
+#       +规则元数据 name(=ruleId 锚)/severity(error|warn|note)/why；
+#       +族 covered/isolated/parity/attrs + exemptions 顶层豁免段。
+#       词表外延即契约外延——新 kind/族须先在此注册。
 
 version: 1
 
@@ -24,32 +28,72 @@ domains:
   - name: local
     match: distill/**|.logs/**
 
+# 词表注册（fail-closed 防线）：规则引用的边/族/键须先在此或内建集注册
+manifest:
+  node_kinds: [file, dir, decl]
+  edge_kinds: [import, link, docref, mention, declare, export]
+  extra_keys: [to, dead, external, mechanism, shape, docrole, surface, source, mtime, comment, until, negated, symbol, ambiguous, candidates]
+  families: [forbidden, allowed, required, covered, isolated, parity, attrs]
+  extractors: [walk@1, ast-grep, line-regex@1, markdown@1, git-check-ignore@1]
+  find_levels: [error, warn, note]
+
+# 豁免排气阀（∀ 族与 builtin 死链检查的声明式豁免；why 必填是纪律）
+# vendored 树是上游 pin 内容——其内部死链属上游维护面，非本仓契约能修的
+exemptions:
+  - glob: vertical/**
+    why: vendored 上游内容——内部死链属上游维护面
+  - glob: base/**
+    why: vendored submodule——内部死链属上游维护面
+  - glob: tests/fixtures/**
+    why: 测试固件刻意含死链/异常样本——finding 面与真仓契约无关
+
 rules:
   forbidden:
     # R5: 自有代码不 import vendored 源（边界纪律，实测=0）
-    - label: own-never-imports-vendored
+    - name: own-never-imports-vendored
+      severity: error
+      why: vendored 字节是采集物——自有代码直链会被 upstream 漂移静默击穿
       via: import
       from: [scripts, tools, tests, private, docs]
       to: [vendored]
     # R6: private 不回调公共壳层（层倒挂防线，实测=0）
-    - label: private-no-callback-shells
+    - name: private-no-callback-shells
+      severity: error
+      why: private→scripts/tools 回调会让私有面依赖公共面生命周期
       via: import
       from: [private]
       to: [scripts, tools]
     # tests 只消费自有面（现状 3 条 tests→private 为合法 impl 直达）
-    - label: tests-own-surface-only
+    - name: tests-own-surface-only
+      severity: error
+      why: 测试面只许触自有工件——碰到 vendored/deployed 即越权引用
       via: import
       from: [tests]
       to: [vendored, deployed]
   allowed:
     # R1 边界半：deployable 链接目标只许 vendored/private（实测 173 边零越界）
-    - label: deployable-link-scope
+    - name: deployable-link-scope
+      severity: error
+      why: 部署包装层只许链 vendored/private 实体——外漂链接=部署承诺断裂
       via: link
       from: [deployed]
       to: [vendored, private]
   # required 子句留空 —— deployable 双族已由 registry family: 字段显式声明
-  # （mirror×16 / authored×9，registry-parity 套件持续互证声明↔fs 实态）。
+  # （mirror×16 / authored×9，registry-parity 套件持续互证声明⟺fs 实态）。
   # 剩余缺口：units_in 的单元集由事实推导——"镜像族被掏空成空目录"的缺席型违例
   # 需要 registry 声明集作为输入（事实面不可见不存在的单元），属 registry-parity
   # 车道而非本引擎车道。当前链接侧不变量已由 allowed + 内建 dead-link 完备覆盖。
   required: []
+  # attrs: unit-local 命名断言（staged 安全——pre-commit 门能实查）
+  attrs:
+    - name: no-temp-artifacts
+      severity: error
+      why: 临时/残骸工件不入仓——.tmp/.bak/.orig/.swp/.rej 一律视为事故遗留
+      units_in: '**'
+      of_kind: file
+      name_not_match: ['*.tmp', '*.bak', '*.orig', '*.swp', '*.rej']
+  # covered/isolated/parity：v1.1 已注册待接消费方（需要 declare/docref 边生态
+  # 先在本仓跑出实证再挂活规则——空族不产出违规，留位即声明面）
+  covered: []
+  isolated: []
+  parity: []

@@ -11,14 +11,16 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fact, domainOf, sortFacts, toJsonl, parseJsonl }
+import { fact, domainOf, sortFacts, toJsonl, parseJsonl, globMatch }
   from '../../private/engineering/ming-boundary/scripts/lib/facts.mjs';
+import { findAstGrep }
+  from '../../private/engineering/ming-boundary/scripts/lib/frontends.mjs';
 
 const PKG = path.resolve(import.meta.dirname, '../../private/engineering/ming-boundary');
 const EXTRACT = path.join(PKG, 'scripts/extract-facts.mjs');
 const CHECK = path.join(PKG, 'scripts/check-boundaries.mjs');
-const hasSg = spawnSync('ast-grep', ['--version'], { encoding: 'utf8' }).status === 0
-  || fs.existsSync('D:/Caches/npm-global/node_modules/@ast-grep/cli/ast-grep.exe');
+// 前端在位性与抽取器共享同一 oracle——不各自硬编码（机器路径曾藏在两处）
+const hasSg = !!findAstGrep();
 
 let tmpRoot;
 function wfile(rel, text) {
@@ -68,8 +70,17 @@ export async function run() {
     assert.deepEqual(back.map((x) => x.name), ['a', 'g', './x', 'f'], '排序键序 file→line→kind→name');
     assert.throws(() => parseJsonl('{"a":1}\n{bad json}\n'), /第 2 行/, '坏行应带行号报错');
 
+    // 1d. globMatch 段级语义（v1.1 SubjectSet 选择集）
+    assert.ok(globMatch('docs/a/b.md', '**/*.md'), '**/ 应跨段且含零段');
+    assert.ok(globMatch('x.md', '**/*.md'), '**/ 零段也命中');
+    assert.ok(globMatch('a/b/c.mjs', 'a/**'), 'a/** 吃多层');
+    assert.ok(!globMatch('a', 'a/**'), 'a/** 不吃 a 本身');
+    assert.ok(!globMatch('a/b/x.mjs', '*.mjs'), '单星不跨段');
+    assert.ok(globMatch('x.tmp', '*.tmp'));
+    assert.ok(!globMatch('a/b.tmp/c', '**/*.tmp'), '*.tmp 只匹后缀');
+
     // ---------- 组 2: fixture 仓 ----------
-    wfile('src/b.mjs', 'export default function b() {}\nexport const K = 1;\n');
+    wfile('src/b.mjs', 'export default function b() {}\nexport const K = () => 1;\n');
     wfile('src/a.mjs', [
       'import { K } from \'./b.mjs\';',
       'import \'./gone.mjs\';',
@@ -83,6 +94,19 @@ export async function run() {
     wfile('vendored/v1/lib.mjs', 'export function vv() {}\n');
     wfile('scripts/tool.ps1', 'function Invoke-Thing { }\n. .\\lib\\helper.ps1\n');
     wfile('docs/note.md', '# md\n');
+    // v1.1 文档面：README/docref/mention/docrole 载体
+    wfile('README.md', '# Fixture Repo\n\nSee [notes](docs/note.md) and [api](docs/api.md).\n');
+    wfile('docs/api.md', [
+      '---', 'docrole: api', '---',
+      '# API Reference',
+      'Entry point is `top()` — see [impl](../src/a.mjs).',
+      'Syntax sample: `[x](y)` is meta, not a ref.',
+      'Dead: [gone](nope/missing.md).',
+      'Ambiguous name: `dup()` here.',
+    ].join('\n'));
+    wfile('src/c.mjs', 'export function dup() {}\n');
+    wfile('src/dup2.mjs', 'export function dup() {}\n'); // dup 双定义 → mention 歧义
+    wfile('src/re.mjs', "export { K } from './b.mjs';\nfunction hidden() {}\n");
     // junction（Windows 免特权；失败则后续 link 断言跳过）
     let junctionOk = false;
     try {
@@ -142,6 +166,48 @@ export async function run() {
     for (const x of facts)
       for (const k of ['v', 'unit', 'kind', 'name', 'file', 'fidelity', 'scope', 'extractor'])
         assert.ok(k in x, `事实缺键 ${k}`);
+
+    // ---------- 组 8: v1.1 抽取面（dir/docrole/docref/mention/export/surface/declare） ----------
+    // 8a. dir 事实：walk 产目录单元（unit 尾斜杠）
+    assert.ok(facts.some((x) => x.kind === 'dir' && x.unit === 'docs/'), 'docs/ 应产 dir 事实');
+    // 8b. docrole：README→readme（文件名兜底链）；frontmatter 覆盖最高优先
+    const readmeF = at('README.md', 'file')[0];
+    assert.equal(readmeF.extra?.docrole, 'readme', 'README.md 应分面 readme');
+    assert.equal(at('docs/api.md', 'file')[0].extra?.docrole, 'api', 'frontmatter docrole 应胜出');
+    assert.equal(at('docs/note.md', 'file')[0].extra?.docrole, 'doc', '无信号兜底 doc');
+    // 8c. docref 边：活链解析 + 死链标记；code-span 内 [x](y) 不算边
+    const dr = at('docs/api.md', 'docref');
+    const drNames = dr.map((x) => x.extra?.to);
+    assert.ok(drNames.includes('src/a.mjs'), '[impl](../src/a.mjs) 应解析成边');
+    assert.ok(dr.some((x) => x.extra?.dead && x.extra?.to === 'docs/nope/missing.md'),
+      '死链应标 dead');
+    assert.ok(!drNames.some((t) => t === 'y' || /\(y\)|docs\/y$/.test(t || '')),
+      'code-span 内 [x](y) 不应产边');
+    // 8d. mention 边：唯一命中 → 解析到 decl；双定义 → 歧义 unresolved
+    const men = at('docs/api.md', 'mention');
+    const mTop = men.find((x) => x.name === 'top');
+    assert.ok(mTop && mTop.extra?.to === 'src/a.mjs#top' && mTop.scope === 'module',
+      `top() 应唯一解析: ${JSON.stringify(mTop)}`);
+    const mDup = men.find((x) => x.name === 'dup');
+    assert.ok(mDup && mDup.scope === 'unresolved' && mDup.extra?.ambiguous,
+      'dup() 双定义应产歧义 mention');
+    assert.ok(!men.some((x) => x.name === 'x'), '`x` 无 decl 不产 mention');
+    // 8e. export 边：reexport 产 import+export 双边（v1 相容 + v1.1 面边）
+    const exp = at('src/re.mjs', 'export');
+    assert.equal(exp.length, 1, 'reexport 应产 1 条 export 边');
+    assert.equal(exp[0].extra?.to, 'src/b.mjs');
+    assert.ok(at('src/re.mjs', 'import').length === 1, 'reexport 仍产 import 边（v1 相容）');
+    // 8f. decl surface：export 声明标 public，未导出标 internal
+    const dTop = facts.find((x) => x.unit === 'src/a.mjs#top');
+    assert.equal(dTop?.extra?.surface, 'public', 'export async function 应标 public');
+    const dArr = facts.find((x) => x.unit === 'src/a.mjs#arr');
+    assert.equal(dArr?.extra?.surface, 'internal', '未导出 arrow 应标 internal');
+    const dHid = facts.find((x) => x.unit === 'src/re.mjs#hidden');
+    assert.equal(dHid?.extra?.surface, 'internal');
+    const dK = facts.find((x) => x.unit === 'src/b.mjs#K');
+    assert.equal(dK?.extra?.surface, 'public', 'export const K 应标 public');
+    const dB = facts.find((x) => x.unit === 'src/b.mjs#b');
+    assert.equal(dB?.extra?.surface, 'public', 'export default function b 应标 public');
 
     // ---------- 组 4: byte-identical 复跑 ----------
     const out2 = path.join(tmpRoot, 'facts2.jsonl');
@@ -308,7 +374,227 @@ export async function run() {
     assert.deepEqual(await gate.run({ root: R2, files: ['x.mjs'] }), [],
       '无 boundaries.yaml 的仓应跳过');
 
-    console.log('  7 组断言全过');
+    // ---------- 组 9: evaluator v1.1 新族 + 词表/元数据/豁免/staged 安全表 ----------
+    const FF = (u, kind, file, extra) =>
+      fact({ unit: u, kind, name: u.split('/').pop().replace(/\/$/, ''),
+        file, fidelity: 'exact', scope: 'repo', extractor: 't@1',
+        ...(extra ? { extra } : {}) });
+    const EDGE = (u, kind, file, to, extra2) =>
+      fact({ unit: u, kind, name: to, file, fidelity: 'exact', scope: 'repo',
+        extractor: 't@1', extra: { to, ...(extra2 || {}) } });
+    const rulesV11 = path.join(tmpRoot, 'rules-v11.json');
+    fs.writeFileSync(rulesV11, JSON.stringify({
+      version: 1,
+      domains: [{ name: 'docs', match: 'docs/**' }, { name: 'src', match: 'src/**' }],
+      manifest: {
+        node_kinds: ['file', 'dir', 'decl'],
+        edge_kinds: ['import', 'link', 'docref', 'mention', 'declare', 'export'],
+        families: ['forbidden', 'allowed', 'required', 'covered', 'isolated', 'parity', 'attrs'],
+      },
+      exemptions: [{ glob: 'ok.tmp', why: '白名单样例文件' }],
+      rules: {
+        covered: [{ name: 'md-docref-covered', units_in: 'docs/**/*.md',
+                    of_kind: 'file', needs: ['docref'] }],
+        isolated: [{ name: 'scratch-clean', units_in: 'scratch/**',
+                     of_kind: 'file', via: ['import', 'docref'] }],
+        parity: [{ name: 'declared-mds', declared: ['docs/a.md', 'docs/b.md'],
+                   observed_units_in: 'docs/**/*.md', observed_kind: 'file' }],
+        attrs: [{ name: 'no-tmp', units_in: '**', of_kind: 'file',
+                  name_not_match: ['*.tmp'], severity: 'warn' }],
+      },
+    }));
+    const factsV11 = path.join(tmpRoot, 'facts-v11.jsonl');
+    fs.writeFileSync(factsV11, toJsonl([
+      FF('docs/a.md', 'file', 'docs/a.md'),         // 有 docref 覆盖
+      FF('docs/b.md', 'file', 'docs/b.md'),         // 无覆盖 → covered 违
+      FF('scratch/lonely.mjs', 'file', 'scratch/lonely.mjs'),   // 无边 → isolated 通过
+      FF('scratch/wired.mjs', 'file', 'scratch/wired.mjs'),     // 有 import → isolated 违
+      FF('src/exempted.mjs', 'file', 'src/exempted.mjs'),
+      FF('ok.tmp', 'file', 'ok.tmp'),      // 在豁免集 → attrs 不违
+      FF('bad.tmp', 'file', 'bad.tmp'),                          // attrs 违（severity warn）
+      EDGE('docs/a.md', 'docref', 'README.md', 'docs/a.md'),    // a.md 被引用
+      EDGE('scratch/wired.mjs', 'import', 'scratch/wired.mjs', 'src/a.mjs'), // wired 出边
+    ]));
+    const chk11 = (extra = []) =>
+      runNode([CHECK, '--facts', factsV11, '--rules', rulesV11, '--json', ...extra]);
+    const v9 = JSON.parse(chk11().stdout);
+    const rulesHit = new Set(v9.violations.map((x) => x.rule));
+    // covered: a.md 有入边过；b.md 零入度违
+    assert.ok(rulesHit.has('covered:md-docref-covered'));
+    assert.ok(v9.violations.some((x) => x.rule === 'covered:md-docref-covered'
+      && x.unit === 'docs/b.md'), 'b.md 无 docref 覆盖应违');
+    assert.ok(!v9.violations.some((x) => x.unit === 'docs/a.md'),
+      'a.md 被引用不应违 covered');
+    // isolated: wired.mjs 有边→违；lonely.mjs 无边→过
+    assert.ok(v9.violations.some((x) => x.rule === 'isolated:scratch-clean'
+      && x.unit === 'scratch/wired.mjs'));
+    assert.ok(!v9.violations.some((x) => x.unit === 'scratch/lonely.mjs'));
+    // parity: declared 两 md 都在观察集 → 无 parity 违；observed 中 wired/lonely
+    //   非 md 不入集
+    assert.ok(![...rulesHit].some((r) => r.startsWith('parity:')),
+      `parity 双向对齐应零违: ${JSON.stringify(v9.violations)}`);
+    // attrs: bad.tmp 违 warn 级（severity 贯通）
+    const vTmp = v9.violations.find((x) => x.rule === 'attrs:no-tmp');
+    assert.ok(vTmp && vTmp.severity === 'warn' && vTmp.unit === 'bad.tmp',
+      'attrs severity=warn 应贯通');
+    assert.ok(!v9.violations.some((x) => x.unit === 'ok.tmp'),
+      '豁免集成员任何 ∀ 族都不应违');
+    // finding 契约字段：expect/observed/fix 在场
+    assert.ok(vTmp.expect && vTmp.observed && vTmp.fix, 'finding 契约字段应在场');
+
+    // staged 安全表：∀ 族全跳；attrs 仍跑（unit-local 安全）
+    const vStaged = JSON.parse(chk11(['--staged', 'bad.tmp,scratch/wired.mjs']).stdout);
+    const rStaged = new Set(vStaged.violations.map((x) => x.rule));
+    assert.ok(![...rStaged].some((r) => /^(covered|isolated|parity|required):/.test(r)),
+      'staged 应跳过全部 ∀/P 族');
+    assert.ok(rStaged.has('attrs:no-tmp'), 'attrs 是 unit-local——staged 应仍评估');
+
+    // parity 双向差集：声明集多一项 → missing；观察集多一 md → undeclared
+    const rulesP = path.join(tmpRoot, 'rules-p.json');
+    fs.writeFileSync(rulesP, JSON.stringify({
+      version: 1,
+      domains: [{ name: 'docs', match: 'docs/**' }],
+      rules: { parity: [{ name: 'p1', declared: ['docs/a.md', 'docs/ghost.md'],
+        observed_units_in: 'docs/**/*.md', observed_kind: 'file' }] },
+    }));
+    const factsP = path.join(tmpRoot, 'facts-p.jsonl');
+    fs.writeFileSync(factsP, toJsonl([
+      FF('docs/a.md', 'file', 'docs/a.md'), FF('docs/extra.md', 'file', 'docs/extra.md')]));
+    const vP = JSON.parse(runNode([CHECK, '--facts', factsP, '--rules', rulesP,
+      '--json']).stdout);
+    assert.ok(vP.violations.some((x) => x.rule === 'parity:p1:missing' && x.unit === 'docs/ghost.md'),
+      'declared∖observed 应产 missing');
+    assert.ok(vP.violations.some((x) => x.rule === 'parity:p1:undeclared' && x.unit === 'docs/extra.md'),
+      'observed∖declared 应产 undeclared');
+
+    // manifest fail-closed：未注册边 kind / 族 / 顶层键
+    const mkRules = (o) => { const p = path.join(tmpRoot, `r${Math.random().toString(36).slice(2)}.json`);
+      fs.writeFileSync(p, JSON.stringify(o)); return p; };
+    const rBadVia = mkRules({ version: 1, domains: [{ name: 'x', match: 'x/**' }],
+      manifest: { edge_kinds: ['import'] },
+      rules: { forbidden: [{ name: 'r1', via: ['teleport'], from: ['x'], to: ['x'] }] } });
+    assert.equal(runNode([CHECK, '--facts', factsV11, '--rules', rBadVia]).status, 3,
+      '未注册边 kind 应 fail-closed');
+    const rBadFam = mkRules({ version: 1, domains: [{ name: 'x', match: 'x/**' }],
+      manifest: { families: ['forbidden'] },
+      rules: { covered: [{ name: 'r1', units_in: 'x/**' }] } });
+    assert.equal(runNode([CHECK, '--facts', factsV11, '--rules', rBadFam]).status, 3,
+      '未注册族应 fail-closed');
+    const rBadSev = mkRules({ version: 1, domains: [{ name: 'x', match: 'x/**' }],
+      rules: { forbidden: [{ name: 'r1', severity: 'fatal', from: ['x'], to: ['x'] }] } });
+    assert.equal(runNode([CHECK, '--facts', factsV11, '--rules', rBadSev]).status, 3,
+      '非法 severity 应 fail-closed');
+
+    // ruleset lint：forbidden∩allowed 域交叠 → config_warnings（非致命）
+    const rOverlap = mkRules({ version: 1, domains: [{ name: 'a', match: 'a/**' },
+      { name: 'b', match: 'b/**' }],
+      rules: {
+        forbidden: [{ name: 'f1', from: ['a'], to: ['b'], via: ['import'] }],
+        allowed: [{ name: 'a1', from: ['a'], to: ['b'], via: ['import'] }] } });
+    const rLint = runNode([CHECK, '--facts', factsV11, '--rules', rOverlap, '--json']);
+    assert.ok(JSON.parse(rLint.stdout).config_warnings.some((w) => w.includes('交叠')),
+      'forbidden∩allowed 交叠应产 ruleset-lint');
+
+    // 确定性序：同一违规集两跑输出 byte-identical + 排序键序
+    const o1 = chk11().stdout, o2 = chk11().stdout;
+    assert.equal(o1, o2, '违规输出应确定性一致');
+
+    // ---------- 组 10: gitignore 适配器（declare 边 oracle） ----------
+    const hasGit = spawnSync('git', ['--version'], { encoding: 'utf8' }).status === 0;
+    if (hasGit) {
+      const R3 = path.join(tmpRoot, 'repo3');
+      fs.mkdirSync(R3, { recursive: true });
+      spawnSync('git', ['init', '-q'], { cwd: R3 });
+      fs.writeFileSync(path.join(R3, '.gitignore'), '*.tmp\n!important.tmp\nbuild/\n');
+      fs.writeFileSync(path.join(R3, 'a.tmp'), 'x');
+      fs.writeFileSync(path.join(R3, 'b.txt'), 'x');
+      fs.writeFileSync(path.join(R3, 'important.tmp'), 'x');
+      const g3 = runNode([EXTRACT, '--root', R3, '--allow-degraded']);
+      assert.equal(g3.status, 0, `gitignore 抽取应过: ${g3.stderr}`);
+      const gf = parseJsonl(g3.stdout);
+      const decls = gf.filter((x) => x.kind === 'declare');
+      assert.ok(decls.some((x) => x.extra?.to === 'a.tmp' && x.extra?.source === 'gitignore'),
+        'a.tmp 应被 *.tmp 认领');
+      assert.ok(decls.some((x) => x.extra?.to === 'important.tmp' && x.extra?.negated),
+        '!important.tmp 应产 negated 边');
+      assert.ok(!decls.some((x) => x.extra?.to === 'b.txt'), 'b.txt 不应有 declare 边');
+      assert.ok(decls.every((x) => x.extractor === 'git-check-ignore@1'), 'extractor 戳记');
+      // 非 git 仓静默空集（repo2 无 .git）
+      const gNo = runNode([EXTRACT, '--root', R2, '--allow-degraded']);
+      assert.equal(gNo.status, 0);
+      assert.ok(!parseJsonl(gNo.stdout).some((x) => x.kind === 'declare'),
+        '非 git 仓 declare 应空集');
+    }
+
+    // ---------- 组 11: T7 钉版——golden fixture 字节契约 ----------
+    // 固件只含 md/ps1（零 js → 不依赖 ast-grep 在位性；--no-ignore-scan → 不依赖 git）
+    // 上游抽取器升级导致的事实面漂移在此显形；有意升级须再生 golden：
+    //   node private/engineering/ming-boundary/scripts/extract-facts.mjs
+    //     --root tests/fixtures/mb-golden/repo --no-ignore-scan --allow-degraded
+    //     --out tests/fixtures/mb-golden/facts.golden.jsonl
+    const GOLDEN_REPO = path.resolve(import.meta.dirname, '../fixtures/mb-golden/repo');
+    const GOLDEN = path.resolve(import.meta.dirname, '../fixtures/mb-golden/facts.golden.jsonl');
+    const gout = path.join(tmpRoot, 'golden-actual.jsonl');
+    const gr = runNode([EXTRACT, '--root', GOLDEN_REPO, '--no-ignore-scan',
+      '--allow-degraded', '--out', gout]);
+    assert.equal(gr.status, 0, `golden 抽取应过: ${gr.stderr}`);
+    assert.equal(fs.readFileSync(gout, 'utf8'), fs.readFileSync(GOLDEN, 'utf8'),
+      'golden 事实面漂移——若属有意升级请再生固件并在评审中说明');
+    const gFacts = parseJsonl(fs.readFileSync(gout, 'utf8'));
+    assert.ok(gFacts.some((x) => x.kind === 'docref' && x.extra?.dead),
+      'golden 应含死链样本');
+    assert.ok(gFacts.some((x) => x.kind === 'mention' && x.extra?.to === 'src/tool.ps1#Invoke-Main'),
+      'golden 应含解析型 mention');
+
+    // ---------- 组 12: 采纳自举——-WithBoundary 铺 kit → 任意仓门点火 ----------
+    // 覆盖"任意仓库调用"面：install-hooks -Target -WithBoundary 应产出
+    // 组件子树+yaml桥+gates.local门+契约模板，且固件仓上的门真能报违规。
+    const hasPwsh = spawnSync('pwsh', ['-NoProfile', '-Command', '$PSVersionTable.PSVersion'],
+      { encoding: 'utf8' }).status === 0;
+    if (hasPwsh && hasGit) {
+      const adopt = path.join(tmpRoot, 'adopted');
+      fs.mkdirSync(adopt, { recursive: true });
+      spawnSync('git', ['init', '-q'], { cwd: adopt });
+      const INSTALL = path.resolve(import.meta.dirname, '../../scripts/install-hooks.ps1');
+      const ins = spawnSync('pwsh', ['-NoProfile', '-File', INSTALL,
+        '-Target', adopt, '-WithBoundary'], { encoding: 'utf8' });
+      assert.equal(ins.status, 0, `-WithBoundary 采纳应过: ${ins.stderr || ins.stdout}`);
+      for (const rel of [
+        'boundaries.yaml',
+        'private/engineering/ming-boundary/scripts/extract-facts.mjs',
+        'private/engineering/ming-boundary/scripts/check-boundaries.mjs',
+        'private/engineering/ming-boundary/scripts/lib/adapters/markdown.mjs',
+        'scripts/lib/yaml-lite.ps1',
+        'scripts/lib/yaml2json.ps1',
+        'scripts/hooks/gates.local/boundary-edge.mjs',
+        'scripts/hooks/engine.mjs'])
+        assert.ok(fs.existsSync(path.join(adopt, rel)), `采纳件缺席: ${rel}`);
+
+      // 门点火：固件违规（src → vendor 命中模板 src-never-imports-vendor）
+      fs.mkdirSync(path.join(adopt, 'src'), { recursive: true });
+      fs.mkdirSync(path.join(adopt, 'vendor'), { recursive: true });
+      fs.writeFileSync(path.join(adopt, 'vendor/lib.js'), 'export const v = 1;\n');
+      fs.writeFileSync(path.join(adopt, 'src/evil.mjs'), "import '../vendor/lib.js';\n");
+      const { pathToFileURL } = await import('node:url');
+      const { gate: adoptedGate } = await import(
+        pathToFileURL(path.join(adopt, 'scripts/hooks/gates.local/boundary-edge.mjs')).href);
+      const fAdopt = await adoptedGate.run({ root: adopt, files: ['src/evil.mjs'] });
+      assert.ok(fAdopt.length > 0, '采纳仓边界门应报 src→vendor 违规');
+      assert.ok(fAdopt.some((x) => x.message.includes('src-never-imports-vendor')),
+        `应命中模板规则: ${fAdopt.map((x) => x.message).join(' | ')}`);
+
+      // 契约归采纳侧：二次铺入不得覆盖已裁 boundaries.yaml
+      fs.writeFileSync(path.join(adopt, 'boundaries.yaml'), '# 采纳侧已裁\n');
+      const ins2 = spawnSync('pwsh', ['-NoProfile', '-File', INSTALL,
+        '-Target', adopt, '-WithBoundary'], { encoding: 'utf8' });
+      assert.equal(ins2.status, 0, `幂等再铺应过: ${ins2.stderr || ins2.stdout}`);
+      assert.equal(fs.readFileSync(path.join(adopt, 'boundaries.yaml'), 'utf8'),
+        '# 采纳侧已裁\n', 'boundaries.yaml 不得被二次铺入覆盖');
+    } else {
+      console.log('    (跳过组12: pwsh/git 不在位)');
+    }
+
+    console.log('  12 组断言全过');
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }

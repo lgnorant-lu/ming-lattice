@@ -1,4 +1,4 @@
-// lib/facts.mjs — 事实记录构造/分类/序列化（ADR-0008 D2）
+// lib/facts.mjs — 事实记录构造/分类/序列化（ADR-0008 D2；v1.1 扩 SubjectSet glob）
 // 纯函数零 IO。事实 schema v1:
 // {v, unit, kind, name, file, line?, fidelity, scope, extractor, extra?}
 // unit = 语义身份键（file 或 file#symbol——内容锚，不用行号）
@@ -53,6 +53,33 @@ function segGlob(seg, pat) {
   return re.test(seg);
 }
 const escRe = (s) => s.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+
+// 段级全 glob：** 跨段（含零段，gitignore 语义）、* 段内、? 单字符；全串锚定。
+// 用于规则 SubjectSet 选择集（units_in/exempt 等）。非首段锚定——与 domainOf 相别。
+// 实现要点：占位符两段替换——若先把 ** 翻成 .*，其中的 * 会被下一轮
+// *→[^/]* 再次吃掉（经典互吃 bug），故先翻成控制字符再翻回。
+const _globReCache = new Map();
+const STAR_STAR_SLASH = '\u0000';
+const STAR_STAR = '\u0001';
+export function globMatch(rel, pat) {
+  let re = _globReCache.get(pat);
+  if (!re) {
+    const body = pat
+      .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+      .replace(/\*\*\//g, STAR_STAR_SLASH)
+      .replace(/\*\*/g, STAR_STAR)
+      .replace(/\*/g, '[^/]*')
+      .replace(/\?/g, '[^/]')
+      .replace(/\u0000/g, '(?:[^/]+/)*')
+      .replace(/\u0001/g, '.*');
+    re = new RegExp('^' + body + '$');
+    _globReCache.set(pat, re);
+  }
+  return re.test(rel);
+}
+export const baseName = (rel) => rel.replace(/\\/g, '/').split('/').pop();
+// unit 身份键的文件部（file#symbol → file）；dir 单元尾斜杠原样保留
+export const unitFile = (unit) => String(unit).split('#')[0];
 
 // 确定性序列化：file → line → kind → name → unit 全排序
 export function sortFacts(facts) {

@@ -21,6 +21,8 @@ trailerLevel=error        # → gate.commit-msg.level（AI 尾巴等）
 
 # ── 项目私有门 ──
 # scripts/hooks/gates.local/*.mjs  # 入仓的项目特有门（与 gates/ 同接口，如 go-verify）
+# gate.boundary-edge.level=error   # ming-boundary 边界契约门（-WithBoundary 采纳面；
+#                                  # 仓根无 boundaries.yaml 自动静默跳过）
 # 仓特有门缺依赖自动缺席：impact-test 需 tests/run.mjs；pre-push-verify 需 scripts/verify.mjs
 
 # ── secrets 门多层调优 ──

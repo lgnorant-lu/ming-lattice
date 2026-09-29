@@ -6,7 +6,7 @@ It operates on pseudocode produced by [View8](https://github.com/suleram/View8),
 
 The filters are pattern-driven and intended primarily as a research toolkit and reference implementation. The tool is **not** a general-purpose JavaScript deobfuscator, does not reconstruct the original source code, and does not produce runnable JavaScript. Its output remains View8 pseudocode intended for static inspection, searching, comparison, and function-tree export.
 
-📖 [Read Wiki](https://github.com/hasherezade/jsc_deobfuscator/wiki)
+[Read Wiki](https://github.com/hasherezade/jsc_deobfuscator/wiki)
 
 ## Safety notes
 
@@ -385,7 +385,7 @@ scripts/deobfuscate_all.sh
 scripts/collect_output.sh
 ```
 
-The scripts preserve conventions used for the JSCeal corpus, including treating discovered `app.jsc` files as Brotli-compressed payloads and naming them by MD5. Review [`scripts/README.md`](scripts/README.md) before applying the workflow to unrelated samples.
+The scripts preserve conventions used for the JSCeal corpus, including treating discovered `app.jsc` files as Brotli-compressed payloads and naming them by MD5. Review the per-script notes (`scripts/README.md`, corpus-side, not shipped in this package) before applying the workflow to unrelated samples.
 
 ### Unattended corpus run
 
@@ -479,7 +479,9 @@ The unattended helper script automates the final decoder-reference validation.
 
 The JSC Deobfuscator source code authored for this project is licensed under
 the GNU General Public License, version 2 or (at your option) any later version
-(`GPL-2.0-or-later`). See [LICENSE](LICENSE) for the complete license text.
+(`GPL-2.0-or-later`). The complete license text is available from the
+canonical SPDX/FSF listing for GPL-2.0-or-later (a `LICENSE` file is not
+shipped in this package).
 
 Copyright (C) 2026 Aleksandra "Hasherezade" Doniec @ Check Point Research.
 

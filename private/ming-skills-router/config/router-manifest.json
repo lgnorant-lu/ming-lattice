@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-28T07:59:57.700Z",
+  "generatedAt": "2026-09-29T14:53:12.148Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -1011,7 +1011,7 @@
     },
     "ming-boundary": {
       "name": "ming-boundary",
-      "description": "仓库结构事实提取与边界契约断言组件——JSONL 事实流（file/decl/import/link）+ boundaries.yaml 声明式契约（forbidden/allowed/required）+ 纯评估引擎。当涉及项目图、依赖边界审计、孤儿符号检测、断链检测、生成与手写接缝核验、跨文件应消费断言时使用。",
+      "description": "仓库结构事实提取与边界契约断言组件——JSONL 事实流（file/dir/decl/import/link/docref/mention/declare/export）+ boundaries.yaml 声明式契约 v1.1（forbidden/allowed/required/covered/isolated/parity/attrs 七族，∀-Witness 规范形）+ 纯评估引擎。当涉及项目图、依赖边界审计、文档拓扑覆盖、孤儿/刻意隔离检测、断链检测、声明-实测对账、生成与手写接缝核验时使用。",
       "triggers": [
         "项目图",
         "project graph",

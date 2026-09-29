@@ -5,14 +5,20 @@
 // 输出：确定性 JSONL（file→line→kind→name 排序），stdout 或 --out
 // 用法: node extract-facts.mjs [--root DIR] [--out FILE] [--allow-degraded]
 //       [--extract-dirs d1,d2] [--no-content-scan] [--files f1,f2]
+//       [--no-md-scan] [--no-ignore-scan]
 // --files: 只抽给定仓相对路径子集（pre-commit staged 面用；逗号分隔，
 //          文件名含逗号者不支持）。工作区缺席条目静默跳过（无边可抽）
+// v1.1 适配器：md 扫描（docrole/docref/mention 二遍）与 git check-ignore
+//   declare 边默认开启，--no-md-scan / --no-ignore-scan 单独关闭
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { fact, domainOf, toJsonl } from './lib/facts.mjs';
+import { findAstGrep } from './lib/frontends.mjs';
+import { mdFacts, MD_EXTRACTOR, MD_EXT } from './lib/adapters/markdown.mjs';
+import { gitignoreFacts, GI_EXTRACTOR } from './lib/adapters/gitignore.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '../../../..');
@@ -23,7 +29,7 @@ const PS_EXT = new Set(['.ps1', '.psm1']);
 const CONTENT_DIRS = ['scripts', 'private', 'tests', 'tools', 'config', 'src'];
 const IGNORE_DIRS = new Set([
   '.git', 'node_modules', 'distill', '.logs', 'runs', 'target',
-  'artifacts', 'out', '.venv', '__pycache__',
+  'artifacts', 'out', '.venv', '__pycache__', '.trash',
 ]);
 
 const AST_RULES = `
@@ -32,12 +38,10 @@ language: JavaScript
 rule:
   kind: import_statement
 ---
-id: reexport-statement
+id: export-statement
 language: JavaScript
 rule:
   kind: export_statement
-  has:
-    kind: string
 ---
 id: dynamic-import
 language: JavaScript
@@ -93,7 +97,8 @@ function die(msg, code = 2) {
 
 function parseArgs(argv) {
   const a = { root: REPO_ROOT, out: null, allowDegraded: false,
-              extractDirs: CONTENT_DIRS, contentScan: true, files: null };
+              extractDirs: CONTENT_DIRS, contentScan: true, files: null,
+              mdScan: true, ignoreScan: true };
   for (let i = 2; i < argv.length; i++) {
     const k = argv[i];
     const take = () => argv[++i] ?? die(`${k} 缺参数`);
@@ -101,6 +106,8 @@ function parseArgs(argv) {
     else if (k === '--out') a.out = take();
     else if (k === '--allow-degraded') a.allowDegraded = true;
     else if (k === '--no-content-scan') a.contentScan = false;
+    else if (k === '--no-md-scan') a.mdScan = false;
+    else if (k === '--no-ignore-scan') a.ignoreScan = false;
     else if (k === '--extract-dirs') a.extractDirs = take().split(',').filter(Boolean);
     else if (k === '--files') a.files = take().split(',').filter(Boolean);
     else die(`未知旗标: ${k}`);
@@ -109,7 +116,7 @@ function parseArgs(argv) {
 }
 
 // ---------- 遍历：忽略集合 + junction 不穿透（实测语义，消费方 resolve 后自扫） ----------
-function walk(dir, root, files, links) {
+function walk(dir, root, files, links, dirs) {
   let ents;
   try { ents = fs.readdirSync(dir, { withFileTypes: true }); }
   catch { return; }
@@ -129,27 +136,15 @@ function walk(dir, root, files, links) {
     }
     if (e.isDirectory()) {
       if (IGNORE_DIRS.has(e.name)) continue;
-      walk(abs, root, files, links);
+      dirs.push(rel); // v1.1: dir 事实（per-dir 覆盖断言主体，unit=rel+'/'）
+      walk(abs, root, files, links, dirs);
     } else if (e.isFile()) {
       files.push({ rel, ext: path.extname(e.name).toLowerCase() });
     }
   }
 }
 
-// ---------- ast-grep 前端 ----------
-function findAstGrep() {
-  // AST_GREP_BIN 为权威覆盖：设了就只试它（失败即无前端——便于测试 fail-closed）
-  const envBin = process.env.AST_GREP_BIN;
-  const cands = envBin ? [envBin] : [
-    'ast-grep',
-    'D:/Caches/npm-global/node_modules/@ast-grep/cli/ast-grep.exe',
-  ];
-  for (const bin of cands) {
-    const r = spawnSync(bin, ['--version'], { encoding: 'utf8' });
-    if (!r.error && r.status === 0) return { bin, ver: r.stdout.trim().split(/\s+/).pop() };
-  }
-  return null;
-}
+// ---------- ast-grep 前端（探测实现收 lib/frontends.mjs——抽取器与测试共用） ----------
 
 function runAstGrep(bin, filesAbs) {
   // 分批喂文件（命令行长度上限）；--json=stream 一行一 match
@@ -218,7 +213,7 @@ function main() {
   const root = a.root;
   if (!fs.existsSync(root)) die(`--root 不存在: ${root}`);
 
-  const files = [], links = [];
+  const files = [], links = [], dirs = [];
   if (a.files) {
     // 显式文件集模式：逐项 lstat——符号链接产 link 事实，常规文件入内容抽面
     for (const rel0 of a.files) {
@@ -239,17 +234,35 @@ function main() {
       }
     }
   } else {
-    walk(root, root, files, links);
+    walk(root, root, files, links, dirs);
   }
 
   const facts = [];
   const sg = findAstGrep();
   const astId = sg ? `ast-grep@${sg.ver}` : null;
   const regId = 'line-regex@1';
+  const fileExists = (rel) => { try { return fs.existsSync(path.join(root, rel)); } catch { return false; } };
+  const mentionCands = []; // [{docRel, name, line}] —— decl 符号表齐了再二遍解析
 
-  for (const { rel } of files) {
+  for (const { rel, ext } of files) {
+    let extra;
+    if (a.mdScan && MD_EXT.has(ext)) {
+      let text = null;
+      try { text = fs.readFileSync(path.join(root, rel), 'utf8'); } catch {}
+      if (text != null) {
+        const md = mdFacts(root, rel, text, fileExists);
+        extra = { docrole: md.docrole };
+        facts.push(...md.facts);
+        for (const c of md.mentionCands) mentionCands.push({ docRel: rel, ...c });
+      }
+    }
     facts.push(fact({ unit: rel, kind: 'file', name: rel, file: rel,
-      fidelity: 'exact', scope: 'repo', extractor: 'walk@1' }));
+      fidelity: 'exact', scope: 'repo', extractor: 'walk@1',
+      ...(extra ? { extra } : {}) }));
+  }
+  for (const d of dirs) {
+    facts.push(fact({ unit: `${d}/`, kind: 'dir', name: d.split('/').pop(),
+      file: d, fidelity: 'exact', scope: 'repo', extractor: 'walk@1' }));
   }
   for (const l of links) {
     facts.push(fact({ unit: l.rel, kind: 'link', name: l.rel, file: l.rel,
@@ -257,6 +270,8 @@ function main() {
       extractor: 'walk@1',
       extra: { to: l.to, ...(l.dead ? { dead: true } : {}) } }));
   }
+  // declare 边（v1.1）：git check-ignore oracle——命中行产边，provenance 带规则行号
+  if (a.ignoreScan) facts.push(...gitignoreFacts(root, files.map((f) => f.rel)));
 
   if (a.contentScan) {
     const jsFiles = files.filter((f) =>
@@ -276,10 +291,48 @@ function main() {
         list.push(m); byFile.set(rel, list);
       }
       for (const [rel, ms] of byFile) {
+        // 两遍：先收 export-stmt 的 surface 标记，再发 decl（surface 要回填）
+        const surfaceMarks = new Set();
         for (const m of ms) {
           const line = m.range.start.line + 1;
           const id = m.ruleId;
-          if (id === 'import-statement' || id === 'reexport-statement') {
+          if (id === 'export-statement') {
+            // reexport 判定必须头锚定：export_statement 节点文本含整个被导
+            // 函数体——体内字符串里的 from 'x' 不许误判成 reexport
+            const reex = m.text.match(
+              /^\s*export\s+(?:\{[^}]*\}|\*\s*(?:as\s+[\w$]+)?)\s*from\s*['"]([^'"]+)['"]/);
+            const spec = reex ? reex[1] : null; // export {…}|\* from 'x' → reexport
+            if (spec) {
+              const r = resolveSpec(root, rel, spec);
+              const base = { file: rel, line, name: spec,
+                fidelity: 'syntactic',
+                scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
+                extractor: astId };
+              // v1 依赖边（via:import 相容）+ v1.1 面边（via:export 专属）
+              facts.push(fact({ ...base, unit: rel, kind: 'import',
+                extra: { to: r.to, mechanism: 'reexport',
+                  ...(r.dead ? { dead: true } : {}),
+                  ...(r.external ? { external: true } : {}) } }));
+              facts.push(fact({ ...base, unit: rel, kind: 'export',
+                extra: { to: r.to, mechanism: 'reexport',
+                  ...(r.dead ? { dead: true } : {}),
+                  ...(r.external ? { external: true } : {}) } }));
+            } else {
+              // export decl/list —— 非边；仅登记模块面标记
+              const dm = m.text.match(/export\s+(?:default\s+)?(?:async\s+)?(?:function\*?|class|const|let|var)\s+([\w$]+)/);
+              if (dm) surfaceMarks.add(dm[1]);
+              const lm = m.text.match(/export\s*\{([^}]*)\}/);
+              if (lm) for (const part of lm[1].split(',')) {
+                const nm = part.trim().split(/\s+as\s+/)[0].trim(); // decl 名（as 前）
+                if (nm) surfaceMarks.add(nm);
+              }
+            }
+          }
+        }
+        for (const m of ms) {
+          const line = m.range.start.line + 1;
+          const id = m.ruleId;
+          if (id === 'import-statement') {
             const spec = specFromText(m.text);
             const r = spec ? resolveSpec(root, rel, spec)
                            : { to: null, external: false, dead: true };
@@ -288,8 +341,7 @@ function main() {
               fidelity: 'syntactic',
               scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
               extractor: astId,
-              extra: { to: r.to,
-                mechanism: id === 'reexport-statement' ? 'reexport' : 'static',
+              extra: { to: r.to, mechanism: 'static',
                 ...(r.dead ? { dead: true } : {}),
                 ...(r.external ? { external: true } : {}) } }));
           } else if (id === 'dynamic-import') {
@@ -309,13 +361,14 @@ function main() {
                 scope: 'unresolved', extractor: astId,
                 extra: { mechanism: 'dynamic-computed' } }));
             }
-          } else {
+          } else if (DECL_RE[id]) {
             const re = DECL_RE[id];
             const nm = re ? (m.text.match(re) || [])[1] : null;
             facts.push(fact({ unit: `${rel}#${nm || '?'}`, kind: 'decl',
               name: nm || m.text.slice(0, 40), file: rel, line,
               fidelity: 'syntactic', scope: 'file-local', extractor: astId,
-              extra: { shape: id.replace('decl-', '') } }));
+              extra: { shape: id.replace('decl-', ''),
+                surface: nm && surfaceMarks.has(nm) ? 'public' : 'internal' } }));
           }
         }
       }
@@ -337,17 +390,47 @@ function main() {
                 ...(r.dead ? { dead: true } : {}),
                 ...(r.external ? { external: true } : {}) } }));
           }
-          const fm = l.match(/^\s*(?:export\s+)?(?:async\s+)?function\s*\*?\s*([\w$]+)/) ||
-                     l.match(/^\s*(?:export\s+)?(?:const|let|var)\s+([\w$]+)\s*=\s*(?:async\s*)?\(/);
-          if (fm) facts.push(fact({ unit: `${f.rel}#${fm[1]}`, kind: 'decl',
-            name: fm[1], file: f.rel, line: li, fidelity: 'regex-degraded',
-            scope: 'file-local', extractor: regId, extra: { shape: 'function' } }));
+          const fm = l.match(/^\s*(export\s+)?(?:async\s+)?function\s*\*?\s*([\w$]+)/) ||
+                     l.match(/^\s*(export\s+)?(?:const|let|var)\s+([\w$]+)\s*=\s*(?:async\s*)?\(/);
+          if (fm) facts.push(fact({ unit: `${f.rel}#${fm[2]}`, kind: 'decl',
+            name: fm[2], file: f.rel, line: li, fidelity: 'regex-degraded',
+            scope: 'file-local', extractor: regId,
+            extra: { shape: 'function',
+              surface: fm[1] ? 'public' : 'internal' } }));
         }
       }
     }
     for (const f of psFiles) {
       const text = fs.readFileSync(path.join(root, f.rel), 'utf8');
       facts.push(...psLineFacts(root, f.rel, text, regId));
+    }
+  }
+
+  // mention 二遍：code-span/heading 候选名查 decl 符号表
+  // 唯一命中 → to=<file#sym>（scope:module）；多名 → 歧义（scope:unresolved+extra.candidates）
+  // 零命中 → 不产边（普通反引号词不是 mention）
+  if (mentionCands.length) {
+    const sym = new Map();
+    for (const f of facts) {
+      if (f.kind !== 'decl') continue;
+      const s = sym.get(f.name) || new Set();
+      s.add(f.unit); sym.set(f.name, s);
+    }
+    for (const c of mentionCands) {
+      const hit = sym.get(c.name);
+      if (!hit) continue;
+      if (hit.size === 1) {
+        facts.push(fact({ unit: c.docRel, kind: 'mention', name: c.name,
+          file: c.docRel, line: c.line, fidelity: 'regex-degraded',
+          scope: 'module', extractor: MD_EXTRACTOR,
+          extra: { to: [...hit][0], symbol: c.name } }));
+      } else {
+        facts.push(fact({ unit: c.docRel, kind: 'mention', name: c.name,
+          file: c.docRel, line: c.line, fidelity: 'regex-degraded',
+          scope: 'unresolved', extractor: MD_EXTRACTOR,
+          extra: { symbol: c.name, ambiguous: true,
+            candidates: [...hit].sort().slice(0, 8) } }));
+      }
     }
   }
 

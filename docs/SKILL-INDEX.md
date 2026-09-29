@@ -298,7 +298,7 @@ status: descriptive
 | ming-l-paradigm | 项目结构域分层元规则：Ming-L 九域全景 x 七动力学 + 规则属性系统 + 域准入判据 + 候审档机制 | 已部署 |
 | ming-skill-forge | 技能包创作元规则：渐进披露预算 + 触发面工艺 + 注册路由接线 + check-skill.mjs 硬门控 | 已部署 |
 | ming-experience-direction | 体验导演式设计流水线：文档阶梯 + 宪法约束源 + 叙事主干 + OQ 状态机 + 六门过审 + 媒介映射预算 | 已部署 |
-| ming-boundary | 项目图事实提取 + 边界契约断言组件：JSONL 事实流 (file/decl/import/link) + boundaries.yaml 声明式 forbidden/allowed/required 评估 (ADR-0008) | 已部署 |
+| ming-boundary | 项目图事实提取 + 边界契约断言组件：JSONL 事实流 (file/dir/decl/import/link/docref/mention/declare/export) + boundaries.yaml v1.1 七族 ∀-Witness 规范形评估 (ADR-0008/0009) | 已部署 |
 
 ## 四、案例库（docs/cases/）
 

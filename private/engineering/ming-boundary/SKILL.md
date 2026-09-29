@@ -1,6 +1,6 @@
 ---
 name: ming-boundary
-description: 仓库结构事实提取与边界契约断言组件——JSONL 事实流（file/decl/import/link）+ boundaries.yaml 声明式契约（forbidden/allowed/required）+ 纯评估引擎。当涉及项目图、依赖边界审计、孤儿符号检测、断链检测、生成与手写接缝核验、跨文件应消费断言时使用。
+description: 仓库结构事实提取与边界契约断言组件——JSONL 事实流（file/dir/decl/import/link/docref/mention/declare/export）+ boundaries.yaml 声明式契约 v1.1（forbidden/allowed/required/covered/isolated/parity/attrs 七族，∀-Witness 规范形）+ 纯评估引擎。当涉及项目图、依赖边界审计、文档拓扑覆盖、孤儿/刻意隔离检测、断链检测、声明-实测对账、生成与手写接缝核验时使用。
 metadata:
   layer: infrastructure
   compose: none
@@ -22,22 +22,24 @@ metadata:
 ```
 node scripts/extract-facts.mjs [--root DIR] [--out FILE]
     [--allow-degraded] [--extract-dirs d1,d2] [--no-content-scan]
-    [--files f1,f2]
+    [--no-md-scan] [--no-ignore-scan] [--files f1,f2]
 ```
 
-`--files`：只抽给定仓相对路径子集（staged 增量面用；符号链接项产 link 事实，工作区缺席项静默跳过）。
+`--files`：只抽给定仓相对路径子集（staged 增量面用；符号链接项产 link 事实，工作区缺席项静默跳过）。`--no-md-scan`/`--no-ignore-scan` 关掉 markdown/gitignore 两默认适配器。
 
-产出确定性 JSONL，schema v1：
+产出确定性 JSONL，schema v1.1（additive 于 v1）：
 
 ```
 {v, unit, kind, name, file, line?, fidelity, scope, extractor, extra?}
 ```
 
-- `unit`：语义身份键（`file` 或 `file#symbol`）——内容锚，不用行号
-- `kind`：file / decl / import / link（前两者=节点，后两者=边）
-- `fidelity`：exact（fs 层）/ syntactic（ast-grep）/ regex-degraded（显式降级）
-- `scope`：repo / module / file-local / external / unresolved——**先分 scope 再判异常**
-- `extractor`：`walk@1` / `ast-grep@<ver>` / `line-regex@1`
+- `unit`：语义身份键（`file`、`file#symbol`、目录为 `path/`）——内容锚，不用行号
+- `kind`：节点=file/dir/decl；边=import/link/docref/mention/declare/export
+- `fidelity`：exact（fs/git-oracle 层）/ syntactic（ast-grep）/ regex-degraded（显式降级）
+- `scope`：repo / module / file-local / external / unresolved / computed——**先分 scope 再判异常**
+- `extractor`：`walk@1` / `ast-grep@<ver>` / `line-regex@1` / `markdown@1` / `git-check-ignore@1`
+
+v1.1 增量面：dir 单元（per-dir 覆盖断言主体）；markdown 适配器产 `docref`（`[x](y)` 死链标 `extra.dead`）+ `mention`（code-span/heading 符号提及，二遍解析 `file#symbol`，歧义标 `scope:unresolved`+`extra.ambiguous`）+ `extra.docrole`（frontmatter→文件名→路径兜底链）；gitignore 适配器以 `git check-ignore` 为 oracle 产 `declare` 边（`extra.source`/行 provenance/`negated`）；re-export 产 `export` 边且 decl 标 `extra.surface=public|internal`。
 
 死链/计算式不丢边：`extra.dead=true`（相对 spec 解析失败）、`extra.mechanism=dynamic-computed`（`import(expr)` 静态不可解）。
 
@@ -48,21 +50,45 @@ node scripts/check-boundaries.mjs --facts F.jsonl [--rules boundaries.yaml]
     [--json] [--staged a.mjs,b.mjs]
 ```
 
-- `forbidden`：`from` 域经 `via` 边到 `to` 域即违规
-- `allowed`：`from`+`via` 命中的边，其 dst 必须在 `to` 名单内
-- `required`：`units_in` 每个单元至少一条 `needs` 边且目标域 ∈ `to_in`
-- 内建：dead link / dead import 恒违规（断裂边无需声明）
+协议规范形 `∀x∈SubjectSet : Witness(x)`——七族按形式分三层（Q-∃ 检测 / Q-∀ 量化 / P 对账）：
+
+- `forbidden`：`from` 域经 `via` 边到 `to` 域即违规（Q-∃）
+- `allowed`：`from`+`via` 命中的边，其 dst 必须在 `to` 名单内（Q-∃；与 forbidden 重叠时 deny-overrides，交集非空被 lint 警为配置 bug）
+- `required`：`units_in` 每单元至少一条 `needs` 边且目标域 ∈ `to_in`（Q-∀）
+- `covered`：单元须被 `via` 入向边覆盖（Q-∀；docref 入向=文档拓扑覆盖）
+- `isolated`：单元不得有任何 in/out 边——刻意隔离须 declare/exempt 认领（Q-∀）
+- `parity`：声明集（declare 边，`from_kind`/`to_kind` 选面）⟺ 实测集对账（P）
+- `attrs`：单元属性谓词——文件名黑名单等无涉边断言（dir=none 退化支）
+- 内建：dead link/docref/dead import 恒违规（断裂边无需声明）
+
+规则条目 `{name, family, severity(error|warn|note), why, …}`——`name` 必填作 ruleId/suppression 锚；顶层 `exemptions: [{glob|unit, why, until?}]` 抑制全部 ∀ 族与 builtin 死检查（Q-∃ 域边界规则不吃豁免）。`manifest:` 段注册词表（families/edge kinds/extra_keys/extractors），未注册值 fail-closed。
+
 - 退出码：0=干净 / 1=有违规 / 2=用法 IO 错 / 3=规则 schema 非法（fail-closed）
 
-`--staged` 增量模式只评 staged 文件发出的**边级规则**（forbidden/allowed/内建 dead）；required 是全称量化（单元集须全图可见），子集事实面下必然误报，故增量模式跳过。
+`--staged` 增量模式只评 Q-∃ 族（forbidden/allowed/内建 dead）——∀/P 族在不完整视图下缺席断言必 fail-open（Rego negation-safety 同型），整族跳过。finding 契约 `{rule,severity,unit,expect,observed,fix}` 码点序输出。
 
 ### 2.3 域分类
 
 `domainOf(rel, domains)` 首段锚定——`private/x/scripts/y.mjs` 归 `private`，中段关键词不参与。domains 有序，先命中先赢。
 
-### 2.4 pre-commit 接线（gates.local/boundary-edge.mjs）
+### 2.4 采纳面（任意仓接入）
 
-staged 文件集 → `extract-facts --files` → `check-boundaries --facts - --staged` → 违规映射 findings。证据分级：syntactic 违规 error 阻断；regex-degraded 违规降 warn 人工复核（行级正则可能过匹配注释内 import）。boundaries.yaml 缺席的下游仓静默跳过。配置：`gate.boundary-edge.level`（.hooksrc §12）。
+```
+pwsh scripts/install-hooks.ps1 -Target <repo> -WithBoundary
+```
+
+一条命令铺全采纳面：门禁引擎 kit（engine+gates+lib，gates.local 按设计不入默认 kit）+
+`private/engineering/ming-boundary/scripts/` 组件子树 + `scripts/lib/` yaml 桥两件套 +
+`gates.local/boundary-edge.mjs` 门 + `boundaries.yaml` 起始模板（`assets/boundaries.starter.yaml`）。
+`boundaries.yaml` 已存在永不覆盖——契约是采纳侧资产。依赖：node 必，pwsh（yaml 桥）必，
+ast-grep 建议（缺席 `--allow-degraded` 降 regex 档），git（ignore 适配器 oracle）可选。
+
+手工等价路径：复制上述四面 + 自写 boundaries.yaml——无魔法路径约定，门与组件按
+`<repo>/private/engineering/ming-boundary/scripts` 相对寻址。
+
+### 2.5 pre-commit 接线（gates.local/boundary-edge.mjs）
+
+staged 文件集（含 `.md` 与 `.gitignore`）→ `extract-facts --files` → `check-boundaries --facts - --staged` → 违规映射 findings。证据分级按 fidelity×family 交叉表：syntactic/exact 按规则 severity 映射（note 降为非阻断警告）；regex-degraded 一律降 warn 人工复核；finding `fix` 文本随消息透出。boundaries.yaml 缺席的下游仓静默跳过；evaluator/schema 失败=error finding。配置：`gate.boundary-edge.level`（.hooksrc §12）。
 
 ## 3. 红线 / 边界
 
@@ -79,7 +105,16 @@ staged 文件集 → `extract-facts --files` → `check-boundaries --facts - --s
 - class 方法占声明面大头（实测 962/1352），漏 `method_definition` 等于符号面黑洞
 - `import('./x')` 字面量与 `import(expr)` 计算式必须分流——后者标 `dynamic-computed` 而非丢弃
 - 按名计数孤儿检测会把 file-local 助手全误标——`scope` 字段就是为这个存在的
+- `export_statement` 节点文本含**整个被导函数体**——reexport 判定必须头锚定 `export {…}|\* from`，`specFromText` 全文本捞会把体内字符串的 `from 'x'` 误当 re-export（真仓炸出 `./b.mjs` 假死链）
+- markdown `[x](y)` 匹配前必须先剥行内 code-span——文档描述 markdown 语法自身时 `[a](b)` 样例会被当死链误报
+- yaml-lite 不吃跨行内联 list——manifest 词表段必须单行内联或块列表
+- glob 翻译要占位符隔离 `**` 与 `*` 的替换序，否则 `.*` 里的 `*` 被二次替换吃掉
+- win32 上 `spawnSync('ast-grep')` 对 npm 全局 `.cmd` shim 必然 ENOENT（CVE-2024-27980 禁 .cmd 直跑，多行参数过 shell 又必碎）——前端探测必须扫 PATH 推导包内原生 exe（lib/frontends.mjs，抽取器与测试共用，勿再硬编码机器路径）
+- `git check-ignore -z -v` 的输出语法实测是"每条命中=4 个 \0 字段+\0 收尾"——传 `-n` 会混入 `path\0` 裸记录产生混用终止符歧义，非命中不产边就别传 -n
+- golden JSONL 固件必须 `.gitattributes text eol=lf` 钉行尾——autocrlf=true 的机器 checkout 成 CRLF 即假死
 
 ## 参考
 
-- `references/fact-model.md` —— ADR-0008 决策背景与五分支完整设计
+- `references/fact-model.md` —— 协议层规格正身（v1.1 规范形/族定义/铁律/finding 契约/理论溯源）
+- `docs/adr/ADR-0008` —— 事实模型决策（五分支/schema/契约三拆）
+- `docs/adr/ADR-0009` —— v1.1 协议决策史（七商确点裁决 + 三语义条款 + 增量表）
