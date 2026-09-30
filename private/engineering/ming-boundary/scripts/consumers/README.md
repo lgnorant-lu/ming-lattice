@@ -65,3 +65,16 @@ consumers:
 ## 候审位（未实现，按消费拉动再落）
 
 `extends:` 预设段（键名已注册）/ reachable / unique / n-way parity / cardinality / 通用查询引擎。
+
+## 设计血统（外部先例 2026-09 调研固化）
+
+孤立/孤儿检测在不同生态各有语义深度，本层取通用图面而非逐语言 RTA：
+
+| 生态先例 | 语义 | 本层映射 |
+|---|---|---|
+| Rust `dead_code`（cargo check "never used"） | decl 级零入度，`pub` 面豁免 | `isolated`/`covered` 族 + `surface` 标记 |
+| Go `deadcode`（RTA 全程序） + staticcheck U1000 | roots→可达集；`-whylive` 证人链 | 候审 `reachable` 消费方的语义参考：roots 声明+可达集+解释链 |
+| JS/TS knip | **入口点注册表驱动**——漏一个入口=整片假孤儿 | docrole 推断/exemptions 即入口声明面；fidelity 戳记≈其 configuration hints |
+| Python vulture 等 | 静态近似+置信度 | 前端候审 |
+
+结论：垂直生态工具在语言内更深，但跨介质边（文档/manifest/gitignore/boundary）只有本层能连。reachable 实现时先回看此表。
