@@ -31,8 +31,8 @@ domains:
 # 词表注册（fail-closed 防线）：规则引用的边/族/键须先在此或内建集注册
 manifest:
   node_kinds: [file, dir, decl]
-  edge_kinds: [import, link, docref, mention, declare, export]
-  extra_keys: [to, dead, external, mechanism, shape, docrole, surface, source, mtime, comment, until, negated, symbol, ambiguous, candidates]
+  edge_kinds: [import, link, docref, mention, declare, export, ref]
+  extra_keys: [to, dead, external, mechanism, shape, docrole, surface, source, mtime, comment, until, negated, symbol, ambiguous, candidates, cfg, role]
   families: [forbidden, allowed, required, covered, isolated, parity, attrs]
   extractors: [walk@1, ast-grep, line-regex@1, markdown@1, git-check-ignore@1]
   find_levels: [error, warn, note]

@@ -60,6 +60,18 @@
 - 刻意孤立不立顶层 exempt 字段——统一为 `declare` 边 `extra.source:exempt` 子型
 - `unique` 族 / n-way keyed parity / cardinality 谓词 / `reachable`/`diff` 生产器——候审，无第二消费方不进
 
+## schema v1.2 词表增量（2026-09-30 采纳，additive 不 bump v）
+
+| 位 | 新增值 | 语义 |
+|---|---|---|
+| 边 kind | `ref` | 代码内符号引用边（单元到符号被引处；`extra.role` 分 read/write/call/def）。SCIP `Occurrence.symbol_roles` 血缘。**词表登记先行——生产器与断言面候审**（最小消费方=IV8 `op_*`/registry parity dogfood） |
+| extra 子键 | `role` | ref 边角色：`read`/`write`/`call`/`def`（SCIP SymbolRole 简化映射） |
+| extra 子键 | `cfg` | Rust `#[cfg]` 条件编译标记——不求值只标记存在性，区分"条件缺席"与真死链（rust.mjs 已产，含内联 mod 传递） |
+
+`ref` 与 `import` 的分层纪律：`import` 是文件/模块边（unit=file），
+`ref` 是符号位边（unit=file#symbol，指向符号级证物）——引用关系不许
+降格成模块边，否则 parity dogfood 的 op 粒度对账无从落地。
+
 ## 协议规范形（v1.1 核心）
 
 一切规则子句归约为一条规范形：
