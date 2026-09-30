@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // 消费层编排者：facts 一次提取 → 多消费方分发 → 归并输出
 // 用法: node run-boundary.mjs [--root R] [--rules R.yaml|R.json] [--facts F.jsonl]
+//        [--facts-extra E.jsonl[,E2…]] （外部适配器事实并入——语义档证据源通道）
 //        [--phase staged|ci|manual] [--staged-units a,b] [--only id,...]
 //        [--apply] [--json] [--keep-facts] [--allow-degraded]
 // 消费方协议 v1（临时稿）:
@@ -46,6 +47,7 @@ function parseArgs(argv) {
     if (k === '--root') a.root = path.resolve(take());
     else if (k === '--rules') a.rules = take();
     else if (k === '--facts') a.facts = take();
+    else if (k === '--facts-extra') a.factsExtra = take().split(',').filter(Boolean);
     else if (k === '--phase') a.phase = take();
     else if (k === '--staged-units') a.staged = take().split(',').filter(Boolean);
     else if (k === '--only') a.only = take().split(',').filter(Boolean);
@@ -130,6 +132,22 @@ if (!factsPath) {
   if (r.error || r.status !== 0) die(`facts 提取失败: ${r.stderr || r.error?.message}`, 3);
   factsPath = tmpFacts;
   console.error((r.stdout || '').trim());
+}
+
+// 外部事实归并口（ADR-0010 生产者侧中/重档）：scip/cargo/rustdoc 适配器
+// 产物以同一份 JSONL 契约并入——fidelity/extra.producer 自行带出身戳。
+// 不改写源文件：--facts 给的是用户文件时也并到新 tmp 副本。
+if (A.factsExtra?.length) {
+  let merged = fs.readFileSync(factsPath, 'utf8');
+  for (const extra of A.factsExtra) {
+    const p = path.resolve(extra);
+    if (!fs.existsSync(p)) die(`--facts-extra 不存在: ${p}`);
+    const chunk = fs.readFileSync(p, 'utf8');
+    merged += (merged.length && !merged.endsWith('\n') ? '\n' : '') + chunk;
+  }
+  const mergedPath = path.join(os.tmpdir(), `mb-facts-merged-${process.pid}.jsonl`);
+  fs.writeFileSync(mergedPath, merged);
+  factsPath = mergedPath;
 }
 
 // 调度：evaluator 恒在（除非 --only 排除），其余按 consumers 段 + phase 过滤

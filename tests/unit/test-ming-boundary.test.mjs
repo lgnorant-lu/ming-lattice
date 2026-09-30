@@ -97,6 +97,26 @@ export async function run() {
       'import { K } from \'./b.mjs\';',
       'export function tsTop(): number { return K; }',
     ].join('\n'));
+    // v1.2 Rust 语法级面（ADR-0010 syntactic 档：crate/self/super/外部 crate 四分 + mod 解析）
+    wfile('crates/demo/src/lib.rs', [
+      'mod dom;',
+      'mod util { use super::Hidden; pub fn inner() {} }',
+      'pub use crate::dom::Elem;',
+      'use crate::net::fetch;',
+      'use std::collections::HashMap;',
+      'use crate::gone::Thing;',
+      'pub fn lib_entry() -> i32 { 1 }',
+      'struct Hidden { f: u8 }',
+      'pub(crate) fn helper() {}',
+      'macro_rules! shout { () => {} }',
+    ].join('\n'));
+    wfile('crates/demo/src/dom.rs',
+      'mod sub;\npub struct Elem;\nimpl Elem { pub fn new() -> Elem { Elem } }\nfn private() {}\n');
+    wfile('crates/demo/src/dom/sub.rs', 'use super::Elem;\nuse crate::net::fetch;\n');
+    wfile('crates/demo/src/net.rs', 'pub fn fetch() {}\n');
+    // tests/<file>.rs 各自是独立 crate 根：mod common; 找兄弟 tests/common/
+    wfile('crates/demo/tests/common/mod.rs', 'pub fn helper() {}\n');
+    wfile('crates/demo/tests/probe_x.rs', 'mod common;\nuse common::helper;\n');
     wfile('scripts/tool.ps1', 'function Invoke-Thing { }\n. .\\lib\\helper.ps1\n');
     wfile('docs/note.md', '# md\n');
     // v1.1 文档面：README/docref/mention/docrole 载体
@@ -180,6 +200,60 @@ export async function run() {
       'ps1 function 应以 regex-degraded 入图');
     assert.ok(at('scripts/tool.ps1', 'import').some((x) => x.extra?.mechanism === 'dot-source'),
       'ps1 dot-source 应产 import 边');
+    // Rust 语法级断言（syntactic 档）
+    const LIB = 'crates/demo/src/lib.rs';
+    const rimp = at(LIB, 'import');
+    const ri = (n) => rimp.find((x) => x.name === n);
+    // crate:: 最长前缀解析：use crate::dom::Elem → src/dom.rs（Elem 作成员）
+    assert.equal(ri('crate::dom::Elem')?.extra?.to, 'crates/demo/src/dom.rs',
+      'crate:: 路径应解析到 crate src/ 根');
+    assert.equal(ri('crate::dom::Elem')?.extra?.mechanism, 'rust-pub-use');
+    assert.equal(ri('crate::dom::Elem')?.scope, 'module');
+    // pub use 双发：import 边 + export 边
+    assert.ok(at(LIB, 'export').some((x) =>
+      x.extra?.mechanism === 'rust-pub-use' && x.extra?.to === 'crates/demo/src/dom.rs'),
+      'pub use 应产 export 边');
+    assert.equal(ri('crate::net::fetch')?.extra?.to, 'crates/demo/src/net.rs');
+    assert.equal(ri('std::collections::HashMap')?.scope, 'external',
+      '裸 ident 首段=外部 crate');
+    assert.ok(ri('crate::gone::Thing')?.extra?.dead, 'crate:: 死链应标 dead');
+    // mod 语义：mod dom; 产边+decl；内联 mod util {} 只有 decl
+    const modEdge = rimp.find((x) => x.extra?.mechanism === 'mod-decl');
+    assert.equal(modEdge?.name, 'dom');
+    assert.equal(modEdge?.extra?.to, 'crates/demo/src/dom.rs');
+    assert.ok(!rimp.some((x) => x.name === 'util'), '内联 mod {} 不应产依赖边');
+    const rdecl = at(LIB, 'decl');
+    assert.ok(rdecl.some((d) => d.name === 'lib_entry' && d.extra?.shape === 'fn' &&
+      d.extra?.surface === 'public'), 'pub fn 应 surface=public');
+    assert.ok(rdecl.some((d) => d.name === 'Hidden' && d.extra?.shape === 'struct' &&
+      d.extra?.surface === 'internal'), '非 pub struct 应 internal');
+    assert.ok(rdecl.some((d) => d.name === 'helper' && d.extra?.surface === 'internal'),
+      'pub(crate) 限域应 internal');
+    assert.ok(rdecl.some((d) => d.name === 'shout' && d.extra?.shape === 'macro'),
+      'macro_rules! 应产 shape=macro decl');
+    assert.ok(rdecl.some((d) => d.name === 'dom' && d.extra?.shape === 'mod'));
+    assert.ok(at('crates/demo/src/dom.rs', 'decl')
+      .some((d) => d.name === 'new'), 'impl 内方法应入图');
+    // super:: 语义：具名文件 foo.rs 的孩子目录=dir/foo（非 dir 本身）——
+    // dom/sub.rs 里 super:: 应落 dom.rs 命名空间而非 src/（曾误上溯一层的回归钉）
+    const SUB = 'crates/demo/src/dom/sub.rs';
+    assert.equal(at(SUB, 'import').find((x) => x.name === 'super::Elem')
+      ?.extra?.to, 'crates/demo/src/dom.rs', 'super:: 应落父模块孩子目录');
+    assert.equal(at('crates/demo/src/dom.rs', 'import')
+      .find((x) => x.extra?.mechanism === 'mod-decl')?.extra?.to,
+      'crates/demo/src/dom/sub.rs', '具名文件 mod-decl 应解析进 dir/stem/');
+    // 内联 mod 深度：mod util {} 里的 super::Hidden 应回文件模块层（lib.rs 自身）
+    assert.equal(ri('super::Hidden')?.extra?.to, 'crates/demo/src/lib.rs',
+      '内联 mod 内 super:: 应先扣内联深度再出文件模块层');
+    // tests/<file>.rs 是 crate 根：mod common; → 兄弟 tests/common/mod.rs；
+    // use common::helper 首段经文件级 mod 声明识别为本地模块（非 external）
+    const T = 'crates/demo/tests/probe_x.rs';
+    assert.equal(at(T, 'import').find((x) => x.extra?.mechanism === 'mod-decl')
+      ?.extra?.to, 'crates/demo/tests/common/mod.rs',
+      'tests/ crate 根的 mod-decl 应找兄弟目录');
+    const cuse = at(T, 'import').find((x) => x.name === 'common::helper');
+    assert.equal(cuse?.scope, 'module', '本地 mod 声明过的首段不标 external');
+    assert.equal(cuse?.extra?.to, 'crates/demo/tests/common/mod.rs');
     // junction: link 事实且不穿透（deployable/d1/x 下无文件事实）
     if (junctionOk) {
       const lk = at('deployable/d1/x', 'link');
