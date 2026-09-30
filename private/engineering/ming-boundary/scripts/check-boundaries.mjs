@@ -51,7 +51,10 @@ function loadRules(p) {
 // ---------- schema 校验（fail-closed：未知键/缺字段直接拒） ----------
 const KNOWN_TOP = new Set(
   ['version', 'domains', 'rules', 'meta', 'manifest', 'exemptions',
-   'consumers', 'extends']);   // consumers=消费方调度(run-boundary 读); extends=预设留位(候审)
+   'consumers', 'extends', 'producers']);
+  // consumers=消费方调度(run-boundary 读); extends=预设留位(候审)
+  // producers=契约自带生产器规格（ref 边机制形状，run-boundary 经
+  //   --emit-spec 喂回 extract——kit 不内嵌采纳仓私有机制词表）
 const KNOWN_RULE = new Set(
   ['forbidden', 'allowed', 'required', 'covered', 'isolated', 'parity', 'attrs']);
 const KNOWN_CLAUSE = new Set([
@@ -59,6 +62,7 @@ const KNOWN_CLAUSE = new Set([
   'from', 'to', 'via', 'units_in', 'needs', 'to_in', 'from_in', // 边量化参数
   'of_kind', 'exempt',                                        // 单元集过滤/豁免
   'declared', 'observed_units_in', 'observed_kind',           // parity 集对账
+  'declared_from', 'observed_from', 'direction',              // parity v1.4：边派生集
   'name_match', 'name_not_match',                             // attrs 见证
 ]);
 const KNOWN_MANIFEST = new Set(
@@ -120,7 +124,42 @@ function validateRules(rules) {
         for (const v of c[k] || [])
           if (!edgeKinds.has(v))
             die(`rules.${fam}[${c.name}] ${k} 引用未注册边 kind: ${v}`, 3);
+      // parity 边派生集选择子：{kind, mechanism, units_in, name} 已知键；
+      // direction 词表；declared_from/observed_from 须与 declared/
+      // observed_* 互斥（同一条 parity 不混两种集源）
+      for (const sk of ['declared_from', 'observed_from']) {
+        if (c[sk] == null) continue;
+        if (typeof c[sk] !== 'object')
+          die(`rules.${fam}[${c.name}] ${sk} 须为选择子对象`, 3);
+        for (const k of Object.keys(c[sk]))
+          if (!['kind', 'mechanism', 'units_in', 'name'].includes(k))
+            die(`rules.${fam}[${c.name}] ${sk} 未知键: ${k}`, 3);
+      }
+      if (c.declared_from && c.declared)
+        die(`rules.${fam}[${c.name}] declared_from 与 declared 互斥`, 3);
+      if (c.observed_from && (c.observed_units_in || c.observed_kind))
+        die(`rules.${fam}[${c.name}] observed_from 与 observed_units_in/kind 互斥`, 3);
+      if (c.direction != null &&
+          !['both', 'missing-only', 'undeclared-only'].includes(c.direction))
+        die(`rules.${fam}[${c.name}] direction 须∈both|missing-only|undeclared-only`, 3);
     }
+  }
+
+  // producers：契约自带生产器规格（ref 边机制形状）——形状 fail-closed，
+  // 语义校验在 extract 侧（callee regex 合法性、lang 支持面）
+  const prod = rules.producers || {};
+  for (const k of Object.keys(prod))
+    if (!['ref'].includes(k)) die(`producers 未知键: ${k}`, 3);
+  for (const [i, s] of (prod.ref || []).entries()) {
+    if (typeof s !== 'object' || s === null)
+      die(`producers.ref[${i}] 非对象`, 3);
+    for (const k of Object.keys(s))
+      if (!['lang', 'callee', 'mechanism', 'role', 'name_args',
+            'symbol_arg', 'for_expand', 'units_in'].includes(k))
+        die(`producers.ref[${i}] 未知键: ${k}`, 3);
+    if (!s.lang || !s.callee || !s.mechanism || !s.role ||
+        !Array.isArray(s.name_args))
+      die(`producers.ref[${i}] 缺必备键 lang/callee/mechanism/role/name_args`, 3);
   }
   return rules;
 }
@@ -315,31 +354,65 @@ function evaluate(facts, rules, stagedOnly) {
     }
 
     // parity：declared ⟺ observed 集对账（P 形：双向差集各产违规）
+    // v1.4 扩展：declared_from/observed_from 边派生集（选择子
+    //   {kind, mechanism, units_in} 收匹配事实的 name 入集——ops-register
+    //   ⟺ ops-dispatch 这类符号对集的源是边不是单元）；
+    //   direction: both(默认双向)|missing-only(只报 declared⊄observed)|
+    //              undeclared-only(只报 observed⊄declared)
     for (const c of R.parity || []) {
-      const declared = new Set([].concat(c.declared || []));
-      const observed = new Set();
-      for (const u of subjects.values()) {
-        if (c.observed_kind && u.kind !== c.observed_kind) continue;
-        if (c.observed_units_in &&
-            ![].concat(c.observed_units_in)
-              .some((p) => globMatch(unitFile(u.unit), p) || globMatch(u.unit, p)))
-          continue;
-        observed.add(u.unit);
+      // collect 返回 Map(name→首个命中源文件)——违规 file 锚回事实源文件，
+      // 豁免既能按名字 glob（'Zeta.*'）也能按源文件 glob（'crates/*/tests/**'）
+      const collect = (sel) => {
+        const m = new Map();
+        if (!sel) return null;
+        for (const f of facts) {
+          if (sel.kind && f.kind !== sel.kind) continue;
+          if (sel.mechanism && f.extra?.mechanism !== sel.mechanism) continue;
+          if (sel.units_in && ![].concat(sel.units_in)
+            .some((p) => globMatch(f.file, p))) continue;
+          if (sel.name && !m.has(f.name)) m.set(f.name, f.file);
+        }
+        return m;
+      };
+      const declared = c.declared_from ? collect(c.declared_from)
+        : new Map([].concat(c.declared || []).map((d) => [d, unitFile(d)]));
+      let observed = null;
+      if (c.observed_from) {
+        observed = collect(c.observed_from);
+      } else {
+        observed = new Map();
+        for (const u of subjects.values()) {
+          if (c.observed_kind && u.kind !== c.observed_kind) continue;
+          if (c.observed_units_in &&
+              ![].concat(c.observed_units_in)
+                .some((p) => globMatch(unitFile(u.unit), p) || globMatch(u.unit, p)))
+            continue;
+          observed.set(u.unit, unitFile(u.unit));
+        }
       }
-      for (const d of [...declared].sort())
-        if (!observed.has(d) &&
-            !exemptGlobs.some((g) => g && (globMatch(d, g) || globMatch(unitFile(d), g))))
-          violations.push({ file: d, unit: d, kind: 'parity',
-            rule: `parity:${c.name}:missing`, severity: sev(c),
-            expect: '声明的单元在观察集存在', observed: '缺失',
-            fix: '补齐实现或从声明集移除该条目' });
-      for (const o of [...observed].sort())
-        if (!declared.has(o) &&
-            !exemptGlobs.some((g) => g && (globMatch(o, g) || globMatch(unitFile(o), g))))
-          violations.push({ file: unitFile(o), unit: o, kind: 'parity',
-            rule: `parity:${c.name}:undeclared`, severity: sev(c),
-            expect: '观察到的单元在声明集登记', observed: '未声明',
-            fix: '登记进声明集（registry/索引），或移除该单元' });
+      // 规则级 c.exempt 优先于全局——parity 的名豁免（'UNRESOLVED.*'）若进
+      // 全局会污染其他规则面；两表都支持名 glob 与源文件 glob 双通道
+      const exempt = (name, file) =>
+        [...(c.exempt || []), ...exemptGlobs].some((g) => g &&
+          (globMatch(name, g) || globMatch(unitFile(name), g) ||
+           (file && globMatch(file, g))));
+      // direction 语义：missing-only=只报 declared∉observed；
+      // undeclared-only=只报 observed∉declared；both=双向全报
+      const dir = c.direction || 'both';
+      if (dir !== 'undeclared-only')
+        for (const [d, f0] of [...declared].sort(([a], [b]) => a < b ? -1 : a > b))
+          if (!observed.has(d) && !exempt(d, f0))
+            violations.push({ file: f0 || d, unit: d, kind: 'parity',
+              rule: `parity:${c.name}:missing`, severity: sev(c),
+              expect: '声明的单元在观察集存在', observed: '缺失',
+              fix: '补齐实现或从声明集移除该条目' });
+      if (dir !== 'missing-only')
+        for (const [o, f0] of [...observed].sort(([a], [b]) => a < b ? -1 : a > b))
+          if (!declared.has(o) && !exempt(o, f0))
+            violations.push({ file: f0 || unitFile(o), unit: o, kind: 'parity',
+              rule: `parity:${c.name}:undeclared`, severity: sev(c),
+              expect: '观察到的单元在声明集登记', observed: '未声明',
+              fix: '登记进声明集（registry/索引），或移除该单元' });
     }
   }
 

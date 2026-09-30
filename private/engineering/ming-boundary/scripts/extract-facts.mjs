@@ -116,7 +116,7 @@ function die(msg, code = 2) {
 function parseArgs(argv) {
   const a = { root: REPO_ROOT, out: null, allowDegraded: false,
               extractDirs: null, contentScan: true, files: null,
-              mdScan: true, ignoreScan: true };
+              mdScan: true, ignoreScan: true, emitSpec: null };
   for (let i = 2; i < argv.length; i++) {
     const k = argv[i];
     const take = () => argv[++i] ?? die(`${k} 缺参数`);
@@ -128,6 +128,7 @@ function parseArgs(argv) {
     else if (k === '--no-ignore-scan') a.ignoreScan = false;
     else if (k === '--extract-dirs') a.extractDirs = take().split(',').filter(Boolean);
     else if (k === '--files') a.files = take().split(',').filter(Boolean);
+    else if (k === '--emit-spec') a.emitSpec = take();
     else die(`未知旗标: ${k}`);
   }
   return a;
@@ -255,6 +256,37 @@ function main() {
   const a = parseArgs(process.argv);
   const root = a.root;
   if (!fs.existsSync(root)) die(`--root 不存在: ${root}`);
+
+  // --emit-spec：契约 producers 段注入（JSON，run-boundary 从 boundaries.yaml
+  // 的 producers.ref 转出）。fail-closed 校验每条 spec 必备键——畸形规格
+  // 带病跑会静默漏规则。
+  const emitSpec = a.emitSpec ? (() => {
+    let s;
+    try { s = JSON.parse(fs.readFileSync(path.resolve(a.emitSpec), 'utf8')); }
+    catch (e) { die(`--emit-spec 不可读/非 JSON: ${a.emitSpec} (${e.message})`, 3); }
+    const rs = s?.ref || [];
+    for (const [i, spec] of rs.entries()) {
+      if (spec.lang !== 'rust')
+        die(`--emit-spec ref[${i}]: 未支持 lang '${spec.lang}'（目前只认 rust）`, 3);
+      if (typeof spec.callee !== 'string' || !spec.callee)
+        die(`--emit-spec ref[${i}]: callee regex 缺失`, 3);
+      try { new RegExp(spec.callee); }
+      catch { die(`--emit-spec ref[${i}]: callee 非合法 regex`, 3); }
+      if (typeof spec.mechanism !== 'string' || !spec.mechanism)
+        die(`--emit-spec ref[${i}]: mechanism 缺失`, 3);
+      if (typeof spec.role !== 'string' || !spec.role)
+        die(`--emit-spec ref[${i}]: role 缺失`, 3);
+      if (!Array.isArray(spec.name_args) ||
+          !spec.name_args.every((x) => Number.isInteger(x)))
+        die(`--emit-spec ref[${i}]: name_args 必须是整数数组`, 3);
+      for (const k of Object.keys(spec))
+        if (!['lang', 'callee', 'mechanism', 'role', 'name_args',
+              'symbol_arg', 'for_expand', 'units_in'].includes(k))
+          die(`--emit-spec ref[${i}]: 未知键 '${k}'`, 3);
+    }
+    return { ref: rs };
+  })() : null;
+  const rustRefSpecs = emitSpec?.ref || null;
 
   const files = [], links = [], dirs = [];
   if (a.files) {
@@ -406,12 +438,26 @@ function main() {
       const degraded = new Set();
       for (const [bucket, rules] of
         [[jsFiles, AST_RULES], [tsFiles, AST_RULES_TS], [tsxFiles, AST_RULES_TSX],
-         [rsFiles, rustLang.rules], [pyFiles, pythonLang.rules],
-         [shFiles, shLang.rules]]) {
+         [rsFiles, rustLang.rulesFor(rustRefSpecs)],
+         [pyFiles, pythonLang.rules], [shFiles, shLang.rules]]) {
         if (!bucket.length) continue;
         const r = runAstGrep(sg.bin, bucket.map((f) => path.join(root, f.rel)), rules);
         matches.push(...r.matches);
         for (const d of r.degraded) degraded.add(d);
+      }
+      // ast-grep 第三种失败模式（2026-09-30 实证）：>~8MB 文件静默产零匹配
+      // （exit 0、无 stderr——20MB 的 IV8 web_apis.rs 曾整体消失）。零匹配
+      // 超大件降级判 degraded 走 regex 兜底；env 阈值可注（测试用 1KB 探针）
+      const AST_MAX = Number(process.env.MB_AST_MAX_BYTES) || 8388608;
+      {
+        const matched = new Set(matches.map((m) => path.resolve(m.file)));
+        for (const f of astFiles) {
+          const abs = path.resolve(root, f.rel);
+          if (degraded.has(abs) || matched.has(abs)) continue;
+          try {
+            if (fs.statSync(abs).size > AST_MAX) degraded.add(abs);
+          } catch {}
+        }
       }
       const byFile = new Map();
       for (const m of matches) {
@@ -496,7 +542,7 @@ function main() {
             }
           } else if (rustLang.handles(id)) {
             rustLang.handle(id, m, { root, rel, extractor: astId,
-              out: facts, prepared: rustPrepared });
+              out: facts, prepared: rustPrepared, ref: rustRefSpecs });
           } else if (pythonLang.handles(id)) {
             pythonLang.handle(id, m, { root, rel, extractor: astId,
               out: facts, prepared: pyPrepared, run: pyRun });
@@ -521,7 +567,7 @@ function main() {
         for (const f of astFiles) {
           if (rels.has(f.rel))
             facts.push(...(RUST_EXT.has(f.ext)
-              ? rustLang.regexFacts(root, f.rel, regId)
+              ? rustLang.regexFacts(root, f.rel, regId, rustRefSpecs)
               : PY_EXT.has(f.ext)
                 ? pythonLang.regexFacts(root, f.rel, regId)
                 : SH_EXT.has(f.ext)
@@ -534,7 +580,7 @@ function main() {
     } else if (astFiles.length && a.allowDegraded) {
       for (const f of astFiles)
         facts.push(...(RUST_EXT.has(f.ext)
-          ? rustLang.regexFacts(root, f.rel, regId)
+          ? rustLang.regexFacts(root, f.rel, regId, rustRefSpecs)
           : PY_EXT.has(f.ext)
             ? pythonLang.regexFacts(root, f.rel, regId)
             : SH_EXT.has(f.ext)

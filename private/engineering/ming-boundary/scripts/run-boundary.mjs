@@ -114,7 +114,7 @@ const contract = fs.existsSync(rulesPath) ? loadRules(rulesPath, A.root) : null;
 if (!contract && !A.facts) die(`无规则文件且未给 --facts: ${rulesPath}`);
 
 // 提取一次（--facts 提供则跳过）
-let factsPath = A.facts, tmpFacts = null;
+let factsPath = A.facts, tmpFacts = null, tmpSpec = null;
 if (!factsPath) {
   tmpFacts = path.join(os.tmpdir(), `mb-facts-${process.pid}.jsonl`);
   const exArgv = [EXTRACT, '--root', A.root, '--out', tmpFacts];
@@ -123,6 +123,13 @@ if (!factsPath) {
     exArgv.push('--files', A.staged.join(','));
   // hook 语境允许 regex 降级（ast-grep 缺席仓也该有门而不是罢工）
   if (A.allowDegraded) exArgv.push('--allow-degraded');
+  // 契约自带 producers.ref 条款 → 转 JSON 规格喂 extract（机制词表住采纳仓
+  // 契约里，kit 不内嵌 ops-register 这类私有词——生产/消费职责分离）
+  if (contract?.producers?.ref?.length) {
+    tmpSpec = path.join(os.tmpdir(), `mb-spec-${process.pid}.json`);
+    fs.writeFileSync(tmpSpec, JSON.stringify({ ref: contract.producers.ref }));
+    exArgv.push('--emit-spec', tmpSpec);
+  }
   const r = spawnSync(process.execPath, exArgv,
     { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'], timeout: 600_000 });
   if (r.error || r.status !== 0) die(`facts 提取失败: ${r.stderr || r.error?.message}`, 3);
@@ -251,6 +258,7 @@ findings.sort((a, b) => (a.unit || '').localeCompare(b.unit || '')
   || (a.line || 0) - (b.line || 0) || (a.rule || '').localeCompare(b.rule || ''));
 
 if (tmpFacts && !A.keep) fs.rmSync(tmpFacts, { force: true });
+if (tmpSpec && !A.keep) fs.rmSync(tmpSpec, { force: true });
 const hasErr = findings.some(f => f.severity === 'error') || errors.length > 0;
 if (A.json) console.log(JSON.stringify({ findings, reports, warnings, errors }, null, 1));
 else {

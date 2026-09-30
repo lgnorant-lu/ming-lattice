@@ -64,7 +64,7 @@
 
 | 位 | 新增值 | 语义 |
 |---|---|---|
-| 边 kind | `ref` | 代码内符号引用边（单元到符号被引处；`extra.role` 分 read/write/call/def）。SCIP `Occurrence.symbol_roles` 血缘。**词表登记先行——生产器与断言面候审**（最小消费方=IV8 `op_*`/registry parity dogfood） |
+| 边 kind | `ref` | 代码内符号引用边（单元到符号被引处；`extra.role` 分 read/write/call/def）。SCIP `Occurrence.symbol_roles` 血缘。**生产器已入场**（v1.4：`producers.ref` 契约自带 callee/参数位/for 展开规格，IV8 ops parity dogfood 实证） |
 | extra 子键 | `role` | ref 边角色：`read`/`write`/`call`/`def`（SCIP SymbolRole 简化映射） |
 | extra 子键 | `cfg` | Rust `#[cfg]` 条件编译标记——不求值只标记存在性，区分"条件缺席"与真死链（rust.mjs 已产，含内联 mod 传递） |
 

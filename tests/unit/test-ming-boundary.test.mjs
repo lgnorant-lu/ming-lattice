@@ -1079,7 +1079,213 @@ export async function run() {
         'exemptions 每项应带 glob+why');
     }
 
-    console.log('  15 组断言全过');
+    // ---------- 组 16: ref 生产器（emit-spec）+ parity 边派生集 ----------
+    // ops-register ⟺ ops-dispatch 对账的两侧：register(iface,"m",op) 实参
+    // 字面量/for 循环展开/argc·stub 变体/动态 ident → `?.` unresolved
+    if (hasSg) {
+      const R4 = path.join(tmpRoot, 'repo-ref');
+      const w4 = (rel, text) => {
+        const p = path.join(R4, rel);
+        fs.mkdirSync(path.dirname(p), { recursive: true });
+        fs.writeFileSync(p, text, 'utf8');
+      };
+      w4('gen/api.rs',
+        'extern "C" fn a() {\n' +
+        '  ops::dispatch_promise("Cache", "match", scope, &__args, __SIG, &mut rv)\n' +
+        '}\n' +
+        'extern "C" fn b() { ops::dispatch("Element", "before", scope) }\n' +
+        'fn helper() { unrelated_call("x", "y"); }\n');
+      w4('native/ops_impl.rs',
+        'fn install() {\n' +
+        '  for iface in ["Element", "CharacterData", "DocumentType"] {\n' +
+        '    ops::register(iface, "before", op_before);\n' +
+        '    ops::register(iface, "remove", op_remove);\n' +
+        '  }\n' +
+        '  ops::register("Cache", "match", op_cache_match);\n' +
+        '  ops::register_argc("Window", "close", op_close);\n' +
+        '  ops::register_stub("Window", "focus");\n' +
+        '  ops::register(dynamic_iface(), "weird", op_w);\n' +
+        '  register("NotOps", "localfn", other);\n' +  // 裸 register=mixin_ops 真形态
+        '  for (member, op) in [("rate#get", f1), ("time#get", f2)] {\n' +
+        '    ops::register("Ctx", member, op);\n' +
+        '  }\n' +
+        '}\n');
+      const specF = path.join(tmpRoot, 'refspec.json');
+      fs.writeFileSync(specF, JSON.stringify({ ref: [
+        { lang: 'rust', callee: '^dispatch(_\\w+)?$', mechanism: 'ops-dispatch',
+          role: 'slot', name_args: [0, 1], units_in: 'gen/**' },
+        { lang: 'rust', callee: '^register(_argc|_stub)?$', mechanism: 'ops-register',
+          role: 'register', name_args: [0, 1], symbol_arg: [2, 3],
+          for_expand: [0, 1] },
+      ] }));
+      const er = runNode([EXTRACT, '--root', R4, '--emit-spec', specF,
+        '--no-md-scan', '--no-ignore-scan']);
+      assert.equal(er.status, 0, `emit-spec 抽取应过: ${er.stderr}`);
+      const refs = parseJsonl(er.stdout).filter((x) => x.kind === 'ref');
+      const disp = new Set(refs.filter((x) => x.extra?.mechanism === 'ops-dispatch')
+        .map((x) => x.name));
+      const reg = refs.filter((x) => x.extra?.mechanism === 'ops-register');
+      assert.deepEqual([...disp].sort(), ['Cache.match', 'Element.before'],
+        'dispatch 槽位集应收齐两个字面量对');
+      const regNames = reg.map((x) => x.name).sort();
+      assert.deepEqual(regNames, [
+        'Cache.match', 'CharacterData.before', 'CharacterData.remove',
+        'Ctx.rate#get', 'Ctx.time#get',
+        'DocumentType.before', 'DocumentType.remove', 'Element.before',
+        'Element.remove', 'NotOps.localfn', 'UNRESOLVED.weird',
+        'Window.close', 'Window.focus',
+      ],
+        'register 集应收齐：for 展开 6 + 元组解构 2 + 字面量 + argc/stub + 裸 register + 动态');
+      // for 循环展开：Element.before 的注册端 unit 应带 op symbol
+      const eb = reg.find((x) => x.name === 'Element.before');
+      assert.ok(eb && eb.unit === 'native/ops_impl.rs#op_before'
+        && eb.extra.symbol === 'op_before' && eb.extra.role === 'register',
+        'for 展开的注册位应带 unit#symbol 与 role');
+      // register_stub 无 symbol_arg → unit 退文件级
+      const wf = reg.find((x) => x.name === 'Window.focus');
+      assert.ok(wf && wf.unit === 'native/ops_impl.rs' && !wf.extra.symbol,
+        'register_stub 无 symbol 应退文件级 unit');
+      // 动态 iface → UNRESOLVED 段 + unresolved（parity 翻出或豁免登记）
+      const dyn = reg.find((x) => x.name === 'UNRESOLVED.weird');
+      assert.ok(dyn && dyn.scope === 'unresolved',
+        '动态注册应产 UNRESOLVED.member + unresolved');
+      // 负样本：unrelated_call 不收
+      assert.ok(!refs.some((x) => x.name === 'x.y'),
+        '非 callee 匹配的调用不应产 ref');
+      // units_in 剪枝：dispatch spec 只认 gen/**——native 侧若有 dispatch 不收
+      assert.ok(refs.every((x) => x.extra?.mechanism !== 'ops-dispatch'
+        || x.file.startsWith('gen/')), 'dispatch spec 的 units_in 应剪枝');
+      // fidelity/scope 戳
+      assert.ok(refs.every((x) => x.fidelity === 'syntactic'),
+        'ref 事实应带 syntactic 戳');
+
+      // 超大件静默跳过兜底（两测点）：
+      // (a) regexFacts 层——直接喂规格，断言字面量 dispatch 产
+      //     regex-degraded ref 且 ident 参数产 UNRESOLVED 段
+      const { regexFacts } = await import(
+        '../../private/engineering/ming-boundary/scripts/lib/langs/rust.mjs');
+      const rf = regexFacts(R4, 'gen/api.rs', 'line-regex@1',
+        JSON.parse(fs.readFileSync(specF, 'utf8')).ref);
+      const rfNames = rf.filter((x) => x.kind === 'ref').map((x) => x.name);
+      assert.ok(rfNames.includes('Cache.match') && rfNames.includes('Element.before'),
+        'regexFacts 应收字面量 dispatch 槽位');
+      assert.ok(rf.every((x) => x.fidelity === 'regex-degraded'),
+        'regexFacts 产出应全部标 regex-degraded');
+      // (b) 探测层——零匹配+超限件应进 degraded 面（stderr 降级日志点名）
+      w4('gen/zeros.rs', '// ' + 'x'.repeat(2100) + '\n');
+      const er2 = runNode([EXTRACT, '--root', R4, '--emit-spec', specF,
+        '--no-md-scan', '--no-ignore-scan'], { MB_AST_MAX_BYTES: '2000' });
+      assert.equal(er2.status, 0, `巨件降级抽取应过: ${er2.stderr}`);
+      assert.ok(er2.stderr.includes('ast-grep 失败') ||
+        er2.stderr.includes('zeros.rs'),
+        '零匹配超限件应报 degraded 降级');
+
+      // emit-spec fail-closed：坏 JSON / 未知 lang / 缺必备键 → exit 3
+      const badSpec = (o) => {
+        const p = path.join(tmpRoot, `spec${Math.random().toString(36).slice(2)}.json`);
+        fs.writeFileSync(p, JSON.stringify(o)); return p;
+      };
+      const badJson = path.join(tmpRoot, 'spec-bad.json');
+      fs.writeFileSync(badJson, '{not json');
+      for (const [label, p] of [
+        ['非 JSON', badJson],
+        ['未知 lang', badSpec({ ref: [{ lang: 'go', callee: 'x', mechanism: 'm',
+          role: 'r', name_args: [0] }] })],
+        ['缺 callee', badSpec({ ref: [{ lang: 'rust', mechanism: 'm',
+          role: 'r', name_args: [0] }] })],
+        ['未知键', badSpec({ ref: [{ lang: 'rust', callee: 'x', mechanism: 'm',
+          role: 'r', name_args: [0], nope: 1 }] })],
+      ]) {
+        const rb = runNode([EXTRACT, '--root', R4, '--emit-spec', p,
+          '--no-md-scan', '--no-ignore-scan']);
+        assert.equal(rb.status, 3, `emit-spec ${label} 应 fail-closed exit3`);
+      }
+
+      // parity 边派生集：declared_from/observed_from/direction 矩阵
+      const REF = (file, mech, name) =>
+        fact({ unit: file, kind: 'ref', name, file, fidelity: 'syntactic',
+          scope: 'module', extractor: 't@1', extra: { mechanism: mech } });
+      const factsR = path.join(tmpRoot, 'facts-ref.jsonl');
+      fs.writeFileSync(factsR, toJsonl([
+        REF('gen/a.rs', 'ops-dispatch', 'Cache.match'),
+        REF('gen/a.rs', 'ops-dispatch', 'Element.before'),
+        REF('gen/a.rs', 'ops-dispatch', 'Element.remove'),
+        REF('nat/o.rs', 'ops-register', 'Cache.match'),
+        REF('nat/o.rs', 'ops-register', 'Element.before'),
+        REF('nat/o.rs', 'ops-register', 'Window.close'),   // 无槽位 → undeclared
+        REF('nat/o.rs', 'other-mech', 'Noise.x'),          // 选择子滤掉
+      ]));
+      const mkR = (parityClauses, extra = {}) => {
+        const p = path.join(tmpRoot, `rr${Math.random().toString(36).slice(2)}.json`);
+        fs.writeFileSync(p, JSON.stringify({ version: 1,
+          domains: [{ name: 'all', match: '**' }],
+          manifest: { edge_kinds: ['ref'],
+            extra_keys: ['mechanism'] },
+          rules: { parity: parityClauses }, ...extra }));
+        return p;
+      };
+      // undeclared-only：只报 register∖dispatch
+      const vU = JSON.parse(runNode([CHECK, '--facts', factsR, '--json',
+        '--rules', mkR([{ name: 'p', declared_from: { kind: 'ref',
+          mechanism: 'ops-dispatch', name: true },
+          observed_from: { kind: 'ref', mechanism: 'ops-register', name: true },
+          direction: 'undeclared-only' }])]).stdout);
+      assert.ok(vU.violations.some((x) => x.rule === 'parity:p:undeclared'
+        && x.unit === 'Window.close'), '注册无槽位应产 undeclared');
+      assert.ok(!vU.violations.some((x) => x.rule === 'parity:p:missing'),
+        'undeclared-only 不应报 missing 侧');
+      assert.ok(!vU.violations.some((x) => x.unit === 'Noise.x'),
+        'mechanism 选择子应滤掉非本机制 ref');
+      // missing-only：只报 dispatch∖register（对账反向）
+      const vM = JSON.parse(runNode([CHECK, '--facts', factsR, '--json',
+        '--rules', mkR([{ name: 'p2', declared_from: { kind: 'ref',
+          mechanism: 'ops-dispatch', name: true },
+          observed_from: { kind: 'ref', mechanism: 'ops-register', name: true },
+          direction: 'missing-only' }])]).stdout);
+      assert.ok(vM.violations.some((x) => x.rule === 'parity:p2:missing'
+        && x.unit === 'Element.remove'), '槽位无注册应产 missing');
+      assert.ok(!vM.violations.some((x) => x.unit === 'Window.close'),
+        'missing-only 不应报 undeclared 侧');
+      // both 默认：双侧都报
+      const vB = JSON.parse(runNode([CHECK, '--facts', factsR, '--json',
+        '--rules', mkR([{ name: 'p3', declared_from: { kind: 'ref',
+          mechanism: 'ops-dispatch', name: true },
+          observed_from: { kind: 'ref', mechanism: 'ops-register', name: true } }])]).stdout);
+      assert.ok(vB.violations.some((x) => x.rule === 'parity:p3:missing')
+        && vB.violations.some((x) => x.rule === 'parity:p3:undeclared'),
+        'direction 缺省应双向全报');
+      // 规则级 exempt：parity 名豁免只作用本规则（UNRESOLVED 形态 +
+      //   Window.close 名豁免后 undeclared 应清零）
+      const vE = JSON.parse(runNode([CHECK, '--facts', factsR, '--json',
+        '--rules', mkR([{ name: 'p4', declared_from: { kind: 'ref',
+          mechanism: 'ops-dispatch', name: true },
+          observed_from: { kind: 'ref', mechanism: 'ops-register', name: true },
+          direction: 'undeclared-only',
+          exempt: ['Window.close', 'UNRESOLVED.*'] }])]).stdout);
+      assert.equal(vE.violations.filter((x) => x.rule === 'parity:p4:undeclared')
+        .length, 0, '规则级 exempt 应压掉 undeclared 全列');
+      // fail-closed：direction 非法值 / declared_from+declared 混用 /
+      //   选择子未知键 / producers 未知键 / ref spec 缺必备键
+      for (const [label, rr] of [
+        ['direction 非法', mkR([{ name: 'x', declared_from: { kind: 'ref' },
+          observed_from: { kind: 'ref' }, direction: 'sideways' }])],
+        ['declared 混用', mkR([{ name: 'x', declared: ['a'],
+          declared_from: { kind: 'ref' },
+          observed_from: { kind: 'ref' } }])],
+        ['选择子未知键', mkR([{ name: 'x', declared_from: { kind: 'ref',
+          bogus: 1 }, observed_from: { kind: 'ref' } }])],
+        ['producers 未知键', mkR([], { producers: { emit: [] } })],
+        ['spec 缺必备键', mkR([], { producers: { ref: [
+          { lang: 'rust', callee: 'x' }] } })],
+      ]) {
+        assert.equal(runNode([CHECK, '--facts', factsR, '--rules', rr]).status, 3,
+          `${label} 应 fail-closed exit3`);
+      }
+    } else {
+      console.log('    (跳过组16: ast-grep 不在位)');
+    }
+
+    console.log('  16 组断言全过');
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }

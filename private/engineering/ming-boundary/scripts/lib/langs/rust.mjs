@@ -10,7 +10,7 @@
 //   让消费方能区分"真死链"与"条件缺席"。
 import fs from 'node:fs';
 import path from 'node:path';
-import { fact } from '../facts.mjs';
+import { fact, globMatch } from '../facts.mjs';
 import { derived } from './rust.derived.mjs';
 
 export const exts = new Set(['.rs']);
@@ -46,6 +46,30 @@ rule:
 
 export const rules = EDGE_RULES + '\n---\n' + DECL_KINDS.map((d) =>
   `id: rust-decl-${d.kind}\nlanguage: Rust\nrule:\n  kind: ${d.kind}`).join('\n---\n');
+
+// ref 生产器规格驱动（v1.4）：契约自带 producers.ref 条款经 --emit-spec
+// 注入——每条 spec 生成一条 call_expression 规则（has+field+regex 粗滤
+// callee，handle 侧按 spec.callee 精确复核）。for_expand 条款存在时追加
+// for_expression 规则——`for v in ["A","B"]` 字面量数组可静态展开，
+// 包围 register(v,…) 的循环变量由此解析（语法层不模拟求值，仅展开
+// 字面量迭代域）。
+// spec = {callee, mechanism, role, name_args:[…], symbol_arg?, for_expand?}
+export function rulesFor(refSpecs) {
+  if (!refSpecs?.length) return rules;
+  const parts = [rules];
+  refSpecs.forEach((s, i) => {
+    // 粗滤 regex 作用在 function 字段全文（`ops::dispatch_x`）——spec.callee
+    // 的 `^` 锚剥掉换 `(?:^|::)` 前缀容忍；精确复核仍在 handle 按最终段做
+    let re = String(s.callee);
+    if (re.startsWith('^')) re = '(?:^|::)' + re.slice(1);
+    const pre = re.replace(/'/g, "''");
+    parts.push(`---\nid: rust-ref-${i}\nlanguage: Rust\nrule:\n` +
+      `  kind: call_expression\n  has:\n    field: function\n    regex: '${pre}'`);
+  });
+  if (refSpecs.some((s) => s.for_expand != null))
+    parts.push(`---\nid: rust-for\nlanguage: Rust\nrule:\n  kind: for_expression`);
+  return parts.join('\n');
+}
 
 // kind → 名称抽取 regex（降级路径与 ast 路径共用 shape 词表）
 const DECL_NAME_RE = {
@@ -203,6 +227,8 @@ function cfgGated(text, start) {
 
 // per-file 预处理：文件级 mod 声明名集 + 内联 mod 匹配（内联深度给 use 用）
 // + cfg 门集（被 #[cfg] 修饰的匹配起点 byteOffset 集合）
+// + for 循环字面量域（rust-for 规则在时——`for v in ["A","B"]` 的迭代变量
+//   → 字面量集 + byteRange，ref 生产器的循环变量静态展开面）
 export function prepare(ms) {
   const mods = new Set(ms.filter((x) => x.ruleId === 'rust-mod')
     .map((x) => (x.text.match(/mod\s+([A-Za-z_]\w*)/) || [])[1])
@@ -216,8 +242,93 @@ export function prepare(ms) {
       if (cfgGated(text, m.range.byteOffset.start))
         cfg.add(m.range.byteOffset.start);
   }
-  return { fileMods: mods, inline, cfg };
+  // for 循环字面量域：两种可静态展开形态——
+  //   for v in ["a","b"]            → {vars:{v:0} 单变量, items: 字面量表}
+  //   for (m, op) in [(lit, e),…]   → 元组解构：vars:{m:0, op:1}，
+  //                                   items 按位置取字面量列
+  // 非字面量迭代域（param table/iter 链等）不收——留给 UNRESOLVED 盲区语义
+  const forLoops = [];
+  for (const m of ms) {
+    if (m.ruleId !== 'rust-for') continue;
+    const fm = m.text.match(
+      /for\s+(\([^)]*\)|[A-Za-z_]\w*)\s+in\s+&?(?:mut\s+)?\[/);
+    if (!fm) continue;
+    const open = m.text.indexOf('[', fm.index + fm[0].length - 1);
+    const seg = m.text.slice(open + 1, m.text.lastIndexOf(']'));
+    const pat = fm[1].trim();
+    const vars = pat.startsWith('(')
+      ? Object.fromEntries(pat.slice(1, -1).split(',')
+          .map((v, i) => [v.trim(), i]).filter(([v]) => /^[A-Za-z_]\w*$/.test(v)))
+      : { [pat]: 0 };
+    const items = splitTop(seg).map((item) => {
+      const t = item.trim();
+      if (!pat.startsWith('(')) {
+        const lit = t.match(/^"([^"]*)"|^'([^']*)'/);
+        return lit ? (lit[1] ?? lit[2]) : null;
+      }
+      if (!t.startsWith('(')) return null;
+      const elems = splitTop(t.slice(1, t.lastIndexOf(')')));
+      return elems.map((e) => {
+        const lit = e.trim().match(/^"([^"]*)"|^'([^']*)'/);
+        return lit ? (lit[1] ?? lit[2]) : null;
+      });
+    });
+    if (items.length)
+      forLoops.push({ vars, items,
+        start: m.range.byteOffset.start, end: m.range.byteOffset.end });
+  }
+  return { fileMods: mods, inline, cfg, forLoops };
 }
+
+// 顶层逗号切分（括号/字符串感知）——callArgs 与 for 数组项共用
+function splitTop(inner) {
+  const out = [];
+  let depth = 0, cur = '', q = null;
+  for (let i = 0; i < inner.length; i++) {
+    const ch = inner[i];
+    if (q) {
+      cur += ch;
+      if (ch === '\\') { cur += inner[++i] || ''; continue; }
+      if (ch === q) q = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") { q = ch; cur += ch; continue; }
+    if ('([{'.includes(ch)) depth++;
+    else if (')]}'.includes(ch)) depth--;
+    if (ch === ',' && depth === 0) { out.push(cur.trim()); cur = ''; }
+    else cur += ch;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+
+// call_expression 顶层参数切分（括号/字符串感知——嵌套调用与闭包不误切）
+function callArgs(text) {
+  const open = text.indexOf('(');
+  const close = text.lastIndexOf(')');
+  if (open < 0 || close <= open) return [];
+  const args = [];
+  let depth = 0, cur = '', q = null;
+  const inner = text.slice(open + 1, close);
+  for (let i = 0; i < inner.length; i++) {
+    const ch = inner[i];
+    if (q) {
+      cur += ch;
+      if (ch === '\\') { cur += inner[++i] || ''; continue; } // 吃掉转义对
+      if (ch === q) q = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") { q = ch; cur += ch; continue; }
+    if ('([{'.includes(ch)) depth++;
+    else if (')]}'.includes(ch)) depth--;
+    if (ch === ',' && depth === 0) { args.push(cur.trim()); cur = ''; }
+    else cur += ch;
+  }
+  if (cur.trim()) args.push(cur.trim());
+  return args;
+}
+const STR_LIT = /^"([^"]*)"|^'([^']*)'/;
+const IDENT = /^[A-Za-z_]\w*$/;
 
 // 匹配分发。ctx={root,rel,line,extractor,out,prepared}；返回 true=已处理
 export function handle(id, m, ctx) {
@@ -275,6 +386,69 @@ export function handle(id, m, ctx) {
     }
     return true;
   }
+  // rust-for：prepare 已消费（循环域表），自身不产事实
+  if (id === 'rust-for') return true;
+  // rust-ref-N：契约 producer 规格驱动的符号位边（ops-register/ops-dispatch
+  // 这类机制形状由采纳仓 boundaries.yaml 自带，本文件不内嵌词表）
+  if (id.startsWith('rust-ref-')) {
+    const spec = ctx.ref?.[Number(id.slice(9))];
+    if (!spec) return true;
+    if (spec.units_in && ![].concat(spec.units_in)
+      .some((p) => globMatch(rel, p))) return true;
+    const calleeM = m.text.match(/^\s*([A-Za-z_]\w*(?:::[A-Za-z_]\w*)*)\s*\(/);
+    const callee = calleeM ? calleeM[1].split('::').pop() : null;
+    if (!callee || !new RegExp(spec.callee).test(callee)) return true;
+    const args = callArgs(m.text);
+    // name_args 各位取字面量；for_expand 位遇 ident 时查包围 for 循环
+    // 字面量域展开（无命中循环/非字面量参数 → name 置 'UNRESOLVED' 段，
+    // scope unresolved——parity 集收进名字即被 undeclared 侧翻出，或契约
+    // 以 'UNRESOLVED.*' 豁免词显式登记盲区；不静默吞）
+    const expandSet = new Set([].concat(spec.for_expand ?? []));
+    const expand = (ai) => {
+      const t = args[ai] || '';
+      const lit = t.match(STR_LIT);
+      if (lit) return [lit[1] ?? lit[2]];
+      if (expandSet.has(ai) && IDENT.test(t)) {
+        const loop = (prepared?.forLoops || [])
+          .find((l) => l.vars?.[t] != null &&
+            l.start < m.range.byteOffset.start &&
+            m.range.byteOffset.end <= l.end);
+        if (loop) {
+          const pos = loop.vars[t];
+          const vals = loop.items
+            .map((it) => Array.isArray(it) ? it[pos] : it)
+            .filter((v) => v != null);
+          if (vals.length) return vals;
+        }
+      }
+      return [null];
+    };
+    const domains = spec.name_args.map((ai) => expand(ai));
+    // symbol_arg 候选位数组：首个 IDENT 胜出（register_stub 的
+    // 4 参形态 (i,m,reason,op) 里 arg2 是字面量原因串——skip 到 arg3）
+    const sym = (() => {
+      for (const ai of [].concat(spec.symbol_arg ?? []))
+        if (IDENT.test(args[ai] || '')) return args[ai];
+      return null;
+    })();
+    const combos = [[]];
+    for (const dom of domains) {
+      const next = [];
+      for (const c of combos) for (const v of dom) next.push([...c, v]);
+      combos.length = 0; combos.push(...next);
+    }
+    for (const combo of combos) {
+      const resolved = combo.every((v) => v != null);
+      const name = combo.map((v) => v ?? 'UNRESOLVED').join('.');
+      out.push(fact({ unit: sym ? `${rel}#${sym}` : rel, kind: 'ref',
+        name, file: rel, line, fidelity: 'syntactic',
+        scope: resolved ? 'module' : 'unresolved', extractor,
+        extra: { mechanism: spec.mechanism, role: spec.role,
+          ...(sym ? { symbol: sym } : {}),
+          ...(gated(m.range.byteOffset.start) ? { cfg: true } : {}) } }));
+    }
+    return true;
+  }
   const declKind = id.startsWith('rust-decl-') ? id.slice(10) : null;
   if (declKind && DECL_NAME_RE[declKind]) {
     const nm = (m.text.match(DECL_NAME_RE[declKind]) || [])[1] || null;
@@ -289,21 +463,66 @@ export function handle(id, m, ctx) {
   return false;
 }
 
-export const handles = (id) => RUST_IDS.has(id);
+export const handles = (id) =>
+  RUST_IDS.has(id) || id === 'rust-for' || id.startsWith('rust-ref-');
 
 // --allow-degraded/ast 单件失败时的 regex 兜底（fidelity 自带戳记，禁拟合宏语义）
-export function regexFacts(root, rel, extractor) {
+// refSpecs 在场时同消费契约 producer 规格产 ref 边——regex 档只认字面量
+// 参数；ident/非字面量一律 UNRESOLVED 段（for 展开是 ast 专属能力，
+// 降级层不模拟），超大巨件（>AST_MAX 被 ast-grep 静默跳过）靠此保住
+// dispatch/register 字面量面
+export function regexFacts(root, rel, extractor, refSpecs) {
   const out = [];
   const text = fs.readFileSync(path.join(root, rel), 'utf8');
   // 降级档也收文件级 mod 声明名（内联深度不可知，super 按文件位算——已标戳）
   const fileMods = new Set(
     [...text.matchAll(/\bmod\s+([A-Za-z_]\w*)\s*[;{]/g)].map((m) => m[1]));
   const ctx = { fileMods };
+  const refSpecsOk = (refSpecs || []).filter((s) =>
+    !s.units_in || [].concat(s.units_in).some((p) => globMatch(rel, p)));
+  const CALL_RE = /([A-Za-z_]\w*(?:::[A-Za-z_]\w*)*)\s*\(/g;
   let li = 0, lineOff = 0;
   for (const l of text.split(/\r?\n/)) {
     li++;
     const at = lineOff;                    // 本行起点 byteOffset（cfg 回探用）
     lineOff += l.length + 1;               // \r\n 差一字节——仅用于回探可容差
+    // ref 生产（regex 档）：行内 callee 调用字面量参数抽取；
+    // ident/嵌套参数 → UNRESOLVED（不调 for 展开——ast 专属）
+    if (refSpecsOk.length)
+      for (const cm of l.matchAll(CALL_RE)) {
+        const callee = cm[1].split('::').pop();
+        for (const spec of refSpecsOk) {
+          if (!new RegExp(spec.callee).test(callee)) continue;
+          const argText = l.slice(cm.index + cm[0].length);
+          const args = callArgs(callee + '(' + argText);
+          const domains = spec.name_args.map((ai) => {
+            const lit = (args[ai] || '').match(STR_LIT);
+            return lit ? [lit[1] ?? lit[2]] : [null];
+          });
+          const combos = [[]];
+          for (const dom of domains) {
+            const nx = [];
+            for (const c of combos) for (const v of dom) nx.push([...c, v]);
+            combos.length = 0; combos.push(...nx);
+          }
+          const sym = (() => {
+            for (const ai of [].concat(spec.symbol_arg ?? []))
+              if (IDENT.test(args[ai] || '')) return args[ai];
+            return null;
+          })();
+          for (const combo of combos) {
+            const resolved = combo.every((v) => v != null);
+            out.push(fact({ unit: sym ? `${rel}#${sym}` : rel,
+              kind: 'ref', file: rel, line: li,
+              name: combo.map((v) => v ?? 'UNRESOLVED').join('.'),
+              fidelity: 'regex-degraded',
+              scope: resolved ? 'module' : 'unresolved', extractor,
+              extra: { mechanism: spec.mechanism, role: spec.role,
+                ...(sym ? { symbol: sym } : {}),
+                ...(cfgGated(text, at + cm.index) ? { cfg: true } : {}) } }));
+          }
+        }
+      }
     let m = l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?use\s+([^;]+);/);
     if (m) {
       const spec = useSpec(l) || m[2].trim();

@@ -61,13 +61,28 @@ node scripts/check-boundaries.mjs --facts F.jsonl [--rules boundaries.yaml]
 - `required`：`units_in` 每单元至少一条 `needs` 边且目标域 ∈ `to_in`（Q-∀）
 - `covered`：单元须被 `via` 入向边覆盖（Q-∀；docref 入向=文档拓扑覆盖）
 - `isolated`：单元不得有任何 in/out 边——刻意隔离须 declare/exempt 认领（Q-∀）
-- `parity`：声明集（declare 边，`from_kind`/`to_kind` 选面）⟺ 实测集对账（P）
+- `parity`：声明集（declare 边，`from_kind`/`to_kind` 选面）⟺ 实测集对账（P）。
+  v1.4 扩为双源形：`declared`（字面名单）或 `declared_from` 选择子
+  `{kind, mechanism, units_in, name}` 从边事实收名集，`observed` 侧同形
+  （`observed_from` 或单元集 `observed_kind`/`observed_units_in`）；
+  `direction: both|missing-only|undeclared-only`（缺省双向），规则级
+  `exempt` 按名 glob 与源文件 glob 双通道（名豁免勿进顶层 exemptions——
+  会污染其他规则面）
 - `attrs`：单元属性谓词——文件名黑名单等无涉边断言（dir=none 退化支）
 - 内建：dead link/docref/dead import 恒违规（断裂边无需声明）
 
 规则条目 `{name, family, severity(error|warn|note), why, …}`——`name` 必填作 ruleId/suppression 锚；顶层 `exemptions: [{glob|unit, why, until?}]` 抑制全部 ∀ 族与 builtin 死检查（Q-∃ 域边界规则不吃豁免）。`manifest:` 段注册词表（families/edge kinds/extra_keys/extractors），未注册值 fail-closed。
 
 - 退出码：0=干净 / 1=有违规 / 2=用法 IO 错 / 3=规则 schema 非法（fail-closed）
+
+`producers.ref`（v1.4）：契约自带 ref 边生产器规格，run-boundary 经
+`--emit-spec` 喂给 extract——`{lang, callee(regex), mechanism, role,
+name_args, symbol_arg?(候选位数组), for_expand?(参数位数组), units_in?}`。
+语义在语言描述符内：rust 支持 `for x in [lit,…]`/`for (a,b) in [(l,e),…]`
+元组解构字面量展开、限定 callee 前缀容忍（`ops::register` 对 `^register`）、
+不可解析参数产 `UNRESOLVED` 段（可豁免可审计，不静吞）；regex 降级档
+（超大件 ast-grep 静默零输出兜底，阈值 `MB_AST_MAX_BYTES` 缺省 8MiB，
+仅零匹配件触发）同机制产 `regex-degraded` ref。
 
 `--staged` 增量模式只评 Q-∃ 族（forbidden/allowed/内建 dead）——∀/P 族在不完整视图下缺席断言必 fail-open（Rego negation-safety 同型），整族跳过。finding 契约 `{rule,severity,unit,expect,observed,fix}` 码点序输出。
 
