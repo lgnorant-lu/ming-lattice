@@ -44,6 +44,12 @@ export function regexFacts(root, rel, extractor): facts[]  // 降级兜底
 
 "不建议 syntactic" = 文件粒度映射失真面大，直接走 precise 通道更诚实。
 
+**Rust 已落地件的已知盲面**（syntactic 档诚实缺席，IV8 实测记录）：
+`include!`/`include_str!` 文件包含不产边、`#[path]` 重定向不解析、
+`extern crate`（2015 版次遗留）不产边、宏生成项无 decl。
+`#[cfg]` 属性**不求值但标记** `extra.cfg=true`（含内联 mod 内 use 的传递门），
+消费方据以区分"真死链"与"条件缺席"（IV8 实测 70 条 cfg 事实、0 误死）。
+
 ## 上游金数据源（调研档案——词表面可借上游演进，边语义不可借）
 
 | 上游 | 数据 | 覆盖 | 可转化物 |

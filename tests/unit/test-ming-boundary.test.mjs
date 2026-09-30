@@ -102,6 +102,10 @@ export async function run() {
     wfile('crates/demo/src/lib.rs', [
       'mod dom;',
       'mod util { use super::Hidden; pub fn inner() {} }',
+      '#[cfg(feature = "x")]',
+      'mod gated_x;',
+      '#[cfg(unix)]',
+      'mod cfg_wrap { use crate::dep::depfn; }',
       'pub use crate::dom::Elem;',
       'use crate::net::fetch;',
       'use std::collections::HashMap;',
@@ -115,9 +119,11 @@ export async function run() {
       'mod sub;\npub struct Elem;\nimpl Elem { pub fn new() -> Elem { Elem } }\nfn private() {}\n');
     wfile('crates/demo/src/dom/sub.rs', 'use super::Elem;\nuse crate::net::fetch;\n');
     wfile('crates/demo/src/net.rs', 'pub fn fetch() {}\n');
+    wfile('crates/demo/src/dep.rs', 'pub fn depfn() {}\n');
     // tests/<file>.rs 各自是独立 crate 根：mod common; 找兄弟 tests/common/
     wfile('crates/demo/tests/common/mod.rs', 'pub fn helper() {}\n');
-    wfile('crates/demo/tests/probe_x.rs', 'mod common;\nuse common::helper;\n');
+    wfile('crates/demo/tests/probe_x.rs',
+      'mod common;\nuse common::helper;\nfn self_item() {}\nuse crate::self_item;\n');
     wfile('scripts/tool.ps1', 'function Invoke-Thing { }\n. .\\lib\\helper.ps1\n');
     wfile('docs/note.md', '# md\n');
     // v1.1 文档面：README/docref/mention/docrole 载体
@@ -244,6 +250,13 @@ export async function run() {
       .find((x) => x.extra?.mechanism === 'mod-decl')?.extra?.to,
       'crates/demo/src/dom/sub.rs', '具名文件 mod-decl 应解析进 dir/stem/');
     // 内联 mod 深度：mod util {} 里的 super::Hidden 应回文件模块层（lib.rs 自身）
+    // cfg 门标记：#[cfg] 修饰的 mod-decl 与内联 mod 内的 use 都带 extra.cfg
+    assert.equal(at(LIB, 'import').find((x) => x.extra?.mechanism === 'mod-decl' &&
+      x.name === 'gated_x')?.extra?.cfg, true, '#[cfg] mod 应带 cfg 标记');
+    assert.equal(ri('crate::net::fetch')?.extra?.cfg, undefined,
+      '无 cfg 门的 use 不应带 cfg 标记');
+    assert.equal(ri('crate::dep::depfn')?.extra?.cfg, true,
+      'cfg 内联 mod 内的 use 应传递 cfg 标记');
     assert.equal(ri('super::Hidden')?.extra?.to, 'crates/demo/src/lib.rs',
       '内联 mod 内 super:: 应先扣内联深度再出文件模块层');
     // tests/<file>.rs 是 crate 根：mod common; → 兄弟 tests/common/mod.rs；
@@ -255,6 +268,9 @@ export async function run() {
     const cuse = at(T, 'import').find((x) => x.name === 'common::helper');
     assert.equal(cuse?.scope, 'module', '本地 mod 声明过的首段不标 external');
     assert.equal(cuse?.extra?.to, 'crates/demo/tests/common/mod.rs');
+    // 非 src/ crate 根里 crate:: 应锚文件自身命名空间而非判死
+    assert.equal(at(T, 'import').find((x) => x.name === 'crate::self_item')
+      ?.extra?.to, T, 'tests/ 下 crate:: 应解析回本文件');
     // junction: link 事实且不穿透（deployable/d1/x 下无文件事实）
     if (junctionOk) {
       const lk = at('deployable/d1/x', 'link');
@@ -333,6 +349,15 @@ export async function run() {
     const dead = runNode([EXTRACT, '--root', R, '--allow-degraded'],
       { AST_GREP_BIN: 'D:/nonexistent/sg.exe' });
     assert.equal(dead.status, 0, 'allow-degraded 应放行');
+    // 降级路径下 Rust regex 兜底同构断言（组3 只走 ast-grep 正道）
+    const deadFacts = parseJsonl(dead.stdout);
+    const rsDead = deadFacts.filter((x) => x.file === 'crates/demo/src/lib.rs');
+    assert.ok(rsDead.some((x) => x.kind === 'import' && x.fidelity === 'regex-degraded' &&
+      x.extra?.mechanism === 'rust-pub-use'), '降级路径应产 rust-pub-use 边');
+    assert.ok(rsDead.some((x) => x.kind === 'decl' && x.fidelity === 'regex-degraded'),
+      '降级路径应产 rs decl 事实');
+    assert.equal(rsDead.find((x) => x.name === 'crate::net::fetch')?.extra?.to,
+      'crates/demo/src/net.rs', '降级路径 crate:: 解析应同构命中');
     const noFront = runNode([EXTRACT, '--root', R], { AST_GREP_BIN: 'D:/nonexistent/sg.exe' });
     assert.equal(noFront.status, 3, '前端缺失且无 allow-degraded 应 fail-closed exit 3');
     assert.ok(noFront.stderr.includes('fail-closed'));
@@ -821,6 +846,15 @@ export async function run() {
       const before = fs.readFileSync(fpath, 'utf8');
       runJson(['--phase', 'ci', '--only', 'metrics', '--facts-extra', extraPath]);
       assert.equal(fs.readFileSync(fpath, 'utf8'), before, '--facts 源不得被改写');
+      // 外部事实=不可信输入：坏 JSONL 行 fail-closed 而非带病并入
+      const badPath = path.join(C, 'bad.facts.jsonl');
+      fs.writeFileSync(badPath,
+        '{"v":1,"unit":"x","kind":"decl","file":"a.rs","fidelity":"semantic"}\n{not json}\n');
+      const r10 = runRB(['--phase', 'ci', '--only', 'metrics',
+        '--facts-extra', badPath]);
+      assert.equal(r10.status, 2, '坏 JSONL 外部事实应 exit 2');
+      assert.ok(r10.stderr.includes('facts-extra') && r10.stderr.includes(':2'),
+        'stderr 应点名 --facts-extra 与行号');
     }
 
     console.log('  13 组断言全过');

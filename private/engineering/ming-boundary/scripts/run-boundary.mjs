@@ -143,6 +143,17 @@ if (A.factsExtra?.length) {
     const p = path.resolve(extra);
     if (!fs.existsSync(p)) die(`--facts-extra 不存在: ${p}`);
     const chunk = fs.readFileSync(p, 'utf8');
+    // 外部事实=不可信输入：逐行校验 JSONL+必备键，坏行 fail-closed 而非带病并入
+    for (const [li, raw] of chunk.split('\n').entries()) {
+      const t = raw.trim();
+      if (!t) continue;
+      let f;
+      try { f = JSON.parse(t); }
+      catch { die(`--facts-extra ${p}:${li + 1} 非 JSONL 行`, 2); }
+      if (f.v !== 1 || typeof f.unit !== 'string' || typeof f.kind !== 'string' ||
+          typeof f.file !== 'string' || typeof f.fidelity !== 'string')
+          die(`--facts-extra ${p}:${li + 1} 缺 fact 必备键 (v/unit/kind/file/fidelity)`, 2);
+    }
     merged += (merged.length && !merged.endsWith('\n') ? '\n' : '') + chunk;
   }
   const mergedPath = path.join(os.tmpdir(), `mb-facts-merged-${process.pid}.jsonl`);
