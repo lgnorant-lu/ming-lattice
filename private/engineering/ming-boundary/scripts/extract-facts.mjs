@@ -23,6 +23,7 @@ import { findAstGrep } from './lib/frontends.mjs';
 import { mdFacts, MD_EXTRACTOR, MD_EXT } from './lib/adapters/markdown.mjs';
 import { gitignoreFacts, GI_EXTRACTOR } from './lib/adapters/gitignore.mjs';
 import * as rustLang from './lib/langs/rust.mjs';
+import * as pythonLang from './lib/langs/python.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '../../../..');
@@ -31,6 +32,7 @@ const JS_EXT = new Set(['.mjs', '.js', '.cjs', '.jsx']);
 const TS_EXT = new Set(['.ts', '.mts', '.cts']);
 const TSX_EXT = new Set(['.tsx']);
 const RUST_EXT = new Set(['.rs']);
+const PY_EXT = new Set(['.py', '.pyi', '.pyw']);
 const PS_EXT = new Set(['.ps1', '.psm1']);
 // 内容扫描谓词（v1.1a 修正）：缺省 = 全部支持扩展名且未被 .gitignore 声明
 // 忽略的文件——目录白名单硬编码是本仓私货（js逆向/ 项目资料/ crates/ 这类
@@ -343,7 +345,8 @@ function main() {
     const tsxFiles = files.filter((f) => TSX_EXT.has(f.ext) && inScope(f));
     const psFiles = files.filter((f) => PS_EXT.has(f.ext) && inScope(f));
     const rsFiles = files.filter((f) => RUST_EXT.has(f.ext) && inScope(f));
-    const astFiles = [...jsFiles, ...tsFiles, ...tsxFiles, ...rsFiles];
+    const pyFiles = files.filter((f) => PY_EXT.has(f.ext) && inScope(f));
+    const astFiles = [...jsFiles, ...tsFiles, ...tsxFiles, ...rsFiles, ...pyFiles];
 
     // js 单文件 regex 降级路径（ast-grep 缺席的 --allow-degraded 面，
     // 与 ENOBUFS 单文件爆管的韧性降级共用同一实现）
@@ -384,7 +387,7 @@ function main() {
       const degraded = new Set();
       for (const [bucket, rules] of
         [[jsFiles, AST_RULES], [tsFiles, AST_RULES_TS], [tsxFiles, AST_RULES_TSX],
-         [rsFiles, rustLang.rules]]) {
+         [rsFiles, rustLang.rules], [pyFiles, pythonLang.rules]]) {
         if (!bucket.length) continue;
         const r = runAstGrep(sg.bin, bucket.map((f) => path.join(root, f.rel)), rules);
         matches.push(...r.matches);
@@ -435,8 +438,10 @@ function main() {
             }
           }
         }
-        // 语言描述符 per-file 预处理（rust: mod 声明名集+内联 range；其他语言无）
+        // 语言描述符 per-file 预处理（rust: mod 声明名集+内联 range）
         const rustPrepared = rel.endsWith('.rs') ? rustLang.prepare(ms) : null;
+        const pyPrepared = PY_EXT.has(path.posix.extname(rel))
+          ? pythonLang.prepare(ms) : null;
         for (const m of ms) {
           const line = m.range.start.line + 1;
           const id = m.ruleId;
@@ -472,6 +477,9 @@ function main() {
           } else if (rustLang.handles(id)) {
             rustLang.handle(id, m, { root, rel, extractor: astId,
               out: facts, prepared: rustPrepared });
+          } else if (pythonLang.handles(id)) {
+            pythonLang.handle(id, m, { root, rel, extractor: astId,
+              out: facts, prepared: pyPrepared });
           } else if (DECL_RE[id]) {
             const re = DECL_RE[id];
             const nm = re ? (m.text.match(re) || [])[1] : null;
@@ -491,7 +499,10 @@ function main() {
         for (const f of astFiles) {
           if (rels.has(f.rel))
             facts.push(...(RUST_EXT.has(f.ext)
-              ? rustLang.regexFacts(root, f.rel, regId) : jsRegexFacts(f)));
+              ? rustLang.regexFacts(root, f.rel, regId)
+              : PY_EXT.has(f.ext)
+                ? pythonLang.regexFacts(root, f.rel, regId)
+                : jsRegexFacts(f)));
         }
         console.error(`[extract-facts] ${degraded.size} 个 js/ts 文件 ast-grep 失败` +
           `降 regex（巨型混淆/边界输入面）: ${[...rels].slice(0, 5).join(', ')}`);
@@ -499,7 +510,10 @@ function main() {
     } else if (astFiles.length && a.allowDegraded) {
       for (const f of astFiles)
         facts.push(...(RUST_EXT.has(f.ext)
-          ? rustLang.regexFacts(root, f.rel, regId) : jsRegexFacts(f)));
+          ? rustLang.regexFacts(root, f.rel, regId)
+          : PY_EXT.has(f.ext)
+            ? pythonLang.regexFacts(root, f.rel, regId)
+            : jsRegexFacts(f)));
     }
     for (const f of psFiles) {
       const text = fs.readFileSync(path.join(root, f.rel), 'utf8');

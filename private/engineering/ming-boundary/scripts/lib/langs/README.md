@@ -28,7 +28,7 @@ export function regexFacts(root, rel, extractor): facts[]  // 降级兜底
 | 语言 | 边面语法物 | 模块语义速查 | syntactic 可达性 | precise 生态通道 | 闸状态 |
 |---|---|---|---|---|---|
 | Rust | `use`/`mod x;`/`pub use` | crate::/self/super/modDir，cargo crate 根 | [OK] 已落地 | rust-analyzer→SCIP | **已入**（IV8 dogfood） |
-| Python | `import a.b`/`from .x import y` | pkg→dir、`__init__.py`、相对点=父包 | [OK] 可行（sys.path/动态 `__import__` 诚实缺席） | pyright/scip-python | 候消费方 |
+| Python | `import a.b`/`from .x import y` | pkg→dir、`__init__.py`、相对点=父包、PEP420 命名空间目录 | [OK] 已入 `python.mjs`（候选根序 filedir/root/{python,src,tests,tools}，sys.path/动态 `__import__` 诚实缺席） | pyright/scip-python | **已入（v1.3）**——IV8 521py 零边实证过闸 |
 | Go | `import "path"` | module path→dir、`internal/` 约束、需读 go.mod 前缀 | [OK] 大体可行（replace/workspace 面缺席） | gopls/scip-go | 候消费方 |
 | Java | `import a.b.C` | package→目录 1:1 | [OK] 可行（多源根/build 面缺席） | scip-java | 候消费方 |
 | C/C++ | `#include` | quoted=相对、angle=-I 依赖 | [受限] include path 需构建上下文 | clangd→SCIP | 候选，语义面偏深 |

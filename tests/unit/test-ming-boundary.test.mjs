@@ -1,6 +1,8 @@
 // tests/unit/test-ming-boundary.test.mjs
 // 单元测试: private/engineering/ming-boundary/scripts/{extract-facts,check-boundaries,
-//   run-boundary}.mjs + scripts/lib/langs/rust.mjs（Rust 语法级前端描述符）
+//   run-boundary}.mjs + scripts/lib/langs/rust.mjs + scripts/lib/langs/python.mjs
+//   + scripts/lib/langs/rust.derived.mjs + scripts/lib/langs/python.derived.mjs
+//   （语法级前端描述符与上游派生词表，后者经描述符 import 由断言面行使）
 // 覆盖: 事实 schema 形状 / domainOf 首段锚定回归 / 排序确定性(byte-identical) /
 //       声明形态族谱(function/async/arrow/method/getset) / 动态 import 字面量+计算式 /
 //       dead import scope 分类 / junction link 事实+不穿透 / fail-closed 退出码 /
@@ -124,6 +126,14 @@ export async function run() {
     wfile('crates/demo/tests/common/mod.rs', 'pub fn helper() {}\n');
     wfile('crates/demo/tests/probe_x.rs',
       'mod common;\nuse common::helper;\nfn self_item() {}\nuse crate::self_item;\n');
+    // v1.3 Python 语法级面（ADR-0010 syntactic 档：相对点导入/包 __init__/
+    //   PEP420 命名空间/外部不判死/逐名子模块探测/init re-export）
+    wfile('pkg/__init__.py', 'from .helper import run\nfrom . import sibling\n');
+    wfile('pkg/helper.py', 'MAX = 3\ndef run():\n    pass\nclass Runner:\n    def go(self):\n        pass\n');
+    wfile('pkg/sibling.py',
+      'from ..pkg import helper\nimport os\nimport pkg.helper\nfrom .sub import deep\n');
+    wfile('pkg/sub/deep.py',
+      'from .. import helper\nimport missing_ext_mod_xyz\nfrom .gone import thing\n');
     wfile('scripts/tool.ps1', 'function Invoke-Thing { }\n. .\\lib\\helper.ps1\n');
     wfile('docs/note.md', '# md\n');
     // v1.1 文档面：README/docref/mention/docrole 载体
@@ -271,6 +281,40 @@ export async function run() {
     // 非 src/ crate 根里 crate:: 应锚文件自身命名空间而非判死
     assert.equal(at(T, 'import').find((x) => x.name === 'crate::self_item')
       ?.extra?.to, T, 'tests/ 下 crate:: 应解析回本文件');
+    // py. Python 面：相对导入/包解析/外部不判死/命名空间/init re-export/decl
+    const INIT = 'pkg/__init__.py';
+    assert.equal(at(INIT, 'import').find((x) => x.name === '.helper')
+      ?.extra?.to, 'pkg/helper.py', 'from .helper import run 应解包内兄弟');
+    assert.ok(at(INIT, 'import').some((x) => x.name === '.' &&
+      x.extra?.to === INIT), 'from . import x 应发包边到 __init__');
+    assert.ok(at(INIT, 'export').some((x) => x.extra?.mechanism === 'py-reexport'),
+      '__init__.py from-import 应双发 export 边');
+    const SIB = 'pkg/sibling.py';
+    assert.equal(at(SIB, 'import').find((x) => x.name === '..pkg')
+      ?.extra?.to, INIT, 'from ..pkg 应上溯一层包');
+    assert.equal(at(SIB, 'import').find((x) => x.name === 'os')
+      ?.scope, 'external', 'stdlib 应 external 不判死');
+    assert.equal(at(SIB, 'import').find((x) => x.name === 'pkg.helper')
+      ?.extra?.to, 'pkg/helper.py', '绝对导入应经候选根命中');
+    // PEP420：pkg/sub 无 __init__.py 是命名空间包——不判死且名字可探测
+    const subEdge = at(SIB, 'import').find((x) => x.name === '.sub');
+    assert.ok(subEdge && !subEdge.extra?.dead, '命名空间包不应判死');
+    assert.equal(at(SIB, 'import').find((x) => x.name === '.sub.deep')
+      ?.extra?.to, 'pkg/sub/deep.py', 'from .sub import deep 应探测到子模块');
+    const DEEP = 'pkg/sub/deep.py';
+    assert.equal(at(DEEP, 'import').find((x) => x.name === '..helper')
+      ?.extra?.to, 'pkg/helper.py', 'from .. import helper 逐名探测兄弟');
+    assert.equal(at(DEEP, 'import').find((x) => x.name === 'missing_ext_mod_xyz')
+      ?.scope, 'external', '外部包不判死');
+    assert.ok(at(DEEP, 'import').find((x) => x.name === '.gone')
+      ?.extra?.dead, '相对导入落空应判死（仓内主张）');
+    const hpDecl = at('pkg/helper.py', 'decl');
+    assert.ok(hpDecl.some((d) => d.name === 'MAX' && d.extra?.shape === 'const'),
+      '模块级赋值应产 const decl（derived inside 链）');
+    assert.ok(hpDecl.some((d) => d.name === 'Runner' && d.extra?.shape === 'class'));
+    assert.ok(hpDecl.some((d) => d.name === 'run' && d.extra?.shape === 'fn'));
+    assert.ok(hpDecl.some((d) => d.name === 'go'),
+      '方法 function_definition 应入 decl（shape 同 fn）');
     // junction: link 事实且不穿透（deployable/d1/x 下无文件事实）
     if (junctionOk) {
       const lk = at('deployable/d1/x', 'link');

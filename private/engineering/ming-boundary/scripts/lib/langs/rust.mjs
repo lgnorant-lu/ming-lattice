@@ -11,10 +11,28 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fact } from '../facts.mjs';
+import { derived } from './rust.derived.mjs';
 
 export const exts = new Set(['.rs']);
 
-export const rules = `
+// ---------- 分层：上游词表（derived）+ 本地 overlay ----------
+// decl 节点种清单由 sync-langs.mjs 从 tree-sitter tags.scm 派生（覆盖自动跟
+// 上游演进——union_item/declaration_list method 即上游补给的新捕获）。
+// 本地 overlay 三件事：上游粗 shape→本组件 shape 词；边规则手写（use/mod）；
+// 名称抽取 regex 兜底表（降级路径用）。
+const SHAPE_OF = {
+  enum_item: 'enum', struct_item: 'struct', type_item: 'type',
+  union_item: 'union', trait_item: 'trait', mod_item: 'mod',
+  macro_definition: 'macro', function_item: 'fn',
+};
+// mod_item 的 decl 由 rust-mod 边规则合并产出（边+声明一体），不进 decl 规则
+const EDGE_OWNED = new Set(['mod_item']);
+// function_item 双捕获（top-level fn + declaration_list method）按 kind 去重
+const DECL_KINDS = [...new Map(derived.declKinds
+  .filter((d) => !EDGE_OWNED.has(d.kind))
+  .map((d) => [d.kind, d])).values()];
+
+const EDGE_RULES = `
 id: rust-use
 language: Rust
 rule:
@@ -24,48 +42,28 @@ id: rust-mod
 language: Rust
 rule:
   kind: mod_item
----
-id: rust-fn
-language: Rust
-rule:
-  kind: function_item
----
-id: rust-struct
-language: Rust
-rule:
-  kind: struct_item
----
-id: rust-enum
-language: Rust
-rule:
-  kind: enum_item
----
-id: rust-trait
-language: Rust
-rule:
-  kind: trait_item
----
-id: rust-type
-language: Rust
-rule:
-  kind: type_item
----
-id: rust-macro
-language: Rust
-rule:
-  kind: macro_definition
 `.trim();
 
-const RUST_DECL_RE = {
-  'rust-fn': /fn\s+([A-Za-z_]\w*)/,
-  'rust-struct': /struct\s+([A-Za-z_]\w*)/,
-  'rust-enum': /enum\s+([A-Za-z_]\w*)/,
-  'rust-trait': /trait\s+([A-Za-z_]\w*)/,
-  'rust-type': /type\s+([A-Za-z_]\w*)/,
-  'rust-macro': /macro_rules!\s*([A-Za-z_]\w*)/,
-};
+export const rules = EDGE_RULES + '\n---\n' + DECL_KINDS.map((d) =>
+  `id: rust-decl-${d.kind}\nlanguage: Rust\nrule:\n  kind: ${d.kind}`).join('\n---\n');
 
-const RUST_IDS = new Set(['rust-use', 'rust-mod', ...Object.keys(RUST_DECL_RE)]);
+// kind → 名称抽取 regex（降级路径与 ast 路径共用 shape 词表）
+const DECL_NAME_RE = {
+  function_item: /fn\s+([A-Za-z_]\w*)/,
+  struct_item: /struct\s+([A-Za-z_]\w*)/,
+  enum_item: /enum\s+([A-Za-z_]\w*)/,
+  union_item: /union\s+([A-Za-z_]\w*)/,
+  trait_item: /trait\s+([A-Za-z_]\w*)/,
+  type_item: /type\s+([A-Za-z_]\w*)/,
+  macro_definition: /macro_rules!\s*([A-Za-z_]\w*)/,
+  const_item: /const\s+([A-Za-z_]\w*)/,
+  static_item: /static\s+([A-Za-z_]\w*)/,
+};
+const DECL_SHAPE = Object.fromEntries(DECL_KINDS.map((d) =>
+  [d.kind, SHAPE_OF[d.kind] || d.shape]));
+
+const RUST_IDS = new Set(['rust-use', 'rust-mod',
+  ...DECL_KINDS.map((d) => `rust-decl-${d.kind}`)]);
 
 // crate 根判定：mod/lib/main/build.rs 之外，cargo 自动发现面里
 // tests|benches|examples/<file>.rs 与 src/bin/<file>.rs 各自是独立 crate 根
@@ -277,12 +275,14 @@ export function handle(id, m, ctx) {
     }
     return true;
   }
-  if (RUST_DECL_RE[id]) {
-    const nm = (m.text.match(RUST_DECL_RE[id]) || [])[1] || null;
+  const declKind = id.startsWith('rust-decl-') ? id.slice(10) : null;
+  if (declKind && DECL_NAME_RE[declKind]) {
+    const nm = (m.text.match(DECL_NAME_RE[declKind]) || [])[1] || null;
     out.push(fact({ unit: `${rel}#${nm || '?'}`, kind: 'decl',
       name: nm || m.text.slice(0, 40), file: rel, line,
       fidelity: 'syntactic', scope: 'file-local', extractor,
-      extra: { shape: id.replace('rust-', ''), surface: surface(m.text),
+      extra: { shape: DECL_SHAPE[declKind] || declKind,
+        surface: surface(m.text),
         ...(gated(m.range.byteOffset.start) ? { cfg: true } : {}) } }));
     return true;
   }
@@ -338,19 +338,20 @@ export function regexFacts(root, rel, extractor) {
       continue;
     }
     m = l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?(?:async\s+|unsafe\s+|extern\s+"[^"]+"\s+)*fn\s+([A-Za-z_]\w*)/)
-      || l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?(struct|enum|trait|type)\s+([A-Za-z_]\w*)/)
+      || l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?(struct|enum|union|trait|type|const|static)\s+([A-Za-z_]\w*)/)
       || l.match(/^\s*macro_rules!\s*([A-Za-z_]\w*)/);
     if (m) {
-      const nm = m[2] && !['struct','enum','trait','type'].includes(m[2])
+      const nm = m[2] && !/^(struct|enum|union|trait|type|const|static)$/.test(m[2])
         ? m[2] : (m[3] || m[1]);
       const isFn = /fn\s/.test(l) || /macro_rules!/.test(l);
       const pubKw = l.match(/^\s*pub\s+(?!\()/);
       out.push(fact({ unit: `${rel}#${nm}`, kind: 'decl', name: nm,
         file: rel, line: li, fidelity: 'regex-degraded', scope: 'file-local',
         extractor,
-        extra: { shape: isFn ? (/macro_rules!/.test(l) ? 'macro' : 'function')
+        extra: { shape: isFn ? (/macro_rules!/.test(l) ? 'macro' : 'fn')
                             : (m[2] || 'type'),
-          surface: pubKw ? 'public' : 'internal' } }));
+          surface: pubKw ? 'public' : 'internal',
+          ...(cfgGated(text, at + m.index) ? { cfg: true } : {}) } }));
     }
   }
   return out;

@@ -1,0 +1,22 @@
+# upstream.yaml — 语言上游金数据源 pin 表（sync-langs.mjs 消费）
+# 语义：每语言钉住 grammar 仓 rev + tags.scm 路径 + linguist 语言键。
+# rev=采集时上游 HEAD SHA；漂移检测=重跑 sync-langs --check 对比派生物。
+# 分层边界：本表只管"写什么节点"（decl/ref 词表+exts）——"边去哪"的
+# 模块语义永不来自上游，住各语言手写描述符。
+version: 1
+sources:
+  linguist:
+    repo: github-linguist/linguist
+    rev: 5fbdfcb8133be2bed88bf3ce62b2335f50474525
+    path: lib/linguist/languages.yml
+langs:
+  rust:
+    linguist: Rust
+    grammar: tree-sitter/tree-sitter-rust
+    rev: 77a3747266f4d621d0757825e6b11edcbf991ca5
+    tags: queries/tags.scm
+  python:
+    linguist: Python
+    grammar: tree-sitter/tree-sitter-python
+    rev: 26855eabccb19c6abf499fbc5b8dc7cc9ab8bc64
+    tags: queries/tags.scm
