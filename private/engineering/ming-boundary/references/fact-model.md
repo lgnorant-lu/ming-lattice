@@ -209,10 +209,15 @@ default-deny 式 gitignore（`/*` + `!` 逐条放行）：根目录误入文件�
 - allowlist 实例: https://github.com/anp2dev/anp2/blob/main/.gitignore ；
   技术指南: https://lukeocodes.dev/gitignore-allowlist
 - **适配器设计裁决**：不重写 gitignore 匹配语义（`!` 反排、`/**`、父目录不穿透
-  全是坑）——**调 `git check-ignore --stdin -v -n` 当 oracle**：verbose 输出
-  `<source>:<linenum>:<pattern>\t<pathname>` 白送 declare 边的 provenance
-  （哪条规则第几行命中了谁）；`-n` 列不匹配项=未声明文件候选集；
-  `--stdin` 批量喂。非 git 宿主才降级为自解析，fidelity 标 `regex-degraded`
+  全是坑）——**调 `git check-ignore --stdin -v -z` 当 oracle**：命中记录实测语法
+  = `<source>\0<linenum>\0<pattern>\0<pathname>\0` 四字段组，白送 provenance；
+  不传 `-n`（其裸路径记录与命中记录终止符混用，徒增解析歧义）。
+  **所有权条款**：oracle 仅在 `--root` 为 worktree 顶时激活（`rev-parse
+  --show-toplevel` 判等）——子目录抽取不继承父仓声明；`.gitmodules` 登记的
+  submodule 路径须先从输入剔除（check-ignore 对其 fatal 128 会废掉整批），
+  但含 `.git` 的非登记嵌套仓照常喂（父仓忽略规则对它们有效）。
+  **联动**：ignored 集兼任内容扫描剪枝面——被忽略树只留 file/dir/declare
+  事实不读内容；`--extract-dirs` 显式收窄优先。
   https://git-scm.com/docs/git-check-ignore
 
 ### G. 文档拓扑先例

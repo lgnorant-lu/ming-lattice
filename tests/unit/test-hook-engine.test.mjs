@@ -689,7 +689,8 @@ export async function run() {
       fs.writeFileSync(path.join(edir, '.hooksrc'), [
         'lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off',
         'gate.impact-test.level=off', 'gate.pre-push-verify.level=off',
-        'gate.review-after.globs=proposals/*.md', 'gate.review-after.cadence=2s',
+        // 窗口给 30s：2s 在全量套件并发负载下会超时序翻车（节流语义不变）
+        'gate.review-after.globs=proposals/*.md', 'gate.review-after.cadence=30s',
       ].join('\n'));
       fs.mkdirSync(path.join(edir, 'proposals'), { recursive: true });
       fs.writeFileSync(path.join(edir, 'proposals/x.md'), 'reviewAfter: 2000-01-01\n');

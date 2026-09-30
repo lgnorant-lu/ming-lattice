@@ -10,6 +10,9 @@
 //          文件名含逗号者不支持）。工作区缺席条目静默跳过（无边可抽）
 // v1.1 适配器：md 扫描（docrole/docref/mention 二遍）与 git check-ignore
 //   declare 边默认开启，--no-md-scan / --no-ignore-scan 单独关闭
+// 内容扫描谓词：缺省=全部支持扩展名且未被忽略声明的文件（vendored/venv/
+//   产物树只留 file/dir/declare 事实）；--extract-dirs 显式收窄优先；
+//   gitignore oracle 仅在 --root 为 worktree 顶时激活（父仓声明不记子树账）
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,8 +28,10 @@ const REPO_ROOT = path.resolve(HERE, '../../../..');
 
 const JS_EXT = new Set(['.mjs', '.js', '.cjs', '.jsx']);
 const PS_EXT = new Set(['.ps1', '.psm1']);
-// 内容抽取白名单域：自有代码面；vendored/base/deployable 只产 file/link 事实
-const CONTENT_DIRS = ['scripts', 'private', 'tests', 'tools', 'config', 'src'];
+// 内容扫描谓词（v1.1a 修正）：缺省 = 全部支持扩展名且未被 .gitignore 声明
+// 忽略的文件——目录白名单硬编码是本仓私货（js逆向/ 项目资料/ crates/ 这类
+// 真仓目录词表根本对不上，沉默跳过=抽取器退化成文件枚举器）。
+// --extract-dirs 显式收窄优先；git 顶缺席（无 oracle）→ 全扫。
 const IGNORE_DIRS = new Set([
   '.git', 'node_modules', 'distill', '.logs', 'runs', 'target',
   'artifacts', 'out', '.venv', '__pycache__', '.trash',
@@ -97,7 +102,7 @@ function die(msg, code = 2) {
 
 function parseArgs(argv) {
   const a = { root: REPO_ROOT, out: null, allowDegraded: false,
-              extractDirs: CONTENT_DIRS, contentScan: true, files: null,
+              extractDirs: null, contentScan: true, files: null,
               mdScan: true, ignoreScan: true };
   for (let i = 2; i < argv.length; i++) {
     const k = argv[i];
@@ -148,19 +153,44 @@ function walk(dir, root, files, links, dirs) {
 
 function runAstGrep(bin, filesAbs) {
   // 分批喂文件（命令行长度上限）；--json=stream 一行一 match
+  // 单文件韧性链：批级失败（ENOBUFS/ast-grep 内部错）→ 二分降级到单文件；
+  // 单文件仍失败 → 收残余 stdout 后交回 regex 降级（degraded 集），
+  // 不让一个坏文件 die 掉整仓抽取（实证：2.2MB 混淆单行文件
+  // 能产 4.6MB 输出后仍 os error 87 退出）。
   const out = [];
+  const degraded = new Set();
+  const harvest = (stdout) => {
+    for (const line of (stdout || '').split('\n')) {
+      if (line.trim()) { try { out.push(JSON.parse(line)); } catch {} }
+    }
+  };
+  const scan = (batch) => {
+    let r;
+    try {
+      r = spawnSync(bin, ['scan', '--inline-rules', AST_RULES,
+        '--json=stream', ...batch], { encoding: 'utf8', maxBuffer: 512 << 20 });
+    } catch (e) {
+      // spawnSync 本身也会抛（ERR_STRING_TOO_LONG：单文件输出超 512MB
+      // 字符串上限——巨型混淆文件逐节点 dump 能到）——同归批降级链
+      r = { error: e, status: null, stdout: '', stderr: String(e.message) };
+    }
+    const broken = r.error || r.status !== 0;
+    if (broken && batch.length > 1) {           // 批级失败 → 二分降级到单文件
+      for (const f of batch) scan([f]);
+      return;
+    }
+    if (broken) {                               // 单文件失败 → 收残余产出后降 regex
+      degraded.add(batch[0]);                   // （ENOBUFS/os-87/读失败同归一路）
+      harvest(r.stdout);
+      return;
+    }
+    harvest(r.stdout);
+  };
   const CHUNK = 60;
   for (let i = 0; i < filesAbs.length; i += CHUNK) {
-    const batch = filesAbs.slice(i, i + CHUNK);
-    const r = spawnSync(bin, ['scan', '--inline-rules', AST_RULES,
-      '--json=stream', ...batch], { encoding: 'utf8', maxBuffer: 256 << 20 });
-    if (r.error) die(`ast-grep 调用失败: ${r.error.message}`, 3);
-    if (r.status !== 0) die(`ast-grep 非零退出 ${r.status}: ${(r.stderr || '').slice(0, 400)}`, 3);
-    for (const line of (r.stdout || '').split('\n')) {
-      if (line.trim()) out.push(JSON.parse(line));
-    }
+    scan(filesAbs.slice(i, i + CHUNK));
   }
-  return out;
+  return { matches: out, degraded };
 }
 
 // ---------- 事实翻译 ----------
@@ -236,6 +266,17 @@ function main() {
   } else {
     walk(root, root, files, links, dirs);
   }
+  // 登记在册的 submodule 内路径会让 check-ignore fatal 128——
+  // 从 .gitmodules 取登记前缀剔除；普通嵌套仓（vertical 物化含 .git）
+  // 照喂不误——父仓忽略规则对它们照常答。
+  const subPrefixes = (() => {
+    try {
+      const gm = fs.readFileSync(path.join(root, '.gitmodules'), 'utf8');
+      return [...gm.matchAll(/^\s*path\s*=\s*(\S+)\s*$/gm)]
+        .map((m) => m[1].replace(/\\/g, '/') + '/');
+    } catch { return []; }
+  })();
+  const inSub = (rel) => subPrefixes.some((s) => rel.startsWith(s));
 
   const facts = [];
   const sg = findAstGrep();
@@ -244,9 +285,25 @@ function main() {
   const fileExists = (rel) => { try { return fs.existsSync(path.join(root, rel)); } catch { return false; } };
   const mentionCands = []; // [{docRel, name, line}] —— decl 符号表齐了再二遍解析
 
+  // declare 边（v1.1）：git check-ignore oracle——先于内容扫描跑，
+  // 返回的 ignored 集兼任"内容扫描剪枝面"（被忽略树只留 file/dir/declare
+  // 事实，不读内容——vendored/venv/产物树的死链与符号属上游账面噪音）
+  let ignored = new Set();
+  if (a.ignoreScan) {
+    const gi = gitignoreFacts(root,
+      files.map((f) => f.rel).filter((r) => !inSub(r)));
+    facts.push(...gi.facts);
+    ignored = gi.ignored;
+  }
+  // 内容扫描谓词：--extract-dirs 显式收窄优先；缺省=非忽略声明件全扫；
+  // submodule 内文件同样不读内容——那是另一个仓的治理面（file/dir 事实照产）
+  const inScope = (f) => a.extractDirs
+    ? a.extractDirs.includes(f.rel.split('/')[0])
+    : !ignored.has(f.rel) && !inSub(f.rel);
+
   for (const { rel, ext } of files) {
     let extra;
-    if (a.mdScan && MD_EXT.has(ext)) {
+    if (a.mdScan && MD_EXT.has(ext) && inScope({ rel, ext })) {
       let text = null;
       try { text = fs.readFileSync(path.join(root, rel), 'utf8'); } catch {}
       if (text != null) {
@@ -270,20 +327,47 @@ function main() {
       extractor: 'walk@1',
       extra: { to: l.to, ...(l.dead ? { dead: true } : {}) } }));
   }
-  // declare 边（v1.1）：git check-ignore oracle——命中行产边，provenance 带规则行号
-  if (a.ignoreScan) facts.push(...gitignoreFacts(root, files.map((f) => f.rel)));
-
   if (a.contentScan) {
-    const jsFiles = files.filter((f) =>
-      JS_EXT.has(f.ext) && a.extractDirs.includes(f.rel.split('/')[0]));
-    const psFiles = files.filter((f) =>
-      PS_EXT.has(f.ext) && a.extractDirs.includes(f.rel.split('/')[0]));
+    const jsFiles = files.filter((f) => JS_EXT.has(f.ext) && inScope(f));
+    const psFiles = files.filter((f) => PS_EXT.has(f.ext) && inScope(f));
+
+    // js 单文件 regex 降级路径（ast-grep 缺席的 --allow-degraded 面，
+    // 与 ENOBUFS 单文件爆管的韧性降级共用同一实现）
+    const jsRegexFacts = (f) => {
+      const out = [];
+      const text = fs.readFileSync(path.join(root, f.rel), 'utf8');
+      let li = 0;
+      for (const l of text.split(/\r?\n/)) {
+        li++;
+        const im = l.match(/import\s+.*?from\s+['"]([^'"]+)['"]/) ||
+                   l.match(/import\s+['"]([^'"]+)['"]/);
+        if (im) {
+          const r = resolveSpec(root, f.rel, im[1]);
+          out.push(fact({ unit: f.rel, kind: 'import', name: im[1],
+            file: f.rel, line: li, fidelity: 'regex-degraded',
+            scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
+            extractor: regId,
+            extra: { to: r.to, mechanism: 'static',
+              ...(r.dead ? { dead: true } : {}),
+              ...(r.external ? { external: true } : {}) } }));
+        }
+        const fm = l.match(/^\s*(export\s+)?(?:async\s+)?function\s*\*?\s*([\w$]+)/) ||
+                   l.match(/^\s*(export\s+)?(?:const|let|var)\s+([\w$]+)\s*=\s*(?:async\s*)?\(/);
+        if (fm) out.push(fact({ unit: `${f.rel}#${fm[2]}`, kind: 'decl',
+          name: fm[2], file: f.rel, line: li, fidelity: 'regex-degraded',
+          scope: 'file-local', extractor: regId,
+          extra: { shape: 'function',
+            surface: fm[1] ? 'public' : 'internal' } }));
+      }
+      return out;
+    };
 
     if (jsFiles.length && !sg && !a.allowDegraded) {
       die(`ast-grep 前端缺失而 js 文件 ${jsFiles.length} 个待抽——` +
         `fail-closed 拒降级（ADR-0008 D2）；确需降级传 --allow-degraded`, 3);
     } else if (jsFiles.length && sg) {
-      const matches = runAstGrep(sg.bin, jsFiles.map((f) => path.join(root, f.rel)));
+      const { matches, degraded } = runAstGrep(sg.bin,
+        jsFiles.map((f) => path.join(root, f.rel)));
       const byFile = new Map();
       for (const m of matches) {
         const rel = path.relative(root, m.file).replace(/\\/g, '/');
@@ -372,33 +456,19 @@ function main() {
           }
         }
       }
-    } else if (jsFiles.length && a.allowDegraded) {
-      for (const f of jsFiles) {
-        const text = fs.readFileSync(path.join(root, f.rel), 'utf8');
-        let li = 0;
-        for (const l of text.split(/\r?\n/)) {
-          li++;
-          const im = l.match(/import\s+.*?from\s+['"]([^'"]+)['"]/) ||
-                     l.match(/import\s+['"]([^'"]+)['"]/);
-          if (im) {
-            const r = resolveSpec(root, f.rel, im[1]);
-            facts.push(fact({ unit: f.rel, kind: 'import', name: im[1],
-              file: f.rel, line: li, fidelity: 'regex-degraded',
-              scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
-              extractor: regId,
-              extra: { to: r.to, mechanism: 'static',
-                ...(r.dead ? { dead: true } : {}),
-                ...(r.external ? { external: true } : {}) } }));
-          }
-          const fm = l.match(/^\s*(export\s+)?(?:async\s+)?function\s*\*?\s*([\w$]+)/) ||
-                     l.match(/^\s*(export\s+)?(?:const|let|var)\s+([\w$]+)\s*=\s*(?:async\s*)?\(/);
-          if (fm) facts.push(fact({ unit: `${f.rel}#${fm[2]}`, kind: 'decl',
-            name: fm[2], file: f.rel, line: li, fidelity: 'regex-degraded',
-            scope: 'file-local', extractor: regId,
-            extra: { shape: 'function',
-              surface: fm[1] ? 'public' : 'internal' } }));
+      // 单文件 ast-grep 失败 → regex 降级兜底（fidelity 已自带降级戳记，
+      // 消费方按 fidelity×family 矩阵自行降权——不靠静默吞）
+      if (degraded.size) {
+        const rels = new Set([...degraded].map((p) =>
+          path.relative(root, p).replace(/\\/g, '/')));
+        for (const f of jsFiles) {
+          if (rels.has(f.rel)) facts.push(...jsRegexFacts(f));
         }
+        console.error(`[extract-facts] ${degraded.size} 个 js 文件 ast-grep 失败` +
+          `降 regex（巨型混淆/边界输入面）: ${[...rels].slice(0, 5).join(', ')}`);
       }
+    } else if (jsFiles.length && a.allowDegraded) {
+      for (const f of jsFiles) facts.push(...jsRegexFacts(f));
     }
     for (const f of psFiles) {
       const text = fs.readFileSync(path.join(root, f.rel), 'utf8');

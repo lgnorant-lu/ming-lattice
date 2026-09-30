@@ -94,9 +94,17 @@ function ConvertFrom-YamlScalar {
         $items = @()
         foreach ($part in ($Matches[1] -split ',')) {
             $t = $part.Trim()
-            if ($t -ne '') { $items += $t.Trim('"') }
+            if ($t -ne '') { $items += (Unquote-YamlScalar $t) }
         }
         return , $items   # 逗号包裹: 防止单元素数组被 PowerShell 展开为标量
     }
-    return $Value.Trim('"')
+    return Unquote-YamlScalar $Value
+}
+
+# YAML 引号标量: 首尾成对的 ' 或 " 剥一层；不成对的是字面内容不碰
+function Unquote-YamlScalar {
+    param([string]$V)
+    if ($V.Length -ge 2 -and (($V[0] -eq "'" -and $V[-1] -eq "'") -or
+        ($V[0] -eq '"' -and $V[-1] -eq '"'))) { return $V.Substring(1, $V.Length - 2) }
+    return $V
 }

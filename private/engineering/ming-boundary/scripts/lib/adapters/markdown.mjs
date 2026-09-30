@@ -78,11 +78,14 @@ export function mdFacts(root, rel, text, fileExists) {
   let inFence = false;
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
-    if (/^\s*```/.test(l)) inFence = !inFence;
+    if (/^\s*(```|~~~)/.test(l)) { inFence = !inFence; continue; }
+    // 围栏代码块内不产 docref——CommonMark 语义块内容是字面文本；
+    // [b(0x14)]() / [native code](注) 这类 JS/伪码语法撞形是实证噪音源
+    if (inFence) continue;
     // docref 前先剥行内 code-span——`[x](y)` 在反引号里是语法示例不是引用
     // （mention 候选不从剥壳行取：code-span 恰是 mention 的信号源）
     const bare = l.replace(/`[^`\n]*`/g, '');
-    // docref: [t](target) —— 代码块内也算（示例文档里的链接同样是引用承诺）
+    // docref: [t](target)
     for (const m of bare.matchAll(/\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {
       const to = docTarget(rel, m[2]);
       if (to === null) continue;
@@ -93,13 +96,11 @@ export function mdFacts(root, rel, text, fileExists) {
         extra: { to, ...(dead ? { dead: true } : {}) } }));
     }
     // mention 候选：code-span `name(` 与 heading 内 name(（含连字符——ps1 Verb-Noun 命名）
-    if (!inFence) {
-      for (const m of l.matchAll(/`([A-Za-z_$][\w$-]*)\s*\(/g))
-        cands.push({ name: m[1], line: i + 1 });
-      const h = l.match(/^#{1,6}\s+/);
-      if (h) for (const m of l.slice(h[0].length).matchAll(/\b([A-Za-z_$][\w$-]*)\s*\(/g))
-        cands.push({ name: m[1], line: i + 1 });
-    }
+    for (const m of l.matchAll(/`([A-Za-z_$][\w$-]*)\s*\(/g))
+      cands.push({ name: m[1], line: i + 1 });
+    const h = l.match(/^#{1,6}\s+/);
+    if (h) for (const m of l.slice(h[0].length).matchAll(/\b([A-Za-z_$][\w$-]*)\s*\(/g))
+      cands.push({ name: m[1], line: i + 1 });
   }
   return { facts, docrole, mentionCands: cands };
 }

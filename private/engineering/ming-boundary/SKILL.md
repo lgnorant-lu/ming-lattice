@@ -27,6 +27,8 @@ node scripts/extract-facts.mjs [--root DIR] [--out FILE]
 
 `--files`：只抽给定仓相对路径子集（staged 增量面用；符号链接项产 link 事实，工作区缺席项静默跳过）。`--no-md-scan`/`--no-ignore-scan` 关掉 markdown/gitignore 两默认适配器。
 
+**内容扫描谓词（v1.1a 实测修正）**：缺省=全部支持扩展名（js/ps/md）且未被 `.gitignore` 声明忽略的文件——被忽略树只留 file/dir/declare 事实不读内容（vendored/venv/产物树的死链与符号属上游账面噪音，事实源处剪枝）。`--extract-dirs` 显式收窄优先于忽略集。gitignore oracle 仅在 `--root` 为 git worktree 顶时激活（`rev-parse --show-toplevel` 判等）——子目录抽取不继承父仓声明；`.gitmodules` 登记的 submodule 路径自动剔除出 oracle 输入（check-ignore 对其 fatal 128）。ast-grep 单文件失败（ENOBUFS/os error/输出超 512MB 字符串顶）自动二分降级→单文件→regex 兜底，记 `fidelity:regex-degraded` 不 die。
+
 产出确定性 JSONL，schema v1.1（additive 于 v1）：
 
 ```
@@ -95,7 +97,7 @@ staged 文件集（含 `.md` 与 `.gitignore`）→ `extract-facts --files` → 
 - [禁止] 前端缺失静默降级——ast-grep 不在位且未传 `--allow-degraded` 时 exit 3（双事实源分叉比没有更糟）
 - [禁止] 给 schema 加字段解释单个仓库特例——特例先记 evidence，泛化验证后再加（加法演进，schemaVersion 升位）
 - [禁止] 行号进 `unit` 或作判定键——`line` 只是展示元数据
-- [警告] vendored/base/deployable 不产内容事实（白名单外）——只 file/link，别指望从 vendored 里抽符号
+- [警告] 缺省谓词只认"gitignore 声明忽略"——非 git 根（或 `--no-ignore-scan`）时全文件扫描：vendored 树此时会产内容事实，边界靠契约里 exemptions/domains 表达，不靠目录名
 - [警告] junction/symlink 不穿透、产 link 事实即停——消费方自行 resolve 目标再扫（实测语义，勿假设跟随）
 
 ## 4. 已踩过的坑（摘要）
@@ -112,6 +114,11 @@ staged 文件集（含 `.md` 与 `.gitignore`）→ `extract-facts --files` → 
 - win32 上 `spawnSync('ast-grep')` 对 npm 全局 `.cmd` shim 必然 ENOENT（CVE-2024-27980 禁 .cmd 直跑，多行参数过 shell 又必碎）——前端探测必须扫 PATH 推导包内原生 exe（lib/frontends.mjs，抽取器与测试共用，勿再硬编码机器路径）
 - `git check-ignore -z -v` 的输出语法实测是"每条命中=4 个 \0 字段+\0 收尾"——传 `-n` 会混入 `path\0` 裸记录产生混用终止符歧义，非命中不产边就别传 -n
 - golden JSONL 固件必须 `.gitattributes text eol=lf` 钉行尾——autocrlf=true 的机器 checkout 成 CRLF 即假死
+- 围栏代码块（三反引号与 ~~~）是字面文本不是 markup——里面形如 `[b(0x14)]()`、`[native code](x)` 的 JS/伪码撞形曾灌出 30+ 假死链（IV8/js-reverse 实测），docref/mention 双双不取围栏内；行内写三反引号本身会打乱 code-span 配对，文档里别这么写
+- yaml-lite 曾只剥双引号——`'probe_*.py'` 解析成带引号字面量致规则静默全哑；YAML 单引号包裹 glob 是手写惯用形，成对引号剥一层（不成对的不碰）
+- `git check-ignore` 对**已登记 submodule** 内路径 fatal 128、整条 stdin 输出作废——输入须先按 `.gitmodules` 登记路径剔除（`base/reverse-skill` 实例）；但含 `.git` 的**非登记**嵌套仓（vertical 物化）照常喂——父仓忽略规则对它们有效，别一刀切
+- spawnSync 对 ast-grep 的"批级失败"不止 ENOENT/ENOBUFS——os error 87、stdout 超 512MB 字符串顶（`ERR_STRING_TOO_LONG` 是抛异常非返回 error）都要走二分→单文件→regex 降级链；tabx.js 式巨型混淆单文件实证过
+- `CONTENT_DIRS` 目录白名单是本仓私货不是通用语义——`js逆向/`、`crates/`、`projects/` 这类真仓目录词表对不上时抽取器静默退化成文件枚举器（js-reverse 曾零 import 事实）；谓词必须落成"未被忽略声明"而不是"目录名命中"
 
 ## 参考
 

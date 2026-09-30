@@ -103,6 +103,12 @@ export async function run() {
       'Syntax sample: `[x](y)` is meta, not a ref.',
       'Dead: [gone](nope/missing.md).',
       'Ambiguous name: `dup()` here.',
+      '```',
+      'var x = arr[0]; call[m[b(0x1)]()](fake/link.md); [code](in-fence.md)',
+      '```',
+      '~~~text',
+      'also fenced: [tilde](tilde-fence.md)',
+      '~~~',
     ].join('\n'));
     wfile('src/c.mjs', 'export function dup() {}\n');
     wfile('src/dup2.mjs', 'export function dup() {}\n'); // dup 双定义 → mention 歧义
@@ -146,8 +152,19 @@ export async function run() {
     for (const s of ['function', 'arrow', 'method', 'class', 'generator'])
       assert.ok(shapes.has(s), `缺声明形态 ${s}: ${[...shapes]}`);
     assert.ok(decls.some((d) => d.name === 'm'), 'class 方法 m 应入图');
-    // vendored 域不产内容事实（白名单外）
-    assert.equal(at('vendored/v1/lib.mjs', 'decl').length, 0, 'vendored 不应产 decl');
+    // v1.1a 谓词变更：无 git 上下文时 vendored 无从识别——缺省全扫产 decl；
+    // vendored 边界靠 declare 边（.gitignore/豁免）表达，不再靠目录名私货
+    assert.ok(at('vendored/v1/lib.mjs', 'decl').length > 0,
+      '非 git 根全扫——vendored 也应产 decl 事实');
+    // --extract-dirs 显式收窄仍生效（staged/聚焦面用）
+    const rNarrow = runNode([EXTRACT, '--root', R, '--extract-dirs', 'src',
+      '--allow-degraded', '--out', path.join(tmpRoot, 'f-narrow.jsonl')]);
+    assert.equal(rNarrow.status, 0, `--extract-dirs 应过: ${rNarrow.stderr}`);
+    const nf = parseJsonl(fs.readFileSync(path.join(tmpRoot, 'f-narrow.jsonl'), 'utf8'));
+    assert.ok(!nf.some((x) => x.kind === 'decl' && x.file.startsWith('vendored/')),
+      '--extract-dirs src 时 vendored 不应产 decl');
+    assert.ok(nf.some((x) => x.kind === 'decl' && x.file.startsWith('src/')),
+      '--extract-dirs src 时 src 应产 decl');
     // ps1 降级线: function decl + dot-source import
     const psDecl = at('scripts/tool.ps1', 'decl');
     assert.ok(psDecl.some((d) => d.name === 'Invoke-Thing' && d.fidelity === 'regex-degraded'),
@@ -183,6 +200,9 @@ export async function run() {
       '死链应标 dead');
     assert.ok(!drNames.some((t) => t === 'y' || /\(y\)|docs\/y$/.test(t || '')),
       'code-span 内 [x](y) 不应产边');
+    // 围栏块（``` 与 ~~~）内容是字面文本——JS 撞形语法与伪链都不产 docref
+    assert.ok(!drNames.some((t) => /in-fence|tilde-fence|fake\/link|0x1/.test(t || '')),
+      `围栏块内不应产 docref: ${JSON.stringify(drNames)}`);
     // 8d. mention 边：唯一命中 → 解析到 decl；双定义 → 歧义 unresolved
     const men = at('docs/api.md', 'mention');
     const mTop = men.find((x) => x.name === 'top');
@@ -509,6 +529,9 @@ export async function run() {
       fs.writeFileSync(path.join(R3, 'a.tmp'), 'x');
       fs.writeFileSync(path.join(R3, 'b.txt'), 'x');
       fs.writeFileSync(path.join(R3, 'important.tmp'), 'x');
+      fs.mkdirSync(path.join(R3, 'build'), { recursive: true });
+      fs.writeFileSync(path.join(R3, 'build/gen.js'), 'export function gen() {}\n');
+      fs.writeFileSync(path.join(R3, 'src-kept.js'), 'export function kept() {}\n');
       const g3 = runNode([EXTRACT, '--root', R3, '--allow-degraded']);
       assert.equal(g3.status, 0, `gitignore 抽取应过: ${g3.stderr}`);
       const gf = parseJsonl(g3.stdout);
@@ -519,6 +542,13 @@ export async function run() {
         '!important.tmp 应产 negated 边');
       assert.ok(!decls.some((x) => x.extra?.to === 'b.txt'), 'b.txt 不应有 declare 边');
       assert.ok(decls.every((x) => x.extractor === 'git-check-ignore@1'), 'extractor 戳记');
+      // v1.1a 剪枝：忽略声明件不读内容——file/declare 事实在，decl 事实不在
+      assert.ok(gf.some((x) => x.kind === 'file' && x.unit === 'build/gen.js'),
+        '忽略件仍产 file 事实（隔离检测面）');
+      assert.ok(!gf.some((x) => x.kind === 'decl' && x.file.startsWith('build/')),
+        '忽略目录内 js 不产 decl');
+      assert.ok(gf.some((x) => x.unit === 'src-kept.js#kept'),
+        '非忽略件正常产 decl');
       // 非 git 仓静默空集（repo2 无 .git）
       const gNo = runNode([EXTRACT, '--root', R2, '--allow-degraded']);
       assert.equal(gNo.status, 0);
