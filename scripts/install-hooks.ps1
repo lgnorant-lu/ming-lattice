@@ -118,6 +118,29 @@ if ($Target) {
         } else {
             Write-Host "[scaffold] boundaries.yaml 已存在——跳过（契约归采纳侧）" -ForegroundColor Yellow
         }
+
+        # 4.5e 自定义消费方约定区——仅建位+README 种子，永不覆盖用户文件
+        $consDir = Join-Path $dest 'boundary.consumers'
+        $consReadme = Join-Path $consDir 'README.md'
+        if (-not (Test-Path $consReadme)) {
+            if ($PSCmdlet.ShouldProcess($consReadme, '铺入 boundary.consumers 约定说明')) {
+                New-Item -ItemType Directory -Path $consDir -Force | Out-Null
+                @'
+# boundary.consumers/ — 自定义消费方约定区
+
+此目录文件**不会被 install-hooks 覆盖**（用户资产面，同 gates.local/ 语义）。
+
+- 文件名即消费方 id：`boundary.consumers/<id>.mjs`
+- 在 `boundaries.yaml` 的 `consumers:` 段**显式列名**才激活——目录内有文件不自动跑
+- 契约（消费方协议 v1）：`node <id>.mjs --facts <jsonl> --root <root> --config <json> [--apply]`
+  - `outputs: findings` → stdout 逐行 JSONL `{rule,severity,unit,expect,observed,fix}`
+  - `outputs: report` → stdout 自由文本
+  - `outputs: files` → stdout JSON `{planned,written,preview?}`，须声明 `mutates: true`
+- 参考实现：`private/engineering/ming-boundary/scripts/consumers/`
+'@ | Set-Content -Path $consReadme -Encoding utf8
+                Write-Host "[scaffold] boundary.consumers/ <- 约定区+说明（自定义消费方住所）" -ForegroundColor Gray
+            }
+        }
     }
 
     # 5. hooksPath + integrity 存值（+ commit.template 文件约定：目标仓有 .gitmessage 即指向）

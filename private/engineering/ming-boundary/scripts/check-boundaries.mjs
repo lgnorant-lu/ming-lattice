@@ -54,7 +54,9 @@ function loadRules(p) {
 }
 
 // ---------- schema 校验（fail-closed：未知键/缺字段直接拒） ----------
-const KNOWN_TOP = new Set(['version', 'domains', 'rules', 'meta', 'manifest', 'exemptions']);
+const KNOWN_TOP = new Set(
+  ['version', 'domains', 'rules', 'meta', 'manifest', 'exemptions',
+   'consumers', 'extends']);   // consumers=消费方调度(run-boundary 读); extends=预设留位(候审)
 const KNOWN_RULE = new Set(
   ['forbidden', 'allowed', 'required', 'covered', 'isolated', 'parity', 'attrs']);
 const KNOWN_CLAUSE = new Set([
@@ -138,10 +140,19 @@ function lintRules(rules) {
       if (overlap(cf.from, ca.from) && overlap(cf.via, ca.via) && overlap(cf.to, ca.to))
         warn.push(`ruleset-lint: forbidden[${cf.name}] ∩ allowed[${ca.name}] ` +
           `域交叠——deny-overrides 下 forbidden 赢，确认非笔误`);
+  // 域引用 lint：from/to/from_in/to_in 收域名（非 glob）——引用未声明域=死规则
+  const SENTINELS = new Set(['external', '__other__', '__dead__', '__none__']);
+  const domNames = new Set((rules.domains || []).map((d) => d.name));
   for (const [fam, list] of Object.entries(R))
-    for (const c of list)
+    for (const c of list) {
       if (c._synthName)
         warn.push(`ruleset-lint: ${fam}[${c.name}] 缺 name——建议显式 ruleId 便于豁免锚定`);
+      for (const k of ['from', 'to', 'from_in', 'to_in'])
+        for (const v of c[k] || [])
+          if (!domNames.has(v) && !SENTINELS.has(v))
+            warn.push(`ruleset-lint: ${fam}[${c.name}] ${k} 引用未声明域 '${v}'` +
+              `——域键收域名非 glob（units_in/exempt 才是 glob），当前为死规则`);
+    }
   return warn;
 }
 

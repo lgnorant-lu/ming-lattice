@@ -65,3 +65,20 @@ rules:
   covered: []   # 文档拓扑覆盖：units_in docs → 被 docref 入向边覆盖
   isolated: []  # 刻意隔离断言：units_in 内不得有关联边（除非 declare/exempt 认领）
   parity: []    # 声明集⟺实测集对账：declared 列表 vs observed_units_in
+
+# 消费方调度段（run-boundary.mjs 读——一次提取多处消费；evaluator 恒在不在此列）
+# 激活通道仅此一处列举：未列名文件不跑；列名无实现 fail-closed。
+# 内置目录件: metrics(report) / emit-skeleton(files,manual-only) / diff(report,需 baseline)
+# 自定义: boundary.consumers/<id>.mjs（约定位）或 entry: <仓内路径>（显式）
+# 元数据: phases:[staged|ci|manual] level:[error|warn|note] outputs:[findings|report|files] mutates:bool
+# consumers:
+#   metrics:
+#     phases: [ci, manual]
+#   emit-skeleton:
+#   diff:
+#     baseline: .boundary/baseline.facts.jsonl
+#   my-check:
+#     entry: boundary.consumers/my-check.mjs   # 须解析在仓根内，越界即拒
+#     phases: [ci]
+#     outputs: findings
+#     level: warn

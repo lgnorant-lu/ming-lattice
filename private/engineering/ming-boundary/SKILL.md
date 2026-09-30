@@ -92,6 +92,16 @@ ast-grep 建议（缺席 `--allow-degraded` 降 regex 档），git（ignore 适�
 
 staged 文件集（含 `.md` 与 `.gitignore`）→ `extract-facts --files` → `check-boundaries --facts - --staged` → 违规映射 findings。证据分级按 fidelity×family 交叉表：syntactic/exact 按规则 severity 映射（note 降为非阻断警告）；regex-degraded 一律降 warn 人工复核；finding `fix` 文本随消息透出。boundaries.yaml 缺席的下游仓静默跳过；evaluator/schema 失败=error finding。配置：`gate.boundary-edge.level`（.hooksrc §12）。
 
+### 2.6 消费层编排（run-boundary.mjs + consumers/）
+
+`run-boundary.mjs` = 编排者：**extract once → fan-out**——一次提取分发全部启用消费方
+（evaluator 恒在，不进 consumers 段）。`boundaries.yaml` 顶层 `consumers:` 段逐 id 列举
+激活（列举=唯一激活通道，列名无实现 fail-closed）。解析序：`entry:`（仓根内）→
+`boundary.consumers/<id>.mjs`（采纳侧约定区，安装器永不覆写）→ `consumers/<id>.mjs`（内置件）。
+内置三公民：`metrics`（report，诊断遥测）、`emit-skeleton`（files，manual-only，
+拓扑推断起草 `boundaries.suggested.yaml`，永不覆盖既有文件，推断规则一律 warn）、
+`diff`（report，事实面差分，需 `baseline:`）。协议与元数据全集见 `scripts/consumers/README.md`。
+
 ## 3. 红线 / 边界
 
 - [禁止] 前端缺失静默降级——ast-grep 不在位且未传 `--allow-degraded` 时 exit 3（双事实源分叉比没有更糟）
@@ -119,6 +129,10 @@ staged 文件集（含 `.md` 与 `.gitignore`）→ `extract-facts --files` → 
 - `git check-ignore` 对**已登记 submodule** 内路径 fatal 128、整条 stdin 输出作废——输入须先按 `.gitmodules` 登记路径剔除（`base/reverse-skill` 实例）；但含 `.git` 的**非登记**嵌套仓（vertical 物化）照常喂——父仓忽略规则对它们有效，别一刀切
 - spawnSync 对 ast-grep 的"批级失败"不止 ENOENT/ENOBUFS——os error 87、stdout 超 512MB 字符串顶（`ERR_STRING_TOO_LONG` 是抛异常非返回 error）都要走二分→单文件→regex 降级链；tabx.js 式巨型混淆单文件实证过
 - `CONTENT_DIRS` 目录白名单是本仓私货不是通用语义——`js逆向/`、`crates/`、`projects/` 这类真仓目录词表对不上时抽取器静默退化成文件枚举器（js-reverse 曾零 import 事实）；谓词必须落成"未被忽略声明"而不是"目录名命中"
+- yaml-lite 不认 flow-map `{ k: v }`——consumers 条目写成单行 map 会静默解析成字符串;块式键值才安全（runner 侧已加形态检测告警）
+- 规则 `from`/`to`/`from_in`/`to_in` 收**域名**不是 glob——`from: 'src/**'` 恒假成死规则；ruleset-lint 已加"引用未声明域"校验（sentinels: external/__other__/__dead__/__none__）
+- emit 类生成器的引导悖论：观察现状生成的契约会把违规固化成法律——只写新路径+推断一律 warn+零入度数量进注释（terraform `-generate-config-out` 先例）
+- "目录被忽略"判定不能按 declare 首段截断——`**/.*` 这类点文件规则会误伤 `deployable/`（其子路径命中）；按"目录下文件 declare 覆盖率≥80%"判才稳
 
 ## 参考
 

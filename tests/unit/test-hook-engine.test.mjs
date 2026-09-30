@@ -877,7 +877,7 @@ export async function run() {
       fs.writeFileSync(path.join(edir, '.hooksrc'), [
         'lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off',
         'gate.impact-test.level=off', 'gate.review-after.level=off',
-        'chore.c.watch=t.txt', 'chore.c.stages=pre-commit', 'chore.c.cadence=2s', 'chore.c.message=提醒件',
+        'chore.c.watch=t.txt', 'chore.c.stages=pre-commit', 'chore.c.cadence=30s', 'chore.c.message=提醒件',
       ].join('\n'));
       fs.writeFileSync(path.join(edir, 't.txt'), 'x\n');
       execFileSync('git', ['add', '.'], { cwd: edir });
