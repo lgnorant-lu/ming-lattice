@@ -1,6 +1,7 @@
 // tests/unit/test-ming-boundary.test.mjs
 // 单元测试: private/engineering/ming-boundary/scripts/{extract-facts,check-boundaries,
 //   run-boundary}.mjs + scripts/lib/langs/rust.mjs + scripts/lib/langs/python.mjs
+//   + scripts/lib/langs/sh.mjs + scripts/lib/yaml.mjs
 //   + scripts/lib/langs/rust.derived.mjs + scripts/lib/langs/python.derived.mjs
 //   （语法级前端描述符与上游派生词表，后者经描述符 import 由断言面行使）
 // 覆盖: 事实 schema 形状 / domainOf 首段锚定回归 / 排序确定性(byte-identical) /
@@ -23,6 +24,7 @@ import { parseTags, linguistExts, derive, emitDerived,
   from '../../private/engineering/ming-boundary/scripts/lib/langs/derive.mjs';
 
 const PKG = path.resolve(import.meta.dirname, '../../private/engineering/ming-boundary');
+const REPO = path.resolve(PKG, '../../..');
 const EXTRACT = path.join(PKG, 'scripts/extract-facts.mjs');
 const CHECK = path.join(PKG, 'scripts/check-boundaries.mjs');
 // 前端在位性与抽取器共享同一 oracle——不各自硬编码（机器路径曾藏在两处）
@@ -144,6 +146,22 @@ export async function run() {
     wfile('scripts/sib.py', 'X = 1\n');
     wfile('scripts/useit.py', 'import nest.core\nimport sib\n');
     wfile('scripts/tool.ps1', 'function Invoke-Thing { }\n. .\\lib\\helper.ps1\n');
+    // v1.4 sh 语法级面（上游无 tags.scm 的手写词表件）：source/. 边四分
+    //   （module/dead/computed/external）+ fn/const decl 族谱
+    wfile('scripts/main.sh', [
+      '#!/bin/bash',
+      'source lib/util.sh',
+      '. ./env.sh',
+      'source lib/gone.sh',
+      'source "$DIR/dyn.sh"',
+      '. /etc/profile.d/x.sh',
+      'foo() { :; }',
+      'function bar() { :; }',
+      'readonly MAX=3',
+      'export PATH_ADD=1',
+    ].join('\n'));
+    wfile('scripts/lib/util.sh', 'helper() { :; }\n');
+    wfile('scripts/env.sh', 'E=1\n');
     wfile('docs/note.md', '# md\n');
     // v1.1 文档面：README/docref/mention/docrole 载体
     wfile('README.md', '# Fixture Repo\n\nSee [notes](docs/note.md) and [api](docs/api.md).\n');
@@ -332,6 +350,35 @@ export async function run() {
       'import nest.core 应经包索引命中非标根 deep/');
     assert.equal(at(USE, 'import').find((x) => x.name === 'sib')
       ?.extra?.to, 'scripts/sib.py', '松散脚本同目录互导应命中');
+    // sh. v1.4 Bash 面（固件规范七场景断言面）
+    const SH = 'scripts/main.sh';
+    const shImp = at(SH, 'import');
+    const shLive = shImp.find((x) => x.name === 'lib/util.sh');
+    assert.equal(shLive?.extra?.to, 'scripts/lib/util.sh',
+      'source 相对路径应解析 module 边');
+    assert.equal(shLive?.scope, 'module',
+      '活 source 边应 scope=module（消融钉：落空也产同名 to，光断 to 分辨不出死活）');
+    assert.ok(!shLive?.extra?.dead, '活 source 边不应标 dead');
+    assert.equal(shImp.find((x) => x.name === './env.sh')
+      ?.extra?.to, 'scripts/env.sh', '. ./env 应同机制解析');
+    assert.ok(shImp.find((x) => x.name === 'lib/gone.sh')
+      ?.extra?.dead, 'source 落空应 dead（运行期硬依赖）');
+    const shDyn = shImp.find((x) => x.name === '$DIR/dyn.sh');
+    assert.equal(shDyn?.extra?.mechanism, 'sh-source-computed',
+      '变量展开的 source 应标 sh-source-computed');
+    assert.ok(shDyn && !shDyn.extra?.dead, '动态 source 不可静态判死');
+    assert.equal(shImp.find((x) => x.name === '/etc/profile.d/x.sh')?.scope,
+      'external', '绝对路径 source 应 external');
+    const shDecl = at(SH, 'decl');
+    assert.ok(shDecl.some((d) => d.name === 'foo' && d.extra?.shape === 'fn')
+      && shDecl.some((d) => d.name === 'bar'),
+      'foo(){} 与 function bar(){} 双形态都应产 fn decl');
+    assert.ok(shDecl.some((d) => d.name === 'MAX' && d.extra?.surface === 'internal'),
+      'readonly 非 export 应 internal');
+    assert.ok(shDecl.some((d) => d.name === 'PATH_ADD' && d.extra?.surface === 'public'),
+      'export 赋值应 public');
+    assert.equal(shDecl.filter((d) => d.name === 'PATH_ADD').length, 1,
+      'export X= 的 decl_cmd 与 variable_assignment 不双发');
     // junction: link 事实且不穿透（deployable/d1/x 下无文件事实）
     if (junctionOk) {
       const lk = at('deployable/d1/x', 'link');
@@ -971,7 +1018,53 @@ export async function run() {
       assert.equal(stStale.rust.state, 'stale', 'pin 升未重生成应判 stale');
     }
 
-    console.log('  14 组断言全过');
+    // ---------- 组 15: yaml-lite 去 POSIX 化（lit≡pwsh parity + fail-closed） ----------
+    {
+      const { parseYamlLite } = await import(
+        '../../private/engineering/ming-boundary/scripts/lib/yaml.mjs');
+      const { spawnSync } = await import('node:child_process');
+      // DDT 形态矩阵：map/list/flow/引号/注释/嵌套清单全场景
+      const CASES = [
+        'a: 1\nb: x\nc: [p, q]\n',
+        'list:\n  - a\n  - b\n',
+        'items:\n  - name: n1\n    key: v1\n  - name: n2\n    sub:\n      - s1\n      - s2\n',
+        "q: 'has # inside'  # comment\nd: \"dq\"\nempty: []\n",
+        'deep:\n  l1:\n    l2:\n      - x\n',
+      ];
+      for (const [i, y] of CASES.entries()) {
+        const got = parseYamlLite(y);
+        assert.ok(got && typeof got === 'object', `DDT-${i} 应产对象`);
+      }
+      assert.deepEqual(parseYamlLite(CASES[2]).items[1].sub, ['s1', 's2'],
+        'map 项下嵌套 list 应正确归巢');
+      assert.equal(parseYamlLite(CASES[3]).q, 'has # inside',
+        '引号内 # 不应被注释剥离');
+      // fail-closed：不支持构造必须抛（回退 pwsh 桥而非静默错解）
+      for (const bad of ['a: |\n  block\n', 'a: &x 1\nb: *x\n',
+        'a: {k: v}\n', 'x:\n\t- y\n']) {
+        assert.throws(() => parseYamlLite(bad), /不支持|未闭合/,
+          `非法构造应抛错: ${bad.slice(0, 20)}`);
+      }
+      // CDC parity：本仓+IV8 真契约 lite≡pwsh 输出全等（pwsh 在位才互证）
+      const pwsh = spawnSync('pwsh', ['-NoProfile', '-File',
+        path.join(REPO, 'scripts/lib/yaml2json.ps1'), '-Path',
+        path.join(REPO, 'boundaries.yaml')], { encoding: 'utf8' });
+      if (pwsh.status === 0) {
+        const lite = parseYamlLite(fs.readFileSync(
+          path.join(REPO, 'boundaries.yaml'), 'utf8'));
+        assert.deepEqual(lite, JSON.parse(pwsh.stdout),
+          'boundaries.yaml lite 输出应与 pwsh 正典全等');
+      }
+      // lite 自洽断言（无 pwsh 也跑）：本仓契约的关键面
+      const own = parseYamlLite(fs.readFileSync(
+        path.join(REPO, 'boundaries.yaml'), 'utf8'));
+      assert.ok(own.manifest.edge_kinds.includes('ref'), 'manifest 词表应解析');
+      assert.ok(own.rules.forbidden.length > 0, 'forbidden 规则块应解析');
+      assert.ok(own.exemptions.every((e) => e.glob && e.why),
+        'exemptions 每项应带 glob+why');
+    }
+
+    console.log('  15 组断言全过');
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }

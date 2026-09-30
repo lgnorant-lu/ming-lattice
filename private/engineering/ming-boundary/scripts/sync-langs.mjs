@@ -14,11 +14,10 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { derive, emitDerived, checkDerivedConsistency }
   from './lib/langs/derive.mjs';
+import { loadYaml } from './lib/yaml.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const LANGS_DIR = path.join(HERE, 'lib', 'langs');
-const REPO_ROOT = path.resolve(HERE, '..', '..', '..', '..');
-const YAML2JSON = path.join(REPO_ROOT, 'scripts/lib/yaml2json.ps1');
 const RAW = 'https://raw.githubusercontent.com';
 
 function die(msg, code = 2) { console.error(`[sync-langs] ${msg}`); process.exit(code); }
@@ -36,20 +35,17 @@ for (let i = 0; i < argv.length; i++) {
 if ([a.check, a.heads, a.verify].filter(Boolean).length > 1)
   die('--check/--heads/--verify 互斥');
 
-// ---------- 上游表装载（仓内 yaml-lite 桥） ----------
+// ---------- 上游表装载（lib/yaml.mjs：lite 解析优先，pwsh 桥兜底） ----------
 function loadUpstream() {
-  const p = path.join(LANGS_DIR, 'upstream.yaml');
-  const r = spawnSync('pwsh', ['-NoProfile', '-File', YAML2JSON, '-Path', p],
-    { encoding: 'utf8' });
-  if (r.error || r.status !== 0) die(`yaml 桥失败: ${r.stderr || r.error?.message}`);
-  return JSON.parse(r.stdout);
+  return loadYaml(path.join(LANGS_DIR, 'upstream.yaml'));
 }
 
-function fetchText(repo, rev, p) {
+// Node 22 全局 fetch——去 curl 依赖（win32 无 curl.exe 的老镜像也能跑）
+async function fetchText(repo, rev, p) {
   const url = `${RAW}/${repo}/${rev}/${p}`;
-  const r = spawnSync('curl', ['-sfL', url], { encoding: 'utf8', maxBuffer: 64 << 20 });
-  if (r.error || r.status !== 0) die(`拉取失败 ${url}: ${r.stderr || r.error?.message}`);
-  return r.stdout;
+  const r = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+  if (!r.ok) die(`拉取失败 ${url}: HTTP ${r.status}`);
+  return r.text();
 }
 
 const cfg = loadUpstream();
@@ -92,13 +88,13 @@ if (a.heads) {
 }
 
 // ---------- 默认/--check：拉取派生（在线） ----------
-const lingYml = fetchText(cfg.sources.linguist.repo, cfg.sources.linguist.rev,
+const lingYml = await fetchText(cfg.sources.linguist.repo, cfg.sources.linguist.rev,
   cfg.sources.linguist.path);
 
 let drift = false;
 for (const l of targets) {
   const c = cfg.langs[l];
-  const scm = fetchText(c.grammar, c.rev, c.tags);
+  const scm = await fetchText(c.grammar, c.rev, c.tags);
   const d = derive(l, c, scm, lingYml);
   const body = emitDerived(l, c, d);
   const out = path.join(LANGS_DIR, `${l}.derived.mjs`);

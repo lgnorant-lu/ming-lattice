@@ -15,14 +15,14 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { loadYaml } from './lib/yaml.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DEF_ROOT = path.resolve(HERE, '../../../..');
 const EXTRACT = path.join(HERE, 'extract-facts.mjs');
 const CHECK = path.join(HERE, 'check-boundaries.mjs');
 const CONSUMERS_DIR = path.join(HERE, 'consumers');
-// yaml 桥属 kit 资产——锚定本包所在仓根，而非被测仓根（下游仓无 scripts/lib 桥件）
-const YAML2JSON = path.join(DEF_ROOT, 'scripts/lib/yaml2json.ps1');
+
 
 // 内置目录件登记：id → 默认元数据（yaml entry 可覆写 phases/level 等）
 const BUILTIN = {
@@ -64,11 +64,7 @@ function parseArgs(argv) {
 function loadRules(p, root) {
   if (!fs.existsSync(p)) return null;
   if (/\.json$/i.test(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
-  const r = spawnSync('pwsh', ['-NoProfile', '-File', YAML2JSON, '-Path', p],
-    { encoding: 'utf8' });
-  if (r.error || r.status !== 0)
-    die(`yaml 桥失败（需 pwsh+yaml-lite，或改用 .json 规则）: ${r.stderr || r.error?.message}`, 3);
-  return JSON.parse(r.stdout);
+  return loadYaml(p);
 }
 
 // ---------- consumers 段 lint + 解析（fail-closed：列了名找不到实现=错） ----------

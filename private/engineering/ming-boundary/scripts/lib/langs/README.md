@@ -35,7 +35,7 @@ export function regexFacts(root, rel, extractor): facts[]  // 降级兜底
 | Java | `import a.b.C` | package→目录 1:1 | [OK] 可行（多源根/build 面缺席） | scip-java | 候消费方 |
 | C/C++ | `#include` | quoted=相对、angle=-I 依赖 | [受限] include path 需构建上下文 | clangd→SCIP | 候选，语义面偏深 |
 | TypeScript/JS | `import`/`export`/`require` | 相对路径+index 兜底（已有） | [OK] 已落地 | scip-typescript | **已入** |
-| Bash/sh | `source`/`.` | file→file | [OK] 轻量（同 ps1 档即可） | — | 候消费方 |
+| Bash/sh | `source`/`.` | file→file（相对文件目录，.sh/.bash 探测） | [OK] 已入 `sh.mjs`（v1.4）——上游 tags.scm 缺席，decl 词表手写；`$VAR` 动态 source=unresolved+sh-source-computed 不判死；`bash x.sh` 子进程调用不产边 | — | **已入**——宿主仓脚本面审计（21 sh 件+IV8 2 件） |
 | Lua | `require` | `a.b`→`a/b.lua`+init.lua | [OK] 轻量 | — | 候消费方 |
 | Zig | `@import` | file→file 直接 | [OK] 轻量 | — | 候消费方 |
 | Ruby | `require`/`require_relative` | load path 半动态 | [受限] 可降级 | sorbet | 候消费方 |
@@ -85,7 +85,12 @@ derive.mjs           tags.scm/linguist 解析、派生定型、pin 对 derived �
 |---|---|---|---|---|
 | 离线对账 | `sync-langs --verify` | 无 | derived.provenance.rev==pin；stale/missing/orphan 即 exit1 | `verify.mjs --profile full` 步骤表 |
 | 在线漂移 | `sync-langs --heads` | ls-remote | pin vs grammar HEAD 报告（不代改） | `update.ps1` 尾部（DryRun 跳过） |
-| 重生成 | `sync-langs` / `--check` | curl | 派生重写 / 字节级对账 | 人审 pin 后手动 |
+| 重生成 | `sync-langs` / `--check` | fetch | 派生重写 / 字节级对账 | 人审 pin 后手动 |
+
+**去 POSIX 化（v1.4）**：YAML 读取改 `lib/yaml.mjs`——纯 mjs 子集解析
+优先（零子进程跨端），不支持的构造抛错回退 pwsh 桥，桥也缺席才 die；
+`sync-langs` 取数改 Node 22 全局 `fetch`（去 curl 依赖）。组15 钉死
+lite≡pwsh parity + 非法构造 fail-closed。
 
 **手写面剩余**（上游给不了的——这是规则不是债）：边规则
 （use/import/#include 的语义）、模块→文件解析（构建系统层）、

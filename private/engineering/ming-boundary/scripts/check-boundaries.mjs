@@ -15,10 +15,10 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { domainOf, parseJsonl, globMatch, baseName, unitFile } from './lib/facts.mjs';
+import { loadYaml } from './lib/yaml.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '../../../..');
-const YAML2JSON = path.join(REPO_ROOT, 'scripts/lib/yaml2json.ps1');
 
 function die(msg, code = 2) {
   console.error(`[check-boundaries] ${msg}`);
@@ -44,13 +44,8 @@ function parseArgs(argv) {
 function loadRules(p) {
   if (!fs.existsSync(p)) die(`规则文件不存在: ${p}`);
   if (/\.json$/i.test(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
-  // .yaml/.yml 经仓内 yaml-lite 桥（pwsh 是仓级既有依赖）
-  const r = spawnSync('pwsh', ['-NoProfile', '-File', YAML2JSON, '-Path', p],
-    { encoding: 'utf8' });
-  if (r.error || r.status !== 0)
-    die(`yaml 桥失败（需 pwsh+yaml-lite，或改用 .json 规则）: ${r.stderr || r.error?.message}`, 3);
-  try { return JSON.parse(r.stdout); }
-  catch { die('yaml 桥输出非 JSON', 3); }
+  // .yaml/.yml：lite 解析优先（零子进程跨端），不支持的构造回退 pwsh 桥
+  return loadYaml(p);
 }
 
 // ---------- schema 校验（fail-closed：未知键/缺字段直接拒） ----------
