@@ -22,6 +22,7 @@ import { fact, domainOf, toJsonl } from './lib/facts.mjs';
 import { findAstGrep } from './lib/frontends.mjs';
 import { mdFacts, MD_EXTRACTOR, MD_EXT } from './lib/adapters/markdown.mjs';
 import { gitignoreFacts, GI_EXTRACTOR } from './lib/adapters/gitignore.mjs';
+import * as rustLang from './lib/langs/rust.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '../../../..');
@@ -90,50 +91,6 @@ rule:
 // TS/TSX 复用同一规则集（tree-sitter-typescript 节点名与 js 同构）——只换 language 头
 const AST_RULES_TS = AST_RULES.replace(/language: JavaScript/g, 'language: TypeScript');
 const AST_RULES_TSX = AST_RULES.replace(/language: JavaScript/g, 'language: Tsx');
-
-// Rust 语法级前端（ADR-0010 syntactic 档）：use/mod/fn/struct/enum/trait/type/macro_rules。
-// 不碰宏展开/cfg/feature 语义——那些走外部 precise 证据源（scip/rust-analyzer 适配器）。
-const AST_RULES_RUST = `
-id: rust-use
-language: Rust
-rule:
-  kind: use_declaration
----
-id: rust-mod
-language: Rust
-rule:
-  kind: mod_item
----
-id: rust-fn
-language: Rust
-rule:
-  kind: function_item
----
-id: rust-struct
-language: Rust
-rule:
-  kind: struct_item
----
-id: rust-enum
-language: Rust
-rule:
-  kind: enum_item
----
-id: rust-trait
-language: Rust
-rule:
-  kind: trait_item
----
-id: rust-type
-language: Rust
-rule:
-  kind: type_item
----
-id: rust-macro
-language: Rust
-rule:
-  kind: macro_definition
-`.trim();
 
 const DECL_RE = {
   'decl-function': /function\s*\*?\s*([\w$]+)/,
@@ -262,169 +219,6 @@ function resolveSpec(root, fromRel, spec) {
       return { to: base + suf, external: false };
   }
   return { to: base, external: false, dead: true };
-}
-
-// ---------- Rust 语法级辅助（ADR-0010 syntactic 档） ----------
-
-const RUST_DECL_RE = {
-  'rust-fn': /fn\s+([A-Za-z_]\w*)/,
-  'rust-struct': /struct\s+([A-Za-z_]\w*)/,
-  'rust-enum': /enum\s+([A-Za-z_]\w*)/,
-  'rust-trait': /trait\s+([A-Za-z_]\w*)/,
-  'rust-type': /type\s+([A-Za-z_]\w*)/,
-  'rust-macro': /macro_rules!\s*([A-Za-z_]\w*)/,
-};
-
-// 裸 `pub` 前缀=发布面；`pub(crate)`/`pub(super)`/`pub(in …)` 限域=internal
-function rustSurface(text) {
-  return /^\s*pub\s+(?!\()/.test(text) ? 'public' : 'internal';
-}
-
-// use 路径原文：`[pub[..]] use <path>;`——列表取模块前缀、别名取原名、glob 取父模块
-function rustUseSpec(text) {
-  const m = text.match(/^\s*(?:pub(?:\s*\([^)]*\))?\s+)?use\s+(.+?)\s*;?\s*$/s);
-  if (!m) return null;
-  let p = m[1].trim();
-  p = p.replace(/\s*::\s*\{[^}]*\}\s*$/, '');
-  p = p.replace(/\s+as\s+[A-Za-z_]\w*\s*$/, '');
-  p = p.replace(/\s*::\s*\*\s*$/, '');
-  return p || null;
-}
-
-// crate 根判定：mod/lib/main/build.rs 之外，cargo 自动发现面里
-// tests|benches|examples/<file>.rs 与 src/bin/<file>.rs 各自是独立 crate 根
-// （tests/foo.rs 的 `mod common;` 找兄弟 tests/common/，不是 foo/common/）
-function isRustCrateRoot(rel) {
-  const stem = path.posix.basename(rel).replace(/\.rs$/, '');
-  if (['mod', 'lib', 'main', 'build'].includes(stem)) return true;
-  const parts = path.posix.dirname(rel).split('/');
-  const last = parts[parts.length - 1];
-  if (['tests', 'benches', 'examples'].includes(last)) return true;
-  if (last === 'bin' && parts[parts.length - 2] === 'src') return true;
-  return false;
-}
-
-// crate:: 根=本文件所在 crate 的 src/ 目录；self::/super:: 相对目录；
-// 裸 ident 首段：本文件 mod 声明过=本地模块（等价 self::），否则=外部 crate。
-// ctx.fileMods=本文件 mod 声明名集；ctx.inline=包围 use 的内联 mod 名链（outer→inner），
-// 内联深度会先压进位置再算 super——`mod tests { use super::super::x }` 的
-// 第二个 super 才出到父模块。
-function resolveRustSpec(root, fromRel, spec, ctx = {}) {
-  const segs = spec.split('::').map((s) => s.trim()).filter(Boolean);
-  if (!segs.length) return { to: null, external: false, dead: true };
-  const dir = path.posix.dirname(fromRel);
-  const stem = path.posix.basename(fromRel).replace(/\.rs$/, '');
-  // modDir=本文件模块的孩子目录：crate 根文件=所在目录，具名文件 foo.rs=dir/foo
-  const fileModDir = isRustCrateRoot(fromRel) ? dir : `${dir}/${stem}`;
-  let base = null, i = 0;
-  if (segs[0] === 'crate') {
-    const parts = dir.split('/');
-    const srcAt = parts.lastIndexOf('src');
-    if (srcAt < 0) return { to: null, external: false, dead: true };
-    base = parts.slice(0, srcAt + 1).join('/'); i = 1;
-  } else if (segs[0] === 'self' || segs[0] === 'super') {
-    let d = fileModDir + (ctx.inline?.length ? '/' + ctx.inline.join('/') : '');
-    while (i < segs.length && (segs[i] === 'self' || segs[i] === 'super')) {
-      if (segs[i] === 'super') d = path.posix.dirname(d);
-      i++;
-    }
-    base = d;
-  } else if (ctx.fileMods?.has(segs[0])) {
-    // 文件级 `mod x;`/`mod x {}` 声明——其命名空间在文件模块层（不进内联链）
-    base = fileModDir;
-  } else {
-    return { to: null, external: true };
-  }
-  const rest = segs.slice(i);
-  if (!rest.length) return { to: base, external: false };
-  for (let k = rest.length; k >= 1; k--) {
-    const cand = base + '/' + rest.slice(0, k).join('/');
-    if (fs.existsSync(path.join(root, cand + '.rs')))
-      return { to: cand + '.rs', external: false };
-    if (fs.existsSync(path.join(root, cand + '/mod.rs')))
-      return { to: cand + '/mod.rs', external: false };
-  }
-  // k=0：rest 全部是模块文件内的成员项——super::Elem=父模块文件本身、
-  // crate::Config=crate 根 lib.rs/main.rs。多段路径须证据：模块文件确实内联
-  // 声明了 `mod <rest[0]>`，否则标 dead（crate::gone::X 的 gone 未声明=真死链）
-  const selfFile = [`${base}.rs`, `${base}/mod.rs`, `${base}/lib.rs`,
-    `${base}/main.rs`];
-  for (const cand of selfFile) {
-    const ap = path.join(root, cand);
-    if (!fs.existsSync(ap)) continue;
-    if (rest.length === 1) return { to: cand, external: false };
-    const body = fs.readFileSync(ap, 'utf8');
-    if (new RegExp(`\\bmod\\s+${rest[0]}\\b`).test(body))
-      return { to: cand, external: false };
-  }
-  return { to: base + '/' + rest.join('/'), external: false, dead: true };
-}
-
-// `mod foo;`：声明文件是 mod.rs/lib.rs/main.rs/build.rs 时子模块同级；
-// 其余文件（a.rs）的子模块住 a/ 子目录（2018 版模块规则）
-function resolveRustMod(root, fromRel, name) {
-  const dir = path.posix.dirname(fromRel);
-  const stem = path.posix.basename(fromRel).replace(/\.rs$/, '');
-  const base = isRustCrateRoot(fromRel) ? dir : `${dir}/${stem}`;
-  for (const cand of [`${base}/${name}.rs`, `${base}/${name}/mod.rs`])
-    if (fs.existsSync(path.join(root, cand))) return { to: cand, external: false };
-  return { to: `${base}/${name}.rs`, external: false, dead: true };
-}
-
-// --allow-degraded/ast 单件失败时的 regex 兜底（fidelity 自带戳记，禁拟合宏语义）
-function rustRegexFacts(root, rel, extractorId) {
-  const out = [];
-  const text = fs.readFileSync(path.join(root, rel), 'utf8');
-  // 降级档也收文件级 mod 声明名（内联深度不可知，super 按文件位算——已标戳）
-  const fileMods = new Set(
-    [...text.matchAll(/\bmod\s+([A-Za-z_]\w*)\s*[;{]/g)].map((m) => m[1]));
-  const ctx = { fileMods };
-  let li = 0;
-  for (const l of text.split(/\r?\n/)) {
-    li++;
-    let m = l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?use\s+([^;]+);/);
-    if (m) {
-      const spec = rustUseSpec(l) || m[2].trim();
-      const r = resolveRustSpec(root, rel, spec, ctx);
-      const pub = !!(m[1] && !m[1].includes('('));
-      out.push(fact({ unit: rel, kind: 'import', name: spec, file: rel,
-        line: li, fidelity: 'regex-degraded',
-        scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
-        extractor: extractorId,
-        extra: { to: r.to, mechanism: pub ? 'rust-pub-use' : 'rust-use',
-          ...(r.dead ? { dead: true } : {}),
-          ...(r.external ? { external: true } : {}) } }));
-      continue;
-    }
-    m = l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?mod\s+([A-Za-z_]\w*)\s*;/);
-    if (m) {
-      const r = resolveRustMod(root, rel, m[2]);
-      out.push(fact({ unit: rel, kind: 'import', name: m[2], file: rel,
-        line: li, fidelity: 'regex-degraded',
-        scope: r.dead ? 'unresolved' : 'module', extractor: extractorId,
-        extra: { to: r.to, mechanism: 'mod-decl', ...(r.dead ? { dead: true } : {}) } }));
-      out.push(fact({ unit: `${rel}#${m[2]}`, kind: 'decl', name: m[2],
-        file: rel, line: li, fidelity: 'regex-degraded', scope: 'file-local',
-        extractor: extractorId, extra: { shape: 'mod',
-          surface: m[1] ? 'public' : 'internal' } }));
-      continue;
-    }
-    m = l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?(?:async\s+|unsafe\s+|extern\s+"[^"]+"\s+)*fn\s+([A-Za-z_]\w*)/)
-      || l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?(struct|enum|trait|type)\s+([A-Za-z_]\w*)/)
-      || l.match(/^\s*macro_rules!\s*([A-Za-z_]\w*)/);
-    if (m) {
-      const nm = m[2] && !['struct','enum','trait','type'].includes(m[2]) ? m[2] : (m[3] || m[1]);
-      const isFn = /fn\s/.test(l) || /macro_rules!/.test(l);
-      const pubKw = l.match(/^\s*pub\s+(?!\()/);
-      out.push(fact({ unit: `${rel}#${nm}`, kind: 'decl', name: nm,
-        file: rel, line: li, fidelity: 'regex-degraded', scope: 'file-local',
-        extractor: extractorId,
-        extra: { shape: isFn ? (/macro_rules!/.test(l) ? 'macro' : 'function')
-                            : (m[2] || 'type'),
-          surface: pubKw ? 'public' : 'internal' } }));
-    }
-  }
-  return out;
 }
 
 function psLineFacts(root, rel, text, extractorId) {
@@ -590,7 +384,7 @@ function main() {
       const degraded = new Set();
       for (const [bucket, rules] of
         [[jsFiles, AST_RULES], [tsFiles, AST_RULES_TS], [tsxFiles, AST_RULES_TSX],
-         [rsFiles, AST_RULES_RUST]]) {
+         [rsFiles, rustLang.rules]]) {
         if (!bucket.length) continue;
         const r = runAstGrep(sg.bin, bucket.map((f) => path.join(root, f.rel)), rules);
         matches.push(...r.matches);
@@ -641,11 +435,8 @@ function main() {
             }
           }
         }
-        // Rust 上下文：文件级 mod 声明名集 + 内联 mod range（super 深度扣除用）
-        const rsMods = new Set(ms.filter((x) => x.ruleId === 'rust-mod')
-          .map((x) => (x.text.match(/mod\s+([A-Za-z_]\w*)/) || [])[1])
-          .filter(Boolean));
-        const rsInline = ms.filter((x) => x.ruleId === 'rust-mod' && /\{/.test(x.text));
+        // 语言描述符 per-file 预处理（rust: mod 声明名集+内联 range；其他语言无）
+        const rustPrepared = rel.endsWith('.rs') ? rustLang.prepare(ms) : null;
         for (const m of ms) {
           const line = m.range.start.line + 1;
           const id = m.ruleId;
@@ -678,52 +469,9 @@ function main() {
                 scope: 'unresolved', extractor: astId,
                 extra: { mechanism: 'dynamic-computed' } }));
             }
-          } else if (id === 'rust-use') {
-            const spec = rustUseSpec(m.text);
-            const inline = rsInline
-              .filter((x) => x.range.byteOffset.start < m.range.byteOffset.start &&
-                             m.range.byteOffset.end <= x.range.byteOffset.end)
-              .sort((a, b) => a.range.byteOffset.start - b.range.byteOffset.start)
-              .map((x) => (x.text.match(/mod\s+([A-Za-z_]\w*)/) || [])[1])
-              .filter(Boolean);
-            const r = spec ? resolveRustSpec(root, rel, spec, { fileMods: rsMods, inline })
-                           : { to: null, external: false, dead: true };
-            const pub = /^\s*pub\s+(?!\()/.test(m.text);
-            const base = { file: rel, line, name: spec || '(unparsed)',
-              fidelity: 'syntactic',
-              scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
-              extractor: astId };
-            // use 恒产 import 边；pub use 再产 export 边（re-export 面）
-            facts.push(fact({ ...base, unit: rel, kind: 'import',
-              extra: { to: r.to, mechanism: pub ? 'rust-pub-use' : 'rust-use',
-                ...(r.dead ? { dead: true } : {}),
-                ...(r.external ? { external: true } : {}) } }));
-            if (pub) facts.push(fact({ ...base, unit: rel, kind: 'export',
-              extra: { to: r.to, mechanism: 'rust-pub-use',
-                ...(r.dead ? { dead: true } : {}),
-                ...(r.external ? { external: true } : {}) } }));
-          } else if (id === 'rust-mod') {
-            const nm = (m.text.match(/mod\s+([A-Za-z_]\w*)/) || [])[1] || '?';
-            facts.push(fact({ unit: `${rel}#${nm}`, kind: 'decl', name: nm,
-              file: rel, line, fidelity: 'syntactic', scope: 'file-local',
-              extractor: astId,
-              extra: { shape: 'mod', surface: rustSurface(m.text) } }));
-            // mod foo {…} 内联模块不产依赖边；mod foo; 产文件级边
-            if (!/\{/.test(m.text)) {
-              const r = resolveRustMod(root, rel, nm);
-              facts.push(fact({ unit: rel, kind: 'import', name: nm,
-                file: rel, line, fidelity: 'syntactic',
-                scope: r.dead ? 'unresolved' : 'module', extractor: astId,
-                extra: { to: r.to, mechanism: 'mod-decl',
-                  ...(r.dead ? { dead: true } : {}) } }));
-            }
-          } else if (RUST_DECL_RE[id]) {
-            const nm = (m.text.match(RUST_DECL_RE[id]) || [])[1] || null;
-            facts.push(fact({ unit: `${rel}#${nm || '?'}`, kind: 'decl',
-              name: nm || m.text.slice(0, 40), file: rel, line,
-              fidelity: 'syntactic', scope: 'file-local', extractor: astId,
-              extra: { shape: id.replace('rust-', ''),
-                surface: rustSurface(m.text) } }));
+          } else if (rustLang.handles(id)) {
+            rustLang.handle(id, m, { root, rel, extractor: astId,
+              out: facts, prepared: rustPrepared });
           } else if (DECL_RE[id]) {
             const re = DECL_RE[id];
             const nm = re ? (m.text.match(re) || [])[1] : null;
@@ -743,7 +491,7 @@ function main() {
         for (const f of astFiles) {
           if (rels.has(f.rel))
             facts.push(...(RUST_EXT.has(f.ext)
-              ? rustRegexFacts(root, f.rel, regId) : jsRegexFacts(f)));
+              ? rustLang.regexFacts(root, f.rel, regId) : jsRegexFacts(f)));
         }
         console.error(`[extract-facts] ${degraded.size} 个 js/ts 文件 ast-grep 失败` +
           `降 regex（巨型混淆/边界输入面）: ${[...rels].slice(0, 5).join(', ')}`);
@@ -751,7 +499,7 @@ function main() {
     } else if (astFiles.length && a.allowDegraded) {
       for (const f of astFiles)
         facts.push(...(RUST_EXT.has(f.ext)
-          ? rustRegexFacts(root, f.rel, regId) : jsRegexFacts(f)));
+          ? rustLang.regexFacts(root, f.rel, regId) : jsRegexFacts(f)));
     }
     for (const f of psFiles) {
       const text = fs.readFileSync(path.join(root, f.rel), 'utf8');

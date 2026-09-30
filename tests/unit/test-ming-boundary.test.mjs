@@ -1,5 +1,6 @@
 // tests/unit/test-ming-boundary.test.mjs
-// 单元测试: private/engineering/ming-boundary/scripts/{extract-facts,check-boundaries}.mjs
+// 单元测试: private/engineering/ming-boundary/scripts/{extract-facts,check-boundaries,
+//   run-boundary}.mjs + scripts/lib/langs/rust.mjs（Rust 语法级前端描述符）
 // 覆盖: 事实 schema 形状 / domainOf 首段锚定回归 / 排序确定性(byte-identical) /
 //       声明形态族谱(function/async/arrow/method/getset) / 动态 import 字面量+计算式 /
 //       dead import scope 分类 / junction link 事实+不穿透 / fail-closed 退出码 /
@@ -799,6 +800,27 @@ export async function run() {
       const r7 = runJson(['--phase', 'manual', '--only', 'diff']);
       assert.ok(r7.j.reports.some(rep => rep.id === 'diff' && rep.text.includes('+added 1')),
         `diff 应报 +added 1: ${JSON.stringify(r7.j.reports.map(r => r.id))}`);
+
+      // --facts-extra: 外部适配器事实并入评估分发（CDC 面：producer 契约经归并口）
+      const extraPath = path.join(C, 'ext.facts.jsonl');
+      fs.writeFileSync(extraPath, JSON.stringify({
+        v: 1, unit: 'src/x.mjs#ExtSym', kind: 'decl', name: 'ExtSym',
+        file: 'src/x.mjs', fidelity: 'semantic', scope: 'file-local',
+        extractor: 'scip-adapter@1', extra: { producer: 'rust-analyzer' } }) + '\n');
+      const r8 = runJson(['--phase', 'ci', '--only', 'metrics',
+        '--facts-extra', extraPath]);
+      const mtxt = r8.j.reports.find(r => r.id === 'metrics')?.text || '';
+      assert.ok(mtxt.includes('scip-adapter@1'), '外部事实应入流并见 metrics');
+      assert.ok(mtxt.includes('semantic'), '外部事实 fidelity 档应可见');
+      // 不存在的外部文件 → fail-closed 而非静默跳过
+      const r9 = runRB(['--phase', 'ci', '--only', 'metrics',
+        '--facts-extra', path.join(C, 'nope.jsonl')]);
+      assert.equal(r9.status, 2, '缺外部事实文件应 exit 2 fail-closed');
+      assert.ok(r9.stderr.includes('facts-extra'), 'stderr 应点名 --facts-extra');
+      // --facts 源文件不被归并改写（新 tmp 副本策略）
+      const before = fs.readFileSync(fpath, 'utf8');
+      runJson(['--phase', 'ci', '--only', 'metrics', '--facts-extra', extraPath]);
+      assert.equal(fs.readFileSync(fpath, 'utf8'), before, '--facts 源不得被改写');
     }
 
     console.log('  13 组断言全过');
