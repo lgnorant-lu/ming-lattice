@@ -7,6 +7,7 @@ export const exts: Set<string>            // 触发扩展名
 export const rules: string                // ast-grep 规则 YAML（syntactic 档）
 export function prepare(ms): object       // 每文件预处理（声明表/range 索引等）
 export function prepareRun({root,files})  // run 级预处理（可选：python 包索引）
+export function sniffFile(abs): boolean   // 可选：无扩展名件 128B 嗅探认领（shebang）
 export const handles: (id) => boolean     // 该语言认哪些 ruleId
 export function handle(id, m, ctx): true  // 匹配→facts 推入 ctx.out
 export function regexFacts(root, rel, extractor): facts[]  // 降级兜底

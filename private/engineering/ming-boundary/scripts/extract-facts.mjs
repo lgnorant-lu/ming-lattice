@@ -349,6 +349,17 @@ function main() {
     const rsFiles = files.filter((f) => RUST_EXT.has(f.ext) && inScope(f));
     const pyFiles = files.filter((f) => PY_EXT.has(f.ext) && inScope(f));
     const shFiles = files.filter((f) => SH_EXT.has(f.ext) && inScope(f));
+    // 无扩展名件认领：描述符可选 sniffFile 做 128B 级嗅探（shebang）——
+    // .githooks 钩件即此面入场。注意 ast-grep 按规则语言的扩展名过滤目标
+    // 文件，无扩展名件进 ast 桶也静默跳过——故 sniffed 件不走 astFiles，
+    // 直接 regexFacts（line-regex 档，fidelity 诚实标 regex-degraded）
+    const sniffed = [];
+    for (const f of files) {
+      if (f.ext || !inScope(f)) continue;
+      for (const [lang] of [[shLang]]) {
+        if (lang.sniffFile?.(path.join(root, f.rel))) { sniffed.push({ f, lang }); break; }
+      }
+    }
     const astFiles = [...jsFiles, ...tsFiles, ...tsxFiles, ...rsFiles, ...pyFiles,
       ...shFiles];
 
@@ -534,6 +545,11 @@ function main() {
       const text = fs.readFileSync(path.join(root, f.rel), 'utf8');
       facts.push(...psLineFacts(root, f.rel, text, regId));
     }
+    // sniffed 无扩展名件：与前端在位性无关——ast-grep 不认 extless，
+    // regexFacts 是唯一通道（不受 --allow-degraded 门约束：本路径不是降级
+    // 退路而是唯一实现，fidelity 戳仍如实标 regex-degraded）
+    for (const { f, lang } of sniffed)
+      facts.push(...lang.regexFacts(root, f.rel, regId));
   }
 
   // mention 二遍：code-span/heading 候选名查 decl 符号表

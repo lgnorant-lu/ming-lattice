@@ -25,7 +25,8 @@
 // 诚实缺席（文档化不实现）：
 //   `bash x.sh`/`sh x.sh` 子进程调用不产边（语义≠source 并入，误并入会
 //   污染 import 集）——如需审计走 command 名单族另立 kind；
-//   无扩展名的 .githooks/* 钩件不属 exts 触发面（walk 按扩展名分派）；
+//   无扩展名件经 sniffFile 前 160B shebang 嗅探认领（#!.*\b(ba)?sh\b——
+//   .githooks/* 钩件即靠此面入场；非钩件的哈希键/数据件自然落空）；
 //   heredoc 内文/命令替换内嵌 source 不解析（嵌套词法面留给 precise）。
 import fs from 'node:fs';
 import path from 'node:path';
@@ -62,6 +63,20 @@ rule:
 `;
 
 export function prepare() { return {}; }
+
+// 可选契约：无扩展名文件认领嗅探（walk 对 ext=='' 的件调用——
+// 只读前 160B 判 shebang；#!.*\b(ba)?sh\b 保守收 sh/bash，
+// zsh/ksh 等异方言不冒领）
+export function sniffFile(abs) {
+  try {
+    const fd = fs.openSync(abs, 'r');
+    const buf = Buffer.alloc(160);
+    const n = fs.readSync(fd, buf, 0, 160, 0);
+    fs.closeSync(fd);
+    if (n < 3 || buf[0] !== 0x23 || buf[1] !== 0x21) return false;
+    return /^#![^\r\n]*\b(?:ba)?sh\b/.test(buf.toString('utf8', 0, n));
+  } catch { return false; }
+}
 
 const SH_IDS = new Set(['sh-source', 'sh-fn', 'sh-decl-cmd', 'sh-assign']);
 export const handles = (id) => SH_IDS.has(id);

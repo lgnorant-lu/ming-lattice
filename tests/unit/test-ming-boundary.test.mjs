@@ -162,6 +162,10 @@ export async function run() {
     ].join('\n'));
     wfile('scripts/lib/util.sh', 'helper() { :; }\n');
     wfile('scripts/env.sh', 'E=1\n');
+    // 无扩展名认领面：shebang 嗅探收 .githooks 钩件（ext=='' 走 sniffFile）
+    wfile('.githooks/pre-commit', '#!/bin/bash\nsource ../scripts/env.sh\nhook_fn() { :; }\n');
+    wfile('.githooks/not-a-hook', 'plain text no shebang\n');
+    wfile('data-noext', 'binary\x00data no ext\n');
     wfile('docs/note.md', '# md\n');
     // v1.1 文档面：README/docref/mention/docrole 载体
     wfile('README.md', '# Fixture Repo\n\nSee [notes](docs/note.md) and [api](docs/api.md).\n');
@@ -379,6 +383,17 @@ export async function run() {
       'export 赋值应 public');
     assert.equal(shDecl.filter((d) => d.name === 'PATH_ADD').length, 1,
       'export X= 的 decl_cmd 与 variable_assignment 不双发');
+    // shebang 认领：无扩展名 .githooks 钩件经 sniffFile 入 sh 面
+    const HOOK = '.githooks/pre-commit';
+    assert.equal(at(HOOK, 'import').find((x) => x.name === '../scripts/env.sh')
+      ?.extra?.to, 'scripts/env.sh',
+      '无扩展名钩件的 source 应解析 module 边（sniffFile 认领）');
+    assert.ok(at(HOOK, 'decl').some((d) => d.name === 'hook_fn'),
+      '钩件函数 decl 应产出');
+    assert.equal(at('.githooks/not-a-hook', 'decl').length, 0,
+      '无 shebang 件不应被认领');
+    assert.equal(at('data-noext', 'decl').length, 0,
+      '二进制无扩展名件不应被认领');
     // junction: link 事实且不穿透（deployable/d1/x 下无文件事实）
     if (junctionOk) {
       const lk = at('deployable/d1/x', 'link');
