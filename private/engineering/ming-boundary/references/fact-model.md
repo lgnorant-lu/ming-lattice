@@ -255,6 +255,53 @@ default-deny 式 gitignore（`/*` + `!` 逐条放行）：根目录误入文件�
 - OASIS SARIF 2.1.0: https://docs.oasis-open.org/sarif/sarif/v2.1.0/
 - schema+教程: https://github.com/oasis-tcs/sarif-spec
 
+### J. 生产/消费双侧架构先例 — SCIP producers / Glean 派生层 / Sourcegraph 三档
+（2026-09-30 蔓延调研固化，ADR-0010 姊妹节）
+
+**同构性审计结论**——结构层与 Glean 同构、与 SCIP 不同构，且各有其理：
+
+| 系统 | 数据形状 | 深度结构 | 我们对应 |
+|---|---|---|---|
+| Glean | **扁平事实集**（用户自定义 predicate:key->value，dedup DAG） | 无固定层级；跨语言中立面由 Angle 规则**派生** | facts.jsonl 平流行 + manifest 词表 + computed 派生生产器——**同构** |
+| SCIP | **嵌套树** Index->Document->Occurrence+SymbolInformation | 三级固定容器，range 级定位 | 我们刻意扁平化（行级、append-only、jq 友好）——**不同构且不应同构**（SCIP 形状服务编辑器 UX，我们服务流式审计） |
+
+**同构点的精确边界**：可吸收的是身份/标记层（Symbol 语法、Occurrence 角色位组），
+不可吸收的是容器层级（嵌套 document 树在流式消费下是负担）。SCIP 本身没有
+import/module 依赖边——它是符号 occurrence 中心模型；我们的文件级边
+（import/docref/declare）是 dep-cruiser 系传统，两个模型的正交面。
+
+**SCIP 的可扩展性解剖**（"固定范式还是可调"的答案）：
+闭合骨架 + 开放词表——proto 字段只增不改（deprecated range->typed_range
+为加法演进）、SymbolRole 位组可扩、Language 为开放字符串、Descriptor.Suffix
+带 allow_alias。与我们"固定行 schema + manifest 注册词表"是同一元形态。
+
+**Sourcegraph 三档生产先例**（官方文档，优先级序）：
+Precise（编译器级 indexer，scip-rust-analyzer/scip-typescript/…每语言独立 repo）
+> Syntactic（tree-sitter 级零配置）> Search（ctags/文本启发兜底）——
+高档在则压低档。映射本组件：fidelity 词表
+`semantic > syntactic > regex-degraded`（semantic 档为外部证据源预留）。
+
+**可吸收增量**（触发条件即消费方）：
+
+| 元素 | 我们缺口 | 落地触发 |
+|---|---|---|
+| Occurrence roles（Definition/ReadAccess/WriteAccess/Import/**Generated**/Test/ForwardDefinition 位组） | 无代码内符号引用边 | `ref` 边族+`extra.role`——IV8 parity dogfood（op_* <-> ops::register）为最小消费方 |
+| Generated/Test 角色标记 | decl 无生成/测试标 | `extra.generated`/`extra.test`——生成面接缝断言需要时 |
+| external_symbols 段 | scope:external 已覆盖 | 已同构，无债 |
+| enclosing_range / Relationship / PositionEncoding 列级 | 无消费方 | 缓议（调用层级/列级定位需求出现时再加法演进） |
+
+**Glean 的两个决定性教益**：
+1. "不强迫单一 schema"——每语言专属 predicate + 中立面靠派生规则。
+   对应：extra 自由袋+manifest 注册键是同哲学的轻量版。
+2. Glean 自产 indexers（C++/Hack/Python）之外**直接吃 SCIP/LSIF** 作
+   Go/Java/Rust/TS 索引源——"适配器消化外部 precise 输出"在 Meta 规模实证可行。
+   对应：`--facts-extra` 归并口 + scip->facts 适配器（一个适配器解锁
+   rust-analyzer/scip-typescript/scip-go/scip-python 全家——前端不跑步化）。
+
+**Diagnostic 澄清**：SCIP `Occurrence.diagnostics` 是编译器式范围级诊断
+（索引器对某符号的告警），非调试通道；与我们 findings 通道松散对应——
+不吸收（finding 是消费产物不是事实原料）。
+
 ## 增量裁定纪（2026-09-29 轮，已收编上文 v1.1 规格）
 
 本轮启发式+消融审计净产出（已全部采纳并落位到对应节，本处留决策纪）：
