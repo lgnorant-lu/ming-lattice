@@ -26,6 +26,25 @@ export function runStep(cmd, args, options = {}, json = false) {
   return true;
 }
 
+// profile → 静态步骤表（affected 是动态计划器路径，不入此表）。
+// 单列出图表的原因：步骤静默漏跑是门禁自身失聪——此表是唯一直接可测面。
+export function profileSteps(profile) {
+  if (profile === 'quick')
+    return [[process.execPath, ['tests/run.mjs', '--profile', 'quick']]];
+  if (profile === 'full')
+    return [
+      [process.execPath, ['tests/run.mjs', '--require-all']],
+      [process.execPath, ['scripts/check-supply-chain.mjs', '--strict']],
+    ];
+  if (profile === 'release')
+    return [
+      ...profileSteps('full').slice(0, 1),
+      [process.execPath, ['scripts/check-supply-chain.mjs', '--strict', '--check-freshness']],
+      [process.execPath, ['tests/benchmarks/route-performance.mjs', '--strict']],
+    ];
+  return null; // 'affected' 走动态计划器
+}
+
 export function runVerification({ profile = 'full', json = false } = {}) {
   const startedAt = Date.now();
   const log = json ? console.error : console.log;
@@ -59,20 +78,11 @@ export function runVerification({ profile = 'full', json = false } = {}) {
       }
       ok = runVerifiedStep(process.execPath, args);
     }
-  } else if (profile === 'full') {
-    // 全量档: 17 个测试套件 + 严格离线供应链静态门禁
-    ok = runVerifiedStep(process.execPath, ['tests/run.mjs', '--require-all']);
-    if (ok) {
-      ok = runVerifiedStep(process.execPath, ['scripts/check-supply-chain.mjs', '--strict']);
-    }
-  } else if (profile === 'release') {
-    // 发布档: 全量测试 + 严格供应链门禁 (含新鲜度比对) + 性能硬阈值 Benchmark
-    ok = runVerifiedStep(process.execPath, ['tests/run.mjs', '--require-all']);
-    if (ok) {
-      ok = runVerifiedStep(process.execPath, ['scripts/check-supply-chain.mjs', '--strict', '--check-freshness']);
-    }
-    if (ok) {
-      ok = runVerifiedStep(process.execPath, ['tests/benchmarks/route-performance.mjs', '--strict']);
+  } else {
+    // full/release/quick 静态步骤表——单源在 profileSteps()，测试面直接对表断言
+    for (const [cmd, args] of profileSteps(profile) || []) {
+      if (!ok) break;
+      ok = runVerifiedStep(cmd, args);
     }
   }
 

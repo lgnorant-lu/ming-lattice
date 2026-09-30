@@ -24,6 +24,7 @@ import { run as runHookPlannerContract } from './contract/test-hook-planner.mjs'
 import { run as runRouteObserver } from './contract/test-route-observer.mjs';
 import { run as runFetchCli } from './unit/test-fetch.test.mjs';
 import { run as runMingBoundary } from './unit/test-ming-boundary.test.mjs';
+import { run as runVerifyGates } from './unit/test-verify-gates.test.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const startedAt = process.hrtime.bigint();
@@ -80,6 +81,8 @@ export const allSuites = [
   { name: 'hook-engine', tier: 'unit', git: true, run: runHookEngine },
   { name: 'fetch-cli', tier: 'unit', git: true, run: runFetchCli },
   { name: 'ming-boundary', tier: 'unit', run: runMingBoundary },
+  { name: 'verify-gates', tier: 'unit', run: runVerifyGates },
+  { name: 'test-coverage', tier: 'contract', run: () => node('scripts/check-test-coverage.mjs') },
   { name: 'boundary-live', tier: 'contract', run: () => {
     // 真仓事实提取 + 根级 boundaries.yaml 契约评估（ADR-0008 实例化闸门）
     const factsFile = path.join(os.tmpdir(), `mb-live-${process.pid}.jsonl`);

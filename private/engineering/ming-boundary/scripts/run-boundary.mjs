@@ -2,7 +2,7 @@
 // 消费层编排者：facts 一次提取 → 多消费方分发 → 归并输出
 // 用法: node run-boundary.mjs [--root R] [--rules R.yaml|R.json] [--facts F.jsonl]
 //        [--phase staged|ci|manual] [--staged-units a,b] [--only id,...]
-//        [--apply] [--json] [--keep-facts]
+//        [--apply] [--json] [--keep-facts] [--allow-degraded]
 // 消费方协议 v1（临时稿）:
 //   调起: node <entry> --facts <path> --root <root> --config <entry-json> [--apply]
 //   outputs=findings → stdout 逐行 JSONL finding {rule,severity,unit,...}
@@ -20,7 +20,8 @@ const DEF_ROOT = path.resolve(HERE, '../../../..');
 const EXTRACT = path.join(HERE, 'extract-facts.mjs');
 const CHECK = path.join(HERE, 'check-boundaries.mjs');
 const CONSUMERS_DIR = path.join(HERE, 'consumers');
-const YAML2JSON = (root) => path.join(root, 'scripts/lib/yaml2json.ps1');
+// yaml 桥属 kit 资产——锚定本包所在仓根，而非被测仓根（下游仓无 scripts/lib 桥件）
+const YAML2JSON = path.join(DEF_ROOT, 'scripts/lib/yaml2json.ps1');
 
 // 内置目录件登记：id → 默认元数据（yaml entry 可覆写 phases/level 等）
 const BUILTIN = {
@@ -50,7 +51,8 @@ function parseArgs(argv) {
     else if (k === '--only') a.only = take().split(',').filter(Boolean);
     else if (k === '--apply') a.apply = true;
     else if (k === '--json') a.json = true;
-    else if (k === '--keep-facts') a.keep = true;
+    else if (k === '--allow-degraded') a.allowDegraded = true;
+    else if (k === '--keep' || k === '--keep-facts') a.keep = true;
     else die(`未知旗标: ${k}`);
   }
   if (!KNOWN_PHASE.has(a.phase)) die(`未知 phase: ${a.phase}`);
@@ -60,7 +62,7 @@ function parseArgs(argv) {
 function loadRules(p, root) {
   if (!fs.existsSync(p)) return null;
   if (/\.json$/i.test(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
-  const r = spawnSync('pwsh', ['-NoProfile', '-File', YAML2JSON(root), '-Path', p],
+  const r = spawnSync('pwsh', ['-NoProfile', '-File', YAML2JSON, '-Path', p],
     { encoding: 'utf8' });
   if (r.error || r.status !== 0)
     die(`yaml 桥失败（需 pwsh+yaml-lite，或改用 .json 规则）: ${r.stderr || r.error?.message}`, 3);
@@ -117,7 +119,13 @@ if (!contract && !A.facts) die(`无规则文件且未给 --facts: ${rulesPath}`)
 let factsPath = A.facts, tmpFacts = null;
 if (!factsPath) {
   tmpFacts = path.join(os.tmpdir(), `mb-facts-${process.pid}.jsonl`);
-  const r = spawnSync(process.execPath, [EXTRACT, '--root', A.root, '--out', tmpFacts],
+  const exArgv = [EXTRACT, '--root', A.root, '--out', tmpFacts];
+  // staged 相位=增量语义：只抽 staged 单元集（pre-commit 面全仓抽取=25s 不可行）
+  if (A.phase === 'staged' && A.staged?.length)
+    exArgv.push('--files', A.staged.join(','));
+  // hook 语境允许 regex 降级（ast-grep 缺席仓也该有门而不是罢工）
+  if (A.allowDegraded) exArgv.push('--allow-degraded');
+  const r = spawnSync(process.execPath, exArgv,
     { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'], timeout: 600_000 });
   if (r.error || r.status !== 0) die(`facts 提取失败: ${r.stderr || r.error?.message}`, 3);
   factsPath = tmpFacts;
@@ -197,6 +205,22 @@ for (const c of picked) {
     reports.push({ id: c.id, outputs: c.meta.outputs, text });
   }
 }
+
+// findings 回填 fidelity 注记（additive）——file|line|kind 回查事实，
+// 下游（gate 的 regex-degraded 封顶 warn 等交叉表降权）直接消费不再自查
+try {
+  const fidMap = new Map();
+  for (const line of fs.readFileSync(factsPath, 'utf8').split('\n')) {
+    if (!line.trim()) continue;
+    const f = JSON.parse(line);
+    fidMap.set(`${f.file}|${f.line}|${f.kind}`, f.fidelity);
+  }
+  for (const f of findings) {
+    const fid = fidMap.get(`${f.file}|${f.line}|${f.kind}`)
+      || fidMap.get(`${f.unit}|${f.line}|${f.kind}`);
+    if (fid) f.fidelity = fid;
+  }
+} catch { /* 注记失败不阻塞主通道 */ }
 
 findings.sort((a, b) => (a.unit || '').localeCompare(b.unit || '')
   || (a.line || 0) - (b.line || 0) || (a.rule || '').localeCompare(b.rule || ''));

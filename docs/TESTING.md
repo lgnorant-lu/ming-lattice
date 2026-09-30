@@ -18,7 +18,7 @@ node scripts/verify.mjs --profile <quick|affected|full|release>
 `scripts/verify.mjs` 提供分级门禁编排：
 - `--profile quick`：仅运行纯 Node 逻辑测试（跳过外部 pwsh 进程池，秒级响应）；
 - `--profile affected`：基于 `scripts/plan.mjs` 仅运行暂存区改动受影响的测试套件；
-- `--profile full`：全量 23 个测试套件 + 严格离线供应链门禁；
+- `--profile full`：全量测试套件 + 严格离线供应链门禁；
 - `--profile release`：full 门禁 + SBOM/SCA 新鲜度就地深度比对 + Benchmark 性能硬阈值检查。
 
 ## 验证范围
@@ -46,8 +46,10 @@ node scripts/verify.mjs --profile <quick|affected|full|release>
 | Hook 暂存区集成 | 临时 Git 仓库的 staged/unstaged 分离、工作文件已删、Unicode 和空格路径；不提交 |
 | Hook 引擎单测 | INI 归组与 .local 覆盖、旧键别名、matcher glob 语义、声明式门构建、baseline 冻结/新增判别、SKIP/required 等级、端到端退出码契约 |
 | Manifest 新鲜度 | `--check` 比较两份清单，忽略生成时间；只读，不自动修复 |
+| 门禁编排器与门微断言 | verify.mjs 的 profileSteps 步骤表完备性（quick/full/release 分派不丢步）、runStep 传播与 CLI 拒识；emit-operational-event stdin→NDJSON 契约（未知事件名 fail-closed）；secrets/pii/link-rot 门行为 fixture（签名命中/占位符豁免/打码红线/家目录路径/URL 剥尾） |
+| 可执行件测试登记 | `scripts/check-test-coverage.mjs`：scripts/ 与 private/*/scripts/ 每可执行件须在测试语料被点名或在 `tests/coverage-exempt.txt` 登记豁免理由；陈旧豁免条目反向校验 |
 
-测试定义在 [tests/run.mjs](../tests/run.mjs)，计数以运行结果为准（全量共 23 个套件）。测试使用临时目录并在 finally 清理；可用 `SKILLS_TEST_TMPDIR` 指定已存在的测试临时父目录。CLI 隔离测试采用有界异步进程池（并发上限 4）调度以提升执行效率。
+测试定义在 [tests/run.mjs](../tests/run.mjs)，计数以运行结果为准（当前全量 35 个套件）。测试使用临时目录并在 finally 清理；可用 `SKILLS_TEST_TMPDIR` 指定已存在的测试临时父目录。CLI 隔离测试采用有界异步进程池（并发上限 4）调度以提升执行效率。
 
 ## 内容与部署检查
 

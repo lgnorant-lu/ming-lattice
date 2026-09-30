@@ -1,0 +1,8 @@
+# 可执行件测试覆盖豁免台账——check-test-coverage.mjs 读取
+# 格式: <仓相对路径> — <理由>
+# 纪律：豁免=显性登记非隐形缺口；债务类条目解决后应删行（陈旧条目会 fail）
+scripts/hooks/lib/files.mjs — hooks 内部 lib 模块；由 hook-engine 20 组断言经入口集成覆盖
+private/engineering/ming-boundary/scripts/consumers/diff.mjs — 组13 经消费者 id 'diff' 点名调度断言（stem 4 字符低于防误覆盖阈值，登记豁免）
+scripts/test.sh — POSIX 透传壳：仅转发 tests/run.mjs，语义与已测的 test.ps1/verify 入口同一
+scripts/patch-deployable.ps1 — 候审债务：deployable 改写器的 WhatIf/写面矩阵测试待补（登记为显性缺口）
+scripts/verify-cache.ps1 — 候审债务：checkCache 完整性校验测试待补（登记为显性缺口）
