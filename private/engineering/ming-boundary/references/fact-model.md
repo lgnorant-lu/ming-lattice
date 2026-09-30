@@ -39,7 +39,7 @@
 | 位 | 新增值 | 语义 |
 |---|---|---|
 | 节点 kind | `dir` | 目录单元（unit=`path/` 尾斜杠）——per-dir 覆盖断言主体 |
-| 边 kind | `docref` | 文档→文档/目录链接边（markdown `[x](y)` 解析出） |
+| 边 kind | `docref` | 文档→文档/目录链接边（markdown `[x](y)` inline 与 `[t][label]`/`[label]` 引用式双解析；`[label]:` 定义行不产边） |
 | 边 kind | `mention` | 文档→符号提及边（code-span/heading，解析 `file#symbol`；歧义标 `scope:unresolved`+`extra.ambiguous`） |
 | 边 kind | `declare` | 声明文档→单元认领边（`extra.source` 分源：gitignore/registry/doc-index/exempt/…） |
 | 边 kind | `export` | 模块→模块 re-export/入口映射边 |

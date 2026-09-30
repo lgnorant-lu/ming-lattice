@@ -75,6 +75,27 @@ export function mdFacts(root, rel, text, fileExists) {
   const cands = [];
   const docrole = docRoleOf(rel, text);
   const lines = text.split(/\r?\n/);
+  // 一遍收 reference 定义 [label]: target——引用式链接是 Rust/Go/docs
+  // 生态主流写法（anyhow README 全篇引用式，inline 抓不到=docref 面全哑）
+  const normLabel = (s) => s.trim().replace(/\s+/g, ' ').toLowerCase();
+  const defs = new Map();
+  let inFenceD = false;
+  for (const l of lines) {
+    if (/^\s*(```|~~~)/.test(l)) { inFenceD = !inFenceD; continue; }
+    if (inFenceD) continue;
+    const d = l.replace(/`[^`\n]*`/g, '')
+      .match(/^\s{0,3}\[([^\]]+)\]:\s*(\S+)/);
+    if (d) defs.set(normLabel(d[1]), d[2]);
+  }
+  const emitRef = (i, raw) => {
+    const to = docTarget(rel, raw);
+    if (to === null) return;
+    const dead = !fileExists(to);
+    facts.push(fact({ unit: rel, kind: 'docref', name: to,
+      file: rel, line: i + 1, fidelity: 'regex-degraded',
+      scope: dead ? 'unresolved' : 'repo', extractor: MD_EXTRACTOR,
+      extra: { to, ...(dead ? { dead: true } : {}) } }));
+  };
   let inFence = false;
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
@@ -86,15 +107,21 @@ export function mdFacts(root, rel, text, fileExists) {
     // （mention 候选不从剥壳行取：code-span 恰是 mention 的信号源）
     const bare = l.replace(/`[^`\n]*`/g, '');
     // docref: [t](target)
-    for (const m of bare.matchAll(/\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {
-      const to = docTarget(rel, m[2]);
-      if (to === null) continue;
-      const dead = !fileExists(to);
-      facts.push(fact({ unit: rel, kind: 'docref', name: to,
-        file: rel, line: i + 1, fidelity: 'regex-degraded',
-        scope: dead ? 'unresolved' : 'repo', extractor: MD_EXTRACTOR,
-        extra: { to, ...(dead ? { dead: true } : {}) } }));
+    for (const m of bare.matchAll(/\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g))
+      emitRef(i, m[2]);
+    // docref: 引用式使用点——[t][label]（含折叠 [t][]）与快捷 [label]
+    const rest = bare.replace(
+      /\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, '');
+    for (const m of rest.matchAll(/\[([^\]]*)\]\[([^\]]*)\]/g)) {
+      const t = defs.get(normLabel(m[2] || m[1]));
+      if (t !== undefined) emitRef(i, t);
     }
+    const rest2 = rest.replace(/\[([^\]]*)\]\[([^\]]*)\]/g, '');
+    if (!/^\s{0,3}\[[^\]]+\]:/.test(rest2))
+      for (const m of rest2.matchAll(/\[([^\]]+)\]/g)) {
+        const t = defs.get(normLabel(m[1]));
+        if (t !== undefined) emitRef(i, t);
+      }
     // mention 候选：code-span `name(` 与 heading 内 name(（含连字符——ps1 Verb-Noun 命名）
     for (const m of l.matchAll(/`([A-Za-z_$][\w$-]*)\s*\(/g))
       cands.push({ name: m[1], line: i + 1 });

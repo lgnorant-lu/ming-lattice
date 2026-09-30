@@ -27,6 +27,8 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '../../../..');
 
 const JS_EXT = new Set(['.mjs', '.js', '.cjs', '.jsx']);
+const TS_EXT = new Set(['.ts', '.mts', '.cts']);
+const TSX_EXT = new Set(['.tsx']);
 const PS_EXT = new Set(['.ps1', '.psm1']);
 // 内容扫描谓词（v1.1a 修正）：缺省 = 全部支持扩展名且未被 .gitignore 声明
 // 忽略的文件——目录白名单硬编码是本仓私货（js逆向/ 项目资料/ crates/ 这类
@@ -84,6 +86,10 @@ rule:
     kind: arrow_function
 `.trim();
 
+// TS/TSX 复用同一规则集（tree-sitter-typescript 节点名与 js 同构）——只换 language 头
+const AST_RULES_TS = AST_RULES.replace(/language: JavaScript/g, 'language: TypeScript');
+const AST_RULES_TSX = AST_RULES.replace(/language: JavaScript/g, 'language: Tsx');
+
 const DECL_RE = {
   'decl-function': /function\s*\*?\s*([\w$]+)/,
   'decl-generator': /function\s*\*?\s*([\w$]+)/,
@@ -93,7 +99,8 @@ const DECL_RE = {
 };
 
 const REL_SPEC = /^\.{1,2}\//;
-const TRY_SUFFIX = ['', '.mjs', '.js', '.cjs', '.ts', '.json', '/index.mjs', '/index.js'];
+const TRY_SUFFIX = ['', '.mjs', '.js', '.cjs', '.d.ts', '.ts', '.mts', '.cts', '.tsx',
+  '.json', '/index.mjs', '/index.js', '/index.ts'];
 
 function die(msg, code = 2) {
   console.error(`[extract-facts] ${msg}`);
@@ -151,7 +158,7 @@ function walk(dir, root, files, links, dirs) {
 
 // ---------- ast-grep 前端（探测实现收 lib/frontends.mjs——抽取器与测试共用） ----------
 
-function runAstGrep(bin, filesAbs) {
+function runAstGrep(bin, filesAbs, rules) {
   // 分批喂文件（命令行长度上限）；--json=stream 一行一 match
   // 单文件韧性链：批级失败（ENOBUFS/ast-grep 内部错）→ 二分降级到单文件；
   // 单文件仍失败 → 收残余 stdout 后交回 regex 降级（degraded 集），
@@ -167,7 +174,7 @@ function runAstGrep(bin, filesAbs) {
   const scan = (batch) => {
     let r;
     try {
-      r = spawnSync(bin, ['scan', '--inline-rules', AST_RULES,
+      r = spawnSync(bin, ['scan', '--inline-rules', rules,
         '--json=stream', ...batch], { encoding: 'utf8', maxBuffer: 512 << 20 });
     } catch (e) {
       // spawnSync 本身也会抛（ERR_STRING_TOO_LONG：单文件输出超 512MB
@@ -328,8 +335,12 @@ function main() {
       extra: { to: l.to, ...(l.dead ? { dead: true } : {}) } }));
   }
   if (a.contentScan) {
+    // ast-grep 按语言分桶——JavaScript/TypeScript/Tsx 各跑各的规则集（rules 同构仅 language 换头）
     const jsFiles = files.filter((f) => JS_EXT.has(f.ext) && inScope(f));
+    const tsFiles = files.filter((f) => TS_EXT.has(f.ext) && inScope(f));
+    const tsxFiles = files.filter((f) => TSX_EXT.has(f.ext) && inScope(f));
     const psFiles = files.filter((f) => PS_EXT.has(f.ext) && inScope(f));
+    const astFiles = [...jsFiles, ...tsFiles, ...tsxFiles];
 
     // js 单文件 regex 降级路径（ast-grep 缺席的 --allow-degraded 面，
     // 与 ENOBUFS 单文件爆管的韧性降级共用同一实现）
@@ -362,12 +373,19 @@ function main() {
       return out;
     };
 
-    if (jsFiles.length && !sg && !a.allowDegraded) {
-      die(`ast-grep 前端缺失而 js 文件 ${jsFiles.length} 个待抽——` +
+    if (astFiles.length && !sg && !a.allowDegraded) {
+      die(`ast-grep 前端缺失而 js/ts 文件 ${astFiles.length} 个待抽——` +
         `fail-closed 拒降级（ADR-0008 D2）；确需降级传 --allow-degraded`, 3);
-    } else if (jsFiles.length && sg) {
-      const { matches, degraded } = runAstGrep(sg.bin,
-        jsFiles.map((f) => path.join(root, f.rel)));
+    } else if (astFiles.length && sg) {
+      const matches = [];
+      const degraded = new Set();
+      for (const [bucket, rules] of
+        [[jsFiles, AST_RULES], [tsFiles, AST_RULES_TS], [tsxFiles, AST_RULES_TSX]]) {
+        if (!bucket.length) continue;
+        const r = runAstGrep(sg.bin, bucket.map((f) => path.join(root, f.rel)), rules);
+        matches.push(...r.matches);
+        for (const d of r.degraded) degraded.add(d);
+      }
       const byFile = new Map();
       for (const m of matches) {
         const rel = path.relative(root, m.file).replace(/\\/g, '/');
@@ -461,14 +479,14 @@ function main() {
       if (degraded.size) {
         const rels = new Set([...degraded].map((p) =>
           path.relative(root, p).replace(/\\/g, '/')));
-        for (const f of jsFiles) {
+        for (const f of astFiles) {
           if (rels.has(f.rel)) facts.push(...jsRegexFacts(f));
         }
-        console.error(`[extract-facts] ${degraded.size} 个 js 文件 ast-grep 失败` +
+        console.error(`[extract-facts] ${degraded.size} 个 js/ts 文件 ast-grep 失败` +
           `降 regex（巨型混淆/边界输入面）: ${[...rels].slice(0, 5).join(', ')}`);
       }
-    } else if (jsFiles.length && a.allowDegraded) {
-      for (const f of jsFiles) facts.push(...jsRegexFacts(f));
+    } else if (astFiles.length && a.allowDegraded) {
+      for (const f of astFiles) facts.push(...jsRegexFacts(f));
     }
     for (const f of psFiles) {
       const text = fs.readFileSync(path.join(root, f.rel), 'utf8');

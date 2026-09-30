@@ -27,7 +27,9 @@ node scripts/extract-facts.mjs [--root DIR] [--out FILE]
 
 `--files`：只抽给定仓相对路径子集（staged 增量面用；符号链接项产 link 事实，工作区缺席项静默跳过）。`--no-md-scan`/`--no-ignore-scan` 关掉 markdown/gitignore 两默认适配器。
 
-**内容扫描谓词（v1.1a 实测修正）**：缺省=全部支持扩展名（js/ps/md）且未被 `.gitignore` 声明忽略的文件——被忽略树只留 file/dir/declare 事实不读内容（vendored/venv/产物树的死链与符号属上游账面噪音，事实源处剪枝）。`--extract-dirs` 显式收窄优先于忽略集。gitignore oracle 仅在 `--root` 为 git worktree 顶时激活（`rev-parse --show-toplevel` 判等）——子目录抽取不继承父仓声明；`.gitmodules` 登记的 submodule 路径自动剔除出 oracle 输入（check-ignore 对其 fatal 128）。ast-grep 单文件失败（ENOBUFS/os error/输出超 512MB 字符串顶）自动二分降级→单文件→regex 兜底，记 `fidelity:regex-degraded` 不 die。
+**内容扫描谓词（v1.1a 实测修正）**：缺省=全部支持扩展名（js/ts/tsx/ps/md）且未被 `.gitignore` 声明忽略的文件——被忽略树只留 file/dir/declare 事实不读内容（vendored/venv/产物树的死链与符号属上游账面噪音，事实源处剪枝）。`--extract-dirs` 显式收窄优先于忽略集。gitignore oracle 仅在 `--root` 为 git worktree 顶时激活（`rev-parse --show-toplevel` 判等）——子目录抽取不继承父仓声明；`.gitmodules` 登记的 submodule 路径自动剔除出 oracle 输入（check-ignore 对其 fatal 128）。ast-grep 单文件失败（ENOBUFS/os error/输出超 512MB 字符串顶）自动二分降级→单文件→regex 兜底，记 `fidelity:regex-degraded` 不 die。
+
+**语言面（v1.1b 五公仓压测实证）**：`.ts/.mts/.cts` 走 TypeScript 规则集、`.tsx` 走 Tsx（tree-sitter-typescript 节点名与 js 同构，规则仅换 language 头）；js-yaml 的 src/*.ts 面在补上后 import 145→280/decl 75→249、changesets monorepo 0→743 import——**TS 缺席会让 TypeScript 仓静默退成文件枚举器**。Rust/Python/Go 无前端：零代码边事实时 emit 生成稿头注显式告警（拓扑契约不覆盖依赖边）。markdown 引用式链接 `[t][label]`/`[label]`（CommonMark 引用式，Rust/Go/docs 生态主流）经一遍 defs 表解析出 docref；`[label]:` 定义行本身不产边（定义≠使用）。
 
 产出确定性 JSONL，schema v1.1（additive 于 v1）：
 
@@ -101,6 +103,9 @@ staged 文件集（含 `.md` 与 `.gitignore`）→ `extract-facts --files` → 
 内置三公民：`metrics`（report，诊断遥测）、`emit-skeleton`（files，manual-only，
 拓扑推断起草 `boundaries.suggested.yaml`，永不覆盖既有文件，推断规则一律 warn）、
 `diff`（report，事实面差分，需 `baseline:`）。协议与元数据全集见 `scripts/consumers/README.md`。
+空契约面（采纳初期只有 consumers 无 rules）：evaluator 自动跳过+warning 而非撞
+domains 硬性校验——evaluator 也只是消费方之一。`diff` 的 baseline 建议放仓根之外
+或 gitignored——置根内会被 walk 计成新文件事实（baseline.jsonl 自己上 +added 清单）。
 
 ## 3. 红线 / 边界
 

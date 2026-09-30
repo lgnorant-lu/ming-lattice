@@ -132,7 +132,7 @@ errors.push(...sel.errors.map(e => `CONFIG ${e}`));
 const inPhase = (c) => c.meta.phases.includes(A.phase);
 const picked = sel.out.filter(c => (!A.only || A.only.includes(c.id)) && inPhase(c));
 const stagedNoUnits = A.phase === 'staged' && !A.staged?.length;
-const runEval = (!A.only || A.only.includes('check')) && contract
+let runEval = (!A.only || A.only.includes('check')) && contract
   && A.phase !== 'manual' && !stagedNoUnits;
 // staged 相位下 evaluator 必须拿到 staged 单元集——否则部分事实+全图量化=否定不安全误报
 if (stagedNoUnits && contract)
@@ -146,6 +146,15 @@ const pushFindings = (via, text) => {
     catch { /* findings 型通道混入非 JSON 行=忽略（report 文本走 reports） */ }
   }
 };
+
+// 采纳空契约面：无 rules 的仓（emit/diff/metrics 先行、契约后补）evaluator
+// 跳过而非撞 check-boundaries 的 domains 硬性校验——evaluator 也是消费方之一
+const hasRules = contract && contract.rules && typeof contract.rules === 'object'
+  && Object.keys(contract.rules).length > 0;
+if (runEval && !hasRules) {
+  runEval = false;
+  warnings.push('contract 无 rules 条目——evaluator 跳过（仅消费方运行）');
+}
 
 if (runEval) {
   const argv = [CHECK, '--facts', factsPath, '--rules', rulesPath, '--json'];

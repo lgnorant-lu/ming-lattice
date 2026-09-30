@@ -92,6 +92,11 @@ export async function run() {
       'function* gen() {}',
     ].join('\n'));
     wfile('vendored/v1/lib.mjs', 'export function vv() {}\n');
+    // v1.1b：TypeScript 面——tree-sitter-typescript 规则集应产同构事实
+    wfile('src/mod.ts', [
+      'import { K } from \'./b.mjs\';',
+      'export function tsTop(): number { return K; }',
+    ].join('\n'));
     wfile('scripts/tool.ps1', 'function Invoke-Thing { }\n. .\\lib\\helper.ps1\n');
     wfile('docs/note.md', '# md\n');
     // v1.1 文档面：README/docref/mention/docrole 载体
@@ -100,6 +105,10 @@ export async function run() {
       '---', 'docrole: api', '---',
       '# API Reference',
       'Entry point is `top()` — see [impl](../src/a.mjs).',
+      // v1.1b 引用式链接：全形 [t][label] + 快捷 [label]，定义行不产边
+      'Ref link: [to b][bref] and shortcut [bref2]; unused [unused]: ../src/nope.md',
+      '[bref]: ../src/b.mjs',
+      '[bref2]: note.md',
       'Syntax sample: `[x](y)` is meta, not a ref.',
       'Dead: [gone](nope/missing.md).',
       'Ambiguous name: `dup()` here.',
@@ -203,6 +212,15 @@ export async function run() {
     // 围栏块（``` 与 ~~~）内容是字面文本——JS 撞形语法与伪链都不产 docref
     assert.ok(!drNames.some((t) => /in-fence|tilde-fence|fake\/link|0x1/.test(t || '')),
       `围栏块内不应产 docref: ${JSON.stringify(drNames)}`);
+    // 8c+. 引用式链接（CommonMark reference）：[t][label]/[label] 产边；定义行与未用定义不产
+    assert.ok(drNames.includes('src/b.mjs'), '[to b][bref] 引用式应解析成边');
+    assert.ok(drNames.includes('docs/note.md'), '[bref2] 快捷式应解析成边');
+    assert.ok(!drNames.includes('src/nope.md'), '未使用的 [unused]: 定义不产边');
+    // 8e-ts. TypeScript 面：TS 规则集产同构 import/decl（v1.1b——TS 仓曾静默零边）
+    assert.equal(at('src/mod.ts', 'import')[0]?.extra?.to, 'src/b.mjs',
+      '.ts import 应解析');
+    assert.ok(at('src/mod.ts', 'decl').some((d) => d.name === 'tsTop'),
+      '.ts function decl 应入图');
     // 8d. mention 边：唯一命中 → 解析到 decl；双定义 → 歧义 unresolved
     const men = at('docs/api.md', 'mention');
     const mTop = men.find((x) => x.name === 'top');
