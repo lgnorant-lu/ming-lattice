@@ -18,6 +18,9 @@ import { fact, domainOf, sortFacts, toJsonl, parseJsonl, globMatch }
   from '../../private/engineering/ming-boundary/scripts/lib/facts.mjs';
 import { findAstGrep }
   from '../../private/engineering/ming-boundary/scripts/lib/frontends.mjs';
+import { parseTags, linguistExts, derive, emitDerived,
+  checkDerivedConsistency, parseUpstreamPins }
+  from '../../private/engineering/ming-boundary/scripts/lib/langs/derive.mjs';
 
 const PKG = path.resolve(import.meta.dirname, '../../private/engineering/ming-boundary');
 const EXTRACT = path.join(PKG, 'scripts/extract-facts.mjs');
@@ -134,6 +137,12 @@ export async function run() {
       'from ..pkg import helper\nimport os\nimport pkg.helper\nfrom .sub import deep\n');
     wfile('pkg/sub/deep.py',
       'from .. import helper\nimport missing_ext_mod_xyz\nfrom .gone import thing\n');
+    // 包索引实证：deep/nest 不在任何惯例根名表——靠 __init__ 链实算导入根；
+    // scripts/ 下松散脚本互导经松散目录根命中
+    wfile('deep/nest/__init__.py', '');
+    wfile('deep/nest/core.py', 'def core():\n    pass\n');
+    wfile('scripts/sib.py', 'X = 1\n');
+    wfile('scripts/useit.py', 'import nest.core\nimport sib\n');
     wfile('scripts/tool.ps1', 'function Invoke-Thing { }\n. .\\lib\\helper.ps1\n');
     wfile('docs/note.md', '# md\n');
     // v1.1 文档面：README/docref/mention/docrole 载体
@@ -315,6 +324,14 @@ export async function run() {
     assert.ok(hpDecl.some((d) => d.name === 'run' && d.extra?.shape === 'fn'));
     assert.ok(hpDecl.some((d) => d.name === 'go'),
       '方法 function_definition 应入 decl（shape 同 fn）');
+    // py-idx. 包索引：非标包根 deep/ 经 __init__ 链实算为导入根（旧猜词表
+    // 只有 python/src/tests/tools——本断言是索引化的回归钉）
+    const USE = 'scripts/useit.py';
+    assert.equal(at(USE, 'import').find((x) => x.name === 'nest.core')
+      ?.extra?.to, 'deep/nest/core.py',
+      'import nest.core 应经包索引命中非标根 deep/');
+    assert.equal(at(USE, 'import').find((x) => x.name === 'sib')
+      ?.extra?.to, 'scripts/sib.py', '松散脚本同目录互导应命中');
     // junction: link 事实且不穿透（deployable/d1/x 下无文件事实）
     if (junctionOk) {
       const lk = at('deployable/d1/x', 'link');
@@ -901,7 +918,60 @@ export async function run() {
         'stderr 应点名 --facts-extra 与行号');
     }
 
-    console.log('  13 组断言全过');
+    // ---------- 组 14: derive.mjs 纯核（DDT 矩阵）+ pin↔derived 对账（CDC） ----------
+    {
+      // DDT: tags.scm S-expr 形态矩阵 → 捕获归属期望
+      const SCM = `
+(module (call (identifier) @name) @reference.call)
+(class_definition name: (identifier) @name) @definition.class
+(impl_item name: (type_identifier) @name) @reference.implementation
+(module (expression_statement (assignment left: (identifier) @name) @definition.constant))
+`;
+      const caps = parseTags(SCM);
+      const capOf = (cap) => caps.filter((c) => c.capture === cap);
+      assert.ok(capOf('reference.call').some((c) => c.kind === 'call'),
+        'reference.call 宿主应为 call 节点');
+      assert.ok(capOf('definition.class').some((c) =>
+        c.kind === 'class_definition' && c.nameKind === 'identifier'),
+        'definition.class 应记 nameKind=identifier');
+      assert.ok(capOf('definition.constant').some((c) =>
+        c.kind === 'assignment' &&
+        c.inside.join('>') === 'module>expression_statement'),
+        'inside 链应外→内有序');
+      // linguist 行级解析：目标块内 exts 收集、块外不越界
+      const LING = `Python:\n  extensions:\n    - ".py"\n    - ".pyi"\nRust:\n  extensions:\n    - ".rs"\n`;
+      assert.deepEqual(linguistExts(LING, 'Python'), ['.py', '.pyi']);
+      assert.deepEqual(linguistExts(LING, 'Rust'), ['.rs']);
+      // derive 去重+排序确定性 + emit 头注 provenance
+      const d = derive('x', { linguist: 'Python' }, SCM, LING);
+      assert.ok(d.declKinds.some((k) => k.shape === 'constant' &&
+        k.inside?.join('>') === 'module>expression_statement'),
+        'inside 链应入 derived 条目');
+      const body = emitDerived('python',
+        { grammar: 'g/r', rev: 'abc1234', tags: 'queries/tags.scm' }, d);
+      assert.ok(body.includes('DO NOT EDIT') && body.includes('abc1234'),
+        '派生物须带 DO-NOT-EDIT 戳与 provenance rev');
+      // CDC: pin↔derived 对账状态机（ok/stale/missing/orphan 四态）
+      const YAML = `version: 1\nsources:\n  linguist:\n    rev: 1111111\nlangs:\n  rust:\n    rev: aaaaaaa\n  python:\n    rev: bbbbbbb\n`;
+      const pins = parseUpstreamPins(YAML);
+      assert.deepEqual(pins, { rust: 'aaaaaaa', python: 'bbbbbbb' },
+        'pins 只认 langs: 节（sources.linguist 不混入）');
+      const st = checkDerivedConsistency(YAML, {
+        rust: '// provenance: g/r@aaaaaaa t\nexport const derived={};',
+        // python 缺席 → missing；ghost 无 pin → orphan
+        ghost: '// provenance: g/r@ccccccc t\nexport const derived={};',
+      });
+      assert.equal(st.rust.state, 'ok');
+      assert.equal(st.python.state, 'missing');
+      assert.equal(st.ghost.state, 'orphan');
+      const stStale = checkDerivedConsistency(YAML, {
+        rust: '// provenance: g/r@fffffff t\nexport const derived={};',
+        python: '// provenance: g/r@bbbbbbb t\nexport const derived={};',
+      });
+      assert.equal(stStale.rust.state, 'stale', 'pin 升未重生成应判 stale');
+    }
+
+    console.log('  14 组断言全过');
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }

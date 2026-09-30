@@ -30,9 +30,11 @@ export async function run() {
     assert.ok(quick[0][1].includes('--profile'), 'quick 应调 tests/run --profile quick');
 
     const full = profileSteps('full');
-    assert.equal(full.length, 2, 'full=套件+供应链两步');
+    assert.equal(full.length, 3, 'full=套件+供应链+langs 派生对账三步');
     assert.ok(full[1][1].includes('--strict'), 'full 供应链须严格档');
     assert.ok(!full[1][1].includes('--check-freshness'), 'full 不含新鲜度比对');
+    assert.ok(full[2][1].includes('--verify') &&
+      full[2][1][0].includes('sync-langs'), 'full 末步为上游金数据离线对账');
 
     const rel = profileSteps('release');
     assert.equal(rel.length, 3, 'release=套件+供应链新鲜度+benchmark 三步');

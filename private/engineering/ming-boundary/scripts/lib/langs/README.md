@@ -6,12 +6,14 @@
 export const exts: Set<string>            // 触发扩展名
 export const rules: string                // ast-grep 规则 YAML（syntactic 档）
 export function prepare(ms): object       // 每文件预处理（声明表/range 索引等）
+export function prepareRun({root,files})  // run 级预处理（可选：python 包索引）
 export const handles: (id) => boolean     // 该语言认哪些 ruleId
 export function handle(id, m, ctx): true  // 匹配→facts 推入 ctx.out
 export function regexFacts(root, rel, extractor): facts[]  // 降级兜底
 ```
 
-`ctx = { root, rel, extractor, out, prepared }`。骨架参照 `rust.mjs`。
+`ctx = { root, rel, extractor, out, prepared, run }`（run=prepareRun 返回值，
+无 prepareRun 的语言为 null）。骨架参照 `rust.mjs`/`python.mjs`。
 
 ## 准入闸（ADR-0010，四条须全满）
 
@@ -28,7 +30,7 @@ export function regexFacts(root, rel, extractor): facts[]  // 降级兜底
 | 语言 | 边面语法物 | 模块语义速查 | syntactic 可达性 | precise 生态通道 | 闸状态 |
 |---|---|---|---|---|---|
 | Rust | `use`/`mod x;`/`pub use` | crate::/self/super/modDir，cargo crate 根 | [OK] 已落地 | rust-analyzer→SCIP | **已入**（IV8 dogfood） |
-| Python | `import a.b`/`from .x import y` | pkg→dir、`__init__.py`、相对点=父包、PEP420 命名空间目录 | [OK] 已入 `python.mjs`（候选根序 filedir/root/{python,src,tests,tools}，sys.path/动态 `__import__` 诚实缺席） | pyright/scip-python | **已入（v1.3）**——IV8 521py 零边实证过闸 |
+| Python | `import a.b`/`from .x import y` | pkg→dir、`__init__.py`、相对点=父包、PEP420 命名空间目录 | [OK] 已入 `python.mjs`（sysroots 由 __init__ 链实算——prepareRun 包索引，非猜词表；sys.path 动态/`__import__` 诚实缺席） | pyright/scip-python | **已入（v1.3）**——IV8 521py 零边实证过闸 |
 | Go | `import "path"` | module path→dir、`internal/` 约束、需读 go.mod 前缀 | [OK] 大体可行（replace/workspace 面缺席） | gopls/scip-go | 候消费方 |
 | Java | `import a.b.C` | package→目录 1:1 | [OK] 可行（多源根/build 面缺席） | scip-java | 候消费方 |
 | C/C++ | `#include` | quoted=相对、angle=-I 依赖 | [受限] include path 需构建上下文 | clangd→SCIP | 候选，语义面偏深 |
@@ -67,9 +69,29 @@ export function regexFacts(root, rel, extractor): facts[]  // 降级兜底
 兼容性注意：tags.scm 是 tree-sitter 原生 S-expr 方言，本 kit 跑 ast-grep
 `kind:` 规则——可译粒度="节点种清单+`@name` 字段绑定"（`has:{field:name}`），
 完整方言要么写转换器要么另接 `tree-sitter` CLI 做第二前端。
-**同步管线（`upstream.yaml` pin + `sync-langs.mjs` 派生描述符）在第二语言
-入场时才建**——现在建=为单语言造管道；rust.mjs 手写规则留作校准用例
-（验证 tags.scm 派生能否复现其覆盖面）。
+
+**已落地（v1.3 Python 入场触发）**：
+
+```
+upstream.yaml        pin 表：lang→{grammar repo, rev, tags path, linguist key}
+sync-langs.mjs       CLI 壳：取数(curl)+写盘；解析核在 derive.mjs（纯函数）
+derive.mjs           tags.scm/linguist 解析、派生定型、pin 对 derived 对账
+<lang>.derived.mjs   产物：declKinds/refKinds/exts+provenance+DO-NOT-EDIT
+```
+
+**更新管理三层**（pin 不自动跟上游——漂移必须人审，同 registry.yaml 哲学）：
+
+| 层 | 命令 | 网络 | 职责 | 挂载 |
+|---|---|---|---|---|
+| 离线对账 | `sync-langs --verify` | 无 | derived.provenance.rev==pin；stale/missing/orphan 即 exit1 | `verify.mjs --profile full` 步骤表 |
+| 在线漂移 | `sync-langs --heads` | ls-remote | pin vs grammar HEAD 报告（不代改） | `update.ps1` 尾部（DryRun 跳过） |
+| 重生成 | `sync-langs` / `--check` | curl | 派生重写 / 字节级对账 | 人审 pin 后手动 |
+
+**手写面剩余**（上游给不了的——这是规则不是债）：边规则
+（use/import/#include 的语义）、模块→文件解析（构建系统层）、
+shape 词 overlay（上游 class 粗词→本组件 fn/trait/macro 细词）、
+名称抽取 regex。python.mjs 的 sysroots 曾用猜词表，v1.3 已改
+包索引实算——**凡能由仓内结构推出的都不许手写词表**。
 
 ## 固件规范（金数据约定）
 

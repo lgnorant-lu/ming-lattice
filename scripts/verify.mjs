@@ -35,6 +35,9 @@ export function profileSteps(profile) {
     return [
       [process.execPath, ['tests/run.mjs', '--require-all']],
       [process.execPath, ['scripts/check-supply-chain.mjs', '--strict']],
+      // 上游金数据 pin↔derived 对账（离线）：pin 升未重生成 / 缺件 / 孤儿 derived 即 fail
+      [process.execPath,
+        ['private/engineering/ming-boundary/scripts/sync-langs.mjs', '--verify']],
     ];
   if (profile === 'release')
     return [

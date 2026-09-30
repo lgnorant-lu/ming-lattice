@@ -190,4 +190,20 @@ if (-not $Quiet) {
     $networkLabel = if ($WhatIf) { '网络检测=0 (DryRun)' } else { "网络检测=$($stats.net)" }
     Write-Host "[update] 缓存命中=$($stats.cache) $networkLabel 可更新=$($stats.updated) 未验证=$($stats.skip) (TTL=$ttlDays 天)"
 }
+
+# ---------- 上游金数据漂移（ming-boundary langs pin ↔ HEAD） ----------
+# 报告面非门禁：DRIFT 不拦 update 退出码；升 pin 是人审+重生成事（同上 registry 哲学）
+if (-not $WhatIf) {
+    $syncLangs = Join-Path $PSScriptRoot '../private/engineering/ming-boundary/scripts/sync-langs.mjs'
+    if (Test-Path $syncLangs) {
+        $headsOut = & node $syncLangs --heads 2>&1
+        $drifted = @($headsOut | Where-Object { $_ -match 'DRIFT' })
+        if ($drifted.Count -gt 0) {
+            Write-Host ""
+            Write-Host "=== langs 上游漂移 ($($drifted.Count)) ===" -ForegroundColor Yellow
+            foreach ($d in $drifted) { Write-Host "  $d" }
+            Write-Host "  应用: 人审 upstream.yaml 升 pin → node sync-langs.mjs 重生成 → 提交 diff"
+        }
+    }
+}
 exit 0

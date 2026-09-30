@@ -379,8 +379,12 @@ function main() {
       return out;
     };
 
+    // run 级包索引：python 描述符按全量 py rels 实算 sysroots
+    // （__init__ 链顶祖先父目录+松散目录），替代历史猜词表
+    const pyRun = pyFiles.length
+      ? pythonLang.prepareRun({ root, files: pyFiles }) : null;
     if (astFiles.length && !sg && !a.allowDegraded) {
-      die(`ast-grep 前端缺失而 js/ts 文件 ${astFiles.length} 个待抽——` +
+      die(`ast-grep 前端缺失而 js/ts/rs/py 文件 ${astFiles.length} 个待抽——` +
         `fail-closed 拒降级（ADR-0008 D2）；确需降级传 --allow-degraded`, 3);
     } else if (astFiles.length && sg) {
       const matches = [];
@@ -479,7 +483,7 @@ function main() {
               out: facts, prepared: rustPrepared });
           } else if (pythonLang.handles(id)) {
             pythonLang.handle(id, m, { root, rel, extractor: astId,
-              out: facts, prepared: pyPrepared });
+              out: facts, prepared: pyPrepared, run: pyRun });
           } else if (DECL_RE[id]) {
             const re = DECL_RE[id];
             const nm = re ? (m.text.match(re) || [])[1] : null;

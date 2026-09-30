@@ -2,10 +2,11 @@
 // 第二语言入场——IV8 521 py 文件零边实证为过闸消费方）
 // 面：import/from-import → import 边；__init__.py from-import → 双发 export；
 //     def/class/模块级赋值 → decl。
-// 解析语义：import a.b → 候选根序 [文件目录, root, root/{python,src,tests,
-//   tools}] 找 a/b.py|.pyi|.pyd|.so 或 a/b/__init__.py；from .x import y /
-//   from .. 相对层级锚文件包链；绝对导入无命中=外部（stdlib/site-packages 不
-//   枚举，external 不判死）；相对导入无命中=dead（仓内主张落空）。
+// 解析语义：import a.b → 包索引候选根序（文件目录→计算 sysroots）找
+//   a/b.py|.pyi|.pyd|.so 或 a/b/__init__.py；sysroots 非猜词——由
+//   __init__.py 链顶祖先的父目录 + 松散 py 目录实算（prepareRun 一次/run）。
+//   from .x import y / from .. 相对层级锚文件包链；绝对导入无命中=外部
+//   （stdlib/site-packages 不枚举，external 不判死）；相对导入无命中=dead。
 // 明确不做：sys.path 动态注入/条件导入求值/__import__/importlib 动态边——
 //   语义层留给 pyright/scip-python 适配器（--facts-extra）。
 import fs from 'node:fs';
@@ -92,14 +93,58 @@ function modFile(root, base, dotted) {
   return null;
 }
 
-// 绝对导入候选根：文件目录（扁平脚本风）→ root → 常见包根
-function searchRoots(fromRel) {
-  const dir = path.posix.dirname(fromRel);
-  return [...new Set([dir === '.' ? '' : dir, '',
-    'python', 'src', 'tests', 'tools'])];
+// ---------- 包索引（run 级，一次算定） ----------
+// sysroot 实算规则：init 目录上溯到"不再含 __init__ 的祖先"，其父目录即
+// 导入根（python/iv8_rs/__init__.py 且 python/ 无 init → python/ 是根）；
+// 含 .py 但无 init 的目录登记为松散脚本根（同目录互导语义）。
+// root 自身（''）总在序尾兜底；文件所在目录永远首位（sys.path[0] 同构）。
+function computeRoots(rels) {
+  const initDirs = new Set(), pyDirs = new Set();
+  for (const r of rels) {
+    const d = path.posix.dirname(r);
+    if (path.posix.basename(r).startsWith('__init__.py')) initDirs.add(d);
+    if (/\.(py|pyi|pyw)$/.test(r)) pyDirs.add(d);
+  }
+  const roots = new Set(['']);
+  for (const d of initDirs) {
+    let t = d;
+    while (t && t !== '.' && initDirs.has(path.posix.dirname(t)))
+      t = path.posix.dirname(t);
+    const p = path.posix.dirname(t);
+    roots.add(p === '.' ? '' : p);
+  }
+  for (const d of pyDirs) if (!initDirs.has(d)) roots.add(d === '.' ? '' : d);
+  // 浅根优先（更接近传统 sys.path 序），同深按字典序保确定性
+  return [...roots].sort((x, y) =>
+    x.split('/').length - y.split('/').length || x.localeCompare(y));
 }
 
-function resolvePy(root, fromRel, spec) {
+// run 状态仓：prepareRun 由抽取器在匹配循环前调一次；regexFacts 降级路径
+// 走懒计算（fs 遍历补 py 清单——降级档不读上游 walk 结果）
+const RUN = new Map();
+export function prepareRun({ root, files }) {
+  const rels = files.map((f) => (typeof f === 'string' ? f : f.rel));
+  const roots = computeRoots(rels);
+  RUN.set(root, { roots });
+  return roots;
+}
+function collectPyRels(root, dir = '', out = []) {
+  for (const e of fs.readdirSync(path.join(root, dir || '.'), { withFileTypes: true })) {
+    if (e.name === '.git' || e.name === 'node_modules') continue;
+    const rel = dir ? `${dir}/${e.name}` : e.name;
+    if (e.isDirectory()) collectPyRels(root, rel, out);
+    else if (/\.(py|pyi|pyw)$/.test(e.name)) out.push(rel);
+  }
+  return out;
+}
+function rootsFor(root, fromRel) {
+  const run = RUN.get(root) || { roots: computeRoots(collectPyRels(root)) };
+  const dir = path.posix.dirname(fromRel);
+  const first = dir === '.' ? '' : dir;
+  return [first, ...run.roots.filter((r) => r !== first)];
+}
+
+function resolvePy(root, fromRel, spec, roots) {
   const dir = path.posix.dirname(fromRel);
   if (spec.level > 0) {
     // 相对：level 个点 = 从文件目录上溯 level-1 层包
@@ -121,7 +166,7 @@ function resolvePy(root, fromRel, spec) {
                : { to: `${base ? base + '/' : ''}${spec.mod.replace(/\./g, '/')}`,
                    external: false, dead: true, base };
   }
-  for (const b of searchRoots(fromRel)) {
+  for (const b of roots || rootsFor(root, fromRel)) {
     const hit = modFile(root, b, spec.mod);
     if (hit) return { ...hit, external: false, base: b };
   }
@@ -140,7 +185,7 @@ export function handle(id, m, ctx) {
   const inInit = path.posix.basename(rel).startsWith('__init__.py');
   if (id === 'py-import') {
     for (const spec of importSpecs(m.text)) {
-      const r = resolvePy(root, rel, spec);
+      const r = resolvePy(root, rel, spec, ctx.run);
       out.push(edge(rel, line, spec.mod, r, 'py-import', extractor));
     }
     return true;
@@ -153,7 +198,7 @@ export function handle(id, m, ctx) {
         extractor, extra: { dead: true, mechanism: 'py-from' } }));
       return true;
     }
-    const r = resolvePy(root, rel, spec);
+    const r = resolvePy(root, rel, spec, ctx.run);
     const mech = spec.star ? 'py-star' : 'py-from';
     const specName = '.'.repeat(spec.level) + spec.mod;
     // 模块/包边总是发（from m import n 对 m 的依赖独立成立）；
@@ -198,11 +243,12 @@ function edge(rel, line, name, r, mechanism, extractor) {
       ...(r.external ? { external: true } : {}) } });
 }
 
-// --allow-degraded 降级档：行 regex（相对导入锚目录、绝对导入同上根序）
+// --allow-degraded 降级档：行 regex（相对导入锚目录、绝对导入走包索引）
 export function regexFacts(root, rel, extractor) {
   const out = [];
   const text = fs.readFileSync(path.join(root, rel), 'utf8');
   const inInit = path.posix.basename(rel).startsWith('__init__.py');
+  const roots = rootsFor(root, rel);   // prepareRun 未跑时懒建索引
   let li = 0;
   for (const l of text.split(/\r?\n/)) {
     li++;
@@ -210,7 +256,7 @@ export function regexFacts(root, rel, extractor) {
     if (m) {
       for (const mod of m[1].split(',').map((s) =>
         s.trim().replace(/\s+as\s+\w+\s*$/, '').trim()).filter(Boolean)) {
-        const r = resolvePy(root, rel, { level: 0, mod });
+        const r = resolvePy(root, rel, { level: 0, mod }, roots);
         out.push({ ...edge(rel, li, mod, r, 'py-import', extractor),
           fidelity: 'regex-degraded' });
       }
@@ -223,7 +269,7 @@ export function regexFacts(root, rel, extractor) {
           .split(',').map((s) => s.trim().replace(/\s+as\s+\w+\s*$/, ''))
           .filter(Boolean) };
       spec.star = spec.names.includes('*');
-      const r = resolvePy(root, rel, spec);
+      const r = resolvePy(root, rel, spec, roots);
       const f = edge(rel, li, '.'.repeat(spec.level) + spec.mod || '.', r,
         spec.star ? 'py-star' : 'py-from', extractor);
       out.push({ ...f, fidelity: 'regex-degraded' });
