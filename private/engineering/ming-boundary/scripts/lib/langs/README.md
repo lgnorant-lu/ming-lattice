@@ -44,6 +44,27 @@ export function regexFacts(root, rel, extractor): facts[]  // 降级兜底
 
 "不建议 syntactic" = 文件粒度映射失真面大，直接走 precise 通道更诚实。
 
+## 上游金数据源（调研档案——词表面可借上游演进，边语义不可借）
+
+| 上游 | 数据 | 覆盖 | 可转化物 |
+|---|---|---|---|
+| tree-sitter 各语法仓 `queries/tags.scm` | 官方 `@definition.*`/`@reference.*` 标准词表 + 每语言定义/引用查询 | ~200 语言 | decl/引用边的官方规则源（GitHub 代码导航同套） |
+| tree-sitter `test/corpus/` | 官方解析固件（输入→语法树期望） | 同上 | 金固件摘选（MIT，可引用式复用） |
+| GitHub Linguist `lib/linguist/languages.yml` | 语言→扩展名/文件名/别名 | 813 语言 | `exts` 表上游锚，替代手写集合 |
+| universal-ctags `Units/` | 每语言 input+`expected.tags` 金对 | ~100 语言 | decl 断言 oracle 参照（tags 语义≠边，翻译成本高） |
+
+**分界线**：tags.scm 覆盖"什么算定义/引用"（decl/mention 词表），
+**不管模块边语义**——`use`/`import`/`#include` 的路径→文件映射是构建系统层
+（cargo/go.mod/tsconfig），上游无对应物。上游能消"写什么节点"，
+消不掉"边去哪"——后者仍须按语言落地，故准入闸不因上游存在而撤除。
+
+兼容性注意：tags.scm 是 tree-sitter 原生 S-expr 方言，本 kit 跑 ast-grep
+`kind:` 规则——可译粒度="节点种清单+`@name` 字段绑定"（`has:{field:name}`），
+完整方言要么写转换器要么另接 `tree-sitter` CLI 做第二前端。
+**同步管线（`upstream.yaml` pin + `sync-langs.mjs` 派生描述符）在第二语言
+入场时才建**——现在建=为单语言造管道；rust.mjs 手写规则留作校准用例
+（验证 tags.scm 派生能否复现其覆盖面）。
+
 ## 固件规范（金数据约定）
 
 每语言一组标准固件，覆盖**同一张断言面**——新增语言=补固件块+断言，
