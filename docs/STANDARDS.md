@@ -48,6 +48,21 @@ status: normative
    - 包含上游生态增量时，必须在 Commit 正文中清晰列出变更的仓库名称、Commit Hash 与核心改动。
 3. **中文描述先行**：标题统一采用中文描述，Scope 必须采用小写字母（如 `(testing-rust)`、`(registry)`、`(hooks)`）。
 
+### 1.4 提交正文约定（Commit Body）
+
+非琐碎提交（feat/fix/refactor/docs 涉及决策或行为面者）正文按三段式：
+
+```text
+实施内容:    做了什么（可列点）
+本提交不授权: 显式边界——未触碰的面、未做的事、遗留候审项
+已执行审阅:  验证证据（套件计数/命令/实测输出）
+```
+
+可选后缀行 `关联:` 指认 TODO 条目/ADR/distill 条目（一行内，
+不展开正文——动机正文属于 ADR/distill，body 不建第二真相源）。
+琐碎提交（typo/纯格式）不适用。本约定为文档规范非门禁——
+commit-msg 门仍只校验 subject。
+
 ---
 
 ## 2. 测试规范体系与 Oracle 质量治理
