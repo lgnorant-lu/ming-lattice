@@ -155,7 +155,7 @@ function validateRules(rules) {
       die(`producers.ref[${i}] 非对象`, 3);
     for (const k of Object.keys(s))
       if (!['lang', 'callee', 'mechanism', 'role', 'name_args',
-            'symbol_arg', 'for_expand', 'units_in'].includes(k))
+            'symbol_arg', 'for_expand', 'units_in', 'const_files'].includes(k))
         die(`producers.ref[${i}] 未知键: ${k}`, 3);
     if (!s.lang || !s.callee || !s.mechanism || !s.role ||
         !Array.isArray(s.name_args))

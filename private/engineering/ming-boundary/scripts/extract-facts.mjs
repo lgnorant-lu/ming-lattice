@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { fact, domainOf, toJsonl } from './lib/facts.mjs';
+import { fact, domainOf, toJsonl, globMatch } from './lib/facts.mjs';
 import { findAstGrep } from './lib/frontends.mjs';
 import { mdFacts, MD_EXTRACTOR, MD_EXT } from './lib/adapters/markdown.mjs';
 import { gitignoreFacts, GI_EXTRACTOR } from './lib/adapters/gitignore.mjs';
@@ -279,9 +279,13 @@ function main() {
       if (!Array.isArray(spec.name_args) ||
           !spec.name_args.every((x) => Number.isInteger(x)))
         die(`--emit-spec ref[${i}]: name_args 必须是整数数组`, 3);
+      if (spec.const_files != null &&
+          (!Array.isArray(spec.const_files) ||
+           !spec.const_files.every((x) => typeof x === 'string' && x)))
+        die(`--emit-spec ref[${i}]: const_files 必须是 glob 字符串数组`, 3);
       for (const k of Object.keys(spec))
         if (!['lang', 'callee', 'mechanism', 'role', 'name_args',
-              'symbol_arg', 'for_expand', 'units_in'].includes(k))
+              'symbol_arg', 'for_expand', 'units_in', 'const_files'].includes(k))
           die(`--emit-spec ref[${i}]: 未知键 '${k}'`, 3);
     }
     return { ref: rs };
@@ -328,6 +332,36 @@ function main() {
   const astId = sg ? `ast-grep@${sg.ver}` : null;
   const regId = 'line-regex@1';
   const fileExists = (rel) => { try { return fs.existsSync(path.join(root, rel)); } catch { return false; } };
+
+  // const_files 常量表：契约声明常量住哪个文件（证据锚），值从源码实读
+  // 不抄进契约——`const NAME: &str = "..."` 扫描建 ident→字面量表，
+  // 供 name_args 位的限定/裸 ident 解析（ops::CTOR_MEMBER → #constructor）。
+  // 零匹配 fail-closed：声明了源头却扫不到文件=契约漂移。
+  for (const spec of rustRefSpecs || []) {
+    if (!spec.const_files) continue;
+    const globs = [].concat(spec.const_files);
+    const matched = files.filter((f) =>
+      globs.some((g) => globMatch(f.rel, g)));
+    // staged/--files 显式集可能不含常量件——无通配条目回落直读
+    // （常量表是解析辅助不是事实面，不受 staged 范围约束）
+    for (const g of globs)
+      if (!/[*?[\]{}]/.test(g) && !matched.some((f) => f.rel === g) &&
+          fileExists(g)) matched.push({ rel: g });
+    if (!matched.length)
+      die(`--emit-spec const_files 零匹配: ${globs.join(',')}`, 3);
+    spec._consts = new Map();
+    for (const f of matched) {
+      let text;
+      try { text = fs.readFileSync(path.join(root, f.rel), 'utf8'); }
+      catch { continue; }
+      for (const cm of text.matchAll(
+        /(?:^|\n)[ \t]*(?:pub(?:\s*\([^)]*\))?\s+)?const\s+([A-Za-z_]\w*)\s*:\s*&(?:'static\s+)?str\s*=\s*"((?:[^"\\]|\\.)*)"/g)) {
+        let v = cm[2];
+        try { v = JSON.parse(`"${v}"`); } catch { /* 转义族原样留 */ }
+        spec._consts.set(cm[1], v);
+      }
+    }
+  }
   const mentionCands = []; // [{docRel, name, line}] —— decl 符号表齐了再二遍解析
 
   // declare 边（v1.1）：git check-ignore oracle——先于内容扫描跑，

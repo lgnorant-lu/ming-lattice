@@ -421,6 +421,11 @@ export function handle(id, m, ctx) {
           if (vals.length) return vals;
         }
       }
+      // 常量表解析：限定/裸 ident（ops::CTOR_MEMBER 取尾段）经契约
+      // const_files 建表命中即取字面量值——值从源码实读不拟合
+      const q = t.match(/^[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*$/);
+      if (q && spec._consts?.has(q[0].split('::').pop()))
+        return [spec._consts.get(q[0].split('::').pop())];
       return [null];
     };
     const domains = spec.name_args.map((ai) => expand(ai));
@@ -496,8 +501,14 @@ export function regexFacts(root, rel, extractor, refSpecs) {
           const argText = l.slice(cm.index + cm[0].length);
           const args = callArgs(callee + '(' + argText);
           const domains = spec.name_args.map((ai) => {
-            const lit = (args[ai] || '').match(STR_LIT);
-            return lit ? [lit[1] ?? lit[2]] : [null];
+            const t = args[ai] || '';
+            const lit = t.match(STR_LIT);
+            if (lit) return [lit[1] ?? lit[2]];
+            // 常量表同 AST 路径（for 展开仍是 ast 专属不模拟）
+            const q = t.match(/^[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*$/);
+            if (q && spec._consts?.has(q[0].split('::').pop()))
+              return [spec._consts.get(q[0].split('::').pop())];
+            return [null];
           });
           const combos = [[]];
           for (const dom of domains) {

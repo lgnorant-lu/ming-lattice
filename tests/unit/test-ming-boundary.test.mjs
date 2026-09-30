@@ -1095,6 +1095,9 @@ export async function run() {
         '}\n' +
         'extern "C" fn b() { ops::dispatch("Element", "before", scope) }\n' +
         'fn helper() { unrelated_call("x", "y"); }\n');
+      w4('support/ops.rs',
+        'pub const CTOR_MEMBER: &str = "#constructor";\n' +
+        'const LOCAL_KEY: &str = "localkey";\n');
       w4('native/ops_impl.rs',
         'fn install() {\n' +
         '  for iface in ["Element", "CharacterData", "DocumentType"] {\n' +
@@ -1106,6 +1109,8 @@ export async function run() {
         '  ops::register_stub("Window", "focus");\n' +
         '  ops::register(dynamic_iface(), "weird", op_w);\n' +
         '  register("NotOps", "localfn", other);\n' +  // 裸 register=mixin_ops 真形态
+        '  ops::register("FontFace", ops::CTOR_MEMBER, op_ff_ctor);\n' +  // 限定常量形
+        '  ops::register("Range", CTOR_MEMBER, op_range_ctor);\n' +     // 裸 ident 常量形
         '  for (member, op) in [("rate#get", f1), ("time#get", f2)] {\n' +
         '    ops::register("Ctx", member, op);\n' +
         '  }\n' +
@@ -1116,7 +1121,7 @@ export async function run() {
           role: 'slot', name_args: [0, 1], units_in: 'gen/**' },
         { lang: 'rust', callee: '^register(_argc|_stub)?$', mechanism: 'ops-register',
           role: 'register', name_args: [0, 1], symbol_arg: [2, 3],
-          for_expand: [0, 1] },
+          for_expand: [0, 1], const_files: ['support/ops.rs'] },
       ] }));
       const er = runNode([EXTRACT, '--root', R4, '--emit-spec', specF,
         '--no-md-scan', '--no-ignore-scan']);
@@ -1132,10 +1137,11 @@ export async function run() {
         'Cache.match', 'CharacterData.before', 'CharacterData.remove',
         'Ctx.rate#get', 'Ctx.time#get',
         'DocumentType.before', 'DocumentType.remove', 'Element.before',
-        'Element.remove', 'NotOps.localfn', 'UNRESOLVED.weird',
+        'Element.remove', 'FontFace.#constructor', 'NotOps.localfn',
+        'Range.#constructor', 'UNRESOLVED.weird',
         'Window.close', 'Window.focus',
       ],
-        'register 集应收齐：for 展开 6 + 元组解构 2 + 字面量 + argc/stub + 裸 register + 动态');
+        'register 集应收齐：for 展开 6 + 元组解构 2 + 字面量 + argc/stub + 裸 register + 常量表 2 + 动态');
       // for 循环展开：Element.before 的注册端 unit 应带 op symbol
       const eb = reg.find((x) => x.name === 'Element.before');
       assert.ok(eb && eb.unit === 'native/ops_impl.rs#op_before'

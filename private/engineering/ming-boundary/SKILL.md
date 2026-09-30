@@ -77,12 +77,16 @@ node scripts/check-boundaries.mjs --facts F.jsonl [--rules boundaries.yaml]
 
 `producers.ref`（v1.4）：契约自带 ref 边生产器规格，run-boundary 经
 `--emit-spec` 喂给 extract——`{lang, callee(regex), mechanism, role,
-name_args, symbol_arg?(候选位数组), for_expand?(参数位数组), units_in?}`。
-语义在语言描述符内：rust 支持 `for x in [lit,…]`/`for (a,b) in [(l,e),…]`
-元组解构字面量展开、限定 callee 前缀容忍（`ops::register` 对 `^register`）、
-不可解析参数产 `UNRESOLVED` 段（可豁免可审计，不静吞）；regex 降级档
-（超大件 ast-grep 静默零输出兜底，阈值 `MB_AST_MAX_BYTES` 缺省 8MiB，
-仅零匹配件触发）同机制产 `regex-degraded` ref。
+name_args, symbol_arg?(候选位数组), for_expand?(参数位数组),
+units_in?, const_files?}`。语义在语言描述符内：rust 支持
+`for x in [lit,…]`/`for (a,b) in [(l,e),…]` 元组解构字面量展开、
+限定 callee 前缀容忍（`ops::register` 对 `^register`）、
+`const_files` 声明常量源文件后 `const NAME: &str = "…"` 实值建表——
+`ops::CTOR_MEMBER` 这类常量键归实名（值从源码读不抄契约，零匹配
+fail-closed）、不可解析参数产 `UNRESOLVED` 段（可豁免可审计，
+不静吞）；regex 降级档（超大件 ast-grep 静默零输出兜底，阈值
+`MB_AST_MAX_BYTES` 缺省 8MiB，仅零匹配件触发）同机制产
+`regex-degraded` ref。
 
 `--staged` 增量模式只评 Q-∃ 族（forbidden/allowed/内建 dead）——∀/P 族在不完整视图下缺席断言必 fail-open（Rego negation-safety 同型），整族跳过。finding 契约 `{rule,severity,unit,expect,observed,fix}` 码点序输出。
 
