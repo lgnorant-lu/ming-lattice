@@ -18,7 +18,8 @@ import { fileURLToPath } from 'node:url';
 import { loadYaml } from './lib/yaml.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const DEF_ROOT = path.resolve(HERE, '../../../..');
+// --root 缺省=cwd 解析（先前硬编码指 kit 仓——从别的仓目录跑会静默评错对象）
+const DEF_ROOT = process.cwd();
 const EXTRACT = path.join(HERE, 'extract-facts.mjs');
 const CHECK = path.join(HERE, 'check-boundaries.mjs');
 const CONSUMERS_DIR = path.join(HERE, 'consumers');
@@ -268,7 +269,7 @@ else {
     console.log(`[${f.severity}] ${f.unit}${f.line ? ':' + f.line : ''} ${f.rule}` +
       (f.expect ? ` — expect ${f.expect}, got ${f.observed}` : '') + (f.via ? ` (via ${f.via})` : ''));
   for (const e of errors) console.error(`[error] ${e}`);
-  console.error(`\n[run-boundary] phase=${A.phase} consumers=${picked.map(c => c.id).join(',') || '-'}` +
+  console.error(`\n[run-boundary] root=${A.root} phase=${A.phase} consumers=${picked.map(c => c.id).join(',') || '-'}` +
     ` findings=${findings.length} reports=${reports.length}`);
 }
 process.exit(hasErr ? 1 : 0);
