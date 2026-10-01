@@ -21,6 +21,8 @@ import { parseYamlLite } from './lib/yaml.mjs';
 import { findAstGrep } from './lib/frontends.mjs';
 
 const PKG = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// -c 项目配置（languageGlobs .jsx→Tsx 覆盖）——与 extract-facts 同一 sgconfig
+const SGCONFIG = path.join(PKG, 'scripts/lib/sgconfig.yml');
 const EXTRACT = path.join(PKG, 'scripts', 'extract-facts.mjs');
 const CMDLINE_BUDGET = 24000; // 字符——Win32 CreateProcess 32K 上限留裕量
 
@@ -74,16 +76,28 @@ function batches(files) {
   return out;
 }
 
+// langName 可传函数（ext→grammar）：js 族一描述符三 grammar——
+// .ts 件用 JavaScript 语法探会全灭，须按 ext 分桶各探
 function m1ParseRate(bin, langName, files, errGlobs) {
-  const rules = `id: probe-error\nlanguage: ${langName}\nrule:\n  kind: ERROR`;
   const errRe = errGlobs.map(g => new RegExp(g));
   const errFiles = new Set();
-  for (const b of batches(files)) {
-    const r = spawnSync(bin, ['scan', '--inline-rules', rules, '--json', ...b],
-      { encoding: 'utf8', maxBuffer: 512 * 1024 * 1024 });
-    if (r.status !== 0 && !r.stdout) die(`ast-grep batch spawn 失败: ${r.stderr?.slice(0, 200)}`);
-    for (const m of JSON.parse(r.stdout || '[]')) {
-      if (m.ruleId === 'probe-error') errFiles.add(m.file.replace(/\\/g, '/'));
+  const groups = new Map();
+  for (const f of files) {
+    const g = typeof langName === 'function'
+      ? langName(path.extname(f)) : langName;
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(f);
+  }
+  for (const [g, fs2] of groups) {
+    const rules = `id: probe-error\nlanguage: ${g}\nrule:\n  kind: ERROR`;
+    for (const b of batches(fs2)) {
+      const r = spawnSync(bin, ['scan', '--inline-rules', rules,
+        '-c', SGCONFIG, '--json', ...b],
+        { encoding: 'utf8', maxBuffer: 512 * 1024 * 1024 });
+      if (r.status !== 0 && !r.stdout) die(`ast-grep batch spawn 失败: ${r.stderr?.slice(0, 200)}`);
+      for (const m of JSON.parse(r.stdout || '[]')) {
+        if (m.ruleId === 'probe-error') errFiles.add(m.file.replace(/\\/g, '/'));
+      }
     }
   }
   const realErr = [...errFiles].filter(f => !errRe.some(re => re.test(f)));
@@ -240,7 +254,7 @@ if (a.sync) {
 }
 
 const { bin, ver } = findAstGrep();
-const LANG_AST = { rust: 'Rust', python: 'Python' }; // ast-grep language 名映射
+const LANG_AST = { rust: 'Rust', python: 'Python' }; // ast-grep language 名映射（js 族走 descMod.astLangOf 多 grammar 路）
 let gateFails = 0;
 
 for (const lang of langs) {
@@ -265,7 +279,8 @@ for (const lang of langs) {
     const kloc = files.reduce((s, f) => s + fs.readFileSync(f, 'utf8').split('\n').length, 0) / 1000;
     const globs = c.errFixtureGlobs || [];
 
-    const m1 = m1ParseRate(bin, LANG_AST[lang] || lang, files, globs);
+    const m1 = m1ParseRate(bin, descMod.astLangOf || LANG_AST[lang] || lang,
+      files, globs);
     const m1ok = m1.rate >= (c.minParseRate ?? 1);
     if (!m1ok) gateFails++;
     console.log(`  ${c.name} [${c.scale}]: files=${m1.files} KLOC=${kloc.toFixed(1)} M1=${(m1.rate * 100).toFixed(2)}%` +

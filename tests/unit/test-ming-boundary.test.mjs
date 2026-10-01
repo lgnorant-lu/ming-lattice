@@ -1,7 +1,7 @@
 // tests/unit/test-ming-boundary.test.mjs
 // 单元测试: private/engineering/ming-boundary/scripts/{extract-facts,check-boundaries,
 //   run-boundary}.mjs + scripts/lib/langs/rust.mjs + scripts/lib/langs/python.mjs
-//   + scripts/lib/langs/sh.mjs + scripts/lib/yaml.mjs
+//   + scripts/lib/langs/sh.mjs + scripts/lib/langs/js.mjs + scripts/lib/yaml.mjs
 //   + scripts/lib/langs/rust.derived.mjs + scripts/lib/langs/python.derived.mjs
 //   （语法级前端描述符与上游派生词表，后者经描述符 import 由断言面行使）
 // 覆盖: 事实 schema 形状 / domainOf 首段锚定回归 / 排序确定性(byte-identical) /
@@ -105,6 +105,23 @@ export async function run() {
       'import { K } from \'./b.mjs\';',
       'export function tsTop(): number { return K; }',
     ].join('\n'));
+    // v1.6 js 族描述符化面（langs/js.mjs 升格实证族）：
+    //   三 grammar 路由（.jsx→Tsx / .mts→TypeScript / .tsx→Tsx）+
+    //   CJS require 边 + TS import= + 解构 declarator 裸名不可得即跳过
+    wfile('src/comp.jsx',
+      'import { K } from \'./b.mjs\';\nexport const App = () => <div>{K}</div>;\n');
+    wfile('src/comp.tsx',
+      'import { K } from \'./b.mjs\';\nexport const App2 = (): number => K;\n');
+    wfile('src/tmod.mts',
+      'import { K } from \'./b.mjs\';\nexport const mv: number = K;\n');
+    wfile('src/legacy.cjs',
+      'const b = require(\'./b.mjs\');\nconst p = require(\'node:path\');\nmodule.exports = b;\n');
+    wfile('src/req.ts',
+      'import p = require(\'path\');\nexport function xreq() { return p.sep; }\n');
+    // 解构 variable_declarator（object/array pattern 名非裸标识符）——
+    // nm 不可得即非可命名 decl，不得 slice 兜底产畸形名（solid/vite 实证教训）
+    wfile('src/dstr.mjs',
+      'const { xa, ya } = { xa: () => 1, ya: 2 };\nconst [pa] = [1];\n');
     // v1.2 Rust 语法级面（ADR-0010 syntactic 档：crate/self/super/外部 crate 四分 + mod 解析）
     wfile('crates/demo/src/lib.rs', [
       'mod dom;',
@@ -246,6 +263,27 @@ export async function run() {
     for (const s of ['function', 'arrow', 'method', 'class', 'generator'])
       assert.ok(shapes.has(s), `缺声明形态 ${s}: ${[...shapes]}`);
     assert.ok(decls.some((d) => d.name === 'm'), 'class 方法 m 应入图');
+    // v1.6 js 族描述符化断言（langs/js.mjs）：
+    // .jsx/.tsx→Tsx、.mts→TypeScript 三桶路由各自产边且相对边解析
+    for (const f of ['src/comp.jsx', 'src/comp.tsx', 'src/tmod.mts'])
+      assert.ok(at(f, 'import').some((x) => x.name === './b.mjs'
+        && x.extra?.to === 'src/b.mjs'), `${f} 应解析 ./b.mjs 边`);
+    assert.ok(at('src/comp.jsx', 'decl').some((d) => d.name === 'App'
+      && d.extra?.surface === 'public'), 'jsx arrow decl 应入图且标 public');
+    // CJS require：字面量产 require-cjs 边，裸包名判 external
+    const cjs = at('src/legacy.cjs', 'import');
+    assert.ok(cjs.some((x) => x.name === './b.mjs'
+      && x.extra?.mechanism === 'require-cjs' && x.extra?.to === 'src/b.mjs'),
+      'require(相对) 应产 require-cjs 边并解析');
+    assert.ok(cjs.some((x) => x.name === 'node:path' && x.extra?.external),
+      'require(裸名) 应判 external');
+    // TS import x = require('y')（tach 语料实证形态）——产边即可，
+    // mechanism 视 grammar 归 import-statement 或 require-call 不锁死
+    assert.ok(at('src/req.ts', 'import').some((x) => x.name === 'path'),
+      'TS import=require 应产边（specFromText require 分支）');
+    // 解构 declarator：裸名不可得即跳过，不得 slice 兜底产畸形名
+    assert.equal(at('src/dstr.mjs', 'decl').length, 0,
+      '解构/无名 declarator 不得产 decl（M4 防线）');
     // v1.1a 谓词变更：无 git 上下文时 vendored 无从识别——缺省全扫产 decl；
     // vendored 边界靠 declare 边（.gitignore/豁免）表达，不再靠目录名私货
     assert.ok(at('vendored/v1/lib.mjs', 'decl').length > 0,

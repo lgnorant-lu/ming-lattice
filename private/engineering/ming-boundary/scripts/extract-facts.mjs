@@ -25,14 +25,20 @@ import { gitignoreFacts, GI_EXTRACTOR } from './lib/adapters/gitignore.mjs';
 import * as rustLang from './lib/langs/rust.mjs';
 import * as pythonLang from './lib/langs/python.mjs';
 import * as shLang from './lib/langs/sh.mjs';
+import * as jsLang from './lib/langs/js.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
+// -c 项目配置：languageGlobs 把 .jsx 挂 Tsx grammar（默认 JavaScript 不含 JSX）。
+//   显式引用不污染调用方仓自身 sgconfig
+const SGCONFIG = path.join(HERE, 'lib/sgconfig.yml');
 const REPO_ROOT = path.resolve(HERE, '../../../..');
 
 // 大数组并入不用 spread——push(...arr) 是参数传递，超 ~65k 元即爆栈
 // （typeshed 桶级 5477 件 .pyi 实证 RangeError: call stack exceeded）
 const pushAll = (dst, src) => { for (const x of src) dst.push(x); };
 
+// js/ts/tsx 三 grammar 族由 jsLang 描述符承载（GRAMMAR_OF 路由）——
+// EXT 集仅供本文件桶划分，规则本体与解析语义住 langs/js.mjs
 const JS_EXT = new Set(['.mjs', '.js', '.cjs', '.jsx']);
 const TS_EXT = new Set(['.ts', '.mts', '.cts']);
 const TSX_EXT = new Set(['.tsx']);
@@ -49,68 +55,11 @@ const IGNORE_DIRS = new Set([
   'artifacts', 'out', '.venv', '__pycache__', '.trash',
 ]);
 
-const AST_RULES = `
-id: import-statement
-language: JavaScript
-rule:
-  kind: import_statement
----
-id: export-statement
-language: JavaScript
-rule:
-  kind: export_statement
----
-id: dynamic-import
-language: JavaScript
-rule:
-  kind: call_expression
-  has:
-    field: function
-    kind: import
----
-id: decl-function
-language: JavaScript
-rule:
-  kind: function_declaration
----
-id: decl-generator
-language: JavaScript
-rule:
-  kind: generator_function_declaration
----
-id: decl-class
-language: JavaScript
-rule:
-  kind: class_declaration
----
-id: decl-method
-language: JavaScript
-rule:
-  kind: method_definition
----
-id: decl-arrow
-language: JavaScript
-rule:
-  kind: variable_declarator
-  has:
-    kind: arrow_function
-`.trim();
+// AST_RULES/DECL_RE/specFromText/resolveSpec 已迁入 langs/js.mjs——
+// js 是唯一三 grammar 族，astLangOf 分桶路由见下方桶构造
 
-// TS/TSX 复用同一规则集（tree-sitter-typescript 节点名与 js 同构）——只换 language 头
-const AST_RULES_TS = AST_RULES.replace(/language: JavaScript/g, 'language: TypeScript');
-const AST_RULES_TSX = AST_RULES.replace(/language: JavaScript/g, 'language: Tsx');
-
-const DECL_RE = {
-  'decl-function': /function\s*\*?\s*([\w$]+)/,
-  'decl-generator': /function\s*\*?\s*([\w$]+)/,
-  'decl-class': /class\s+([\w$]+)/,
-  'decl-method': /^\s*(?:static\s+)?(?:async\s+)?(?:get\s+|set\s+)?[\*]?\s*([\w$]+)/,
-  'decl-arrow': /^\s*(?:[\w$]+\s*[:,]|(?:const|let|var)\s+)?([\w$]+)\s*=/,
-};
-
-const REL_SPEC = /^\.{1,2}\//;
-const TRY_SUFFIX = ['', '.mjs', '.js', '.cjs', '.d.ts', '.ts', '.mts', '.cts', '.tsx',
-  '.json', '/index.mjs', '/index.js', '/index.ts'];
+// resolveSpec 由 jsLang 再导出（psLineFacts 复用同一落地序）
+const resolveSpec = jsLang.resolveSpec;
 
 function die(msg, code = 2) {
   console.error(`[extract-facts] ${msg}`);
@@ -186,7 +135,8 @@ function runAstGrep(bin, filesAbs, rules) {
     let r;
     try {
       r = spawnSync(bin, ['scan', '--inline-rules', rules,
-        '--json=stream', ...batch], { encoding: 'utf8', maxBuffer: 512 << 20 });
+        '-c', SGCONFIG, '--json=stream', ...batch],
+        { encoding: 'utf8', maxBuffer: 512 << 20 });
     } catch (e) {
       // spawnSync 本身也会抛（ERR_STRING_TOO_LONG：单文件输出超 512MB
       // 字符串上限——巨型混淆文件逐节点 dump 能到）——同归批降级链
@@ -209,26 +159,6 @@ function runAstGrep(bin, filesAbs, rules) {
     scan(filesAbs.slice(i, i + CHUNK));
   }
   return { matches: out, degraded };
-}
-
-// ---------- 事实翻译 ----------
-function specFromText(text) {
-  const m = text.match(/from\s+['"]([^'"]+)['"]/) ||
-            text.match(/import\(\s*['"]([^'"]+)['"]\s*\)/) || // import('x') 动态字面量
-            text.match(/=\s*require\(\s*['"]([^'"]+)['"]/) || // TS import x=require('y')
-            text.match(/import\s+['"]([^'"]+)['"]/);         // import 'x' 副作用式
-  return m ? m[1] : null;
-}
-
-function resolveSpec(root, fromRel, spec) {
-  if (!REL_SPEC.test(spec)) return { to: null, external: true };
-  const base = path.posix.normalize(
-    path.posix.join(path.posix.dirname(fromRel), spec));
-  for (const suf of TRY_SUFFIX) {
-    if (fs.existsSync(path.join(root, base + suf)))
-      return { to: base + suf, external: false };
-  }
-  return { to: base, external: false, dead: true };
 }
 
 function psLineFacts(root, rel, text, extractorId) {
@@ -434,36 +364,8 @@ function main() {
     const astFiles = [...jsFiles, ...tsFiles, ...tsxFiles, ...rsFiles, ...pyFiles,
       ...shFiles];
 
-    // js 单文件 regex 降级路径（ast-grep 缺席的 --allow-degraded 面，
-    // 与 ENOBUFS 单文件爆管的韧性降级共用同一实现）
-    const jsRegexFacts = (f) => {
-      const out = [];
-      const text = fs.readFileSync(path.join(root, f.rel), 'utf8');
-      let li = 0;
-      for (const l of text.split(/\r?\n/)) {
-        li++;
-        const im = l.match(/import\s+.*?from\s+['"]([^'"]+)['"]/) ||
-                   l.match(/import\s+['"]([^'"]+)['"]/);
-        if (im) {
-          const r = resolveSpec(root, f.rel, im[1]);
-          out.push(fact({ unit: f.rel, kind: 'import', name: im[1],
-            file: f.rel, line: li, fidelity: 'regex-degraded',
-            scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
-            extractor: regId,
-            extra: { to: r.to, mechanism: 'static',
-              ...(r.dead ? { dead: true } : {}),
-              ...(r.external ? { external: true } : {}) } }));
-        }
-        const fm = l.match(/^\s*(export\s+)?(?:async\s+)?function\s*\*?\s*([\w$]+)/) ||
-                   l.match(/^\s*(export\s+)?(?:const|let|var)\s+([\w$]+)\s*=\s*(?:async\s*)?\(/);
-        if (fm) out.push(fact({ unit: `${f.rel}#${fm[2]}`, kind: 'decl',
-          name: fm[2], file: f.rel, line: li, fidelity: 'regex-degraded',
-          scope: 'file-local', extractor: regId,
-          extra: { shape: 'function',
-            surface: fm[1] ? 'public' : 'internal' } }));
-      }
-      return out;
-    };
+    // js 降级路径已入描述符 jsLang.regexFacts（与 ENOBUFS 爆管降级同一实现）
+    const jsRegexFacts = (f) => jsLang.regexFacts(root, f.rel, regId);
 
     // run 级包索引：python 描述符按全量 py rels 实算 sysroots
     // （__init__ 链顶祖先父目录+松散目录），替代历史猜词表
@@ -475,8 +377,15 @@ function main() {
     } else if (astFiles.length && sg) {
       const matches = [];
       const degraded = new Set();
+      // js 族按 ext→grammar 分桶（JavaScript/TypeScript/Tsx 三套规则体）
+      const jsBuckets = new Map();
+      for (const f of [...jsFiles, ...tsFiles, ...tsxFiles]) {
+        const g = jsLang.astLangOf(f.ext);
+        if (!jsBuckets.has(g)) jsBuckets.set(g, []);
+        jsBuckets.get(g).push(f);
+      }
       for (const [bucket, rules] of
-        [[jsFiles, AST_RULES], [tsFiles, AST_RULES_TS], [tsxFiles, AST_RULES_TSX],
+        [...[...jsBuckets].map(([g, fs]) => [fs, jsLang.rulesForGrammar(g)]),
          [rsFiles, rustLang.rulesFor(rustRefSpecs)],
          [pyFiles, pythonLang.rules], [shFiles, shLang.rules]]) {
         if (!bucket.length) continue;
@@ -505,80 +414,19 @@ function main() {
         list.push(m); byFile.set(rel, list);
       }
       for (const [rel, ms] of byFile) {
-        // 两遍：先收 export-stmt 的 surface 标记，再发 decl（surface 要回填）
-        const surfaceMarks = new Set();
-        for (const m of ms) {
-          const line = m.range.start.line + 1;
-          const id = m.ruleId;
-          if (id === 'export-statement') {
-            // reexport 判定必须头锚定：export_statement 节点文本含整个被导
-            // 函数体——体内字符串里的 from 'x' 不许误判成 reexport
-            const reex = m.text.match(
-              /^\s*export\s+(?:\{[^}]*\}|\*\s*(?:as\s+[\w$]+)?)\s*from\s*['"]([^'"]+)['"]/);
-            const spec = reex ? reex[1] : null; // export {…}|\* from 'x' → reexport
-            if (spec) {
-              const r = resolveSpec(root, rel, spec);
-              const base = { file: rel, line, name: spec,
-                fidelity: 'syntactic',
-                scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
-                extractor: astId };
-              // v1 依赖边（via:import 相容）+ v1.1 面边（via:export 专属）
-              facts.push(fact({ ...base, unit: rel, kind: 'import',
-                extra: { to: r.to, mechanism: 'reexport',
-                  ...(r.dead ? { dead: true } : {}),
-                  ...(r.external ? { external: true } : {}) } }));
-              facts.push(fact({ ...base, unit: rel, kind: 'export',
-                extra: { to: r.to, mechanism: 'reexport',
-                  ...(r.dead ? { dead: true } : {}),
-                  ...(r.external ? { external: true } : {}) } }));
-            } else {
-              // export decl/list —— 非边；仅登记模块面标记
-              const dm = m.text.match(/export\s+(?:default\s+)?(?:async\s+)?(?:function\*?|class|const|let|var)\s+([\w$]+)/);
-              if (dm) surfaceMarks.add(dm[1]);
-              const lm = m.text.match(/export\s*\{([^}]*)\}/);
-              if (lm) for (const part of lm[1].split(',')) {
-                const nm = part.trim().split(/\s+as\s+/)[0].trim(); // decl 名（as 前）
-                if (nm) surfaceMarks.add(nm);
-              }
-            }
-          }
-        }
-        // 语言描述符 per-file 预处理（rust: mod 声明名集+内联 range）
+        // 语言描述符 per-file 预处理（rust: mod 声明名集+内联 range；
+        // js: export surface 标记集；python: 保留钩子）
         const rustPrepared = rel.endsWith('.rs') ? rustLang.prepare(ms) : null;
         const pyPrepared = PY_EXT.has(path.posix.extname(rel))
           ? pythonLang.prepare(ms) : null;
+        const jsPrepared = jsLang.exts.has(path.posix.extname(rel))
+          ? jsLang.prepare(ms) : null;
         for (const m of ms) {
           const line = m.range.start.line + 1;
           const id = m.ruleId;
-          if (id === 'import-statement') {
-            const spec = specFromText(m.text);
-            const r = spec ? resolveSpec(root, rel, spec)
-                           : { to: null, external: false, dead: true };
-            facts.push(fact({ unit: rel, kind: 'import',
-              name: spec || '(unparsed)', file: rel, line,
-              fidelity: 'syntactic',
-              scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
-              extractor: astId,
-              extra: { to: r.to, mechanism: 'static',
-                ...(r.dead ? { dead: true } : {}),
-                ...(r.external ? { external: true } : {}) } }));
-          } else if (id === 'dynamic-import') {
-            const spec = specFromText(m.text);
-            if (spec) {
-              const r = resolveSpec(root, rel, spec);
-              facts.push(fact({ unit: rel, kind: 'import', name: spec,
-                file: rel, line, fidelity: 'syntactic',
-                scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
-                extractor: astId,
-                extra: { to: r.to, mechanism: 'dynamic',
-                  ...(r.dead ? { dead: true } : {}),
-                  ...(r.external ? { external: true } : {}) } }));
-            } else {
-              facts.push(fact({ unit: rel, kind: 'import',
-                name: '(computed)', file: rel, line, fidelity: 'syntactic',
-                scope: 'unresolved', extractor: astId,
-                extra: { mechanism: 'dynamic-computed' } }));
-            }
+          if (jsLang.handles(id)) {
+            jsLang.handle(id, m, { root, rel, extractor: astId,
+              out: facts, prepared: jsPrepared });
           } else if (rustLang.handles(id)) {
             rustLang.handle(id, m, { root, rel, extractor: astId,
               out: facts, prepared: rustPrepared, ref: rustRefSpecs });
@@ -587,14 +435,6 @@ function main() {
               out: facts, prepared: pyPrepared, run: pyRun });
           } else if (shLang.handles(id)) {
             shLang.handle(id, m, { root, rel, extractor: astId, out: facts });
-          } else if (DECL_RE[id]) {
-            const re = DECL_RE[id];
-            const nm = re ? (m.text.match(re) || [])[1] : null;
-            facts.push(fact({ unit: `${rel}#${nm || '?'}`, kind: 'decl',
-              name: nm || m.text.slice(0, 40), file: rel, line,
-              fidelity: 'syntactic', scope: 'file-local', extractor: astId,
-              extra: { shape: id.replace('decl-', ''),
-                surface: nm && surfaceMarks.has(nm) ? 'public' : 'internal' } }));
           }
         }
       }

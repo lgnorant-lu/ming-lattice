@@ -1,0 +1,6 @@
+# ast-grep 项目配置——供 extract-facts/metrics 的 -c 显式引用（不影响调用方仓自身的 sgconfig）
+# languageGlobs：扩展名→grammar 覆盖（叠加语义，默认映射不受影响）。
+#   .jsx 默认走 JavaScript grammar（不含 JSX 语法），须挂 Tsx——
+#   vite/solid 语料实证：.jsx 走 JavaScript 必报 ERROR。
+languageGlobs:
+  Tsx: ["*.jsx"]

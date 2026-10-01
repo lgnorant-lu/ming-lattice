@@ -113,3 +113,35 @@ langs:
         minParseRate: 1.0
         maxMalformed: 0
         errFixtureGlobs: ['tests/']
+  js:
+    corpora:
+      - name: express
+        path: js-express
+        repo: expressjs/express
+        rev: 7ef98448f8b38099ab1ded55e458538ad47a51e7
+        scale: small
+        minParseRate: 1.0
+        maxMalformed: 0
+        errFixtureGlobs: ['test/', 'examples/']
+      - name: solid
+        path: js-solid
+        repo: solidjs/solid
+        rev: b25c557754f2ced0d86490e6dbfded9b1745b663
+        scale: med
+        # 实欠 1 件：signal.ts `Setter<in out T>`——ast-grep 0.45.3 捆绑的
+        # tree-sitter-typescript 不认 TS4.7 variance 注解（最小件实证），
+        # 属上游 grammar 版本缺口非路由缺陷；升 ast-grep 后可回拉 1.0
+        minParseRate: 0.99
+        maxMalformed: 0
+        errFixtureGlobs: ['test/', 'packages/*/test', 'bench/', 'examples/']
+      - name: vite
+        path: js-vite
+        repo: vitejs/vite
+        rev: 10033218d239c927cdc375970b5741cce408e81b
+        scale: large
+        minParseRate: 1.0
+        maxMalformed: 0
+        # 前两条=故意脏件区；后四条=ast-grep 0.45.3 捆绑 tree-sitter-typescript
+        # 语法版本缺口实证：export type * as ns(TS5.0)×2 / typeof import()泛型实参 /
+        # .d.ts 多行泛型列表——文件级精准豁免，升 ast-grep 后逐条复核
+        errFixtureGlobs: ['playground/', '__tests__/fixtures', 'src/node/index\.ts$', 'runnerImport\.spec\.ts$', 'types/importGlob\.d\.ts$', 'terserOptions\.d\.ts$']

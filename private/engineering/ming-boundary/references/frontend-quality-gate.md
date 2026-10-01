@@ -143,6 +143,40 @@ symbol→定义文档映射 → 文件级引用边集 vs 我们 syntactic import
   仅在需要符号级差分时启用
 - 门化地位同 rust M8：报告级 oracle，候"采纳仓需 precise 对账"消费方
 
+**js 族描述符化实录（2026-10-02，langs/js.mjs 升格）**：
+
+js 系 8 个扩展名归一描述符，但 ast-grep 只供三 grammar——
+路由表 `GRAMMAR_OF`（描述符持有，metrics M1 与 extract 分桶共用）：
+
+| grammar | exts | 语料实证 |
+|---|---|---|
+| JavaScript | .js .mjs .cjs | express 141 件 .js 全过 |
+| TypeScript | .ts .mts .cts | vite 572 ts + solid 56 ts |
+| Tsx | .jsx .tsx | vite jsx/tsx + solid tsx |
+
+- **`.jsx` 必须挂 Tsx 不是 JavaScript**：JavaScript grammar 不含 JSX
+  元素语法，.jsx 走它必报 ERROR（create-vite 模板实证）；且 ast-grep
+  按**规则语言的扩展名表**过滤目标文件——描述符内路由不生效，须
+  `scripts/lib/sgconfig.yml` 的 `languageGlobs: {Tsx: ["*.jsx"]}`
+  + `-c` 显式引用（叠加不覆盖默认映射，已实证 .tsx 不受影响）
+- **CJS `require()` 是边不是噪声**：express 首跑 M3=0 暴露——
+  `require-call` 规则（call_expression has function=identifier require）
+  + specFromText require 分支补全后 18.5 边/KLOC
+- **M1 分桶按描述符 `astLangOf(ext)`**：metrics.mjs m1ParseRate 接受
+  ext→grammar 函数，三桶各探各自 grammar
+- **畸形名防线同构 python**：decl 裸名 regex 取不出即跳过，
+  禁 slice 兜底（solid `x: () => void =` TS 属性形、vite
+  `[Symbol.iterator]` 计算名方法实证；后者由 decl-method 扩
+  `\[...\]` 名捕获正常收纳）
+- **上游 grammar 版本缺口实录**（ast-grep 0.45.3 捆绑
+  tree-sitter-typescript）：TS4.7 `<in out T>` variance（solid
+  signal.ts）、TS5.0 `export type * as ns`（vite index.ts+
+  terserOptions.d.ts）、`typeof import()` 泛型实参、.d.ts 多行
+  泛型列表——全部文件级 errFixtureGlobs 精准豁免（漂移不掩），
+  升 ast-grep 后逐条复核回拉
+- 语料：express(small,.js) / solid(med,ts+tsx) / vite(large,全八扩展名
+  单仓覆盖)——三仓 M3=18.5/12.7/36.7 边/KLOC、M4=0、M5 byte-identical
+
 ## 不采纳项
 
 - **重型生态工具入库**：scip-rust-analyzer/semgrep/ctags 二进制是
