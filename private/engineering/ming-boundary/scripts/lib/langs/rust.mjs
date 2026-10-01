@@ -28,9 +28,14 @@ const SHAPE_OF = {
 // mod_item 的 decl 由 rust-mod 边规则合并产出（边+声明一体），不进 decl 规则
 const EDGE_OWNED = new Set(['mod_item']);
 // function_item 双捕获（top-level fn + declaration_list method）按 kind 去重
-const DECL_KINDS = [...new Map(derived.declKinds
-  .filter((d) => !EDGE_OWNED.has(d.kind))
-  .map((d) => [d.kind, d])).values()];
+// DECL_OVERLAY：上游 tags.scm 未收 const_item/static_item（M2 语法覆盖实证
+// 的上游词表盲区）——decl 位本地补齐；降级 regex 路早已产之，overlay 是
+// ast/regex 双路同构职责（不进 derived.mjs——那是生成件，重跑 sync 会抹掉）
+const DECL_OVERLAY = ['const_item', 'static_item'];
+const DECL_KINDS = [...new Map([
+  ...derived.declKinds.filter((d) => !EDGE_OWNED.has(d.kind)),
+  ...DECL_OVERLAY.map((k) => ({ kind: k, shape: k.replace(/_item$/, '') })),
+].map((d) => [d.kind, d])).values()];
 
 const EDGE_RULES = `
 id: rust-use
@@ -81,7 +86,7 @@ const DECL_NAME_RE = {
   type_item: /type\s+([A-Za-z_]\w*)/,
   macro_definition: /macro_rules!\s*([A-Za-z_]\w*)/,
   const_item: /const\s+([A-Za-z_]\w*)/,
-  static_item: /static\s+([A-Za-z_]\w*)/,
+  static_item: /static\s+(?:mut\s+)?([A-Za-z_]\w*)/,
 };
 const DECL_SHAPE = Object.fromEntries(DECL_KINDS.map((d) =>
   [d.kind, SHAPE_OF[d.kind] || d.shape]));
@@ -664,7 +669,7 @@ export function regexFacts(root, rel, extractor, refSpecs) {
       continue;
     }
     m = l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?(?:async\s+|unsafe\s+|extern\s+"[^"]+"\s+)*fn\s+([A-Za-z_]\w*)/)
-      || l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?(struct|enum|union|trait|type|const|static)\s+([A-Za-z_]\w*)/)
+      || l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?(struct|enum|union|trait|type|const|static)\s+(?:mut\s+)?([A-Za-z_]\w*)/)
       || l.match(/^\s*macro_rules!\s*([A-Za-z_]\w*)/);
     if (m) {
       const nm = m[2] && !/^(struct|enum|union|trait|type|const|static)$/.test(m[2])

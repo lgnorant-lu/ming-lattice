@@ -134,6 +134,10 @@ export async function run() {
       'struct Hidden { f: u8 }',
       'pub(crate) fn helper() {}',
       'macro_rules! shout { () => {} }',
+      // DECL_OVERLAY 实证（上游 tags.scm 词表盲区 const_item/static_item）：
+      'pub const MAX_DEPTH: u32 = 8;',
+      'static mut TABLE: u32 = 0;',
+      'static LOCALE: &str = "zh";',
     ].join('\n'));
     wfile('crates/demo/src/dom.rs',
       'mod sub;\npub struct Elem;\nimpl Elem { pub fn new() -> Elem { Elem } }\nfn private() {}\n');
@@ -293,6 +297,13 @@ export async function run() {
     assert.ok(rdecl.some((d) => d.name === 'shout' && d.extra?.shape === 'macro'),
       'macro_rules! 应产 shape=macro decl');
     assert.ok(rdecl.some((d) => d.name === 'dom' && d.extra?.shape === 'mod'));
+    // DECL_OVERLAY：const/static 双路产 decl；static mut 名须跳过 mut
+    assert.ok(rdecl.some((d) => d.name === 'MAX_DEPTH' && d.extra?.shape === 'const' &&
+      d.extra?.surface === 'public'), 'pub const 应 shape=const surface=public');
+    assert.ok(rdecl.some((d) => d.name === 'TABLE' && d.extra?.shape === 'static'),
+      'static mut TABLE 名应为 TABLE 非 mut');
+    assert.ok(rdecl.some((d) => d.name === 'LOCALE' && d.extra?.shape === 'static' &&
+      d.extra?.surface === 'internal'), 'static 无 pub 应 internal');
     assert.ok(at('crates/demo/src/dom.rs', 'decl')
       .some((d) => d.name === 'new'), 'impl 内方法应入图');
     // super:: 语义：具名文件 foo.rs 的孩子目录=dir/foo（非 dir 本身）——
