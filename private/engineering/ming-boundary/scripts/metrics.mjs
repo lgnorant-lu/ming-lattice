@@ -7,7 +7,9 @@
 //       M2 语法覆盖(node-types.json ÷ 规则 kind 词表, pin 自 upstream.yaml,
 //          网络件 --no-m2 关 / --node-types 注入本地档)
 //       M3 边产率(import+export/KLOC) / M4 畸形名率 / M5 确定性(--determinism 双跑)
-// --gate: 任一 corpus 越 minParseRate/maxMalformed 阈值 exit 1
+//       M7 上游固件采收(corpus.yaml fixtures: 段, 逐件断言产边/decl/畸形名,
+//          match 零命中=固件漂移 FAIL)
+// --gate: 任一 corpus 越 minParseRate/maxMalformed/fixtures 断言阈值 exit 1
 // 批次上限按命令行长动态算（≤24K 字符/批——Win32 32K 上限实测教训），不拍固定数
 
 import fs from 'node:fs';
@@ -139,6 +141,51 @@ async function m2Coverage(lang, nodeTypesFile) {
            coverage: +(ruleKinds.size / named.size * 100).toFixed(1), unknown };
 }
 
+// ---------- M7 上游固件采收（corpus.yaml fixtures: 段驱动） ----------
+// spec 字段: match=仓相对路径正则(必填) / minFiles(缺省1，0命中=固件漂移FAIL)
+//            / minImports / minDecls / maxMalformed(缺省0)——逐件断言
+// 语义: 采收的上游 test_data/corpus 固件过抽取器，防"词表之外形态"静默劣化
+function m7Fixtures(c, root, allFiles) {
+  const rel = f => path.relative(root, f).replace(/\\/g, '/');
+  const specs = (c.fixtures || []).map(s => {
+    if (!s.match) return { s, files: null, err: 'fixtures spec 缺 match' };
+    const re = new RegExp(s.match);
+    return { s, files: allFiles.filter(f => re.test(rel(f))) };
+  });
+  const uniq = [...new Set(specs.flatMap(p => p.files || []))];
+  const byFile = new Map();
+  if (uniq.length) {
+    const out = path.join(os.tmpdir(), `mb-fix-${process.pid}-${Math.random().toString(36).slice(2)}.jsonl`);
+    const r = spawnSync(process.execPath,
+      [EXTRACT, '--root', root, '--files', uniq.map(rel).join(','), '--out', out],
+      { encoding: 'utf8' });
+    if (r.status !== 0)
+      return specs.map(p => ({ spec: p.s, n: (p.files || []).length, ok: false, rows: [],
+                               err: `extract 失败: ${(r.stderr || r.stdout || '').slice(0, 120)}` }));
+    for (const line of fs.readFileSync(out, 'utf8').split('\n').filter(Boolean)) {
+      const f = JSON.parse(line);
+      const k = String(f.file || '').replace(/\\/g, '/');
+      if (!byFile.has(k)) byFile.set(k, []);
+      byFile.get(k).push(f);
+    }
+    fs.rmSync(out, { force: true });
+  }
+  return specs.map(({ s, files, err }) => {
+    if (err) return { spec: s, n: 0, ok: false, rows: [], err };
+    const rows = (files || []).map(f => {
+      const fx = byFile.get(rel(f)) || [];
+      const imports = fx.filter(x => x.kind === 'import').length;
+      const decls = fx.filter(x => x.kind === 'decl').length;
+      const malformed = fx.filter(x => /[{}]|\/\/|\n/.test(`${x.name || ''}${x.to || ''}`)).length;
+      const ok = imports >= (s.minImports ?? 0) && decls >= (s.minDecls ?? 0)
+               && malformed <= (s.maxMalformed ?? 0);
+      return { file: rel(f), imports, decls, malformed, ok };
+    });
+    const ok = (files || []).length >= (s.minFiles ?? 1) && rows.every(r => r.ok);
+    return { spec: s, n: (files || []).length, ok, rows };
+  });
+}
+
 // ---------- --sync：语料物化 + rev 漂移检测 ----------
 // repo: 'owner/name' → GitHub https；绝对路径/URL 原样用（本地仓 clone 供测试）
 // 缺席 → init+fetch --depth 1 <rev>+checkout FETCH_HEAD（浅物化不拉全史）；
@@ -238,6 +285,16 @@ for (const lang of langs) {
       if (!same) gateFails++;
       console.log(`    M5 确定性双跑: ${same ? 'byte-identical' : '[FAIL] 差异'}`);
       fs.rmSync(fp2, { force: true });
+    }
+
+    if (c.fixtures?.length) {
+      for (const g of m7Fixtures(c, root, files)) {
+        if (!g.ok) gateFails++;
+        console.log(`    M7 固件 ${g.spec.match || '(缺match)'}: ${g.n}件` +
+          (g.ok ? ' 全断言通过' : ' [FAIL]') + (g.err ? ` ${g.err}` : ''));
+        for (const r of (g.rows || []).filter(r => !r.ok).slice(0, 5))
+          console.log(`      FAIL ${r.file}: imports=${r.imports} decls=${r.decls} malformed=${r.malformed}`);
+      }
     }
     fs.rmSync(fp, { force: true });
   }

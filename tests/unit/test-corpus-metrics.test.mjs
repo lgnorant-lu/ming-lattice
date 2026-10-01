@@ -62,6 +62,11 @@ export async function run() {
       assert.ok(c.name && c.path && c.scale, `${lang}.${c.name}: name/path/scale 必填`);
       assert.ok(Array.isArray(c.errFixtureGlobs), `${lang}.${c.name}: errFixtureGlobs 数组`);
       assert.ok(c.minParseRate == null || (c.minParseRate >= 0 && c.minParseRate <= 1), `${lang}.${c.name}: minParseRate ∈[0,1]`);
+      if (c.fixtures != null) {
+        assert.ok(Array.isArray(c.fixtures), `${lang}.${c.name}: fixtures 数组`);
+        for (const s of c.fixtures)
+          assert.ok(s.match, `${lang}.${c.name}: fixtures spec 须有 match`);
+      }
     }
   }
 
@@ -105,6 +110,52 @@ export async function run() {
 
   // —— --corpus 过滤：tiny-strict 不应出现在 tiny 的输出 ——
   assert.ok(!r1.stdout.includes('tiny-strict'), '--corpus 过滤生效');
+
+  // —— M7 fixtures：断言通过 / spec 零命中=漂移 FAIL / minDecls 越阈 FAIL ——
+  const yamlFix = path.join(root, 'corpus-fix.yaml');
+  fs.writeFileSync(yamlFix,
+`version: 1
+langs:
+  rust:
+    corpora:
+      - name: tiny-fix
+        path: tiny
+        scale: small
+        minParseRate: 1.0
+        maxMalformed: 0
+        errFixtureGlobs: ['test_data/']
+        fixtures:
+          - match: 'lib\\.rs$'
+            minImports: 1
+            minDecls: 1
+            maxMalformed: 0
+`, 'utf8');
+  const f1 = metrics(env, ['--corpus-file', yamlFix, '--no-m2', '--gate']);
+  assert.equal(f1.status, 0, f1.stdout + f1.stderr);
+  assert.match(f1.stdout, /M7 固件 .*1件 全断言通过/);
+
+  const yamlFixBad = path.join(root, 'corpus-fix-bad.yaml');
+  fs.writeFileSync(yamlFixBad,
+`version: 1
+langs:
+  rust:
+    corpora:
+      - name: tiny-fix
+        path: tiny
+        scale: small
+        minParseRate: 1.0
+        maxMalformed: 0
+        errFixtureGlobs: ['test_data/']
+        fixtures:
+          - match: 'no_such_fixture'
+          - match: 'lib\\.rs$'
+            minDecls: 99
+`, 'utf8');
+  const f2 = metrics(env, ['--corpus-file', yamlFixBad, '--no-m2', '--gate']);
+  assert.equal(f2.status, 1, '零命中漂移 + minDecls 越阈应 gate fail');
+  assert.match(f2.stdout, /no_such_fixture: 0件 \[FAIL\]/);
+  assert.match(f2.stdout, /FAIL .*lib\.rs.*decls=2/);
+
 
   // —— --sync：本地仓物化/pinned/drift 三态 ——
   const srcRepo = path.join(root, 'src-repo');

@@ -1,7 +1,7 @@
 # 语言前端质量门：分层、指标与语料注册表（设计档）
 
-> 状态：**部分转正**（corpus.yaml + scripts/metrics.mjs 已入库并接测试
-> corpus-metrics 套件；M1-M5 可执行；M7 采收通道实证；M8 候审）。
+> 状态：**转正**（corpus.yaml + scripts/metrics.mjs：M1-M5+M7 可执行、
+> --sync 物化钉 rev、fixtures: 采收断言；M8 试点跑通留档，门化候消费方）。
 > 定位：开发侧仪表层——**生产器健康度，不进 boundaries.yaml 消费方契约链**。
 
 ## 问题
@@ -53,8 +53,8 @@
 | M4 | 畸形名率 | 名含 `{}`/换行/注释残渣 ÷ 全名（err fixture 豁免表） | facts 文件 | =0 硬门（豁免表外） | [实证] 检出过 ripgrep 67 条残留（旧档） |
 | M5 | 确定性 | run1 facts ≡ run2 facts 字节级 | 任意语料 | 硬门 | [实证] 组4 已有，corpus 档待固化 |
 | M6 | 降级同构 | regexFacts ≡ astFacts 在可控子集 | fixture | 断言组已有 | [实证] 组5 |
-| M7 | 上游固件命中 | 采收的 tree-sitter corpus/ra test_data 输入件过抽取器，断言无畸形名/预期叶数 | corpus.yaml `fixtures:` 段 | 逐件断言 | [实证] 可行性实证——8 件 use_tree 固件即抖出 `::*`/`use *`/`std::{::*}` 三种合成 fixture 没想到的残留形态 |
-| M8 | 差分召回 | 与 precise 索引器（scip-*）边交集率 | 采纳仓 precise 输出（--facts-extra 同源） | 报告级，候审到有消费方 | 候审 |
+| M7 | 上游固件命中 | 采收的 tree-sitter corpus/ra test_data 输入件过抽取器，断言无畸形名/预期叶数 | corpus.yaml `fixtures:` 段 | 逐件断言 | [转正] metrics.mjs 落地——match 正则选件+minImports/minDecls/maxMalformed 断言+minFiles 漂移检测；ra 采收 8 件 use_tree + 4 件 decl 固件全过 |
+| M8 | 差分召回 | 与 precise 索引器（scip-*）边交集率 | 采纳仓 precise 输出（--facts-extra 同源） | 报告级，候审到有消费方 | [试点] fd 首份：recall 98.2%（54/55）——详见下节 |
 
 ## corpus.yaml 语料注册表（已转正 `ming-boundary/corpus.yaml`）
 
@@ -113,6 +113,22 @@ langs:
 对采纳仓跑一次做边集 diff 即 M8 召回报告。是按需 oracle 不是门；
 差集分类（cfg 门死/宏生成漏/真漏）才是信息增量，裸 recall% 不是。
 
+**M8 试点实录（2026-10-02，fd 语料 pin ce97e47）**：
+`rust-analyzer scip .`（113s）→ protobufjs+scip.proto 解码 →
+symbol→定义文档映射 → 文件级引用边集 vs 我们 syntactic import 边：
+
+- recall=98.2%（54/55 我方边获 ra 引用证据）
+- 唯一 miss `filter/mod.rs → filter/owner.rs`：`pub use self::owner::X`
+  ra 解析到 `mod owner;` 声明位（本文件）非 owner.rs——口径差
+  （我们产"文件依赖"边更直接），非缺陷
+- ra 独有 73 条=全引用面（含调用/类型引用）天然超集；Import 角色位
+  （0x2）实测 ra 不打——过滤后 0 边，故比对走全引用集
+- 解码选型定案：protobufjs（node 原生栈）——`go install` scip CLI
+  被上游 go.mod replace 指令拒，GitHub release API 限速；
+  scip.proto 单文件自足无 import，loadSync+decode 约 20 行
+- 观察项：ra 把 tests/*.rs 的引用解析进 src/*（testenv `use crate::`
+  外另有跨目录边）——疑 ra 按 workspace 视图归并测试 crate，留档候查
+
 ## 不采纳项
 
 - **重型生态工具入库**：scip-rust-analyzer/semgrep/ctags 二进制是
@@ -125,9 +141,9 @@ langs:
 
 ## 候审项
 
-- M8 差分召回：等"采纳仓需要 precise 边对账"的真实消费方
-- const_item/static_item overlay 补丁：独立小裁决（属 decl 谱系补全
-  不是门设计）
+- M8 差分召回：试点已跑通（上节实录）——门化仍候"采纳仓需要 precise
+  边对账"的真实消费方；试点管线（scip decode.cjs）属一次性 dev 件不入库
 - corpus.yaml + metrics.mjs：已转正（suite=corpus-metrics；实跑 fd/rg
-  M1=100%、ra 99.33% 实欠10/豁免248、M4=0）
+  M1=100%、ra 99.33% 实欠10/豁免248、M4=0；--sync 物化钉 rev；
+  fixtures: 段驱动 M7）
 - fuzz 面（ctags afl-fuzz.r 先例）：最末位，语法生成器驱动
