@@ -1,0 +1,27 @@
+# corpus.yaml — 语言前端质量语料注册表（metrics.mjs 消费，frontend-quality-gate.md M1-M8 语料层）
+# path：绝对路径原样用；相对路径相对 MB_CORPUS_ROOT 环境变量解析（跨机/测试注入面）
+# minParseRate：M1 门——剔除 errFixtureGlobs 命中文件后的解析成功率下限
+# errFixtureGlobs：仓自带故意残缺固件目录（正则串，匹配归一化 / 路径）
+# maxMalformed：M4 门——畸形名（{}/换行/注释残渣）上限
+version: 1
+langs:
+  rust:
+    corpora:
+      - name: fd
+        path: fd-small
+        scale: small
+        minParseRate: 1.0
+        maxMalformed: 0
+        errFixtureGlobs: []
+      - name: ripgrep
+        path: ripgrep-med
+        scale: med
+        minParseRate: 1.0
+        maxMalformed: 0
+        errFixtureGlobs: []
+      - name: rust-analyzer
+        path: ra-large
+        scale: large
+        minParseRate: 0.99
+        maxMalformed: 2
+        errFixtureGlobs: ['test_data/', 'fixtures/']

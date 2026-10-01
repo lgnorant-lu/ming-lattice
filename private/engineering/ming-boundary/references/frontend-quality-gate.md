@@ -1,6 +1,7 @@
 # 语言前端质量门：分层、指标与语料注册表（设计档）
 
-> 状态：设计提案（M1-M5 已在临时探针实证；M7 采收可行性已验证；M8 候审）。
+> 状态：**部分转正**（corpus.yaml + scripts/metrics.mjs 已入库并接测试
+> corpus-metrics 套件；M1-M5 可执行；M7 采收通道实证；M8 候审）。
 > 定位：开发侧仪表层——**生产器健康度，不进 boundaries.yaml 消费方契约链**。
 
 ## 问题
@@ -55,22 +56,27 @@
 | M7 | 上游固件命中 | 采收的 tree-sitter corpus/ra test_data 输入件过抽取器，断言无畸形名/预期叶数 | corpus.yaml `fixtures:` 段 | 逐件断言 | [实证] 可行性实证——8 件 use_tree 固件即抖出 `::*`/`use *`/`std::{::*}` 三种合成 fixture 没想到的残留形态 |
 | M8 | 差分召回 | 与 precise 索引器（scip-*）边交集率 | 采纳仓 precise 输出（--facts-extra 同源） | 报告级，候审到有消费方 | 候审 |
 
-## corpus.yaml 语料注册表（sketch）
+## corpus.yaml 语料注册表（已转正 `ming-boundary/corpus.yaml`）
 
 ```yaml
 version: 1
 langs:
   rust:
-    repos:
-      - { name: fd,            size: small,  rev: <sha> }
-      - { name: ripgrep,       size: medium, rev: <sha> }
-      - { name: rust-analyzer, size: large,  rev: <sha>,
-          exempt: ["crates/parser/test_data/**"] }   # 自带对抗固件，M1/M4 豁免
-    fixtures:
-      - { src: "tree-sitter-rust test/corpus", license: MIT, kinds: [use_declaration] }
-      - { src: "rust-analyzer test_data/parser/inline/ok", license: "MIT/Apache-2.0",
-          pick: "use_tree*.rs" }
+    corpora:
+      - { name: fd,            path: fd-small,     scale: small,
+          minParseRate: 1.0,   maxMalformed: 0,  errFixtureGlobs: [] }
+      - { name: rust-analyzer, path: ra-large,     scale: large,
+          minParseRate: 0.99,  maxMalformed: 2,
+          errFixtureGlobs: ['test_data/', 'fixtures/'] }
 ```
+
+- `path` 相对 `MB_CORPUS_ROOT` 解析（跨机/测试注入面）；`errFixtureGlobs`
+  对 M1 分母与 M4 双向豁免；`--gate` 越阈 exit 1；`--determinism` 起 M5
+  双跑；`--node-types <file>` 注入本地档免网络。
+- 批次上限按**命令行长动态算**（≤24K 字符/批——ra 400 件/批触 Win32
+  32K 静默 spawn 失败实证，不拍固定数）。
+- M7 fixtures 采收通道仍用探针路径（ra test_data 已实证），常驻固件化
+  待第二语言上线时一并定形。
 
 ## 本轮探针实证裁决（临时件 `mb-metrics.mjs`）
 
@@ -122,5 +128,6 @@ langs:
 - M8 差分召回：等"采纳仓需要 precise 边对账"的真实消费方
 - const_item/static_item overlay 补丁：独立小裁决（属 decl 谱系补全
   不是门设计）
-- corpus.yaml 转正 + metrics.mjs 入库：待本档方向获准
+- corpus.yaml + metrics.mjs：已转正（suite=corpus-metrics；实跑 fd/rg
+  M1=100%、ra 99.33% 实欠10/豁免248、M4=0）
 - fuzz 面（ctags afl-fuzz.r 先例）：最末位，语法生成器驱动
