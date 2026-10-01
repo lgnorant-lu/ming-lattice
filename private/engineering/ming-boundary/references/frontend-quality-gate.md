@@ -92,6 +92,21 @@ langs:
 5. **spawn 批调 Windows 命令行 32K 限**：400 件路径参数触线静默
    失败，150/批全过——将来 metrics 工具批尺寸按参数总长度动态算。
 
+## 附：两类"上游"的分界（tags.scm 数据 vs LSP 真值）
+
+| 维度 | tags.scm（tree-sitter 多语言规则） | LSP/indexer（rust-analyzer 等） |
+|---|---|---|
+| 本质 | 语法词表：哪类节点算 def/ref、name 字段位 | 语义真值：每个引用解析到哪个定义（宏/cfg/跨 crate 后） |
+| 回答 | "什么算 decl/ref" | "这个 use 到底绑到谁" |
+| 成本 | 纯解析零构建 | cargo metadata+依赖+proc-macro 构建上下文 |
+| 上游性 | 社区共享静态数据（pin+derived 可吃） | 每仓运行产物（不能 pin，只能按需跑） |
+| 本组件位置 | derived.mjs 数据源（已入） | M8 差分 oracle / --facts-extra 通道（候审） |
+
+判词：LSP 不能进门（准入闸 #3 零新运行时依赖 + 构建上下文不可得），
+但 `rust-analyzer scip`（上游已并入，PR#12976）直接产 SCIP index——
+对采纳仓跑一次做边集 diff 即 M8 召回报告。是按需 oracle 不是门；
+差集分类（cfg 门死/宏生成漏/真漏）才是信息增量，裸 recall% 不是。
+
 ## 不采纳项
 
 - **重型生态工具入库**：scip-rust-analyzer/semgrep/ctags 二进制是

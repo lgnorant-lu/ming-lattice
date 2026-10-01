@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# find-guard v2 (block-form): refuse only the dangerous argument forms —
+# `find /` traverses MSYS2 /proc/registry and leaks one registry Key handle
+# per node (17.8M Key objects ≈ 4.5GB paged pool on 2026-09-17).
+# 无条件拦（L1：非交互调用同样能放血）；其余原样透传真实 find。
+# Registry: private/host-tools/tools.yaml → guards.find
+real=/usr/bin/find.exe
+for arg in "$@"; do
+  case "$arg" in
+    /|//|/proc|/proc/*)
+      echo "find-guard: refused 'find $arg ...' (scans MSYS2 /proc/registry -> kernel handle leak)" >&2
+      echo "  alternatives:" >&2
+      echo "    fd <pattern> [dir]      # file search" >&2
+      echo "    rg --files [dir]        # list files, then rg <pat> to filter" >&2
+      echo "    sg -p <pattern> [dir]   # ast-grep structural code search" >&2
+      echo "    dua [dir]               # disk usage" >&2
+      echo "  real binary: $real $*" >&2
+      exit 2 ;;
+  esac
+done
+exec "$real" "$@"

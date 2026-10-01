@@ -54,6 +54,7 @@ docs/                    STANDARDS(工程总纲)/GOVERNANCE-SPINE(工件本体�
 ## 本机系统护栏（2026-09-17 内存事故后落地）
 
 - **禁止 `find /`**：MSYS2 find 遍历 `/proc/registry` 会泄漏注册表 Key 句柄（实测 17.8M Key 对象 ≈ 4.5GB Paged Pool，cygwin fhandler_registry 的 closedir 不释放 NtOpenKey 句柄，上游 2012 年修过仍回归）。已在 `Git/mingw64/bin/find`(+`.exe`) 前置 guard，拦截 `find /`、`find //`、`find /proc*`，其余透传
-- **grep 软禁用**：`grep`/`egrep`/`fgrep` 被 `mingw64/bin/grep` guard 拦截，默认调用直接失败并提示改用 `rg`/`sg`。确需原生 grep：`grep --real-grep <args>`，或 `export GREP_GUARD_OFF=1`（跑 ./configure 类构建时）
+- **grep 软禁用**：`grep`/`egrep`/`fgrep` 被 guard 拦截（TTY 判定：交互拦+提示 `rg`/`sg`，脚本/管道透传）。确需原生 grep：`grep --real-grep <args>`，或 `export GREP_GUARD_OFF=1`（跑 ./configure 类构建时）
+- **护栏 SoT 已收编 `private/host-tools/`**：tools.yaml 注册表（block-form/soft-ban/hint/coexist 四层）+ shims 源件 + `tools` 状态/`doctor` 体检 + `install.ps1` 部署链（→ `~/.local/bin` 用户级位；`mingw64/bin` 旧件仅作 fallback，Git 升级可覆写）。体检：`tools doctor`；改策略改表后重跑 install
 - 搜索选型：文件查找 → `fd <pat> [dir]` / `rg --files [dir]`；内容搜索 → `rg`；结构搜索 → `sg -p`（ast-grep）；磁盘占用 → `dua`/`diskus`
 - 系统排障工具链已就绪：sysinternals 全套（`pslist64`/`handle64`/`RAMMap64`/`procdump64`/`livekd64`）、`procs`、`samply`、WPT（`xperf`/`wpa`/`wpr`，`"C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit\"`）、`typeperf`/`tracerpt` 内置。大规模进程枚举避免用 PowerShell

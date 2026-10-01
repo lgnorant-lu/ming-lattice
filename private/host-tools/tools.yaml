@@ -1,0 +1,79 @@
+# tools.yaml — 本机命令守卫/提示注册表（单一事实源）
+# tier 四层：
+#   block-form  L1 危险形态硬拦（agent/脚本同样拦——伤害面在非交互）
+#   soft-ban    L2 交互感软禁：TTY 双端（stdin+stdout 皆 tty）才拦+提示；
+#               非交互静默透传（MSYS2 bz* 系脚本/configure 免疫）
+#   hint        L3 提示层：bashrc function，不进 PATH——只导交互人
+#   coexist     L0 共存：无替代或角色不同，仅登记
+# 逃生口三约定：--real-<tool> 单发透传 / <TOOL>_GUARD_OFF=1 会话解锁 /
+#               提示行恒印真实件绝对路径
+version: 1
+
+guards:
+  find:
+    tier: block-form
+    alt: fd
+    block_args: ['/', '//', '/proc', '/proc/*']
+    escape: /usr/bin/find.exe
+    why: 'find / 遍历 MSYS2 /proc/registry → 注册表句柄泄漏（2026-09-17 事故）'
+  grep:
+    tier: soft-ban
+    alt: rg
+    escape_flag: --real-grep
+    env_off: GREP_GUARD_OFF
+    also: [egrep, fgrep]
+    escape: /usr/bin/grep.exe
+    why: 'rg 同作者生态、默认递归+gitignore；脚本走 GREP_GUARD_OFF'
+  sed:
+    tier: coexist
+    alt: sd
+    why: 'sd 非 sed 兼容（无寻址/hold-space）——无合格替代不软禁'
+  awk:
+    tier: coexist
+    alt: ''
+    why: '无现代等价物'
+  ls:
+    tier: hint
+    alt: eza
+  cat:
+    tier: hint
+    alt: bat
+  du:
+    tier: hint
+    alt: dua
+    mode: redirect
+  ps:
+    tier: hint
+    alt: procs
+    mode: redirect
+  diff:
+    tier: hint
+    alt: delta
+  top:
+    tier: hint
+    alt: btop
+  man:
+    tier: hint
+    alt: tldr
+  cd:
+    tier: hint
+    alt: zoxide
+  curl:
+    tier: hint
+    alt: xh
+    mode: redirect
+  xargs:
+    tier: coexist
+    alt: ''
+    why: '无现代等价物'
+  tar:
+    tier: coexist
+    alt: ''
+    why: '无现代等价物'
+
+# 仅提示不入册的现代件（无原生冲突，直接装直接用）
+free:
+  - sg        # ast-grep 结构搜索
+  - jq        # JSON 处理
+  - tokei     # 代码统计（未装）
+  - hyperfine # 基准计时（未装）

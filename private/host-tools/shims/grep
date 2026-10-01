@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# grep-guard v2 (soft-ban): steer interactive use to rg/sg.
+# Registry: private/host-tools/tools.yaml → guards.grep
+#
+# v2 分层：TTY 双端（stdin+stdout 皆 tty）才拦——非交互（脚本/管道/agent
+# 子进程）静默透传，修掉 MSYS2 bzfgrep/bzdiff 系脚本被连带 exit2 的伤。
+# Escape hatches:
+#   grep --real-grep <args>   # strip flag, run real grep once
+#   GREP_GUARD_OFF=1 grep ...  # env unlock (for ./configure-style builds)
+#   GUARD_ASSUME_TTY=1         # test probe: force interactive branch
+name=$(basename "$0")
+extra=""
+case "$name" in
+  egrep|egrep.exe) extra="-E" ;;
+  fgrep|fgrep.exe) extra="-F" ;;
+esac
+real=/usr/bin/grep.exe
+
+if [ "$GREP_GUARD_OFF" = "1" ]; then
+  exec "$real" $extra "$@"
+fi
+
+args=()
+saw_real=0
+for a in "$@"; do
+  if [ "$a" = "--real-grep" ]; then saw_real=1; else args+=("$a"); fi
+done
+if [ "$saw_real" = "1" ]; then
+  exec "$real" $extra "${args[@]}"
+fi
+
+# TTY 判定：交互终端（双端皆 tty）才进软禁；否则真 grep 原样跑
+if [ "${GUARD_ASSUME_TTY:-}" != "1" ] && ! { [ -t 0 ] && [ -t 1 ]; }; then
+  exec "$real" $extra "$@"
+fi
+
+cat >&2 <<'EOF'
+grep-guard: grep is soft-disabled here (interactive). Faster tools are installed:
+
+  rg <pattern> [path]          # content search (ripgrep, respects .gitignore)
+  rg --files [dir]             # list files
+  rg -l/-c/-n <pat> [path]     # files-with-matches / count / line numbers
+  sg -p '<pattern>' [dir]      # ast-grep: structural/AST code search
+
+  One-shot override:  grep --real-grep <args>
+  Session override:   export GREP_GUARD_OFF=1   (e.g. before ./configure)
+  Real binary:        /usr/bin/grep.exe
+EOF
+exit 2
