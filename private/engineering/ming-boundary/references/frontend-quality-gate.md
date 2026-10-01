@@ -129,6 +129,18 @@ symbol→定义文档映射 → 文件级引用边集 vs 我们 syntactic import
 - 观察项：ra 把 tests/*.rs 的引用解析进 src/*（testenv `use crate::`
   外另有跨目录边）——疑 ra 按 workspace 视图归并测试 crate，留档候查
 
+**python precise 层选型调研（2026-10-02，实装验证）**：
+
+- `scip-python`（Sourcegraph）：**出局**——npx 启动即崩于
+  `Invalid regular expression: /\/g`（PythonEnvironment.ts 烤死
+  Unix 路径正则，Windows 不可运行）；且上游仓已归档。归档+跨端
+  缺陷双杀，不作 oracle 候选
+- pyright/basedpyright：纯 LSP 诊断件，无 index/LSIF 导出格式——出局
+- **jedi 迷你索引器**：唯一现实路——pip 装 jedi，~20 行脚本对每文件
+  import 名调 `Script.infer()`/`goto()` 解到模块文件→文件边→与我们
+  syntactic import 边差分；零新运行时依赖进 kit（脚本属 dev 件）
+- 门化地位同 rust M8：报告级 oracle，候"采纳仓需 precise 对账"消费方
+
 ## 不采纳项
 
 - **重型生态工具入库**：scip-rust-analyzer/semgrep/ctags 二进制是
