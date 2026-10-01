@@ -106,5 +106,51 @@ export async function run() {
   // —— --corpus 过滤：tiny-strict 不应出现在 tiny 的输出 ——
   assert.ok(!r1.stdout.includes('tiny-strict'), '--corpus 过滤生效');
 
+  // —— --sync：本地仓物化/pinned/drift 三态 ——
+  const srcRepo = path.join(root, 'src-repo');
+  fs.mkdirSync(srcRepo, { recursive: true });
+  const g = (d, args) => spawnSync('git', args, { cwd: d, encoding: 'utf8' });
+  g(srcRepo, ['init', '-q']);
+  fs.writeFileSync(path.join(srcRepo, 'a.rs'), 'fn a() {}\n');
+  g(srcRepo, ['add', '.']);
+  g(srcRepo, ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'c1']);
+  const rev = g(srcRepo, ['rev-parse', 'HEAD']).stdout.trim();
+  assert.match(rev, /^[0-9a-f]{40}$/);
+  const syncYaml = path.join(root, 'corpus-sync.yaml');
+  fs.writeFileSync(syncYaml,
+`version: 1
+langs:
+  rust:
+    corpora:
+      - name: local
+        path: local-clone
+        repo: '${srcRepo.replace(/\\/g, '/')}'
+        rev: ${rev}
+        scale: small
+        minParseRate: 1.0
+        maxMalformed: 0
+        errFixtureGlobs: []
+`, 'utf8');
+  // 物化
+  const s1 = metrics(env, ['--corpus-file', syncYaml, '--sync']);
+  assert.equal(s1.status, 0, s1.stdout + s1.stderr);
+  assert.match(s1.stdout, /\[ok\].*local.*materialized/);
+  assert.ok(fs.existsSync(path.join(root, 'local-clone', 'a.rs')), 'clone 落盘');
+  // pinned 复核
+  const s2 = metrics(env, ['--corpus-file', syncYaml, '--sync']);
+  assert.match(s2.stdout, /\[ok\].*local.*pinned/);
+  // drift：物化仓挪 HEAD → FAIL 且不覆写
+  g(path.join(root, 'local-clone'), ['checkout', '-qb', 'wip']);
+  fs.writeFileSync(path.join(root, 'local-clone', 'b.rs'), 'fn b() {}\n');
+  g(path.join(root, 'local-clone'), ['add', '.']);
+  g(path.join(root, 'local-clone'), ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'c2']);
+  const s3 = metrics(env, ['--corpus-file', syncYaml, '--sync']);
+  assert.equal(s3.status, 1, 'drift 应 FAIL');
+  assert.match(s3.stdout, /\[FAIL\].*drift.*≠ pin/);
+  assert.ok(fs.existsSync(path.join(root, 'local-clone', 'b.rs')), 'drift 不覆写既有 checkout');
+  // 无 repo 条目跳过（不崩）
+  const s4 = metrics(env, ['--corpus-file', yaml, '--sync']);
+  assert.equal(s4.status, 0);
+
   console.log('    corpus-metrics: 注册表 schema / M1 豁免门 / M4 门 / M5 双跑 / fail-closed / 缺席跳过 全绿');
 }

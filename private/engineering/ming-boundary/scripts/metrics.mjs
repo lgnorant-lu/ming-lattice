@@ -2,6 +2,7 @@
 // 用法:
 //   node metrics.mjs [--lang rust] [--corpus <name>] [--gate] [--determinism]
 //                    [--corpus-file <path>] [--no-m2] [--node-types <file>]
+//                    [--sync   语料物化+rev 漂移对账（provisioning 步，量前先跑）]
 // 指标: M1 解析错误率(ast-grep ERROR 扫描, errFixtureGlobs 豁免) /
 //       M2 语法覆盖(node-types.json ÷ 规则 kind 词表, pin 自 upstream.yaml,
 //          网络件 --no-m2 关 / --node-types 注入本地档)
@@ -30,6 +31,7 @@ function parseArgs(argv) {
     const k = argv[i];
     const take = () => argv[++i] ?? die(`${k} 缺参数`);
     if (k === '--lang') a.lang = take();
+    else if (k === '--sync') a.sync = true;
     else if (k === '--corpus') a.corpus = take();
     else if (k === '--gate') a.gate = true;
     else if (k === '--determinism') a.determinism = true;
@@ -137,10 +139,58 @@ async function m2Coverage(lang, nodeTypesFile) {
            coverage: +(ruleKinds.size / named.size * 100).toFixed(1), unknown };
 }
 
+// ---------- --sync：语料物化 + rev 漂移检测 ----------
+// repo: 'owner/name' → GitHub https；绝对路径/URL 原样用（本地仓 clone 供测试）
+// 缺席 → init+fetch --depth 1 <rev>+checkout FETCH_HEAD（浅物化不拉全史）；
+// 在位 → rev-parse HEAD 对 rev，漂移只报告不改写（--sync 不做有损复位）
+function git(dir, args) {
+  return spawnSync('git', args, { cwd: dir, encoding: 'utf8' });
+}
+function syncCorpus(c) {
+  const root = resolveCorpusPath(c.path);
+  const url = path.isAbsolute(c.repo) ? c.repo
+    : /^[a-z]+:\/\//.test(c.repo) ? c.repo : `https://github.com/${c.repo}`;
+  if (!fs.existsSync(path.join(root, '.git'))) {
+    // 本地仓走 plain clone+checkout（file:// 对 --depth 语义不支持会静默忽略）；
+    // 远端走 init+depth1 fetch 钉 sha——浅物化不拉全史
+    const steps = path.isAbsolute(c.repo)
+      ? [['clone', '-q', url, root], ['-C', root, 'checkout', '-q', c.rev]]
+      : [['init', '-q'], ['remote', 'add', 'origin', url],
+         ['fetch', '-q', '--depth', '1', 'origin', c.rev],
+         ['checkout', '-q', 'FETCH_HEAD']];
+    fs.mkdirSync(root, { recursive: true });
+    for (const args of steps) {
+      const r = args[0] === '-C' || args[0] === 'clone'
+        ? spawnSync('git', args, { encoding: 'utf8' })
+        : git(root, args);
+      if (r.status !== 0) return { name: c.name, ok: false, err: `git ${args[0]}: ${(r.stderr || '').slice(0, 160)}` };
+    }
+    return { name: c.name, ok: true, action: 'materialized' };
+  }
+  const head = git(root, ['rev-parse', 'HEAD']);
+  const cur = (head.stdout || '').trim();
+  if (c.rev && cur !== c.rev)
+    return { name: c.name, ok: false, action: 'drift',
+             err: `HEAD=${cur.slice(0, 12)} ≠ pin=${c.rev.slice(0, 12)}（既有 checkout 不覆写——人工对账）` };
+  return { name: c.name, ok: true, action: 'pinned' };
+}
+
 const a = parseArgs(process.argv);
 const corpusReg = parseYamlLite(fs.readFileSync(a.corpusFile, 'utf8'));
 const langs = Object.keys(corpusReg.langs || {}).filter(l => !a.lang || l === a.lang);
 if (!langs.length) die('无语料命中（--lang 过滤后为空）');
+
+if (a.sync) {
+  let bad = 0;
+  for (const lang of langs)
+    for (const c of corpusReg.langs[lang].corpora || []) {
+      if (!c.repo) continue; // 本地语料只量不拉
+      const r = syncCorpus(c);
+      if (!r.ok) bad++;
+      console.log(`  ${r.ok ? '[ok]' : '[FAIL]'} ${lang}/${c.name}: ${r.action || ''}${r.err ? ' ' + r.err : ''}`);
+    }
+  process.exit(bad ? 1 : 0);
+}
 
 const { bin, ver } = findAstGrep();
 const LANG_AST = { rust: 'Rust', python: 'Python' }; // ast-grep language 名映射

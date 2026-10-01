@@ -7,20 +7,28 @@ version: 1
 langs:
   rust:
     corpora:
+      # repo/rev 可选——带 repo 的语料由 metrics.mjs --sync 物化+钉 rev 校验漂移；
+      # 无 repo 的本地语料只量不拉（测试 fixture/手写语料面）
       - name: fd
         path: fd-small
+        repo: sharkdp/fd
+        rev: ce97e473ebaec49697c07daa50a7bc2b32f713d2
         scale: small
         minParseRate: 1.0
         maxMalformed: 0
         errFixtureGlobs: []
       - name: ripgrep
         path: ripgrep-med
+        repo: BurntSushi/ripgrep
+        rev: 3fce3b5bb0236da2df6d99672afb8a719642eca7
         scale: med
         minParseRate: 1.0
         maxMalformed: 0
         errFixtureGlobs: []
       - name: rust-analyzer
         path: ra-large
+        repo: rust-lang/rust-analyzer
+        rev: 03fcb77246f2568adb0e9b2fa60d19c6cc1686f4
         scale: large
         minParseRate: 0.99
         maxMalformed: 2
