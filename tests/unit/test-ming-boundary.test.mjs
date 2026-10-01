@@ -117,6 +117,15 @@ export async function run() {
       'use crate::net::fetch;',
       'use std::collections::HashMap;',
       'use crate::gone::Thing;',
+      // v1.5 use 树组展开：多段叶级边（外部三仓 dogfood 抓到的回归点——
+      //   组曾整塌成单 blob 名，to 为字符串替换伪路径）
+      'use crate::dom::{Elem as AliasE, sub};',
+      'use crate::{\n  net::fetch as fetch2,\n  gone::{Thing, Ghost}\n};',
+      'use {crate::dep::depfn, std::fmt};',
+      'use crate::dom::sub::*;',
+      'use crate::dom::{self};',
+      // 组内注释与叶级 #[cfg] 属性（ra hir/lib.rs:165 实证形态）
+      'use crate::{\n  net::fetch as fetch3, // trailing note\n  #[cfg(unix)] dom::{self as _selfdom}\n};',
       'pub fn lib_entry() -> i32 { 1 }',
       'struct Hidden { f: u8 }',
       'pub(crate) fn helper() {}',
@@ -300,6 +309,21 @@ export async function run() {
       'cfg 内联 mod 内的 use 应传递 cfg 标记');
     assert.equal(ri('super::Hidden')?.extra?.to, 'crates/demo/src/lib.rs',
       '内联 mod 内 super:: 应先扣内联深度再出文件模块层');
+    // v1.5 use 树组叶级展开断言
+    assert.equal(ri('crate::dom::sub')?.extra?.to, 'crates/demo/src/dom/sub.rs',
+      '组内叶 crate::dom::sub 应解析到子模块文件');
+    assert.equal(ri('crate::dep::depfn')?.extra?.to, 'crates/demo/src/dep.rs',
+      '无前缀组 {crate::dep::depfn, std::fmt} 的 crate 叶应解析');
+    assert.equal(ri('std::fmt')?.scope, 'external',
+      '无前缀组的外部叶应标 external');
+    assert.ok(ri('crate::gone::Ghost')?.extra?.dead,
+      '嵌套组内的死链叶应独立标 dead');
+    assert.equal(ri('crate::dom')?.extra?.to, 'crates/demo/src/dom.rs',
+      '{self} 叶应回落父模块');
+    assert.ok(rimp.filter((x) => x.name === 'crate::dom::sub').length >= 2,
+      '组叶与 glob 叶同源去重不吞并');
+    assert.ok(!rimp.some((x) => /[{}\n]/.test(x.name)),
+      'use 组不得残留含花括号/换行的 blob 名');
     // tests/<file>.rs 是 crate 根：mod common; → 兄弟 tests/common/mod.rs；
     // use common::helper 首段经文件级 mod 声明识别为本地模块（非 external）
     const T = 'crates/demo/tests/probe_x.rs';

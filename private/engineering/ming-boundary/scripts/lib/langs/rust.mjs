@@ -107,15 +107,94 @@ function surface(text) {
   return /^\s*pub\s+(?!\()/.test(text) ? 'public' : 'internal';
 }
 
-// use 路径原文：`[pub[..]] use <path>;`——列表取模块前缀、别名取原名、glob 取父模块
+// use 路径原文：`[pub[..]] use <path>;`——保留原文（组由 useLeaves 展开）
 function useSpec(text) {
   const m = text.match(/^\s*(?:pub(?:\s*\([^)]*\))?\s+)?use\s+(.+?)\s*;?\s*$/s);
-  if (!m) return null;
-  let p = m[1].trim();
-  p = p.replace(/\s*::\s*\{[^}]*\}\s*$/, '');
-  p = p.replace(/\s+as\s+[A-Za-z_]\w*\s*$/, '');
-  p = p.replace(/\s*::\s*\*\s*$/, '');
-  return p || null;
+  return m ? m[1].trim() : null;
+}
+
+// use 树展开：`a::{b, c::{d}}` → ['a::b','a::c::d']。
+// `{x,y}` 无前缀组、`*` glob、`self`、`as 别名`（解析看源路径不看别名）。
+// 单路径无花括号 → 原样一叶。嵌套组递归。
+function splitTopCommas(s) {
+  let depth = 0; const parts = []; let cur = '';
+  for (const c of s) {
+    if (c === '{') depth++;
+    else if (c === '}') depth--;
+    if (c === ',' && depth === 0) { parts.push(cur); cur = ''; }
+    else cur += c;
+  }
+  parts.push(cur);
+  return parts;
+}
+
+function expandUseTree(s) {
+  s = s.trim();
+  if (!s) return [];
+  // 外层组 `{cfg::{..}, hir_def::{..}}` 无前缀——先剥壳按项分发，
+  // 不得把首项的 `::{` 误认作整句前缀（ra hir/lib.rs 实证形态）
+  if (s.startsWith('{') && s.endsWith('}')) {
+    return splitTopCommas(s.slice(1, -1))
+      .flatMap((p) => expandUseTree(p));
+  }
+  // 首个顶层 `::` + 可空白 + `{`（注释已剥）
+  let idx = -1, braceAt = -1, depth = 0;
+  for (let i = 0; i + 1 < s.length; i++) {
+    if (s[i] === '{') depth++;
+    else if (s[i] === '}') depth--;
+    else if (depth === 0 && s[i] === ':' && s[i + 1] === ':') {
+      let j = i + 2;
+      while (j < s.length && /\s/.test(s[j])) j++;
+      if (s[j] === '{') { idx = i; braceAt = j; break; }
+    }
+  }
+  if (idx < 0) {
+    // 无前缀顶层组（`use {crate::x, std::y}`）或纯叶：顶层逗号分割递归
+    const parts = splitTopCommas(s);
+    if (parts.length > 1) {
+      return parts.flatMap((p) => expandUseTree(p));
+    }
+    return [s].filter(Boolean);
+  }
+  const prefix = s.slice(0, idx).trim();
+  const inner = s.slice(braceAt + 1);
+  const close = inner.lastIndexOf('}');
+  const body = close >= 0 ? inner.slice(0, close) : inner;
+  const out = [];
+  for (const it of splitTopCommas(body)) {
+    for (const leaf of expandUseTree(it)) {
+      // `self[ as x]` 叶 = 导入父模块本体
+      if (/^self(\s+as\s+\w+)?$/.test(leaf.trim())) {
+        if (prefix) out.push(prefix);
+        continue;
+      }
+      out.push(prefix ? `${prefix}::${leaf}` : leaf);
+    }
+  }
+  return out;
+}
+
+// use 树里注释合法（`use a::{ //note\n b }`、ra hir/lib.rs 实证）——
+// 展开前剥掉，否则注释里的 {}/,/:: 扰乱叶级切分
+function stripComments(s) {
+  return s.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
+// use 语句 → 叶路径数组（每叶一条 import 边；外部不可解析段原样保留——
+// `use a::{b,c}` 不再是单 blob 名，叶级 to 各自解析）
+function useLeaves(text) {
+  const spec = useSpec(stripComments(text));
+  if (!spec) return [];
+  const out = [];
+  for (const leaf of expandUseTree(spec)) {
+    const p = leaf
+      .replace(/^#\[[^\]]*\]\s*/, '')       // 组内 #[cfg] 叶属性
+      .replace(/\s+as\s+[A-Za-z_]\w*\s*$/, '')
+      .replace(/\s*::\s*\*\s*$/, '') // glob: 导入目标是模块本体
+      .trim();
+    if (p) out.push(p);
+  }
+  return out;
 }
 
 // crate:: 根=本文件所在 crate 的 src/ 目录；self::/super:: 相对模块位置；
@@ -336,7 +415,6 @@ export function handle(id, m, ctx) {
   const line = m.range.start.line + 1;
   const gated = (st) => prepared?.cfg?.has(st) || false;
   if (id === 'rust-use') {
-    const spec = useSpec(m.text);
     const inls = (prepared?.inline || [])
       .filter((x) => x.range.byteOffset.start < m.range.byteOffset.start &&
                      m.range.byteOffset.end <= x.range.byteOffset.end)
@@ -344,27 +422,41 @@ export function handle(id, m, ctx) {
     const chain = inls
       .map((x) => (x.text.match(/mod\s+([A-Za-z_]\w*)/) || [])[1])
       .filter(Boolean);
-    const r = spec
-      ? resolveSpec(root, rel, spec, { fileMods: prepared?.fileMods, inline: chain })
-      : { to: null, external: false, dead: true };
     const pub = /^\s*pub\s+(?!\()/.test(m.text);
     // use 住在 cfg 门内联 mod 里同样被门——传递标记
     const cfg = gated(m.range.byteOffset.start) ||
       inls.some((x) => gated(x.range.byteOffset.start));
-    const base = { file: rel, line, name: spec || '(unparsed)',
-      fidelity: 'syntactic',
-      scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
-      extractor };
-    out.push(fact({ ...base, unit: rel, kind: 'import',
-      extra: { to: r.to, mechanism: pub ? 'rust-pub-use' : 'rust-use',
-        ...(r.dead ? { dead: true } : {}),
-        ...(r.external ? { external: true } : {}),
-        ...(cfg ? { cfg: true } : {}) } }));
-    if (pub) out.push(fact({ ...base, unit: rel, kind: 'export',
-      extra: { to: r.to, mechanism: 'rust-pub-use',
-        ...(r.dead ? { dead: true } : {}),
-        ...(r.external ? { external: true } : {}),
-        ...(cfg ? { cfg: true } : {}) } }));
+    const leaves = useLeaves(m.text);
+    if (!leaves.length) {
+      out.push(fact({ file: rel, line, name: '(unparsed)',
+        fidelity: 'syntactic', scope: 'unresolved', extractor,
+        unit: rel, kind: 'import',
+        extra: { to: null, mechanism: pub ? 'rust-pub-use' : 'rust-use',
+          dead: true, ...(cfg ? { cfg: true } : {}) } }));
+      if (pub) out.push(fact({ file: rel, line, name: '(unparsed)',
+        fidelity: 'syntactic', scope: 'unresolved', extractor,
+        unit: rel, kind: 'export',
+        extra: { to: null, mechanism: 'rust-pub-use', dead: true,
+          ...(cfg ? { cfg: true } : {}) } }));
+      return true;
+    }
+    for (const leaf of leaves) {
+      const r = resolveSpec(root, rel, leaf,
+        { fileMods: prepared?.fileMods, inline: chain });
+      const base = { file: rel, line, name: leaf, fidelity: 'syntactic',
+        scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
+        extractor };
+      out.push(fact({ ...base, unit: rel, kind: 'import',
+        extra: { to: r.to, mechanism: pub ? 'rust-pub-use' : 'rust-use',
+          ...(r.dead ? { dead: true } : {}),
+          ...(r.external ? { external: true } : {}),
+          ...(cfg ? { cfg: true } : {}) } }));
+      if (pub) out.push(fact({ ...base, unit: rel, kind: 'export',
+        extra: { to: r.to, mechanism: 'rust-pub-use',
+          ...(r.dead ? { dead: true } : {}),
+          ...(r.external ? { external: true } : {}),
+          ...(cfg ? { cfg: true } : {}) } }));
+    }
     return true;
   }
   if (id === 'rust-mod') {
@@ -536,18 +628,20 @@ export function regexFacts(root, rel, extractor, refSpecs) {
       }
     let m = l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?use\s+([^;]+);/);
     if (m) {
-      const spec = useSpec(l) || m[2].trim();
-      const r = resolveSpec(root, rel, spec, ctx);
       const pub = !!(m[1] && !m[1].includes('('));
       const cfg = cfgGated(text, at + m.index);
-      out.push(fact({ unit: rel, kind: 'import', name: spec, file: rel,
-        line: li, fidelity: 'regex-degraded',
-        scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
-        extractor,
-        extra: { to: r.to, mechanism: pub ? 'rust-pub-use' : 'rust-use',
-          ...(r.dead ? { dead: true } : {}),
-          ...(r.external ? { external: true } : {}),
-          ...(cfg ? { cfg: true } : {}) } }));
+      const leaves = useLeaves(l);
+      for (const leaf of leaves.length ? leaves : [m[2].trim()]) {
+        const r = resolveSpec(root, rel, leaf, ctx);
+        out.push(fact({ unit: rel, kind: 'import', name: leaf, file: rel,
+          line: li, fidelity: 'regex-degraded',
+          scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
+          extractor,
+          extra: { to: r.to, mechanism: pub ? 'rust-pub-use' : 'rust-use',
+            ...(r.dead ? { dead: true } : {}),
+            ...(r.external ? { external: true } : {}),
+            ...(cfg ? { cfg: true } : {}) } }));
+      }
       continue;
     }
     m = l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?mod\s+([A-Za-z_]\w*)\s*;/);
