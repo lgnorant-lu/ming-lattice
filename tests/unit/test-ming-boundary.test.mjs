@@ -986,6 +986,19 @@ export async function run() {
       assert.ok(!r3.j.findings.some(f => f.rule.startsWith('covered')),
         'staged 不得评 ∀ 族');
 
+      // 缺省 --root = cwd 回归钉（dd0b6bc：先前硬编码 kit 仓，从采纳仓
+      // 目录跑会静默评错对象）——不传 --root 以 cwd=C 起子进程
+      const rDef = spawnSync(process.execPath,
+        [RB, '--rules', path.join(C, 'boundaries.json'), '--facts', fpath,
+         '--phase', 'ci', '--json'],
+        { cwd: C, encoding: 'utf8' });
+      assert.equal(rDef.status, 1, `缺省 root 评测应复现违规退出码: ${rDef.stderr}`);
+      assert.ok(JSON.parse(rDef.stdout).findings
+        .some(f => f.rule === 'forbidden:nv'),
+        '不传 --root 时须评到 cwd 仓的规则面');
+      assert.ok(rDef.stderr.includes('root=') && rDef.stderr.includes('cons-repo'),
+        'stderr 须回显实际评测 root 以便错上下文可辨');
+
       // emit: 预览不写盘 → apply 写盘 → 二次 apply fail-closed
       const r4 = runJson(['--phase', 'manual', '--only', 'emit-skeleton']);
       assert.ok(!fs.existsSync(path.join(C, 'boundaries.suggested.yaml')),

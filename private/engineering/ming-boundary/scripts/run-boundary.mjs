@@ -261,6 +261,9 @@ findings.sort((a, b) => (a.unit || '').localeCompare(b.unit || '')
 if (tmpFacts && !A.keep) fs.rmSync(tmpFacts, { force: true });
 if (tmpSpec && !A.keep) fs.rmSync(tmpSpec, { force: true });
 const hasErr = findings.some(f => f.severity === 'error') || errors.length > 0;
+// root/phase 回显走 stderr——JSON 模式同样须可见（错上下文跑的诊断锚）
+console.error(`[run-boundary] root=${A.root} phase=${A.phase} consumers=${picked.map(c => c.id).join(',') || '-'}` +
+  ` findings=${findings.length} reports=${reports.length}`);
 if (A.json) console.log(JSON.stringify({ findings, reports, warnings, errors }, null, 1));
 else {
   for (const w of warnings) console.error(`[config] ${w}`);
@@ -269,7 +272,5 @@ else {
     console.log(`[${f.severity}] ${f.unit}${f.line ? ':' + f.line : ''} ${f.rule}` +
       (f.expect ? ` — expect ${f.expect}, got ${f.observed}` : '') + (f.via ? ` (via ${f.via})` : ''));
   for (const e of errors) console.error(`[error] ${e}`);
-  console.error(`\n[run-boundary] root=${A.root} phase=${A.phase} consumers=${picked.map(c => c.id).join(',') || '-'}` +
-    ` findings=${findings.length} reports=${reports.length}`);
 }
 process.exit(hasErr ? 1 : 0);
