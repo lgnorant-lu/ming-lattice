@@ -29,6 +29,10 @@ import * as shLang from './lib/langs/sh.mjs';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '../../../..');
 
+// 大数组并入不用 spread——push(...arr) 是参数传递，超 ~65k 元即爆栈
+// （typeshed 桶级 5477 件 .pyi 实证 RangeError: call stack exceeded）
+const pushAll = (dst, src) => { for (const x of src) dst.push(x); };
+
 const JS_EXT = new Set(['.mjs', '.js', '.cjs', '.jsx']);
 const TS_EXT = new Set(['.ts', '.mts', '.cts']);
 const TSX_EXT = new Set(['.tsx']);
@@ -371,7 +375,7 @@ function main() {
   if (a.ignoreScan) {
     const gi = gitignoreFacts(root,
       files.map((f) => f.rel).filter((r) => !inSub(r)));
-    facts.push(...gi.facts);
+    pushAll(facts, gi.facts);
     ignored = gi.ignored;
   }
   // 内容扫描谓词：--extract-dirs 显式收窄优先；缺省=非忽略声明件全扫；
@@ -388,7 +392,7 @@ function main() {
       if (text != null) {
         const md = mdFacts(root, rel, text, fileExists);
         extra = { docrole: md.docrole };
-        facts.push(...md.facts);
+        pushAll(facts, md.facts);
         for (const c of md.mentionCands) mentionCands.push({ docRel: rel, ...c });
       }
     }
@@ -476,7 +480,7 @@ function main() {
          [pyFiles, pythonLang.rules], [shFiles, shLang.rules]]) {
         if (!bucket.length) continue;
         const r = runAstGrep(sg.bin, bucket.map((f) => path.join(root, f.rel)), rules);
-        matches.push(...r.matches);
+        pushAll(matches, r.matches);
         for (const d of r.degraded) degraded.add(d);
       }
       // ast-grep 第三种失败模式（2026-09-30 实证）：>~8MB 文件静默产零匹配
@@ -600,36 +604,36 @@ function main() {
           path.relative(root, p).replace(/\\/g, '/')));
         for (const f of astFiles) {
           if (rels.has(f.rel))
-            facts.push(...(RUST_EXT.has(f.ext)
+            pushAll(facts, RUST_EXT.has(f.ext)
               ? rustLang.regexFacts(root, f.rel, regId, rustRefSpecs)
               : PY_EXT.has(f.ext)
                 ? pythonLang.regexFacts(root, f.rel, regId)
                 : SH_EXT.has(f.ext)
                   ? shLang.regexFacts(root, f.rel, regId)
-                  : jsRegexFacts(f)));
+                  : jsRegexFacts(f));
         }
         console.error(`[extract-facts] ${degraded.size} 个 js/ts 文件 ast-grep 失败` +
           `降 regex（巨型混淆/边界输入面）: ${[...rels].slice(0, 5).join(', ')}`);
       }
     } else if (astFiles.length && a.allowDegraded) {
       for (const f of astFiles)
-        facts.push(...(RUST_EXT.has(f.ext)
+        pushAll(facts, RUST_EXT.has(f.ext)
           ? rustLang.regexFacts(root, f.rel, regId, rustRefSpecs)
           : PY_EXT.has(f.ext)
             ? pythonLang.regexFacts(root, f.rel, regId)
             : SH_EXT.has(f.ext)
               ? shLang.regexFacts(root, f.rel, regId)
-              : jsRegexFacts(f)));
+              : jsRegexFacts(f));
     }
     for (const f of psFiles) {
       const text = fs.readFileSync(path.join(root, f.rel), 'utf8');
-      facts.push(...psLineFacts(root, f.rel, text, regId));
+      pushAll(facts, psLineFacts(root, f.rel, text, regId));
     }
     // sniffed 无扩展名件：与前端在位性无关——ast-grep 不认 extless，
     // regexFacts 是唯一通道（不受 --allow-degraded 门约束：本路径不是降级
     // 退路而是唯一实现，fidelity 戳仍如实标 regex-degraded）
     for (const { f, lang } of sniffed)
-      facts.push(...lang.regexFacts(root, f.rel, regId));
+      pushAll(facts, lang.regexFacts(root, f.rel, regId));
   }
 
   // mention 二遍：code-span/heading 候选名查 decl 符号表

@@ -87,3 +87,11 @@ langs:
         minParseRate: 1.0
         maxMalformed: 0
         errFixtureGlobs: ['tests/']
+      - name: typeshed
+        path: py-typeshed
+        repo: python/typeshed
+        rev: b932d8ce0f893d7d9ef167f0379dcaf9f48bf70b
+        scale: large
+        minParseRate: 1.0
+        maxMalformed: 0
+        errFixtureGlobs: ['stdlib/@tests/']

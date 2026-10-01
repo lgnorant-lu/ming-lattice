@@ -151,7 +151,7 @@ export async function run() {
     // v1.3 Python 语法级面（ADR-0010 syntactic 档：相对点导入/包 __init__/
     //   PEP420 命名空间/外部不判死/逐名子模块探测/init re-export）
     wfile('pkg/__init__.py', 'from .helper import run\nfrom . import sibling\n');
-    wfile('pkg/helper.py', 'MAX = 3\nMAX.__doc__ = "patched"\nrun.__doc__ = "doc"\ndef run():\n    pass\nclass Runner:\n    def go(self):\n        pass\nRunner._allowed = (1, 2)\n');
+    wfile('pkg/helper.py', 'MAX = 3\nMAX.__doc__ = "patched"\nrun.__doc__ = "doc"\nANNOT_ONLY: int\ndef run():\n    pass\nclass Runner:\n    def go(self):\n        pass\nRunner._allowed = (1, 2)\nprint(\n    run(),\n    file=sys.stdout,\n)\n');
     wfile('pkg/sibling.py',
       'from ..pkg import helper\nimport os\nimport pkg.helper\nfrom .sub import deep\n');
     wfile('pkg/sub/deep.py',
@@ -403,6 +403,10 @@ export async function run() {
     // （upstream tags.scm 限 left:(identifier)，derived 丢字段约束的修复钉）
     assert.ok(!hpDecl.some((d) => typeof d.name === 'string' && d.name.includes('.')),
       '属性赋值（__doc__/_allowed）不应产 decl 或畸形名');
+    assert.ok(hpDecl.some((d) => d.name === 'ANNOT_ONLY'),
+      '裸名注解-only（x: int）是 AnnAssign 应产 decl——typeshed 实证面');
+    assert.ok(!hpDecl.some((d) => d.name === 'file'),
+      '多行调用 kwarg 续行（file=）非 decl——AST 天然不误，regex 路靠深度闸');
     // py-idx. 包索引：非标包根 deep/ 经 __init__ 链实算为导入根（旧猜词表
     // 只有 python/src/tests/tools——本断言是索引化的回归钉）
     const USE = 'scripts/useit.py';

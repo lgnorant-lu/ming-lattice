@@ -175,7 +175,9 @@ function resolvePy(root, fromRel, spec, roots) {
 
 const PY_DECL_NAME = { function_definition: /(?:async\s+)?def\s+([A-Za-z_]\w*)/,
   class_definition: /class\s+([A-Za-z_]\w*)/,
-  assignment: /^\s*([A-Za-z_]\w*)\s*(?::[^=]+)?=(?![=>])/ };
+  // 裸名赋值或裸名注解-only（x: int 即 AnnAssign，.pyi 里就是声明主体）；
+  // obj.attr=/x[i]=/解包 LHS 不命中（typeshed os/__init__.pyi 266 处实证）
+  assignment: /^\s*([A-Za-z_]\w*)\s*(?::[^=\n]*)?(?:=(?![=>])|\s*$)/ };
 
 export function prepare(_ms) { return {}; }
 
@@ -252,9 +254,16 @@ export function regexFacts(root, rel, extractor) {
   const text = fs.readFileSync(path.join(root, rel), 'utf8');
   const inInit = path.posix.basename(rel).startsWith('__init__.py');
   const roots = rootsFor(root, rel);   // prepareRun 未跑时懒建索引
-  let li = 0;
+  let li = 0, depth = 0;
   for (const l of text.split(/\r?\n/)) {
     li++;
+    // 括号深度闸：签名/字面量多行展开里的 `name: Type,` 续行非 decl
+    // （AST 路不受影响——参数注解是 typed_parameter 非 assignment 节点；
+    // 粗糙计数是降级档固有代价，fidelity 戳如实标 regex-degraded）
+    const d0 = depth;
+    for (const ch of l)
+      if ('([{'.includes(ch)) depth++; else if (')]}'.includes(ch)) depth--;
+    if (d0 > 0) continue;
     let m = l.match(/^\s*import\s+(.+?)\s*$/);
     if (m) {
       for (const mod of m[1].split(',').map((s) =>
@@ -291,7 +300,7 @@ export function regexFacts(root, rel, extractor) {
     }
     m = l.match(/^\s*(?:async\s+)?def\s+([A-Za-z_]\w*)/)
       || l.match(/^\s*class\s+([A-Za-z_]\w*)/)
-      || l.match(/^([A-Za-z_]\w*)\s*(?::[^=]+)?=(?!=)/);
+      || l.match(/^([A-Za-z_]\w*)\s*(?::[^=]*)?(?:=(?!=)|\s*$)/);
     if (m) {
       const nm = m[1];
       const shape = /^\s*(?:async\s+)?def/.test(l) ? 'fn'
