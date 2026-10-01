@@ -314,6 +314,17 @@ Precise（编译器级 indexer，scip-rust-analyzer/scip-typescript/…每语言
 （索引器对某符号的告警），非调试通道；与我们 findings 通道松散对应——
 不吸收（finding 是消费产物不是事实原料）。
 
+### K. Python 边界同构工具族（2026-10-02 补调研——此前先例谱系只覆盖通用层）
+
+| 件 | 同构面 | 可吸收增量 |
+|---|---|---|
+| import-linter（1.2k★） | 契约词表 forbidden/independence/layers/protected/acyclic_siblings；grimp 静态构图不执行码 | forbidden≈我们 forbidden、independence≈isolated；**layers（方向序层）/protected（白名单 importer 反查）/acyclic（环检测）三族我们没有**——候消费方再进 |
+| grimp | 模块名→文件静态解析 + sys.path/namespace 包处理 | **M8-python 边级 oracle 改判首选**——与 resolvePy/computeRoots 语义级同构；jedi 留符号级 |
+| tach（2.8k★，Rust 核） | Rust AST 抽 import + depends_on/cannot_depend_on/layers/interfaces(expose 正则=公开面)/环检 | source_roots 配置 vs 我们 computeRoots 实算——我们免配置是差异化；expose 佐证 export 面设计有生态先例；仓本体 src/rs+python/ 双修是天然双语言语料 |
+
+判词：词表上我们 parity（生成/手写缝对账）是三家都没有的族——差异化真实成立；
+layers/protected/acyclic 是真实生态需求证据，进 predicate 候审清单。
+
 ## 增量裁定纪（2026-09-29 轮，已收编上文 v1.1 规格）
 
 本轮启发式+消融审计净产出（已全部采纳并落位到对应节，本处留决策纪）：

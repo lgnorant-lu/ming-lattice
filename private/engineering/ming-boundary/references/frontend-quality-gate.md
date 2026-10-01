@@ -136,9 +136,11 @@ symbol→定义文档映射 → 文件级引用边集 vs 我们 syntactic import
   Unix 路径正则，Windows 不可运行）；且上游仓已归档。归档+跨端
   缺陷双杀，不作 oracle 候选
 - pyright/basedpyright：纯 LSP 诊断件，无 index/LSIF 导出格式——出局
-- **jedi 迷你索引器**：唯一现实路——pip 装 jedi，~20 行脚本对每文件
-  import 名调 `Script.infer()`/`goto()` 解到模块文件→文件边→与我们
-  syntactic import 边差分；零新运行时依赖进 kit（脚本属 dev 件）
+- **grimp**：**边级 oracle 首选**（import-linter 图引擎，静态构图不执行码，
+  模块名→文件解析含 sys.path/namespace 包——与 resolvePy 语义级同构，
+  差分粒度天然对齐，避 rust M8 的符号级口径差）
+- **jedi**：符号级候选（infer/goto 解到定义文件）——粒度比边级细，
+  仅在需要符号级差分时启用
 - 门化地位同 rust M8：报告级 oracle，候"采纳仓需 precise 对账"消费方
 
 ## 不采纳项

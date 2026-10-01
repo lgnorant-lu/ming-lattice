@@ -44,6 +44,16 @@ langs:
           - match: 'test_data/parser/inline/ok/(const_item|mod_item|mod_item_curly|macro_rules_as_macro_name)\.rs'
             minDecls: 1
             maxMalformed: 0
+      - name: tach
+        path: tach
+        repo: gauge-sh/tach
+        rev: 08411d489946d8fa10c3bc5957864ea63fa1c3c8
+        scale: med
+        minParseRate: 1.0
+        maxMalformed: 0
+        errFixtureGlobs: []
+        # 双语言同构件仓（src/=Rust 核 89件 + python/=绑定 167件）——
+        # 同仓同时进 rust/python 两语料段，压双前端一致性
   python:
     corpora:
       - name: requests
@@ -95,3 +105,11 @@ langs:
         minParseRate: 1.0
         maxMalformed: 0
         errFixtureGlobs: ['stdlib/@tests/']
+      - name: tach
+        path: tach
+        repo: gauge-sh/tach
+        rev: 08411d489946d8fa10c3bc5957864ea63fa1c3c8
+        scale: med
+        minParseRate: 1.0
+        maxMalformed: 0
+        errFixtureGlobs: ['tests/']

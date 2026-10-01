@@ -215,6 +215,7 @@ function runAstGrep(bin, filesAbs, rules) {
 function specFromText(text) {
   const m = text.match(/from\s+['"]([^'"]+)['"]/) ||
             text.match(/import\(\s*['"]([^'"]+)['"]\s*\)/) || // import('x') 动态字面量
+            text.match(/=\s*require\(\s*['"]([^'"]+)['"]/) || // TS import x=require('y')
             text.match(/import\s+['"]([^'"]+)['"]/);         // import 'x' 副作用式
   return m ? m[1] : null;
 }
