@@ -126,6 +126,10 @@ export async function run() {
       'use crate::dom::{self};',
       // 组内注释与叶级 #[cfg] 属性（ra hir/lib.rs:165 实证形态）
       'use crate::{\n  net::fetch as fetch3, // trailing note\n  #[cfg(unix)] dom::{self as _selfdom}\n};',
+      // M7 上游固件采收（ra test_data/parser/inline/ok/use_tree*.rs 全形态）：
+      //   2015 绝对前导 ::、裸 * glob、组内 ::*、下划线别名、单元素组
+      'use ::std;', 'use ::*;', 'use *;', 'use std::{::*};',
+      'use std as stdlib;', 'use Trait as _;', 'use std::{collections};',
       'pub fn lib_entry() -> i32 { 1 }',
       'struct Hidden { f: u8 }',
       'pub(crate) fn helper() {}',
@@ -324,6 +328,20 @@ export async function run() {
       '组叶与 glob 叶同源去重不吞并');
     assert.ok(!rimp.some((x) => /[{}\n]/.test(x.name)),
       'use 组不得残留含花括号/换行的 blob 名');
+    // M7 上游固件形态（ra use_tree*.rs）：前导 :: 归一、裸 * glob、
+    //   组内 ::* 不残尾冒号、下划线别名剥离
+    assert.equal(ri('std')?.scope, 'external',
+      '`use ::std` 前导 :: 应归一等同裸 `std`');
+    assert.ok(rimp.some((x) => x.name === 'std' && x.scope === 'external'),
+      '`use std::{::*}` 组内 glob 应归一到 std 不残尾冒号');
+    assert.ok(rimp.some((x) => x.name === 'Trait' && x.scope === 'external'),
+      '`use Trait as _` 下划线别名应剥成原名');
+    assert.ok(rimp.some((x) => x.name === 'std::collections'),
+      '`use std::{collections}` 单元素组应展开成叶');
+    assert.ok(rimp.every((x) => !/:$/.test(x.name) && !/^:/.test(x.name)),
+      '叶名不得残留前导/尾随冒号');
+    assert.ok(ri('(unparsed)')?.extra?.dead,
+      '`use ::*` 根 glob 叶剥空应产 (unparsed) 死链而非假名');
     // tests/<file>.rs 是 crate 根：mod common; → 兄弟 tests/common/mod.rs；
     // use common::helper 首段经文件级 mod 声明识别为本地模块（非 external）
     const T = 'crates/demo/tests/probe_x.rs';

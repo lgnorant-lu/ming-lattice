@@ -191,6 +191,8 @@ function useLeaves(text) {
       .replace(/^#\[[^\]]*\]\s*/, '')       // 组内 #[cfg] 叶属性
       .replace(/\s+as\s+[A-Za-z_]\w*\s*$/, '')
       .replace(/\s*::\s*\*\s*$/, '') // glob: 导入目标是模块本体
+      .replace(/^:+/, '')           // 2015 绝对路径前导（`use ::std`≡`std`）
+      .replace(/:+\s*$/, '')        // ::* 剥后尾冒号残留（`std::{::*}`→std）
       .trim();
     if (p) out.push(p);
   }
