@@ -26,16 +26,27 @@ POSIX 原生件不做全局替换（它们是**脚本消费的 API 合同**—�
 - `<TOOL>_GUARD_OFF=1` 会话解锁（`GREP_GUARD_OFF=1 ./configure`）
 - 提示行恒印真实件绝对路径（`/usr/bin/grep.exe`）
 
+## 平台矩阵（平台中性核 + 适配器）
+
+平台中性核 `tools.mjs`（node，天然跨端）+ 每端部署适配器。平台判定：`MSYSTEM` 环境锚 → msys2，否则 `process.platform`；`HT_PLATFORM` 注入供测试。
+
+| 端 | shim 层 | hints 层 | 安装器 | 状态 |
+|---|---|---|---|---|
+| Git Bash/MSYS2 | `~/.local/bin` + `mingw64/bin` fallback | `.bashrc` 托管块 | `install.ps1` | [实证] |
+| Linux/macOS bash/zsh | `~/.local/bin`（chmod +x） | `.bashrc`+`.zshrc` 托管块 | `install.sh` | [实证] install.sh 冒烟测试 |
+| pwsh | 无 shim（`ls`/`cat`/`ps` 是 Get-* 别名非 exe，shim 语义错位） | 函数语法不同须另模板 | — | 候审——不为凑表硬做 |
+| cmd | doskey 宏残废级 | — | — | 不做 |
+
 ## 部署与体检
 
 ```powershell
-pwsh private/host-tools/install.ps1           # 部署
-pwsh private/host-tools/install.ps1 -WhatIf   # 预览
+pwsh private/host-tools/install.ps1           # Windows/MSYS2 部署（-WhatIf 预览 / -Uninstall）
+bash private/host-tools/install.sh            # POSIX 部署（--uninstall 拆除）
 tools                                          # 状态表
-tools doctor                                   # shim 在位/bashrc 编码/PATH 序
+tools doctor                                   # shim 分层在位/rc 编码/PATH 部署点
 ```
 
-部署点 `~/.local/bin`（`~/bin` 兜底）已在 PATH 最前且免疫 Git for Windows 升级（`mingw64/bin` 旧 shim 留作 fallback）。cmd/pwsh 链上 `C:\Windows\system32\find.exe` 是同名异物（文本搜索），本守卫只管 bash 链——已知边界。
+部署点 `~/.local/bin`（`~/bin` 兜底）已在 PATH 最前且免疫 Git for Windows 升级（`mingw64/bin` 旧 shim 由 install.ps1 best-effort 同步作 fallback，提权失败自动跳过）。cmd/pwsh 链上 `C:\Windows\system32\find.exe` 是同名异物（文本搜索），本守卫只管 bash 链——已知边界。
 
 ## 测试
 

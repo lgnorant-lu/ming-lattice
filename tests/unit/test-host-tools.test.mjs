@@ -33,7 +33,7 @@ function mkHome() {
   return d;
 }
 function tools(home, args, extraEnv = {}) {
-  return spawnSync('node', [TOOLS, ...args],
+  return spawnSync(process.execPath, [TOOLS, ...args],
     { encoding: 'utf8', env: { ...process.env, HT_HOME: home, ...extraEnv } });
 }
 function runShim(shim, argv, extraEnv = {}) {
@@ -73,7 +73,7 @@ export async function run() {
   const d1 = tools(home, ['doctor']);
   assert.equal(d1.status, 1, '假 HOME doctor 应失败');
   assert.match(d1.stdout, /FAIL.*find shim/);
-  assert.match(d1.stdout, /FAIL.*bashrc 缺席/);
+  assert.match(d1.stdout, /FAIL.*rc 文件全缺席/);
 
   // —— doctor：铺 shim + UTF-8 bashrc → shim 项转绿 ——
   fs.copyFileSync(SHIM_FIND, path.join(home, '.local', 'bin', 'find'));
@@ -133,5 +133,53 @@ export async function run() {
     assert.equal(g5.stdout.trim(), '2', 'egrep -E 映射应使 a+b 正则生效');
   }
 
-  console.log('    host-tools: registry/schema/status/doctor/gen-hints/shim 契约 全绿');
+  // —— POSIX 平台注入：HT_PLATFORM=linux → mingw64 fallback 位不在探针面 ——
+  const home2 = mkHome();
+  const sp = tools(home2, ['status'], { HT_PLATFORM: 'linux' });
+  assert.equal(sp.status, 0);
+  assert.match(sp.stdout, /find\s+block-form\s+fd\s+\S+\s+MISSING/,
+    'POSIX 端无 mingw64 fallback——未铺 shim 应如实 MISSING');
+  // POSIX PATH 归一化：/ 分隔符判定（注入纯 POSIX 形 HOME——Windows 形
+  // C:\ 盘符冒号与 POSIX PATH ':' 分隔符同形，跨平台语义注定不可混写）
+  const dp = tools('/srv/ht-fake', ['doctor'], {
+    HT_PLATFORM: 'linux',
+    PATH: '/srv/ht-fake/.local/bin:/usr/bin:/bin',
+  });
+  assert.match(dp.stdout, /\[ok\] PATH 含用户 bin 部署点/, 'POSIX PATH 形如 a/b 也应检出');
+
+  // —— install.sh 冒烟（需 bash）：假 HOME 部署 → doctor 转绿 ——
+  if (BASH) {
+    const ih = mkHome();
+    fs.writeFileSync(path.join(ih, '.bashrc'), 'x=1\n', 'utf8');
+    fs.writeFileSync(path.join(ih, '.zshrc'), 'z=1\n', 'utf8');
+    const inst = spawnSync(BASH, [path.join(PKG, 'install.sh')],
+      { encoding: 'utf8', env: { ...process.env, HT_HOME: ih } });
+    assert.equal(inst.status, 0, inst.stderr + inst.stdout);
+    const shimGrep = path.join(ih, '.local', 'bin', 'grep');
+    assert.ok(fs.existsSync(shimGrep), 'shim 落盘');
+    assert.ok(fs.existsSync(path.join(ih, '.local', 'bin', 'tools')), 'tools 入口落盘');
+    const rcBody = fs.readFileSync(path.join(ih, '.bashrc'), 'utf8');
+    assert.match(rcBody, />>> ming host-tools hints/, 'bashrc 挂块');
+    assert.match(rcBody, /^x=1/m, '用户手改区保留');
+    assert.match(fs.readFileSync(path.join(ih, '.zshrc'), 'utf8'), /ming host-tools hints/, 'zshrc 也挂块');
+    // 幂等重放：第二跑走刷新路径不重复追加
+    const inst2 = spawnSync(BASH, [path.join(PKG, 'install.sh')],
+      { encoding: 'utf8', env: { ...process.env, HT_HOME: ih } });
+    assert.equal(inst2.status, 0);
+    assert.match(inst2.stdout, /hints 块已刷新/);
+    const cnt = (fs.readFileSync(path.join(ih, '.bashrc'), 'utf8')
+      .match(/>>> ming host-tools hints/g) || []).length;
+    assert.equal(cnt, 1, '托管块幂等不重复');
+    // 部署后 doctor 在假 HOME 下应全绿（PATH 用 win 形态 ';' 拼入假部署点）
+    const dOk = tools(ih, ['doctor'], {
+      PATH: `${ih}\\.local\\bin;${process.env.PATH}` });
+    assert.equal(dOk.status, 0, dOk.stdout + dOk.stderr);
+    // uninstall
+    const un = spawnSync(BASH, [path.join(PKG, 'install.sh'), '--uninstall'],
+      { encoding: 'utf8', env: { ...process.env, HT_HOME: ih } });
+    assert.equal(un.status, 0);
+    assert.ok(!fs.existsSync(shimGrep), 'uninstall 拆 shim');
+  }
+
+  console.log('    host-tools: registry/schema/status/doctor/gen-hints/shim 契约/POSIX 平台/install.sh 全绿');
 }

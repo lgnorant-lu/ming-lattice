@@ -16,9 +16,16 @@ import { parseYamlLite } from '../engineering/ming-boundary/scripts/lib/yaml.mjs
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const HOME = process.env.HT_HOME || os.homedir();
+// 平台判定：msys2 以 MSYSTEM 环境为锚（Git Bash 注入）；HT_PLATFORM 供测试注入
+const PLATFORM = process.env.HT_PLATFORM
+  || (process.env.MSYSTEM ? 'msys2' : process.platform); // msys2|win32|linux|darwin
 const USER_DIRS = [path.join(HOME, '.local', 'bin'), path.join(HOME, 'bin')];
-const FALLBACK_DIRS = ['C:/Program Files/Git/mingw64/bin']; // 旧装位——Git 升级可覆写
+// mingw64/bin 旧装位只在 msys2/win32 端存在——POSIX 端无此 fallback
+const FALLBACK_DIRS = (PLATFORM === 'msys2' || PLATFORM === 'win32')
+  ? ['C:/Program Files/Git/mingw64/bin'] : [];
 const SHIM_DIRS = [...USER_DIRS, ...FALLBACK_DIRS];
+// rc 探针面：POSIX 壳 rc 文件族（bash/zsh 托管块同语法可复用）
+const RC_FILES = ['.bashrc', '.zshrc'].map(f => path.join(HOME, f));
 
 function die(msg, code = 2) { console.error('tools: ' + msg); process.exit(code); }
 
@@ -70,15 +77,14 @@ function cmdStatus(reg) {
   if (missing.length) console.log(`\n注意: ${missing.length} 项守卫 shim 不在位——跑 install.ps1 或 tools doctor`);
 }
 
-function bashrcProbe() {
-  const p = path.join(HOME, '.bashrc');
-  if (!fs.existsSync(p)) return { exists: false };
+function rcProbe(p) {
+  if (!fs.existsSync(p)) return { path: p, exists: false };
   const buf = fs.readFileSync(p);
   const utf16 = buf.length >= 2 && buf[0] === 0xFF && buf[1] === 0xFE;
   const utf8bom = !utf16 && buf.length >= 3 && buf[0] === 0xEF && buf[1] === 0xBB && buf[2] === 0xBF;
   const text = utf16 ? buf.toString('utf16le') : buf.toString('utf8');
   return {
-    exists: true, utf16, utf8bom,
+    path: p, exists: true, utf16, utf8bom,
     hasHints: text.includes('>>> ming host-tools hints'),
   };
 }
@@ -94,23 +100,30 @@ function cmdDoctor(reg) {
       s ? `${name} shim 仅在 fallback（${s.path}）——Git 升级可覆写，install.ps1 铺用户级`
         : `${name} shim 缺席（tier=${g.tier} 应有 shim；Git 升级 wipe 或 install 未跑）`);
   }
-  const rc = bashrcProbe();
-  ok(rc.exists, '.bashrc 存在', '.bashrc 缺席');
-  if (rc.exists) {
-    ok(!rc.utf16, '.bashrc 编码 UTF-8', '.bashrc 是 UTF-16（逐行解析全灭——install.ps1 可修）');
-    ok(!rc.utf8bom, '.bashrc 无 UTF-8 BOM', '.bashrc 带 UTF-8 BOM（bash 首行噎住——剥 EF BB BF）');
-    const hasHintEntry = Object.values(reg.guards || {}).some(g => g.tier === 'hint');
-    ok(!hasHintEntry || rc.hasHints, 'hints 托管块已挂 .bashrc', 'hints 托管块缺席——install.ps1 挂载');
+  const rcs = RC_FILES.map(rcProbe);
+  const existing = rcs.filter(r => r.exists);
+  ok(existing.length > 0, `rc 文件存在: ${existing.map(r => path.basename(r.path)).join(',')}`,
+    `rc 文件全缺席（探针面: ${RC_FILES.map(f => path.basename(f)).join('/')}）`);
+  for (const rc of existing) {
+    const n = path.basename(rc.path);
+    ok(!rc.utf16, `${n} 编码 UTF-8`, `${n} 是 UTF-16（逐行解析全灭——install 可修）`);
+    ok(!rc.utf8bom, `${n} 无 UTF-8 BOM`, `${n} 带 UTF-8 BOM（shell 首行噎住——剥 EF BB BF）`);
   }
-  // PATH 检查：用户 bin 须在 PATH 存在（bash 内 MSYS2 profile 自动前置，
-  // Windows 层序只影响 cmd/pwsh 链——shim 是 bash 件管不到那边）
-  const homeWin = HOME.replace(/\//g, '\\').toLowerCase();
-  const segs = (process.env.PATH || '').split(path.delimiter)
-    .map(s => s.replace(/\//g, '\\').replace(/\\$/, '').toLowerCase());
-  const hasUserBin = USER_DIRS.some(d =>
-    segs.includes(d.replace(/\//g, '\\').toLowerCase()));
-  ok(hasUserBin || segs.some(s => s.startsWith(homeWin) && s.endsWith('\\bin')),
-    'PATH 含用户 bin 部署点',
+  const hasHintEntry = Object.values(reg.guards || {}).some(g => g.tier === 'hint');
+  const mounted = existing.some(r => r.hasHints);
+  ok(!hasHintEntry || !existing.length || mounted,
+    'hints 托管块已挂 rc', 'hints 托管块缺席——install 挂载（bashrc/zshrc 任一）');
+  // PATH 检查：用户 bin 须在 PATH 存在（msys2 内 profile 自动前置；
+  // Windows 层序只影响 cmd/pwsh 链——shim 是 POSIX 件管不到那边）
+  const norm = s => PLATFORM === 'win32' || PLATFORM === 'msys2'
+    ? s.replace(/\//g, '\\').replace(/\\$/, '').toLowerCase()
+    : s.replace(/\/$/, '');
+  const delim = (PLATFORM === 'linux' || PLATFORM === 'darwin') ? ':' : ';';
+  const segs = (process.env.PATH || '').split(delim).map(norm);
+  const homeN = norm(HOME);
+  const hasUserBin = USER_DIRS.some(d => segs.includes(norm(d)))
+    || segs.some(s => s.startsWith(homeN) && (s.endsWith('/bin') || s.endsWith('\\bin')));
+  ok(hasUserBin, 'PATH 含用户 bin 部署点',
     'PATH 无用户 bin 部署点（~/.local/bin 或 ~/bin）——shim 不会生效');
   console.log(fails ? `doctor: ${fails} 项失败` : 'doctor: 全绿');
   process.exit(fails ? 1 : 0);
