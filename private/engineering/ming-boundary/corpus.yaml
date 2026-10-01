@@ -70,6 +70,15 @@ langs:
         minParseRate: 1.0
         maxMalformed: 0
         errFixtureGlobs: ['tests/data/']
+        # M7 采收：tests/data/cases 上游格式化奇形件——但挑语法面实产族
+        # （import_* 相对星导入/括号 from；assign/function/class decl 族）
+        fixtures:
+          - match: 'tests/data/cases/(fmtpass_imports|import_line_collapse|import_spacing|line_ranges_imports)\.py'
+            minImports: 1
+            maxMalformed: 0
+          - match: 'tests/data/cases/(annotated_assignment_target_parens|annotations|function|class_blank_parentheses|type_param_defaults)\.py'
+            minDecls: 1
+            maxMalformed: 0
       - name: django
         path: py-django
         repo: django/django
