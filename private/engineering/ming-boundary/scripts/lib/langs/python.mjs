@@ -221,11 +221,14 @@ export function handle(id, m, ctx) {
   const declKind = id.startsWith('py-decl-') ? id.slice(8) : null;
   if (declKind) {
     const nm = (m.text.match(PY_DECL_NAME[declKind] || /\b/) || [])[1] || null;
-    out.push(fact({ unit: `${rel}#${nm || '?'}`, kind: 'decl',
-      name: nm || m.text.slice(0, 40), file: rel, line,
+    // upstream tags.scm 对 assignment 本限 left:(identifier)——derived 丢字段约束；
+    // 裸名不命中 = obj.attr=/x[i]=/(a,b)= 属性/下标/解包赋值，非 decl（regex 路同构）
+    if (!nm) return true;
+    out.push(fact({ unit: `${rel}#${nm}`, kind: 'decl',
+      name: nm, file: rel, line,
       fidelity: 'syntactic', scope: 'file-local', extractor,
       extra: { shape: SHAPE_OF[declKind] || declKind,
-        surface: nm && !nm.startsWith('_') ? 'public' : 'internal' } }));
+        surface: nm.startsWith('_') ? 'internal' : 'public' } }));
     return true;
   }
   return false;

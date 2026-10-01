@@ -70,3 +70,11 @@ langs:
         minParseRate: 1.0
         maxMalformed: 0
         errFixtureGlobs: ['tests/data/']
+      - name: django
+        path: py-django
+        repo: django/django
+        rev: 80ea222c8af501031b2eae4f7d9fdbf16cb507a7
+        scale: large
+        minParseRate: 1.0
+        maxMalformed: 0
+        errFixtureGlobs: ['tests/']
