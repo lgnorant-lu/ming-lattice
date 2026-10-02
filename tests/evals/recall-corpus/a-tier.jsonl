@@ -56,3 +56,9 @@
 {"id": "a-056", "query": "generate diverse candidate approaches instead of the obvious one", "expect": {"domain": "engineering", "skills": ["explore-core-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "en"}
 {"id": "a-057", "query": "这个 bug 到底要挖多深，是表面问题还是架构层的", "expect": {"domain": "engineering", "skills": ["depth-core-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "zh"}
 {"id": "a-058", "query": "root cause analysis 到哪层可以停，怕浅修漏掉系统因", "expect": {"domain": "engineering", "skills": ["depth-core-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "mixed"}
+{"id": "a-059", "query": "功能是对的但跑起来有点慢，性能这个横切属性想系统补一下", "expect": {"domain": "engineering", "skills": ["overlay-core-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "13.1"}
+{"id": "a-060", "query": "脚本要在 Windows 和 Linux 都跑得动，可移植性面有什么要防的", "expect": {"domain": "engineering", "skills": ["overlay-core-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "13.1"}
+{"id": "a-061", "query": "这套流程每步都要能重复执行不出副作用，幂等和韧性面怎么立规矩", "expect": {"domain": "engineering", "skills": ["overlay-core-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "13.1"}
+{"id": "a-062", "query": "项目里哪些模块没人引用了，孤儿文件帮我扫出来", "expect": {"action": "ask", "skills": ["ming-boundary"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "13.2"}
+{"id": "a-063", "query": "立个边界契约：前端目录不许 import 后端内部实现", "expect": {"action": "ask", "skills": ["ming-boundary"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "13.2"}
+{"id": "a-064", "query": "check the repo for dead doc links and broken cross-references", "expect": {"action": "ask", "skills": ["ming-boundary"]}, "tier": "A", "provenance": "scenario", "lang": "en", "of": "13.2"}
