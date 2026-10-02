@@ -56,7 +56,8 @@ const KNOWN_TOP = new Set(
   // producers=契约自带生产器规格（ref 边机制形状，run-boundary 经
   //   --emit-spec 喂回 extract——kit 不内嵌采纳仓私有机制词表）
 const KNOWN_RULE = new Set(
-  ['forbidden', 'allowed', 'required', 'covered', 'isolated', 'parity', 'attrs']);
+  ['forbidden', 'allowed', 'required', 'covered', 'isolated', 'parity', 'attrs',
+   'reachable']);
 const KNOWN_CLAUSE = new Set([
   'name', 'label', 'severity', 'why',                        // 元数据：name=ruleId 锚；label=兼容别名
   'from', 'to', 'via', 'units_in', 'needs', 'to_in', 'from_in', // 边量化参数
@@ -64,6 +65,7 @@ const KNOWN_CLAUSE = new Set([
   'declared', 'observed_units_in', 'observed_kind',           // parity 集对账
   'declared_from', 'observed_from', 'direction',              // parity v1.4：边派生集
   'name_match', 'name_not_match',                             // attrs 见证
+  'roots',                                                    // reachable 根集 globs
 ]);
 const KNOWN_MANIFEST = new Set(
   ['node_kinds', 'edge_kinds', 'extra_keys', 'families', 'extractors', 'find_levels']);
@@ -72,7 +74,7 @@ const BUILTIN_EDGE_KINDS = new Set(['import', 'link', 'docref', 'mention', 'decl
 const LEVELS = new Set(['error', 'warn', 'note']);
 // staged 安全表（规格条款，不是实现细节）：不完整视图只许 ∃/unit-local 族
 const STAGED_SAFE = new Set(['forbidden', 'allowed', 'attrs']);
-const FULL_ONLY = new Set(['required', 'covered', 'isolated', 'parity']);
+const FULL_ONLY = new Set(['required', 'covered', 'isolated', 'parity', 'reachable']);
 
 function validateRules(rules) {
   if (!rules || typeof rules !== 'object') die('rules 非对象', 3);
@@ -117,7 +119,8 @@ function validateRules(rules) {
       if (c.severity != null && !LEVELS.has(c.severity))
         die(`rules.${fam}[${c.name}] severity 须∈error|warn|note`, 3);
       for (const k of ['via', 'needs', 'to', 'from', 'to_in', 'from_in',
-                       'exempt', 'declared', 'name_match', 'name_not_match'])
+                       'exempt', 'declared', 'name_match', 'name_not_match',
+                       'roots'])
         if (c[k] != null && !Array.isArray(c[k])) c[k] = [c[k]];
       // via/needs 词表校验：未注册的边 kind = fail-closed（词表即数据）
       for (const k of ['via', 'needs'])
@@ -142,6 +145,8 @@ function validateRules(rules) {
       if (c.direction != null &&
           !['both', 'missing-only', 'undeclared-only'].includes(c.direction))
         die(`rules.${fam}[${c.name}] direction 须∈both|missing-only|undeclared-only`, 3);
+      if (fam === 'reachable' && !c.roots?.length)
+        die(`rules.reachable[${c.name}] 缺 roots 根集 globs`, 3);
     }
   }
 
@@ -350,6 +355,44 @@ function evaluate(facts, rules, stagedOnly) {
             rule: `isolated:${c.name}`, severity: sev(c),
             expect: '断言域内无关联边' + (c.via?.length ? `（via∈{${c.via}}）` : ''),
             observed: `${rel.length} 条关联边`, fix: '移出关联、加豁免，或收窄 units_in' });
+      }
+    }
+
+    // reachable：∀f∈S : f∈Reach(roots) —— mark-sweep 孤儿检测（文件粒度）
+    // 语义：roots glob 命中的文件恒可达；沿 via 边（缺省=全部边）file→to
+    // 有向 BFS；S∩不可达=孤儿候选件（非判官——是删是留人裁决）。
+    // 只沿 resolve 成功的边传播（dead/external 不续传播）。
+    for (const c of R.reachable || []) {
+      const files = new Set(facts.map((f) => f.file));
+      const adj = new Map();
+      for (const e of edges) {
+        const to = e.extra?.to;
+        if (to == null || e.extra?.dead || e.extra?.external) continue;
+        if (c.via?.length && !c.via.includes(e.kind)) continue;
+        let s = adj.get(e.file);
+        if (!s) { s = []; adj.set(e.file, s); }
+        s.push(to);
+      }
+      const isExemptFile = (f) =>
+        [...(c.exempt || []), ...exemptGlobs].some((g) => g && globMatch(f, g));
+      const reached = new Set();
+      const queue = [];
+      for (const f of files)
+        if (c.roots.some((g) => globMatch(f, g))) { reached.add(f); queue.push(f); }
+      for (let i = 0; i < queue.length; i++)
+        for (const nxt of adj.get(queue[i]) || [])
+          if (files.has(nxt) && !reached.has(nxt)) { reached.add(nxt); queue.push(nxt); }
+      const unitPats = [].concat(c.units_in || []);
+      for (const f of files) {
+        if (unitPats.length &&
+            !unitPats.some((p) => globMatch(f, p))) continue;
+        if (reached.has(f) || isExemptFile(f)) continue;
+        violations.push({ file: f, unit: f, kind: 'reachable',
+          rule: `reachable:${c.name}`, severity: sev(c),
+          expect: `可自根集 {${c.roots.join(',')}} 沿 ` +
+            `${c.via?.length ? `{${c.via.join(',')}} 边` : '任意边'}到达`,
+          observed: '根集可达性闭包外——孤儿候选',
+          fix: '确认删除/接入引用链/加豁免或根' });
       }
     }
 

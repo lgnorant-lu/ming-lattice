@@ -33,7 +33,7 @@ manifest:
   node_kinds: [file, dir, decl]
   edge_kinds: [import, link, docref, mention, declare, export, ref]
   extra_keys: [to, dead, external, mechanism, shape, docrole, surface, source, mtime, comment, until, negated, symbol, ambiguous, candidates, cfg, role]
-  families: [forbidden, allowed, required, covered, isolated, parity, attrs]
+  families: [forbidden, allowed, required, covered, isolated, reachable, parity, attrs]
   extractors: [walk@1, ast-grep, line-regex@1, markdown@1, git-check-ignore@1]
   find_levels: [error, warn, note]
 
@@ -46,6 +46,12 @@ exemptions:
     why: vendored submodule——内部死链属上游维护面
   - glob: tests/fixtures/**
     why: 测试固件刻意含死链/异常样本——finding 面与真仓契约无关
+  # reachable 专属豁免：机制调度件在 import 图里天然不可达（名字经契约/
+  # 配置派发，非模块边）——豁免件仍在图中续传出边，只压报告不除分析
+  - glob: private/engineering/ming-boundary/scripts/consumers/*.mjs
+    why: run-boundary consumers 段按名动态调度——入口性由契约声明非 import 边
+  - glob: private/host-tools/tools.mjs
+    why: host-tools 名字调度入口——机制引用不走模块边
 
 rules:
   forbidden:
@@ -92,6 +98,25 @@ rules:
       units_in: '**'
       of_kind: file
       name_not_match: ['*.tmp', '*.bak', '*.orig', '*.swp', '*.rej']
+  # reachable：mark-sweep 孤儿检测（v1.5，Q-∀ 全图族——staged 视图整族跳过）
+  # roots=入口登记集：被 pwsh/git hook/run.mjs 按名调起的件天然无 import
+  # 入边，不登记即正确报为孤儿候选（knip entry registration 同构）。
+  # warn 级：孤儿是候选件非判官——删/接/豁免归人裁决
+  reachable:
+    - name: code-orphans
+      severity: warn
+      why: 孤儿件=死代码或漏登记的入口/调度件——两类都得显式结案
+      units_in: ['scripts/**/*.mjs', 'private/**/*.mjs', 'tests/**/*.mjs']
+      roots:
+        - tests/run.mjs            # 测试总驱动（动态枚举套件，无静态边）
+        - tests/**/*.test.mjs      # 套件件自身即入口
+        - tests/test-*.mjs         # 直接执行件（test-route-decision 等）
+        - tests/benchmarks/**      # 基准按名调起
+        - tests/evals/**/*.mjs     # 评估器按名调起
+        - scripts/*.mjs            # 顶层 CLI 入口（pwsh 包装/hook 直调）
+        - scripts/hooks/**/*.mjs   # 门引擎+gates.local 按 .hooksrc 派发
+        - private/**/scripts/*.mjs # 各技能包工具入口（按名调用）
+      via: [import, export]
   # covered/isolated/parity：v1.1 已注册待接消费方（需要 declare/docref 边生态
   # 先在本仓跑出实证再挂活规则——空族不产出违规，留位即声明面）
   covered: []

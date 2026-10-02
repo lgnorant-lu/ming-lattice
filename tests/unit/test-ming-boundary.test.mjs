@@ -1621,7 +1621,91 @@ export async function run() {
       console.log('    (跳过组17: ast-grep 不在位)');
     }
 
-    console.log('  17 组断言全过');
+    // ---------- 组 18: reachable 族（mark-sweep 孤儿检测，文件粒度） ----------
+    {
+      const rulesR = path.join(tmpRoot, 'rules-r.json');
+      fs.writeFileSync(rulesR, JSON.stringify({
+        version: 1,
+        domains: [{ name: 'src', match: 'src/**' }],
+        exemptions: [{ glob: 'src/grandfathered.mjs', why: '存量孤儿豁免样例' }],
+        rules: {
+          reachable: [
+            { name: 'src-orphans', units_in: 'src/**/*.mjs',
+              roots: ['src/index.mjs'], via: ['import'], severity: 'warn' },
+          ],
+        },
+      }));
+      const factsR = path.join(tmpRoot, 'facts-r.jsonl');
+      fs.writeFileSync(factsR, toJsonl([
+        FF('src/index.mjs', 'file', 'src/index.mjs'),     // 根
+        FF('src/b.mjs', 'file', 'src/b.mjs'),             // 一跳
+        FF('src/c.mjs', 'file', 'src/c.mjs'),             // 两跳（传递可达）
+        FF('src/orphan.mjs', 'file', 'src/orphan.mjs'),   // 不可达 → 违
+        FF('src/grandfathered.mjs', 'file', 'src/grandfathered.mjs'), // 豁免 → 不违
+        FF('src/doc-only.mjs', 'file', 'src/doc-only.mjs'), // 只有 docref 入边 → 违（via 滤）
+        FF('src/dead-tail.mjs', 'file', 'src/dead-tail.mjs'), // 挂死边 → 死边不传播仍违
+        EDGE('src/index.mjs', 'import', 'src/index.mjs', 'src/b.mjs'),
+        EDGE('src/b.mjs', 'import', 'src/b.mjs', 'src/c.mjs'),
+        EDGE('src/doc-only.mjs', 'docref', 'README.md', 'src/doc-only.mjs'),
+        EDGE('src/dead-tail.mjs', 'import', 'src/index.mjs', 'src/dead-tail.mjs',
+             { dead: true }),
+      ]));
+      const chkR = (extra = []) =>
+        runNode([CHECK, '--facts', factsR, '--rules', rulesR, '--json', ...extra]);
+      const vR = JSON.parse(chkR().stdout);
+      const rUnits = new Set(vR.violations.map((x) => x.unit));
+      assert.ok(vR.violations.some((x) =>
+        x.rule === 'reachable:src-orphans' && x.unit === 'src/orphan.mjs'
+        && x.severity === 'warn'), '孤儿件应违 warn 级');
+      assert.ok(!rUnits.has('src/index.mjs'), '根自身不可违');
+      assert.ok(!rUnits.has('src/b.mjs') && !rUnits.has('src/c.mjs'),
+        '传递可达件不可违');
+      assert.ok(!rUnits.has('src/grandfathered.mjs'), 'exemptions 豁免件不可违');
+      assert.ok(rUnits.has('src/doc-only.mjs'),
+        'via=import 下仅 docref 入边不可算可达');
+      assert.ok(rUnits.has('src/dead-tail.mjs'),
+        'dead 边不续传播——目标仍算孤儿');
+
+      // exempt 传播语义：豁免件仍在图中，其出边照常续传
+      const rulesR2 = path.join(tmpRoot, 'rules-r2.json');
+      fs.writeFileSync(rulesR2, JSON.stringify({
+        version: 1,
+        domains: [{ name: 'src', match: 'src/**' }],
+        rules: { reachable: [{ name: 'r2', units_in: 'src/**/*.mjs',
+          roots: ['src/index.mjs'], exempt: ['src/mid.mjs'] }] },
+      }));
+      const factsR2 = path.join(tmpRoot, 'facts-r2.jsonl');
+      fs.writeFileSync(factsR2, toJsonl([
+        FF('src/index.mjs', 'file', 'src/index.mjs'),
+        FF('src/mid.mjs', 'file', 'src/mid.mjs'),
+        FF('src/leaf.mjs', 'file', 'src/leaf.mjs'),
+        EDGE('src/index.mjs', 'import', 'src/index.mjs', 'src/mid.mjs'),
+        EDGE('src/mid.mjs', 'import', 'src/mid.mjs', 'src/leaf.mjs'),
+      ]));
+      const vR2 = JSON.parse(runNode([CHECK, '--facts', factsR2, '--rules',
+        rulesR2, '--json']).stdout);
+      assert.equal(vR2.violations.length, 0,
+        '豁免中继件的出边应续传——leaf 经 mid 可达');
+
+      // staged：∀ 族全跳（reachable 是 FULL_ONLY）
+      const vRS = JSON.parse(chkR(['--staged', 'src/orphan.mjs']).stdout);
+      assert.equal(vRS.violations.filter((x) => x.rule === 'reachable:src-orphans')
+        .length, 0, 'staged 视图 reachable 必须跳过');
+
+      // 缺 roots fail-closed（exit 3）
+      const rulesNoRoot = path.join(tmpRoot, 'rules-noroot.json');
+      fs.writeFileSync(rulesNoRoot, JSON.stringify({
+        version: 1, domains: [{ name: 'src', match: 'src/**' }],
+        rules: { reachable: [{ name: 'bad', units_in: 'src/**' }] } }));
+      assert.equal(runNode([CHECK, '--facts', factsR, '--rules', rulesNoRoot])
+        .status, 3, 'reachable 缺 roots 应 exit3 fail-closed');
+
+      // units_in 缺省 = 全文件域；确定性序
+      const oR1 = chkR().stdout, oR2 = chkR().stdout;
+      assert.equal(oR1, oR2, 'reachable 输出应确定性一致');
+    }
+
+    console.log('  18 组断言全过');
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }

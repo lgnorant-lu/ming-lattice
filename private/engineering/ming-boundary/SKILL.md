@@ -1,6 +1,6 @@
 ---
 name: ming-boundary
-description: 仓库结构事实提取与边界契约断言组件——JSONL 事实流（file/dir/decl/import/link/docref/mention/declare/export）+ boundaries.yaml 声明式契约 v1.1（forbidden/allowed/required/covered/isolated/parity/attrs 七族，∀-Witness 规范形）+ 纯评估引擎。当涉及项目图、依赖边界审计、文档拓扑覆盖、孤儿/刻意隔离检测、断链检测、声明-实测对账、生成与手写接缝核验时使用。
+description: 仓库结构事实提取与边界契约断言组件——JSONL 事实流（file/dir/decl/import/link/docref/mention/declare/export）+ boundaries.yaml 声明式契约 v1.1（forbidden/allowed/required/covered/isolated/reachable/parity/attrs 八族，∀-Witness 规范形）+ 纯评估引擎。当涉及项目图、依赖边界审计、文档拓扑覆盖、孤儿/刻意隔离检测、断链检测、声明-实测对账、生成与手写接缝核验时使用。
 metadata:
   layer: infrastructure
   compose: none
@@ -54,13 +54,16 @@ node scripts/check-boundaries.mjs --facts F.jsonl [--rules boundaries.yaml]
     [--json] [--staged a.mjs,b.mjs]
 ```
 
-协议规范形 `∀x∈SubjectSet : Witness(x)`——七族按形式分三层（Q-∃ 检测 / Q-∀ 量化 / P 对账）：
+协议规范形 `∀x∈SubjectSet : Witness(x)`——八族按形式分三层（Q-∃ 检测 / Q-∀ 量化 / P 对账）：
 
 - `forbidden`：`from` 域经 `via` 边到 `to` 域即违规（Q-∃）
 - `allowed`：`from`+`via` 命中的边，其 dst 必须在 `to` 名单内（Q-∃；与 forbidden 重叠时 deny-overrides，交集非空被 lint 警为配置 bug）
 - `required`：`units_in` 每单元至少一条 `needs` 边且目标域 ∈ `to_in`（Q-∀）
 - `covered`：单元须被 `via` 入向边覆盖（Q-∀；docref 入向=文档拓扑覆盖）
 - `isolated`：单元不得有任何 in/out 边——刻意隔离须 declare/exempt 认领（Q-∀）
+- `reachable`：文件须自 `roots` 根集沿 `via` 边可达——mark-sweep 孤儿检测，
+  不可达=孤儿候选（Q-∀；入口/机制调度件须登记根或豁免；dead/external 边不续传播；
+  豁免件仍在图中续传——只压报告不除分析）
 - `parity`：声明集（declare 边，`from_kind`/`to_kind` 选面）⟺ 实测集对账（P）。
   v1.4 扩为双源形：`declared`（字面名单）或 `declared_from` 选择子
   `{kind, mechanism, units_in, name}` 从边事实收名集，`observed` 侧同形

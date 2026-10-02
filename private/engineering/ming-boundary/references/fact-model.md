@@ -58,7 +58,8 @@
 - `doc` 不立独立节点 kind——docrole 是 facet 不是身份类（分面纪律：正交轴各占字段位，禁造复合枚举）
 - `export` 不立节点 kind——`surface` 属性管 decl、`export` 边管 re-export，各归其位
 - 刻意孤立不立顶层 exempt 字段——统一为 `declare` 边 `extra.source:exempt` 子型
-- `unique` 族 / n-way keyed parity / cardinality 谓词 / `reachable`/`diff` 生产器——候审，无第二消费方不进
+- `unique` 族 / n-way keyed parity / cardinality 谓词 / `diff` 生产器——候审，无第二消费方不进
+  （`reachable` 已脱身候审：v1.5 落地为评估器内建族，见规范形 Q-∀ 行与 §E）
 
 ## schema v1.2 词表增量（2026-09-30 采纳，additive 不 bump v）
 
@@ -96,9 +97,9 @@ Witness := ∃edge(dir, rel∈R, dst∈Y)   # required(out) / covered(in)
 | 形 | 数学形状 | 族 | staged 安全 |
 |---|---|---|---|
 | Q-∃ 检测 | 存在型证物 | `forbidden`/`allowed`/`dead`内建 | 安全（漏检=漏报不谎报） |
-| Q-∀ 量化 | 全称/缺席断言 | `required`/`covered`/`isolated` | 禁评（部分视图必 fail-open） |
+| Q-∀ 量化 | 全称/缺席断言 | `required`/`covered`/`isolated`/`reachable` | 禁评（部分视图必 fail-open） |
 | P 对账 | 声明集⟺实测集 | `parity` | 禁评（同上） |
-| R/D 物化 | 上游派生事实生产 | `reachable`/`diff`（候审） | 产物是普通事实，入上两形 |
+| R/D 物化 | 上游派生事实生产 | `diff`（候审） | 产物是普通事实，入上两形 |
 
 **铁律**（全部为形式化结果，非经验约定）：
 
@@ -110,7 +111,7 @@ Witness := ∃edge(dir, rel∈R, dst∈Y)   # required(out) / covered(in)
   ruleset lint 检出该交集=配置 bug
 - evaluator 求值序与 violations 输出排序确定性钉死（与事实排序同一纪律）
 - 豁免贯通：顶层 `exemptions: [{glob|unit, why(必填), until?}]` 抑制 ∀ 族
-  （required/covered/isolated/parity/attrs）与 builtin 死链/死引用 finding；
+  （required/covered/isolated/parity/reachable/attrs）与 builtin 死链/死引用 finding；
   forbidden/allowed 域边界规则不吃豁免（配置收窄 `from`/`to` 才是正路）
 
 规则条目：`{name(必填，作 finding.ruleId 锚与 suppression 目标), family, severity, why?, <族参数>}`
@@ -124,7 +125,8 @@ Witness := ∃edge(dir, rel∈R, dst∈Y)   # required(out) / covered(in)
 ## 契约三层（ADR D3）
 
 1. **语言无关边界**——Q/P 形各族按域断言（已实现：forbidden/allowed/required/dead；
-   v1.1 新增：covered/isolated/parity + attr-witness；orphan=isolated 族归并）
+   v1.1 新增：covered/isolated/parity + attr-witness；v1.5：reachable 独立成族——
+   isolated 是零度断言，orphan 是可达性断言，两者不同义）
 2. **符号级应消费断言**——"decl X 应被 Y 消费"，通用但要 scope 先行（file-local 不参与；
    v1.1 的 `surface:public` 是新的参与门槛——断言面收窄到发布面）
 3. **语言特定 AST 断言**——每语言适配器内的事，引擎不越界
@@ -156,7 +158,7 @@ Witness := ∃edge(dir, rel∈R, dst∈Y)   # required(out) / covered(in)
 | IND 包含依赖 | R[X] ⊆ S[Y]（外键原型） | `allowed`（边目标⊆白名单）+ `dead` 内建（引用完整性=每个边目标须解析到实存单元） |
 | TGD 元组生成依赖 | ∀x̄ φ(x̄)→∃z̄ ψ | `required`（出度存在）/ `covered`（入度存在） |
 | EGD 等式生成依赖 | ∀x̄ φ(x̄)→t₁=t₂ | `parity`（声明集⟺实测集，双向 IND 退化为等式）+ 单元属性唯一性（FD 属 EGD 子类，如 deployable 名唯一） |
-| 递归 Datalog/不动点 | 超 FOL 表达力 | `reachable`/`circular`——**理论证实不能写成逐单元量化，须物化为派生事实** |
+| 递归 Datalog/不动点 | 超 FOL 表达力 | `reachable` 已内建（v1.5：BFS 闭包包成隶属谓词，外层仍 ∀ 规范形）；`circular` 候审——环证物带成员归属更适合生产器物化 |
 | 时序/bi-temporal | 快照间断言 | `diff` 候选族——作为上游 Δ 事实生产器，不进 evaluator |
 
 关键定理级事实：**缺席不能被事实表达**——负空间断言（"此单元不存在"）无法落成 JSONL 行，故 P 形（声明集对实测集）不可约简为 Q 形。这是 parity 独立于 required 的形式理由。
@@ -215,6 +217,13 @@ SCIP 另一先例：**occurrence 由索引器物化而非查询期推导**——
 - knip：unused = project − reachable(entry)——**两段式架构先例**（build 物化图 / analysis 纯查询），
   entry+plugin 生态证明 R 形须物化；`ignore` 只压报告不除分析——对应豁免≠不观测
   https://knip.dev/explanations/how-knip-works
+- **v1.5 落地记注**：`reachable` 族即此先例的实现——facts JSONL 已是物化图
+  （build 段），check-boundaries 是 analysis 段；可达性闭包按 knip 同构在
+  分析期计算而非再物化一轮事实。语义：`∀f∈units_in : f∈BFS(roots, via)`；
+  `roots` glob 声明入口集（knip 的 entry registration 同构——机制调度件
+  必须显式入根或入豁免，否则正确报为孤儿候选）；dead/external 边不续传播；
+  豁免件仍在图中续传其出边（"只压报告不除分析"）。本仓 dogfood：
+  14 候选全部归因为"入口未登记/机制调度"两类，声明后归零。
 
 ### F. 声明边源先例 — .gitignore allowlist / CODEOWNERS 型
 
