@@ -1,13 +1,15 @@
 // check-index.mjs — distill/INDEX.yaml 契约校验器
 // 仓库事实源对账：INDEX 条目 <-> distill/<project>/*.md 文件 <-> 条目 frontmatter
 // 层级: E=断契约（悬空路径/漏登记/字段违约） W=漂移嫌疑 I=信息
+// _proposals/ 不登记 INDEX 但走 frontmatter 格式门（status/type 闭集，见 references/proposals.md）
 // 用法: node check-index.mjs [--json] [--strict]   （零旗标 = 人读输出）
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
-const DISTILL_DIR = path.join(REPO_ROOT, 'distill');
+// MING_DISTILL_DIR 供测试注入隔离库；缺省回仓根 distill/
+const DISTILL_DIR = process.env.MING_DISTILL_DIR || path.join(REPO_ROOT, 'distill');
 const INDEX_PATH = path.join(DISTILL_DIR, 'INDEX.yaml');
 
 // axis 闭集 = 模板声明值 ∪ Ming-L 九域名（真实条目已漂向域名词表——
@@ -17,6 +19,9 @@ const AXES = new Set(['testing', 'docs', 'docs-presentation', 'obs', 'sec', 'con
 const STATUSES = new Set(['active', 'superseded']);
 const SCOPES = new Set(['project-only', 'general']);
 const ID_RE = /^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
+// _proposals 闭集——references/proposals.md §2 契约
+const PROP_STATUSES = new Set(['pending', 'landed', 'rejected']);
+const PROP_TYPES = new Set(['promotion', 'field-feedback', 'package-iteration', 'new-package', 'policy-decision']);
 
 const issues = [];
 const add = (level, msg) => issues.push({ level, msg });
@@ -65,9 +70,11 @@ function parseFrontmatter(file) {
   if (!fm) return null;
   const pick = k => {
     const f = fm[1].match(new RegExp(`^${k}:\\s*(.+?)\\s*$`, 'm'));
-    return f && f[1].replace(/^"(.*)"$/, '$1');
+    return f && f[1].replace(/^"(.*)"$/, '$1').replace(/\s+#.*$/, '');
   };
-  return { id: pick('id'), status: pick('status'), supersedes: pick('supersedes') };
+  return { id: pick('id'), status: pick('status'), supersedes: pick('supersedes'),
+    revision: pick('revision'), updatedAt: pick('updatedAt'), type: pick('type'),
+    reviewAfter: pick('reviewAfter') };
 }
 
 // ── 主校验 ──
@@ -105,7 +112,7 @@ else {
 
       if (e.path) {
         entryPaths.add(e.path);
-        const abs = path.join(REPO_ROOT, e.path);
+        const abs = path.join(DISTILL_DIR, e.path.replace(/^distill[\\/]/, ''));
         if (!fs.existsSync(abs)) { add('E', `${label}: path 悬空——${e.path} 不存在`); }
         else {
           const fm = parseFrontmatter(abs);
@@ -113,6 +120,8 @@ else {
           else {
             if (fm.id && e.id && fm.id !== e.id) add('E', `${label}: INDEX id 与文件 frontmatter id 不一致（${fm.id}）`);
             if (fm.status && e.status && fm.status !== e.status) add('W', `${label}: status 双写漂移（INDEX=${e.status} 文件=${fm.status}）`);
+            if (fm.revision && e.revision && fm.revision !== e.revision) add('W', `${label}: revision 双写漂移（INDEX=${e.revision} 文件=${fm.revision}）——原地更新后 INDEX 未同步`);
+            if (fm.updatedAt && e.updatedAt && fm.updatedAt !== e.updatedAt) add('W', `${label}: updatedAt 双写漂移（INDEX=${e.updatedAt} 文件=${fm.updatedAt}）`);
             if (fm.supersedes && !entries.some(x => x.id === fm.supersedes)) {
               add('E', `${label}: supersedes 指向不存在的条目 id: ${fm.supersedes}`);
             }
@@ -122,7 +131,7 @@ else {
       if (e.status === 'superseded') add('I', `${label}: 已废弃条目（supersedes 链上节点）`);
     }
 
-    // 覆盖面对账：库内每个条目文件须有 INDEX 记录（_proposals 属 staging，豁免）
+    // 覆盖面对账：库内每个条目文件须有 INDEX 记录（_proposals 属 staging，豁免登记但走下格式门）
     for (const dir of fs.readdirSync(DISTILL_DIR, { withFileTypes: true })) {
       if (!dir.isDirectory() || dir.name === '_proposals') continue;
       const sub = path.join(DISTILL_DIR, dir.name);
@@ -130,6 +139,27 @@ else {
         if (!f.endsWith('.md')) continue;
         const rel = `distill/${dir.name}/${f}`;
         if (!entryPaths.has(rel)) add('E', `未登记条目文件: ${rel}——INDEX.yaml 无记录`);
+      }
+    }
+  }
+
+  // ── _proposals 格式门（不登记 INDEX，但 frontmatter 须守 references/proposals.md §2 契约） ──
+  const PROP_DIR = path.join(DISTILL_DIR, '_proposals');
+  if (fs.existsSync(PROP_DIR)) {
+    const today = new Date().toISOString().slice(0, 10);
+    for (const f of fs.readdirSync(PROP_DIR)) {
+      if (!f.endsWith('.md')) continue;
+      const label = `_proposals/${f}`;
+      const fm = parseFrontmatter(path.join(PROP_DIR, f));
+      if (!fm) { add('E', `${label}: 无 frontmatter（提案须有 id/target/type/status 字段块）`); continue; }
+      const stem = f.replace(/\.md$/, '');
+      if (fm.id && fm.id !== stem) add('E', `${label}: frontmatter id 与文件名不一致（${fm.id}）`);
+      if (!fm.status) add('E', `${label}: 缺 status 字段`);
+      else if (!PROP_STATUSES.has(fm.status)) add('E', `${label}: status 越出闭集: ${fm.status}（pending|landed|rejected）`);
+      if (fm.type && !PROP_TYPES.has(fm.type)) add('E', `${label}: type 越出闭集: ${fm.type}`);
+      // pending 老化提醒（reviewAfter 日期形态才可比；P30D 类时长形态跳过）
+      if (fm.status === 'pending' && fm.reviewAfter && /^\d{4}-\d{2}-\d{2}$/.test(fm.reviewAfter) && fm.reviewAfter < today) {
+        add('W', `${label}: pending 已过 reviewAfter=${fm.reviewAfter}——候审超期应复审（存续/撤回/升格）`);
       }
     }
   }

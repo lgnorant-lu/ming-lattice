@@ -22,14 +22,15 @@
 ---
 id: <date>-<slug>
 target: <包路径，如 private/engineering/ming-l-paradigm>
-type: promotion | field-feedback | package-iteration
+type: promotion | field-feedback | package-iteration | new-package | policy-decision
 status: pending            # pending | landed | rejected
 openedAt: <YYYY-MM-DD>
 source-project: <可选——field-feedback 类填采纳方项目名>
 ---
 ```
 
-- `type` 词表：`promotion`（distill 沉淀晋升）/ `field-feedback`（采纳实证——采纳者跑出来的包体反馈，作者独自产生不了的证据类）/ `package-iteration`（常规迭代建议）；
+- `type` 词表：`promotion`（distill 沉淀晋升）/ `field-feedback`（采纳实证——采纳者跑出来的包体反馈，作者独自产生不了的证据类）/ `package-iteration`（常规迭代建议）/ `new-package`（新包候选提案——需求未熟时思路级草案，候审非开工令；与 registry candidates 互补：那边是登记表位，这边带完整论证正文）/ `policy-decision`（治理裁决记录——定形态/口径/语义的裁决提案，不授权代码变更）；
+- 可选字段 `reviewAfter: <YYYY-MM-DD>`——候审复审位，到期再审存续/撤回/升格（纯人审无机器执行）；`check-index.mjs` 对 pending 超期件报 W 提醒；
 - 正文必备节：**来源证据锚点**（可复查：文件/命令/输出）→ **提案条目**（编号 P1..Pn，现象+建议修法+目标位）→ **不采纳项**（考虑过但排除的方案与理由）；
 - 建议裁决表可选但推荐——人审按条批注效率最高。
 

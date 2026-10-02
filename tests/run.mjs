@@ -27,6 +27,7 @@ import { run as runMingBoundary } from './unit/test-ming-boundary.test.mjs';
 import { run as runVerifyGates } from './unit/test-verify-gates.test.mjs';
 import { run as runHostTools } from './unit/test-host-tools.test.mjs';
 import { run as runCorpusMetrics } from './unit/test-corpus-metrics.test.mjs';
+import { run as runDistillIndex } from './unit/test-distill-index.test.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const startedAt = process.hrtime.bigint();
@@ -86,6 +87,7 @@ export const allSuites = [
   { name: 'verify-gates', tier: 'unit', run: runVerifyGates },
   { name: 'host-tools', tier: 'unit', run: runHostTools },
   { name: 'corpus-metrics', tier: 'unit', run: runCorpusMetrics },
+  { name: 'distill-index-unit', tier: 'unit', run: runDistillIndex },
   { name: 'test-coverage', tier: 'contract', run: () => node('scripts/check-test-coverage.mjs') },
   { name: 'boundary-live', tier: 'contract', run: () => {
     // 真仓事实提取 + 根级 boundaries.yaml 契约评估（ADR-0008 实例化闸门）
