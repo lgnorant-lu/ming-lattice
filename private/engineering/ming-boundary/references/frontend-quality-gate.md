@@ -129,6 +129,27 @@ symbol→定义文档映射 → 文件级引用边集 vs 我们 syntactic import
 - 观察项：ra 把 tests/*.rs 的引用解析进 src/*（testenv `use crate::`
   外另有跨目录边）——疑 ra 按 workspace 视图归并测试 crate，留档候查
 
+**M8-js 试点实录（2026-10-02，dependency-cruiser@18.4.0 差分）**：
+
+`npx -p dependency-cruiser@18.4.0 depcruise <dirs> --no-config
+--output-type json` → local 边集（resolved 归一 `./` 前缀）vs 我们
+module 边集。三语料差分结果：
+
+| 语料 | ours | theirs | missed | ours-only | 结论 |
+|---|---|---|---|---|---|
+| express | 153 | 153 | 0 | 0 | 边集逐条等位 |
+| solid | 17 | 12 | 0 | 5 | 多产全为 depcruise 入口闭包外未巡件 |
+| vite | 1907 | 112 | 0 | 1795 | depcruise 只巡 272/1587（entry 闭包）+ 资产边口径差（166 条 .css/.png/.vue） |
+
+- **差分产出 3 真修复**：目录 spec `''` 后缀 `existsSync` 收目录产
+  `->.` 假边（强制 isFile）；`require('.')`/`..` 无尾斜杠误 external
+  （REL_SPEC 放行行尾）；`./w?worker&url` bundler query 后缀丢边
+  （spec 剥 `[?#]`）——外加 to 的 `./`/`.//` 前缀归一
+- **判据**：口径先归一（`./` 前缀、资产边声明性纳入我方）再比；
+  ours-only 主导项若是"对方未巡文件"则记覆盖差非缺陷
+- js 边级 oracle 定候选：depcruise（npx 免装、JSON 自足、TS 内建）；
+  madge 未测——edge 级差分已实证，第二层候选价值有限
+
 **python precise 层选型调研（2026-10-02，实装验证）**：
 
 - `scip-python`（Sourcegraph）：**出局**——npx 启动即崩于

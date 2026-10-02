@@ -150,18 +150,31 @@ export function specFromText(text) {
   return m ? m[1] : null;
 }
 
-const REL_SPEC = /^\.{1,2}\//;
+// '.'/'..' 无尾斜杠也是目录 spec（require('.')→./index.* 实证差分），
+//   正则须允许行尾
+const REL_SPEC = /^\.{1,2}(?:\/|$)/;
 // 供 extract-facts psLineFacts（.ps1 dot-source）复用——后缀序里 '' 直通
 export const TRY_SUFFIX = ['', '.mjs', '.js', '.cjs', '.d.ts', '.ts', '.mts',
   '.cts', '.tsx', '.json', '/index.mjs', '/index.js', '/index.ts'];
 export function resolveSpec(root, fromRel, spec) {
+  // bundler query/hash 后缀剥除（'./w.js?worker&url'/'./a.css#x'——
+  //   vite/webpack/rollup 通用约定，文件系统路径本不含 ?#；
+  //   depcruise 差分实证 vite worker-url fixture 丢此边）
+  spec = spec.split(/[?#]/, 1)[0];
   if (!REL_SPEC.test(spec)) return { to: null, external: true };
   const base = path.posix.normalize(
     path.posix.join(path.posix.dirname(fromRel), spec));
-  for (const suf of TRY_SUFFIX)
-    if (fs.existsSync(path.join(root, base + suf)))
-      return { to: base + suf, external: false };
-  return { to: base, external: false, dead: true };
+  for (const suf of TRY_SUFFIX) {
+    const p = path.join(root, base + suf);
+    // existsSync 对目录也真——'' 后缀会抢在 /index.* 前把 dir 当模块
+    // （depcruise 差分实证：express `require('.')` 产 ->. 假边）。
+    // Node 语义 dir→dir/index.*——所有命中位强制 isFile
+    if (fs.existsSync(p) && fs.statSync(p).isFile())
+      // 后缀拼接后再归一：'.'+'/index.js' → 'index.js'，
+      //   消前导 './' 与 './/' 双斜杠（depcruise 对账名义等位）
+      return { to: path.posix.normalize(base + suf), external: false };
+  }
+  return { to: path.posix.normalize(base), external: false, dead: true };
 }
 
 // ---------- per-file 预处理：export 声明/list 的 surface 名集 ----------

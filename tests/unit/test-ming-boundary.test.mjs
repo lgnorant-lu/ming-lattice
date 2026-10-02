@@ -106,7 +106,18 @@ export async function run() {
       'x2 = () => {};',
       'obj2.m2 = function () {};',
       'const holder = { p: () => {}, q: function () {} };',
+      // 目录 spec 归 Node 语义（dir→dir/index.*，非指向目录本身）——
+      //   depcruise 差分实证 `->.` 假边
+      'import pkg from \'./pkg\';',
+      'import nodir from \'./nodir\';',
+      // bundler query/hash 后缀（vite ?worker&url 形，depcruise 差分实证）
+      'import wu from \'./worker.mjs?worker&url\';',
     ].join('\n'));
+    wfile('src/worker.mjs', 'export const W = 1;\n');
+    wfile('src/pkg/index.mjs', 'export const P = 1;\n');
+    // '.'/'..' 裸目录 spec（无尾斜杠）——require('.') 差分实证形态
+    wfile('src/pkg/self.mjs', 'import { P } from \'.\';\n');
+    wfile('src/nodir/readme.txt', 'not a module\n');
     wfile('vendored/v1/lib.mjs', 'export function vv() {}\n');
     // v1.1b：TypeScript 面——tree-sitter-typescript 规则集应产同构事实
     wfile('src/mod.ts', [
@@ -282,6 +293,17 @@ export async function run() {
       'holder 值非函数形不得产 decl（上游 value 约束）');
     assert.ok(decls.some((d) => d.name === 'm2'
       && d.extra?.shape === 'assign-fn'), 'member 赋值应取尾段名 m2');
+    // 目录 spec 钉：有 index 归 index 文件、无 index 判 dead——
+    //   不产指向目录本身的 ->. 假边（depcruise 差分实证修复）
+    assert.equal(byName['./pkg']?.extra?.to, 'src/pkg/index.mjs',
+      '目录 spec 应解析到 dir/index.* 而非目录本身');
+    assert.ok(byName['./nodir']?.extra?.dead,
+      '无 index 的目录 spec 应判 dead 而非指向目录');
+    const selfImp = at('src/pkg/self.mjs', 'import');
+    assert.equal(selfImp.find((x) => x.name === '.')?.extra?.to,
+      'src/pkg/index.mjs', '裸 . spec 应归 dir/index.* 而非 external');
+    assert.equal(byName['./worker.mjs?worker&url']?.extra?.to,
+      'src/worker.mjs', 'bundler query 后缀应剥除再落盘解析');
     // v1.6 js 族描述符化断言（langs/js.mjs）：
     // .jsx/.tsx→Tsx、.mts→TypeScript 三桶路由各自产边且相对边解析
     for (const f of ['src/comp.jsx', 'src/comp.tsx', 'src/tmod.mts'])
