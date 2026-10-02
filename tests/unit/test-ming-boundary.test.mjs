@@ -1514,7 +1514,114 @@ export async function run() {
       console.log('    (跳过组16: ast-grep 不在位)');
     }
 
-    console.log('  16 组断言全过');
+    // ---------- 组 17: M6 双路同构钉——regexFacts 边集 ≡ AST 边集 ----------
+    //   按语料差分抖出的分歧形态钉：rust 内联 mod 语境/多行 use 组/跨行
+    //   原生串+注释+字符字面量掩蔽；python docstring/注释撇号/跨行 import；
+    //   js 注释与串内伪关键字/动态 import/reexport。本轮前这些全是真虫。
+    if (hasSg) {
+      const { regexFacts: rsRegex } = await import(
+        '../../private/engineering/ming-boundary/scripts/lib/langs/rust.mjs');
+      const { regexFacts: pyRegex, exts: PY_EXTS } = await import(
+        '../../private/engineering/ming-boundary/scripts/lib/langs/python.mjs');
+      const { regexFacts: jsRegex } = await import(
+        '../../private/engineering/ming-boundary/scripts/lib/langs/js.mjs');
+      const R6 = path.join(tmpRoot, 'm6fx');
+      const w6 = (rel, text) => {
+        const p = path.join(R6, rel);
+        fs.mkdirSync(path.dirname(p), { recursive: true });
+        fs.writeFileSync(p, text, 'utf8');
+      };
+      // rust 固件：内联 mod 语境 + 多行 use 组 + 掩蔽对抗面
+      w6('src/lib.rs', [
+        'pub mod a;',
+        'mod b;',
+        'use crate::a::{',
+        '    A1,',
+        '    A2,',
+        '};',
+        '// use crate::gone::X;',
+        '/* use crate::gone2::Y; */',
+        'const S: &str = r#"',
+        'use crate::rawstr::phantom;',
+        '{ ( /** "',
+        '"#;',
+        'fn run() {}',
+      ].join('\n'));
+      w6('src/a.rs', [
+        'pub struct A1;',
+        'pub struct A2;',
+        'mod inner {',
+        '    use super::A1;',
+        '    use crate::b::B1;',
+        '}',
+        "const C: char = '{';",
+        'fn x() {}',
+      ].join('\n'));
+      w6('src/b.rs', 'pub struct B1;\n');
+      // python 固件：docstring 假边 + 注释撇号 + 跨行 import + 自环抑制
+      w6('pkg/__init__.py', 'from . import leaf\n');
+      w6('pkg/leaf.py', 'X = 1\n');
+      w6('pkg/a.py', 'Y = 2\n');
+      w6('pkg/sub.py', [
+        '"""usage:',
+        '    from pkg import phantom',
+        '"""',
+        'import os',
+        'from pkg import (',
+        '    a,',
+        ')',
+        "# from gone import x  it's tricky (unbalanced",
+        'def f():',
+        '    return 1',
+      ].join('\n'));
+      // js 固件：注释/串内伪关键字 + 动态 import + reexport + CJS
+      w6('app.js', [
+        "import a from './m.js';",
+        "const b = require('./m.js');",
+        "const p = import('./m.js');",
+        "export { c } from './m.js';",
+        "// import phantom from './gone.js';",
+        'const s = "import fake from \'./str\'";',
+        "/* require('./gone2') */",
+        'const r = obj.require(\'./not-cjs\');',
+        'function t() {}',
+      ].join('\n'));
+      w6('m.js', 'export const c = 1; export default 2;\n');
+
+      const out6 = path.join(tmpRoot, 'm6.jsonl');
+      runNode([EXTRACT, '--root', R6, '--out', out6]);
+      const astFacts = parseJsonl(fs.readFileSync(out6, 'utf8'));
+      const edgeSet = (facts, rel) => new Set(
+        facts.filter((x) => x.kind === 'import' && x.file === rel &&
+          x.extra?.to && !x.extra.dead && !x.extra.external)
+          .map((x) => x.extra.to));
+      const dualCheck = (rel, regexFn) => {
+        const want = edgeSet(astFacts, rel);
+        const got = edgeSet(
+          regexFn(R6, rel, 'regex-probe').map((f) => ({ ...f, file: rel })), rel);
+        assert.deepEqual([...got].sort(), [...want].sort(),
+          `${rel} 双路边集应一致`);
+      };
+      dualCheck('src/lib.rs', rsRegex);
+      dualCheck('src/a.rs', rsRegex);
+      dualCheck('pkg/sub.py', pyRegex);
+      dualCheck('pkg/__init__.py', pyRegex);
+      dualCheck('app.js', jsRegex);
+      // 掩蔽负向钉：注释/串/原生串内的伪语句永不产边
+      const rsFx = rsRegex(R6, 'src/lib.rs', 'regex-probe');
+      assert.ok(!rsFx.some((f) => /gone|phantom/.test(String(f.name))),
+        'rust 注释与原生串内伪 use 不得产边');
+      const pyFx = pyRegex(R6, 'pkg/sub.py', 'regex-probe');
+      assert.ok(!pyFx.some((f) => /phantom|gone/.test(String(f.name))),
+        'python docstring 与注释内伪 import 不得产边');
+      const jsFx = jsRegex(R6, 'app.js', 'regex-probe');
+      assert.ok(!jsFx.some((f) => /gone|fake|not-cjs/.test(String(f.name))),
+        'js 注释/串/成员调用伪形态不得产边');
+    } else {
+      console.log('    (跳过组17: ast-grep 不在位)');
+    }
+
+    console.log('  17 组断言全过');
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }

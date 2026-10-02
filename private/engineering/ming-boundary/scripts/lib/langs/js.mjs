@@ -279,25 +279,139 @@ export function handle(id, m, ctx) {
 export function regexFacts(root, rel, extractor) {
   const out = [];
   const text = fs.readFileSync(path.join(root, rel), 'utf8');
-  let li = 0;
-  for (const l of text.split(/\r?\n/)) {
-    li++;
-    const im = l.match(/import\s+.*?from\s+['"]([^'"]+)['"]/) ||
-               l.match(/import\s+['"]([^'"]+)['"]/) ||
-               l.match(/\brequire\(\s*['"]([^'"]+)['"]\s*\)/);
-    if (im) {
-      const r = resolveSpec(root, rel, im[1]);
-      if (r.to !== rel)   // 自环抑制与 AST 路同构
-        out.push(fact({ unit: rel, kind: 'import', name: im[1],
-          file: rel, line: li, fidelity: 'regex-degraded',
-          scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
-          extractor,
-          extra: { to: r.to, mechanism: 'static',
-            ...(r.dead ? { dead: true } : {}),
-            ...(r.external ? { external: true } : {}) } }));
+  // 两遍法（rust 同款纪律）：vis=注释/字符串/模板掏空——只做关键字定位；
+  // spec 文本回 l 同位重解析（spec 本身就是串字面量，掩蔽会吞掉它）。
+  // 漏判方向单向——vis 里见不到的关键字绝不产边
+  let bc = 0;
+  const maskLine = (l) => {
+    const arr = l.split('');
+    for (let ci = 0; ci < arr.length; ci++) {
+      const c = arr[ci], n = arr[ci + 1];
+      if (bc) {
+        if (c === '*' && n === '/') { arr[ci] = arr[ci + 1] = ' '; bc--; ci++; }
+        else { arr[ci] = ' '; }
+        continue;
+      }
+      if (c === '/' && n === '/') { for (let j = ci; j < arr.length; j++) arr[j] = ' '; break; }
+      if (c === '/' && n === '*') { arr[ci] = arr[ci + 1] = ' '; bc++; ci++; continue; }
+      if (c === '"' || c === "'" || c === '`') {
+        const q = c; arr[ci] = ' ';
+        let j = ci + 1;
+        // 模板串 ${} 内可嵌代码——近似整段掩（import/require 以顶层形态为主）
+        while (j < arr.length && arr[j] !== q) {
+          if (arr[j] === '\\') { arr[j] = arr[j + 1] = ' '; j += 2; }
+          else { arr[j] = ' '; j++; }
+        }
+        if (j < arr.length) { arr[j] = ' '; ci = j; } else ci = arr.length;
+      }
     }
-    const fm = l.match(/^\s*(export\s+)?(?:async\s+)?function\s*\*?\s*([\w$]+)/) ||
-               l.match(/^\s*(export\s+)?(?:const|let|var)\s+([\w$]+)\s*=\s*(?:async\s*)?\(/);
+    return arr.join('');
+  };
+  const emit = (spec, r, mechanism, li2) => {
+    if (r.to === rel) return;    // 自环抑制与 AST 路同构
+    out.push(fact({ unit: rel, kind: 'import', name: spec,
+      file: rel, line: li2, fidelity: 'regex-degraded',
+      scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
+      extractor,
+      extra: { to: r.to, mechanism,
+        ...(r.dead ? { dead: true } : {}),
+        ...(r.external ? { external: true } : {}) } }));
+  };
+  const netBraces = (v) => {
+    let d = 0;
+    for (const c of v) {
+      if (c === '{' || c === '(' || c === '[') d++;
+      else if (c === '}' || c === ')' || c === ']') d--;
+    }
+    return d;
+  };
+  // `from` 须在组外顶层（`import {from}` 叶名不命中）；返回 vis 上位置
+  const topFrom = (v) => {
+    let d = 0;
+    for (const fm of v.matchAll(/\bfrom\b|[{}]/g)) {
+      if (fm[0] === '{') d++;
+      else if (fm[0] === '}') d--;
+      else if (d === 0) return fm.index;
+    }
+    return -1;
+  };
+  const lines = text.split(/\r?\n/);
+  let li = 0, depth = 0;
+  for (let idx = 0; idx < lines.length; idx++) {
+    const l = lines[idx];
+    li++;
+    const vis = maskLine(l);
+    let cursor = 0, d2 = depth, kwCut = vis.length;
+    for (const km of vis.matchAll(/\b(import|require|export)\b/g)) {
+      for (; cursor < km.index; cursor++) {
+        const c = vis[cursor];
+        if (c === '{' || c === '(' || c === '[') d2++;
+        else if (c === '}' || c === ')' || c === ']') d2--;
+      }
+      const prev = vis[km.index - 1];
+      if (prev && /[\w$.]/.test(prev)) continue;   // obj.require/x.import 非调用
+      let restV = vis.slice(km.index), restR = l.slice(km.index);
+      // import( 是动态导入——任意深度合法；静态 import/export 才是顶层语义
+      const isDynImport = km[1] === 'import' && /^import\s*\(/.test(restV);
+      const isImportExport = km[1] !== 'require' && !isDynImport;
+      // ESM 顶层语义：函数/块内静态 import|export 是语法错误面——AST 不产边
+      if (isImportExport && (d2 > 0 || /\S/.test(vis.slice(0, km.index))))
+        continue;
+      // 多行 import/export 组（ASI 无分号）：仅真组形态（import {|*,
+      // import x, {|export {——`export const x = {` 对象字面量不算）才续行；
+      // kwCut 截断——组自身的 {} 不算块深度（续行括号净零不入账）
+      if (isImportExport &&
+          /^(?:import|export)\s*(?:type\s+)?[\w$]*\s*,?\s*\{/.test(restV)) {
+        if (km.index < kwCut) kwCut = km.index;
+        while (netBraces(restV) > 0 && idx + 1 < lines.length) {
+          const l2 = lines[++idx];
+          li++;
+          restV += '\n' + maskLine(l2);
+          restR += '\n' + l2;
+        }
+      }
+      let m;
+      if (km[1] === 'import') {
+        if (isDynImport) {
+          if ((m = restR.match(/^import\s*\(\s*(['"])([^'"]+)\1\)/)))
+            emit(m[2], resolveSpec(root, rel, m[2]), 'dynamic', li);
+          else
+            out.push(fact({ unit: rel, kind: 'import', name: '(computed)',
+              file: rel, line: li, fidelity: 'regex-degraded',
+              scope: 'unresolved', extractor,
+              extra: { mechanism: 'dynamic-computed' } }));
+          continue;
+        }
+        const fp = topFrom(restV);
+        if (fp >= 0) {
+          if ((m = restR.slice(fp).match(/^from\s*['"]([^'"]+)['"]/)))
+            emit(m[1], resolveSpec(root, rel, m[1]), 'static', li);
+        } else if ((m = restR.match(/^import\s+['"]([^'"]+)['"]/))) {
+          emit(m[1], resolveSpec(root, rel, m[1]), 'static', li);   // 副作用导入
+        }
+        continue;
+      }
+      if (km[1] === 'require') {
+        if ((m = restR.match(/^require\(\s*['"]([^'"]+)['"]\s*\)/)))
+          emit(m[1], resolveSpec(root, rel, m[1]), 'require-cjs', li);
+        continue;
+      }
+      // export {a} from 'x' / export * as ns from 'x'——与 AST reexport 同形态；
+      // `export type` AST 侧 reex 正则不收（type-only 运行期擦除）同判跳过
+      if (/^export\s+type\b/.test(restV)) continue;
+      const fp = topFrom(restV);
+      if (fp >= 0 && (m = restR.slice(fp).match(/^from\s*['"]([^'"]+)['"]/))) {
+        const spec = m[1];
+        const r = resolveSpec(root, rel, spec);
+        emit(spec, r, 'reexport', li);
+        if (r.to !== rel)   // reexport twin（emit 内自环已闸）
+          out.push({ ...out[out.length - 1], kind: 'export',
+            extra: { ...out[out.length - 1].extra } });
+      }
+    }
+    depth += netBraces(vis.slice(0, kwCut));
+    const fm = vis.match(/^\s*(export\s+)?(?:async\s+)?function\s*\*?\s*([\w$]+)/) ||
+               vis.match(/^\s*(export\s+)?(?:const|let|var)\s+([\w$]+)\s*=\s*(?:async\s*)?\(/);
     if (fm) out.push(fact({ unit: `${rel}#${fm[2]}`, kind: 'decl',
       name: fm[2], file: rel, line: li, fidelity: 'regex-degraded',
       scope: 'file-local', extractor,

@@ -248,7 +248,15 @@ function resolveSpec(root, fromRel, spec, ctx = {}) {
     return { to: null, external: true };
   }
   const rest = segs.slice(i);
-  if (!rest.length) return { to: base, external: false };
+  if (!rest.length) {
+    // 裸 super/self/crate：目标是模块命名空间本体——锚到其宿主文件
+    // （dir 值 to 永不匹配文件 fact；super::* from mod tests=父模块文件）
+    for (const cand of [`${base}.rs`, `${base}/mod.rs`,
+                        `${base}/lib.rs`, `${base}/main.rs`])
+      if (fs.existsSync(path.join(root, cand)))
+        return { to: cand, external: false };
+    return { to: base, external: false };
+  }
   // 最长模块前缀：use a::b::C 先试 a/b.rs|a/b/mod.rs（C 作成员），退到 a/b/c.rs
   for (let k = rest.length; k >= 1; k--) {
     const cand = base + '/' + rest.slice(0, k).join('/');
@@ -590,10 +598,115 @@ export function regexFacts(root, rel, extractor, refSpecs) {
     !s.units_in || [].concat(s.units_in).some((p) => globMatch(rel, p)));
   const CALL_RE = /([A-Za-z_]\w*(?:::[A-Za-z_]\w*)*)\s*\(/g;
   let li = 0, lineOff = 0;
-  for (const l of text.split(/\r?\n/)) {
+  // 内联 mod 语境追踪（与 AST prepare 的 inline 链同构）：单遍掩蔽扫出
+  // 可视行 vis（注释/串/字符/原生串掏空原位留白），再按事件序（{}/mod{/
+  // use 位置）重放括号深度——`mod tests { use super::* }` 里 use 的
+  // super 才能锚到本文件而非越层到 crate 根。
+  let depth = 0, bc = 0, rawTail = '';
+  const modStack = [];                     // {name, atDepth}
+  // 单行掩蔽：行注释截断/嵌套块注释跨行/字符串/字符字面量/原生串
+  // （r#".."# 可跨行——rawTail 持未闭合标记续掩后续行）——
+  // 掏空原位留白保持列位一致（cfgGated 回探、m.index 直接可用）
+  const maskLine = (l) => {
+    const arr = l.split('');
+    for (let ci = 0; ci < arr.length; ci++) {
+      const c = arr[ci], n = arr[ci + 1];
+      if (rawTail) {
+        const e = l.indexOf(rawTail, ci);
+        const stop = e < 0 ? arr.length : e + rawTail.length;
+        for (let j = ci; j < stop; j++) arr[j] = ' ';
+        ci = stop - 1;
+        if (e >= 0) rawTail = '';
+        continue;
+      }
+      if (bc) {
+        if (c === '*' && n === '/') { arr[ci] = arr[ci + 1] = ' '; bc--; ci++; }
+        else if (c === '/' && n === '*') { arr[ci] = arr[ci + 1] = ' '; bc++; ci++; }
+        else arr[ci] = ' ';
+        continue;
+      }
+      if (c === '/' && n === '/') { for (let j = ci; j < arr.length; j++) arr[j] = ' '; break; }
+      if (c === '/' && n === '*') { arr[ci] = arr[ci + 1] = ' '; bc++; ci++; continue; }
+      if (c === '"') {
+        arr[ci] = ' ';
+        let j = ci + 1;
+        while (j < arr.length && arr[j] !== '"') {
+          if (arr[j] === '\\') { arr[j] = arr[j + 1] = ' '; j += 2; }
+          else { arr[j] = ' '; j++; }
+        }
+        if (j < arr.length) { arr[j] = ' '; ci = j; } else ci = arr.length;
+        continue;
+      }
+      if (c === "'") {
+        // 字符字面量 'x'/'\n'/'\'' 掩蔽；生命周期 'a/'static 无闭引号放行
+        if (n === '\\' && arr[ci + 3] === "'") {
+          arr[ci] = arr[ci + 1] = arr[ci + 2] = arr[ci + 3] = ' '; ci += 3; continue;
+        }
+        if (n && n !== '\\' && arr[ci + 2] === "'") {
+          arr[ci] = arr[ci + 1] = arr[ci + 2] = ' '; ci += 2; continue;
+        }
+        continue;
+      }
+      if (c === 'r') {                     // 原生串 r".."/r#".."#/r##".."##
+        let h = ci + 1;
+        while (arr[h] === '#') h++;
+        if (arr[h] === '"') {
+          const hashes = h - ci - 1;
+          const close = '"' + '#'.repeat(hashes);
+          const end = l.indexOf(close, h + 1);
+          const stop = end < 0 ? arr.length : end + close.length;
+          for (let j = ci; j < stop; j++) arr[j] = ' ';
+          ci = stop - 1;
+          if (end < 0) rawTail = close;    // 跨行原生串：后续行续掩
+          continue;
+        }
+      }
+    }
+    return arr.join('');
+  };
+  const lines = text.split(/\r?\n/);
+  for (let idx = 0; idx < lines.length; idx++) {
+    const l = lines[idx];
     li++;
     const at = lineOff;                    // 本行起点 byteOffset（cfg 回探用）
     lineOff += l.length + 1;               // \r\n 差一字节——仅用于回探可容差
+    const vis = maskLine(l);
+    // 行内事件序重放：括号深度 + 内联 mod 压/弹栈；use/mod-decl 匹配在
+    // vis 上做（注释里的伪关键字天然掩掉，m.index 与原文位置一致）
+    const modBrace = new Map();            // '{' 列位 → mod 名
+    for (const mm of vis.matchAll(/\bmod\s+([A-Za-z_]\w*)\s*\{/g))
+      modBrace.set(mm.index + mm[0].length - 1, mm[1]);
+    let cursor = 0, d = depth;
+    const st = modStack.map((s) => s);
+    const advance = (upto) => {
+      for (; cursor < upto; cursor++) {
+        const c = vis[cursor];
+        if (c === '{' || c === '(' || c === '[') {
+          d++;
+          const nm = modBrace.get(cursor);
+          if (nm) st.push({ name: nm, atDepth: d });
+        } else if (c === '}' || c === ')' || c === ']') {
+          d--;
+          while (st.length && st[st.length - 1].atDepth > d) st.pop();
+        }
+      }
+    };
+    const inlineNow = (pos) => { advance(pos); return st.map((s) => s.name); };
+    const feedBrackets = (v) => {          // 续行纯计数（无事件评估）
+      for (const c of v) {
+        if (c === '{' || c === '(' || c === '[') d++;
+        else if (c === '}' || c === ')' || c === ']') {
+          d--;
+          while (st.length && st[st.length - 1].atDepth > d) st.pop();
+        }
+      }
+    };
+    const endLine = () => {
+      advance(vis.length);
+      depth = d;
+      modStack.length = 0; modStack.push(...st);
+    };
+    const ctx2 = { fileMods, inline: undefined };
     // ref 生产（regex 档）：行内 callee 调用字面量参数抽取；
     // ident/嵌套参数 → UNRESOLVED（不调 for 展开——ast 专属）
     if (refSpecsOk.length)
@@ -637,15 +750,32 @@ export function regexFacts(root, rel, extractor, refSpecs) {
           }
         }
       }
-    let m = l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?use\s+([^;]+);/);
+    let m = vis.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?use\s+(.+)$/);
     if (m) {
+      ctx2.inline = inlineNow(m.index);
       const pub = !!(m[1] && !m[1].includes('('));
       const cfg = cfgGated(text, at + m.index);
-      const leaves = useLeaves(l);
-      for (const leaf of leaves.length ? leaves : [m[2].trim()]) {
-        const r = resolveSpec(root, rel, leaf, ctx);
+      // 多行 use 组：`use a::{b,\n c};` 首行无分号——续行掩蔽并入语句，
+      // 括号深度照样过通道（use 组内无 mod/use 事件，只走计数）。
+      // 先把首行 use 自己的 { 计完再吃续行，否则续行 } 会误弹 mod 栈
+      advance(vis.length);
+      let stmt = m[2];
+      const startLi = li;
+      while (!stmt.includes(';') && idx + 1 < lines.length) {
+        idx++;
+        li++;
+        lineOff += lines[idx].length + 1;
+        const v2 = maskLine(lines[idx]);
+        stmt += ' ' + v2;
+        feedBrackets(v2);
+      }
+      const sc = stmt.indexOf(';');
+      if (sc >= 0) stmt = stmt.slice(0, sc);
+      const leaves = useLeaves(`use ${stmt};`);
+      for (const leaf of leaves.length ? leaves : [stmt.trim()]) {
+        const r = resolveSpec(root, rel, leaf, ctx2);
         out.push(fact({ unit: rel, kind: 'import', name: leaf, file: rel,
-          line: li, fidelity: 'regex-degraded',
+          line: startLi, fidelity: 'regex-degraded',
           scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
           extractor,
           extra: { to: r.to, mechanism: pub ? 'rust-pub-use' : 'rust-use',
@@ -653,9 +783,10 @@ export function regexFacts(root, rel, extractor, refSpecs) {
             ...(r.external ? { external: true } : {}),
             ...(cfg ? { cfg: true } : {}) } }));
       }
+      endLine();
       continue;
     }
-    m = l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?mod\s+([A-Za-z_]\w*)\s*;/);
+    m = vis.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?mod\s+([A-Za-z_]\w*)\s*;/);
     if (m) {
       const r = resolveMod(root, rel, m[2]);
       const cfg = cfgGated(text, at + m.index);
@@ -670,16 +801,17 @@ export function regexFacts(root, rel, extractor, refSpecs) {
         extractor, extra: { shape: 'mod',
           surface: m[1] ? 'public' : 'internal',
           ...(cfg ? { cfg: true } : {}) } }));
+      endLine();
       continue;
     }
-    m = l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?(?:async\s+|unsafe\s+|extern\s+"[^"]+"\s+)*fn\s+([A-Za-z_]\w*)/)
-      || l.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?(struct|enum|union|trait|type|const|static)\s+(?:mut\s+)?([A-Za-z_]\w*)/)
-      || l.match(/^\s*macro_rules!\s*([A-Za-z_]\w*)/);
+    m = vis.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?(?:async\s+|unsafe\s+|extern\s+"[^"]+"\s+)*fn\s+([A-Za-z_]\w*)/)
+      || vis.match(/^\s*(pub(?:\s*\([^)]*\))?\s+)?(struct|enum|union|trait|type|const|static)\s+(?:mut\s+)?([A-Za-z_]\w*)/)
+      || vis.match(/^\s*macro_rules!\s*([A-Za-z_]\w*)/);
     if (m) {
       const nm = m[2] && !/^(struct|enum|union|trait|type|const|static)$/.test(m[2])
         ? m[2] : (m[3] || m[1]);
       const isFn = /fn\s/.test(l) || /macro_rules!/.test(l);
-      const pubKw = l.match(/^\s*pub\s+(?!\()/);
+      const pubKw = vis.match(/^\s*pub\s+(?!\()/);
       out.push(fact({ unit: `${rel}#${nm}`, kind: 'decl', name: nm,
         file: rel, line: li, fidelity: 'regex-degraded', scope: 'file-local',
         extractor,
@@ -688,6 +820,7 @@ export function regexFacts(root, rel, extractor, refSpecs) {
           surface: pubKw ? 'public' : 'internal',
           ...(cfgGated(text, at + m.index) ? { cfg: true } : {}) } }));
     }
+    endLine();
   }
   return out;
 }

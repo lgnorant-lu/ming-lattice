@@ -379,6 +379,11 @@ export function regexFacts(root, rel, extractor) {
           .split(',').map((s) => s.trim().replace(/\s+as\s+\w+\s*$/, ''))
           .filter(Boolean) };
       spec.star = spec.names.includes('*');
+      // `from __future__ import` 是编译器指令非模块依赖——tree-sitter 归
+      //   future_import_statement 节点，AST 路天然不匹配；regex 须同义跳过
+      //   （typeshed 差分实证：stdlib/__future__.pyi 在库内可解析，
+      //   regex 曾产 112 条幽灵边）
+      if (spec.mod === '__future__') continue;
       const r = resolvePy(root, rel, spec, roots);
       const f = edge(rel, li, '.'.repeat(spec.level) + spec.mod || '.', r,
         spec.star ? 'py-star' : 'py-from', extractor);

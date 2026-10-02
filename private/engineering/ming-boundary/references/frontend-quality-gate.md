@@ -52,7 +52,7 @@
 | M3 | 边产率 | import/export facts ÷ KLOC，按语料仓 | corpus + wc | 跨版本回归带 | [实证] 20-35/KLOC 量级已建 |
 | M4 | 畸形名率 | 名含 `{}`/换行/注释残渣 ÷ 全名（err fixture 豁免表） | facts 文件 | =0 硬门（豁免表外） | [实证] 检出过 ripgrep 67 条残留（旧档） |
 | M5 | 确定性 | run1 facts ≡ run2 facts 字节级 | 任意语料 | 硬门 | [实证] 组4 已有，corpus 档待固化 |
-| M6 | 降级同构 | regexFacts ≡ astFacts 在可控子集 | fixture | 断言组已有 | [实证] 组5 |
+| M6 | 降级同构 | regexFacts ≡ astFacts 在可控子集 | fixture | 断言组已有 | [实证] 组17（8 仓语料对账全零） |
 | M7 | 上游固件命中 | 采收的 tree-sitter corpus/ra test_data 输入件过抽取器，断言无畸形名/预期叶数 | corpus.yaml `fixtures:` 段 | 逐件断言 | [转正] metrics.mjs 落地——match 正则选件+minImports/minDecls/maxMalformed 断言+minFiles 漂移检测；ra 采收 8 件 use_tree + 4 件 decl 固件全过 |
 | M8 | 差分召回 | 与 precise 索引器（scip-*）边交集率 | 采纳仓 precise 输出（--facts-extra 同源） | 报告级，候审到有消费方 | [试点] fd 首份：recall 98.2%（54/55）——详见下节 |
 
@@ -212,6 +212,21 @@ module 边集。三语料差分结果：
 
 **终态**：flask/django 双路边集**完全同构**（regex-only=0、
 ast-only=0）。降级档语义对齐从口头声明变成大语料实证。
+
+**M6 全语言扩展实录（2026-10-02 续）**：对账扩到 rust/js/sh 后
+再抖三层缺陷，全部根治；新增测试组 17 按形态钉死：
+
+| 语料 | 首轮差 | 根因 | 修法 |
+|---|---|---|---|
+| fd/ripgrep | 12/12 对称 + 58 ast-only | regex 缺 `ctx.inline`——内联 `mod tests { use super::*; }` 里 super 错锚 crate 根/目录；多行 `use a::{b,\n c}` 首行无分号整体丢；`r#"..."#` 跨行原生串未掩 → 宏内 `/**` 文本卡死块注释态吃掉 5000 行 | regexFacts 事件序扫描：掩蔽（`//`/嵌套 `/* */`/串/字符字面量/原生串含跨行）→ 括号深度 + 内联 mod 栈 → use 取位置处栈快照；多行 use 续行并语句 |
+| ripgrep | 1 ast-only | `use super::*` 两路都产**目录值** `to`（永不匹配文件 fact 的建模疣） | resolveSpec 空 rest 分支锚到宿主文件（`base.rs`/mod.rs/lib.rs/main.rs），AST 路同步受益 |
+| typeshed | 112 regex-only | `from __future__ import` 在 `stdlib/__future__.pyi` 可解析时产幽灵边——**tree-sitter 归 future_import_statement 节点**，AST 路天然不匹配（编译器指令非真依赖） | regex 路 `spec.mod==='__future__'` 同义跳过 |
+| vite | 136 ast-only + 1 regex-only | js regexFacts 裸跑：无掩蔽（`// import x` 假边）、无多行 `import {`/`export {` 组（ASI 无分号）、无 `export ... from`/动态 `import()`、无顶层闸（函数内缩进 `import` 语法错误面 AST 不产） | 两遍法：vis（注释+串+模板全掩）只做关键字定位，spec 回原行同位重解析；真组形态才续行（`export const x = {` 字面量不误吞）；`export type` 对齐 AST 不收（type-only 运行期擦除）；d2>0 块内静态 import/export 排除但 `import()` 动态任意深度放行 |
+
+**全语料终态**：fd/ripgrep/express/solid/vite/flask/django/typeshed
+**8 仓全部 regex-only=0、ast-only=0**——三语言降级档与 AST 路
+边集级同构均有语料实证。组 17 把内联 mod 语境/多行组/掩蔽负向
+/`__future__`/成员调用排除等形态钉成回归断言。
 
 **IV8 消费方实证（2026-10-02，首个真实采纳仓）**：
 
