@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fact, globMatch } from '../facts.mjs';
 import { derived } from './rust.derived.mjs';
+import { namesRuleYaml } from './derive.mjs';
 
 export const exts = new Set(['.rs']);
 
@@ -49,8 +50,11 @@ rule:
   kind: mod_item
 `.trim();
 
+// namesRuleYaml：上游 @name 字段链译回规则层（derived.names）——
+// struct/trait 等 name:identifier 约束下沉到 match 时，不再靠 handle 复核
 export const rules = EDGE_RULES + '\n---\n' + DECL_KINDS.map((d) =>
-  `id: rust-decl-${d.kind}\nlanguage: Rust\nrule:\n  kind: ${d.kind}`).join('\n---\n');
+  `id: rust-decl-${d.kind}\nlanguage: Rust\nrule:\n  kind: ${d.kind}\n` +
+  namesRuleYaml(d.names)).join('\n---\n').trimEnd();
 
 // ref 生产器规格驱动（v1.4）：契约自带 producers.ref 条款经 --emit-spec
 // 注入——每条 spec 生成一条 call_expression 规则（has+field+regex 粗滤

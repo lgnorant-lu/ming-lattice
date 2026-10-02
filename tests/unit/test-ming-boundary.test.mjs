@@ -20,7 +20,7 @@ import { fact, domainOf, sortFacts, toJsonl, parseJsonl, globMatch }
 import { findAstGrep }
   from '../../private/engineering/ming-boundary/scripts/lib/frontends.mjs';
 import { parseTags, linguistExts, derive, emitDerived,
-  checkDerivedConsistency, parseUpstreamPins }
+  checkDerivedConsistency, parseUpstreamPins, namesRuleYaml }
   from '../../private/engineering/ming-boundary/scripts/lib/langs/derive.mjs';
 
 const PKG = path.resolve(import.meta.dirname, '../../private/engineering/ming-boundary');
@@ -1112,6 +1112,32 @@ export async function run() {
         c.kind === 'assignment' &&
         c.inside.join('>') === 'module>expression_statement'),
         'inside 链应外→内有序');
+      // names 字段链归位（derived 丢字段约束的修复面——django
+      //   obj.attr= 畸形名根因）：assignment 应记 names=[{left,identifier}]；
+      //   交替组 field: 挂整组（首子节点不许独吞 function:）
+      const asgC = capOf('definition.constant').find((c) => c.kind === 'assignment');
+      assert.deepEqual(asgC.names, [{ path: ['left'], kind: 'identifier' }],
+        'assignment 名约束应记 left 字段链');
+      const SCM_ALT = `(call function: [(identifier) @name
+  (attribute attribute: (identifier) @name)]) @reference.call`;
+      const callC = parseTags(SCM_ALT).find((c) => c.kind === 'call');
+      assert.deepEqual(callC.names.map((n) => n.path),
+        [['function'], ['function', 'attribute']],
+        '交替组内两名应共享 function 首跳、嵌套名记 function>attribute');
+      // namesRuleYaml 编码：单名产 has 链、多名产 any 分支
+      const yHas = namesRuleYaml(asgC.names);
+      assert.ok(yHas.includes('has:') && yHas.includes('field: left')
+        && yHas.includes('kind: identifier'), '单名应产 has field/kind 对');
+      const yAny = namesRuleYaml(callC.names);
+      assert.ok(yAny.includes('any:') && yAny.includes('field: attribute'),
+        '多名应产 any 分支且嵌套 has 记录深跳');
+      // 归并进 derived 条目（dedup 归并名路径）
+      const dAlt = derive('x', { linguist: 'Python' }, SCM_ALT,
+        'Python:\n  extensions:\n    - ".py"\n');
+      assert.deepEqual(dAlt.refKinds.find((k) => k.kind === 'call')?.names,
+        [{ path: ['function'], kind: 'identifier' },
+         { path: ['function', 'attribute'], kind: 'identifier' }],
+        'derived refKinds 应带双名路径');
       // linguist 行级解析：目标块内 exts 收集、块外不越界
       const LING = `Python:\n  extensions:\n    - ".py"\n    - ".pyi"\nRust:\n  extensions:\n    - ".rs"\n`;
       assert.deepEqual(linguistExts(LING, 'Python'), ['.py', '.pyi']);

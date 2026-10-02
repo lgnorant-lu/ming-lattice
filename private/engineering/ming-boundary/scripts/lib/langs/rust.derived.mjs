@@ -17,37 +17,93 @@ export const derived = {
     {
       "shape": "class",
       "kind": "enum_item",
-      "nameKind": "type_identifier"
+      "nameKind": "type_identifier",
+      "names": [
+        {
+          "path": [
+            "name"
+          ],
+          "kind": "type_identifier"
+        }
+      ]
     },
     {
       "shape": "class",
       "kind": "struct_item",
-      "nameKind": "type_identifier"
+      "nameKind": "type_identifier",
+      "names": [
+        {
+          "path": [
+            "name"
+          ],
+          "kind": "type_identifier"
+        }
+      ]
     },
     {
       "shape": "class",
       "kind": "type_item",
-      "nameKind": "type_identifier"
+      "nameKind": "type_identifier",
+      "names": [
+        {
+          "path": [
+            "name"
+          ],
+          "kind": "type_identifier"
+        }
+      ]
     },
     {
       "shape": "class",
       "kind": "union_item",
-      "nameKind": "type_identifier"
+      "nameKind": "type_identifier",
+      "names": [
+        {
+          "path": [
+            "name"
+          ],
+          "kind": "type_identifier"
+        }
+      ]
     },
     {
       "shape": "function",
       "kind": "function_item",
-      "nameKind": "identifier"
+      "nameKind": "identifier",
+      "names": [
+        {
+          "path": [
+            "name"
+          ],
+          "kind": "identifier"
+        }
+      ]
     },
     {
       "shape": "interface",
       "kind": "trait_item",
-      "nameKind": "type_identifier"
+      "nameKind": "type_identifier",
+      "names": [
+        {
+          "path": [
+            "name"
+          ],
+          "kind": "type_identifier"
+        }
+      ]
     },
     {
       "shape": "macro",
       "kind": "macro_definition",
-      "nameKind": "identifier"
+      "nameKind": "identifier",
+      "names": [
+        {
+          "path": [
+            "name"
+          ],
+          "kind": "identifier"
+        }
+      ]
     },
     {
       "shape": "method",
@@ -55,29 +111,82 @@ export const derived = {
       "inside": [
         "declaration_list"
       ],
-      "nameKind": "identifier"
+      "nameKind": "identifier",
+      "names": [
+        {
+          "path": [
+            "name"
+          ],
+          "kind": "identifier"
+        }
+      ]
     },
     {
       "shape": "module",
       "kind": "mod_item",
-      "nameKind": "identifier"
+      "nameKind": "identifier",
+      "names": [
+        {
+          "path": [
+            "name"
+          ],
+          "kind": "identifier"
+        }
+      ]
     }
   ],
   "refKinds": [
     {
       "shape": "call",
       "kind": "call_expression",
-      "nameKind": "identifier"
+      "nameKind": "identifier",
+      "names": [
+        {
+          "path": [
+            "function"
+          ],
+          "kind": "identifier"
+        },
+        {
+          "path": [
+            "function",
+            "field"
+          ],
+          "kind": "field_identifier"
+        }
+      ]
     },
     {
       "shape": "call",
       "kind": "macro_invocation",
-      "nameKind": "identifier"
+      "nameKind": "identifier",
+      "names": [
+        {
+          "path": [
+            "macro"
+          ],
+          "kind": "identifier"
+        }
+      ]
     },
     {
       "shape": "implementation",
       "kind": "impl_item",
-      "nameKind": "type_identifier"
+      "nameKind": "type_identifier",
+      "names": [
+        {
+          "path": [
+            "trait"
+          ],
+          "kind": "type_identifier"
+        },
+        {
+          "path": [
+            "type"
+          ],
+          "kind": "type_identifier"
+        }
+      ]
     }
   ]
 };

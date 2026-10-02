@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fact } from '../facts.mjs';
 import { derived } from './python.derived.mjs';
+import { namesRuleYaml } from './derive.mjs';
 
 // linguist 全量 exts 含构建/打包边角（.gyp/.spec 等）——内容扫描只认模块件
 export const exts = new Set(['.py', '.pyi', '.pyw']);
@@ -43,9 +44,12 @@ function insideRule(inside) {
   return yaml;
 }
 
+// namesRuleYaml：上游 @name 字段链译回规则层（assignment 须 left:identifier
+// ——derived.names 把 tags.scm 字段约束归位，handle 侧裸名过滤是纵深二道）
 export const rules = EDGE_RULES + '\n---\n' + DECL_KINDS.map((d) =>
   `id: py-decl-${d.kind}\nlanguage: Python\nrule:\n  kind: ${d.kind}\n` +
-  (d.inside ? insideRule(d.inside) : '')).join('\n---\n').trimEnd();
+  (d.inside ? insideRule(d.inside) : '') + namesRuleYaml(d.names))
+  .join('\n---\n').trimEnd();
 
 const PY_IDS = new Set(['py-import', 'py-from',
   ...DECL_KINDS.map((d) => `py-decl-${d.kind}`)]);

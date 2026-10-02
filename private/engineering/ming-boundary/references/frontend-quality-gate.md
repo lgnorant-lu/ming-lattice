@@ -177,6 +177,18 @@ js 系 8 个扩展名归一描述符，但 ast-grep 只供三 grammar——
 - 语料：express(small,.js) / solid(med,ts+tsx) / vite(large,全八扩展名
   单仓覆盖)——三仓 M3=18.5/12.7/36.7 边/KLOC、M4=0、M5 byte-identical
 
+**derived 字段约束归位（2026-10-02，系统性漏损根治）**：
+
+`derived.mjs` 曾只序列化 `kind`/`inside`/`nameKind`，上游 tags.scm 的
+`field:` 约束全丢——同一根因两度案发（rust const/static 词表补丁、
+python assignment 丢 `left:(identifier)` 产 `obj.attr=` 畸形名）。
+现 `parseTags` 增 names 路径追踪（`names:[{path:[f1,f2..],kind}]`，
+交替组 `[...]` 建伪帧共享外层 field——`function:[id|attr]` 实证坑），
+`namesRuleYaml` 把约束译回规则层 `has:{field}`/`any:` 组合——上游语义
+在 match 时生效而非 handle 侧事后过滤（handle 裸名过滤降为纵深二道）。
+回归：django/typeshed/rust-fd 全绿，facts 面零漂移（typeshed 170346
+条与修前一致），`--verify` 对账 ok。
+
 ## 不采纳项
 
 - **重型生态工具入库**：scip-rust-analyzer/semgrep/ctags 二进制是

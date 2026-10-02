@@ -32,7 +32,15 @@ export const derived = {
     {
       "shape": "class",
       "kind": "class_definition",
-      "nameKind": "identifier"
+      "nameKind": "identifier",
+      "names": [
+        {
+          "path": [
+            "name"
+          ],
+          "kind": "identifier"
+        }
+      ]
     },
     {
       "shape": "constant",
@@ -41,19 +49,49 @@ export const derived = {
         "module",
         "expression_statement"
       ],
-      "nameKind": "identifier"
+      "nameKind": "identifier",
+      "names": [
+        {
+          "path": [
+            "left"
+          ],
+          "kind": "identifier"
+        }
+      ]
     },
     {
       "shape": "function",
       "kind": "function_definition",
-      "nameKind": "identifier"
+      "nameKind": "identifier",
+      "names": [
+        {
+          "path": [
+            "name"
+          ],
+          "kind": "identifier"
+        }
+      ]
     }
   ],
   "refKinds": [
     {
       "shape": "call",
       "kind": "call",
-      "nameKind": "identifier"
+      "names": [
+        {
+          "path": [
+            "function"
+          ],
+          "kind": "identifier"
+        },
+        {
+          "path": [
+            "function",
+            "attribute"
+          ],
+          "kind": "identifier"
+        }
+      ]
     }
   ]
 };
