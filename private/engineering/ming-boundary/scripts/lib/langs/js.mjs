@@ -156,6 +156,24 @@ const REL_SPEC = /^\.{1,2}(?:\/|$)/;
 // 供 extract-facts psLineFacts（.ps1 dot-source）复用——后缀序里 '' 直通
 export const TRY_SUFFIX = ['', '.mjs', '.js', '.cjs', '.d.ts', '.ts', '.mts',
   '.cts', '.tsx', '.json', '/index.mjs', '/index.js', '/index.ts'];
+// TS ESM 重写 spec：源码 `import './a.js'` 磁盘实体是 a.ts
+//   （Node16/NodeNext + bundler 解析约定；.mjs→.mts/.cjs→.cts/.jsx→.tsx）。
+//   只在直查落空后启用——编译产物并存时优先真身。
+const TS_REWRITE = { '.js': ['.ts', '.tsx', '.d.ts'], '.jsx': ['.tsx'],
+  '.mjs': ['.mts', '.d.ts'], '.cjs': ['.cts', '.d.ts'] };
+function firstFile(root, base, suffixes) {
+  for (const suf of suffixes) {
+    const p = path.join(root, base + suf);
+    // existsSync 对目录也真——'' 后缀会抢在 /index.* 前把 dir 当模块
+    // （depcruise 差分实证：express `require('.')` 产 ->. 假边）。
+    // Node 语义 dir→dir/index.*——所有命中位强制 isFile
+    if (fs.existsSync(p) && fs.statSync(p).isFile())
+      // 后缀拼接后再归一：'.'+'/index.js' → 'index.js'，
+      //   消前导 './' 与 './/' 双斜杠（depcruise 对账名义等位）
+      return path.posix.normalize(base + suf);
+  }
+  return null;
+}
 export function resolveSpec(root, fromRel, spec) {
   // bundler query/hash 后缀剥除（'./w.js?worker&url'/'./a.css#x'——
   //   vite/webpack/rollup 通用约定，文件系统路径本不含 ?#；
@@ -164,15 +182,13 @@ export function resolveSpec(root, fromRel, spec) {
   if (!REL_SPEC.test(spec)) return { to: null, external: true };
   const base = path.posix.normalize(
     path.posix.join(path.posix.dirname(fromRel), spec));
-  for (const suf of TRY_SUFFIX) {
-    const p = path.join(root, base + suf);
-    // existsSync 对目录也真——'' 后缀会抢在 /index.* 前把 dir 当模块
-    // （depcruise 差分实证：express `require('.')` 产 ->. 假边）。
-    // Node 语义 dir→dir/index.*——所有命中位强制 isFile
-    if (fs.existsSync(p) && fs.statSync(p).isFile())
-      // 后缀拼接后再归一：'.'+'/index.js' → 'index.js'，
-      //   消前导 './' 与 './/' 双斜杠（depcruise 对账名义等位）
-      return { to: path.posix.normalize(base + suf), external: false };
+  const direct = firstFile(root, base, TRY_SUFFIX);
+  if (direct) return { to: direct, external: false };
+  const ext = path.posix.extname(base);
+  const tsAlts = TS_REWRITE[ext];
+  if (tsAlts) {
+    const rewritten = firstFile(root, base.slice(0, -ext.length), tsAlts);
+    if (rewritten) return { to: rewritten, external: false };
   }
   return { to: path.posix.normalize(base), external: false, dead: true };
 }

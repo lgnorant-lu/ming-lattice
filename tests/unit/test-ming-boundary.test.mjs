@@ -140,6 +140,16 @@ export async function run() {
       'const b = require(\'./b.mjs\');\nconst p = require(\'node:path\');\nmodule.exports = b;\n');
     wfile('src/req.ts',
       'import p = require(\'path\');\nexport function xreq() { return p.sep; }\n');
+    // TS ESM 重写 spec 面：'./x.js' 磁盘实体是 x.ts（Node16/NodeNext +
+    //   bundler 约定；直查落空才改写——编译产物并存时优先真身）
+    wfile('src/esm.ts',
+      'import { t1 } from \'./esm-target.js\';\nimport \'./esm-m.mjs\';\n' +
+      'import { b1 } from \'./esm-both.js\';\nimport \'./esm-ghost.js\';\n' +
+      'export { t1, b1 };\n');
+    wfile('src/esm-target.ts', 'export const t1 = 1;\n');
+    wfile('src/esm-m.mts', 'export {};\n');
+    wfile('src/esm-both.js', 'export const b1 = 0;\n');
+    wfile('src/esm-both.ts', 'export const b1 = 0;\n');
     // 解构 variable_declarator（object/array pattern 名非裸标识符）——
     // nm 不可得即非可命名 decl，不得 slice 兜底产畸形名（solid/vite 实证教训）。
     // 右值用标识符/数组字面量——对象字面量 pair `k: () =>` 是上游正位
@@ -322,6 +332,18 @@ export async function run() {
     assert.ok(cjs.some((x) => x.name === './b.mjs'
       && x.extra?.mechanism === 'require-cjs' && x.extra?.to === 'src/b.mjs'),
       'require(相对) 应产 require-cjs 边并解析');
+    // TS ESM 重写 spec：.js→.ts/.mjs→.mts 落空改写，直查命中优先，全落空仍 dead
+    const esm = Object.fromEntries(
+      at('src/esm.ts', 'import').map((x) => [x.name, x]));
+    assert.equal(esm['./esm-target.js']?.extra?.to, 'src/esm-target.ts',
+      '.js spec 落空应改写解析到 .ts 真身');
+    assert.equal(esm['./esm-target.js']?.scope, 'module');
+    assert.equal(esm['./esm-m.mjs']?.extra?.to, 'src/esm-m.mts',
+      '.mjs spec 落空应改写解析到 .mts 真身');
+    assert.equal(esm['./esm-both.js']?.extra?.to, 'src/esm-both.js',
+      '产物并存时直查优先 .js 真身不改写');
+    assert.ok(esm['./esm-ghost.js']?.extra?.dead,
+      '改写也落空应仍判 dead');
     assert.ok(cjs.some((x) => x.name === 'node:path' && x.extra?.external),
       'require(裸名) 应判 external');
     // TS import x = require('y')（tach 语料实证形态）——产边即可，
