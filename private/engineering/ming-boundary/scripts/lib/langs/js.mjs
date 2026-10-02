@@ -210,16 +210,24 @@ export function handle(id, m, ctx) {
     extra: { to: r.to, mechanism,
       ...(r.dead ? { dead: true } : {}),
       ...(r.external ? { external: true } : {}) } });
+  // 自指 vacuous 抑制（python.mjs 同闸，django xregexp.js babel 产物
+  // `require('./xregexp')` 自指实证）——自依赖零信息，grimp/depcruise
+  // 均不产自环边；emit 统一收口四类边发射
+  const emit = (spec, r, mechanism) => {
+    if (r.to === rel) return null;
+    out.push(edgeFact(spec, r, mechanism));
+    return out[out.length - 1];
+  };
   if (id === 'import-statement') {
     const spec = specFromText(m.text);
     const r = spec ? resolveSpec(root, rel, spec)
                    : { to: null, external: false, dead: true };
-    out.push(edgeFact(spec || '(unparsed)', r, 'static'));
+    emit(spec || '(unparsed)', r, 'static');
     return true;
   }
   if (id === 'dynamic-import') {
     const spec = specFromText(m.text);
-    if (spec) out.push(edgeFact(spec, resolveSpec(root, rel, spec), 'dynamic'));
+    if (spec) emit(spec, resolveSpec(root, rel, spec), 'dynamic');
     else out.push(fact({ unit: rel, kind: 'import',
       name: '(computed)', file: rel, line, fidelity: 'syntactic',
       scope: 'unresolved', extractor,
@@ -228,7 +236,7 @@ export function handle(id, m, ctx) {
   }
   if (id === 'require-call') {
     const spec = specFromText(m.text);
-    if (spec) out.push(edgeFact(spec, resolveSpec(root, rel, spec), 'require-cjs'));
+    if (spec) emit(spec, resolveSpec(root, rel, spec), 'require-cjs');
     // require(变量/表达式) 非字面量——不计边（动态边界归 precise 层）
     return true;
   }
@@ -240,9 +248,8 @@ export function handle(id, m, ctx) {
     const spec = reex ? reex[1] : null;
     if (spec) {
       const r = resolveSpec(root, rel, spec);
-      out.push(edgeFact(spec, r, 'reexport'));
-      const e = out[out.length - 1];
-      out.push({ ...e, kind: 'export',
+      const e = emit(spec, r, 'reexport');
+      if (e) out.push({ ...e, kind: 'export',
         extra: { ...e.extra } });
     }
     return true;
@@ -280,13 +287,14 @@ export function regexFacts(root, rel, extractor) {
                l.match(/\brequire\(\s*['"]([^'"]+)['"]\s*\)/);
     if (im) {
       const r = resolveSpec(root, rel, im[1]);
-      out.push(fact({ unit: rel, kind: 'import', name: im[1],
-        file: rel, line: li, fidelity: 'regex-degraded',
-        scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
-        extractor,
-        extra: { to: r.to, mechanism: 'static',
-          ...(r.dead ? { dead: true } : {}),
-          ...(r.external ? { external: true } : {}) } }));
+      if (r.to !== rel)   // 自环抑制与 AST 路同构
+        out.push(fact({ unit: rel, kind: 'import', name: im[1],
+          file: rel, line: li, fidelity: 'regex-degraded',
+          scope: r.external ? 'external' : (r.dead ? 'unresolved' : 'module'),
+          extractor,
+          extra: { to: r.to, mechanism: 'static',
+            ...(r.dead ? { dead: true } : {}),
+            ...(r.external ? { external: true } : {}) } }));
     }
     const fm = l.match(/^\s*(export\s+)?(?:async\s+)?function\s*\*?\s*([\w$]+)/) ||
                l.match(/^\s*(export\s+)?(?:const|let|var)\s+([\w$]+)\s*=\s*(?:async\s*)?\(/);

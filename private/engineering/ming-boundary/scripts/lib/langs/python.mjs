@@ -125,7 +125,7 @@ function modFile(root, base, dotted) {
 // sysroot 实算规则：init 目录上溯到"不再含 __init__ 的祖先"，其父目录即
 // 导入根（python/iv8_rs/__init__.py 且 python/ 无 init → python/ 是根）；
 // 含 .py 但无 init 的目录登记为松散脚本根（同目录互导语义）。
-// root 自身（''）总在序尾兜底；文件所在目录永远首位（sys.path[0] 同构）。
+// root 自身（''）总在序尾兜底。
 function computeRoots(rels) {
   const initDirs = new Set(), pyDirs = new Set();
   for (const r of rels) {
@@ -143,8 +143,9 @@ function computeRoots(rels) {
   }
   for (const d of pyDirs) if (!initDirs.has(d)) roots.add(d === '.' ? '' : d);
   // 浅根优先（更接近传统 sys.path 序），同深按字典序保确定性
-  return [...roots].sort((x, y) =>
-    x.split('/').length - y.split('/').length || x.localeCompare(y));
+  return { roots: [...roots].sort((x, y) =>
+    x.split('/').length - y.split('/').length || x.localeCompare(y)),
+    initDirs };
 }
 
 // run 状态仓：prepareRun 由抽取器在匹配循环前调一次；regexFacts 降级路径
@@ -152,8 +153,8 @@ function computeRoots(rels) {
 const RUN = new Map();
 export function prepareRun({ root, files }) {
   const rels = files.map((f) => (typeof f === 'string' ? f : f.rel));
-  const roots = computeRoots(rels);
-  RUN.set(root, { roots });
+  const { roots, initDirs } = computeRoots(rels);
+  RUN.set(root, { roots, initDirs });
   return roots;
 }
 function collectPyRels(root, dir = '', out = []) {
@@ -165,10 +166,16 @@ function collectPyRels(root, dir = '', out = []) {
   }
   return out;
 }
+// 文件目录前置仅非包成员成立：包内目录无 __init__ 不进 sys.path——
+// `import typing` 于 flask/blueprints.py 不得误中兄弟 typing.py
+// （M6 双路对账实证 13 条 regex-only 假边；AST 路本无前置，此为
+// 松散脚本 sys.path[0] 语义向 AST 路对齐后的唯一偏差源）
 function rootsFor(root, fromRel) {
-  const run = RUN.get(root) || { roots: computeRoots(collectPyRels(root)) };
+  const run = RUN.get(root) ||
+    { ...computeRoots(collectPyRels(root)) };
   const dir = path.posix.dirname(fromRel);
   const first = dir === '.' ? '' : dir;
+  if (run.initDirs?.has(dir)) return run.roots;
   return [first, ...run.roots.filter((r) => r !== first)];
 }
 
@@ -198,7 +205,14 @@ function resolvePy(root, fromRel, spec, roots) {
   }
   for (const b of roots || rootsFor(root, fromRel)) {
     const hit = modFile(root, b, spec.mod);
-    if (hit) return { ...hit, external: false, base: b };
+    // self-hit 二分：自文件命中让位下一候选根（松散目录 flask.py
+    //   自遮蔽 `from flask import Flask`——inner2 实证）；自包命中
+    //   （from django.conf import x 在 conf/__init__.py）包边 vacuous
+    //   但 pkgDir 仍须保留给子模块探测——conf→global_settings 是真边
+    if (hit && hit.to === fromRel && hit.pkgDir)
+      return { ...hit, external: false, base: b };
+    if (hit && hit.to !== fromRel)
+      return { ...hit, external: false, base: b };
   }
   return { to: null, external: true };   // stdlib/site-packages——不判死
 }
@@ -217,7 +231,7 @@ export function handle(id, m, ctx) {
   const inInit = path.posix.basename(rel).startsWith('__init__.py');
   if (id === 'py-import') {
     for (const spec of importSpecs(m.text)) {
-      const r = resolvePy(root, rel, spec, ctx.run);
+      const r = resolvePy(root, rel, spec, rootsFor(root, rel));
       // 自环 vacuous：__init__.py 内 from . import 把包自身归到
       //   to==rel——grimp 差分口径不产自环，边界谓词下自依赖无信息
       if (r.to !== rel)
@@ -233,7 +247,7 @@ export function handle(id, m, ctx) {
         extractor, extra: { dead: true, mechanism: 'py-from' } }));
       return true;
     }
-    const r = resolvePy(root, rel, spec, ctx.run);
+    const r = resolvePy(root, rel, spec, rootsFor(root, rel));
     const mech = spec.star ? 'py-star' : 'py-from';
     const specName = '.'.repeat(spec.level) + spec.mod;
     // 模块/包边总是发（from m import n 对 m 的依赖独立成立）；
@@ -296,17 +310,46 @@ export function regexFacts(root, rel, extractor) {
   const text = fs.readFileSync(path.join(root, rel), 'utf8');
   const inInit = path.posix.basename(rel).startsWith('__init__.py');
   const roots = rootsFor(root, rel);   // prepareRun 未跑时懒建索引
-  let li = 0, depth = 0;
-  for (const l of text.split(/\r?\n/)) {
-    li++;
+  let depth = 0, tq = null;            // tq=三引号串态（'"""'|"'''"）
+  const lines = text.split(/\r?\n/);
+  for (let li0 = 0; li0 < lines.length; li0++) {
+    const l = lines[li0], li = li0 + 1;
+    // 单遍掩蔽：三引号跨行态 + 单双引号行内态 + 行外 # 注释截断——
+    // 串内文本不得参与匹配/深度计数（docstring 样例 `from flask import`
+    // 产假边、串内括号污染深度闸）；注释必须并进同一遍——后剥会让
+    // 注释里的撇号（it's）被当成引号吃掉闭合括号（checks.py:765 实证：
+    // `(FIXME:` 注释开括号 + 下行注释撇号吞 `)` → depth 永久+1）
+    let vis = '', i = 0;
+    while (i < l.length) {
+      if (tq) {
+        const j = l.indexOf(tq, i);
+        if (j < 0) { i = l.length; break; }
+        i = j + 3; tq = null;
+        continue;
+      }
+      const tri = l.startsWith('"""', i) ? '"""'
+        : l.startsWith("'''", i) ? "'''" : null;
+      if (tri) { tq = tri; i += 3; continue; }
+      const c = l[i];
+      if (c === '#') break;                  // 串外 # 到行尾全是注释
+      if (c === '"' || c === "'") {
+        let j = i + 1;                       // 行内串：跳配到对引号
+        while (j < l.length && l[j] !== c)
+          j += l[j] === '\\' ? 2 : 1;        // \ 转义吞下一字符
+        i = j < l.length ? j + 1 : l.length;
+        continue;
+      }
+      vis += c; i++;
+    }
     // 括号深度闸：签名/字面量多行展开里的 `name: Type,` 续行非 decl
     // （AST 路不受影响——参数注解是 typed_parameter 非 assignment 节点；
     // 粗糙计数是降级档固有代价，fidelity 戳如实标 regex-degraded）
     const d0 = depth;
-    for (const ch of l)
+    for (const ch of vis)
       if ('([{'.includes(ch)) depth++; else if (')]}'.includes(ch)) depth--;
     if (d0 > 0) continue;
-    let m = l.match(/^\s*import\s+(.+?)\s*$/);
+    const code = vis;
+    let m = code.match(/^\s*import\s+(.+?)\s*$/);
     if (m) {
       for (const mod of m[1].split(',').map((s) =>
         s.trim().replace(/\s+as\s+\w+\s*$/, '').trim()).filter(Boolean)) {
@@ -317,10 +360,22 @@ export function regexFacts(root, rel, extractor) {
       }
       continue;
     }
-    m = l.match(/^\s*from\s+(\.*)([\w.]*)\s+import\s+(.+?)\s*$/);
+    m = code.match(/^\s*from\s+(\.*)([\w.]*)\s+import\s+(.+?)\s*$/);
     if (m) {
+      // 跨行括号 from-import：并入后续行名字直到 ) 闭合——
+      // django `from django.db import (\n models,\n)` 41 条
+      // ast-only 实证；续行剥注释+括号计数同步 depth
+      let namesTxt = m[3];
+      while (namesTxt.includes('(') && !namesTxt.includes(')') &&
+             li0 + 1 < lines.length) {
+        const nxt = lines[++li0].replace(/\s+#.*$/, '');
+        for (const ch of nxt)
+          if ('([{'.includes(ch)) depth++;
+          else if (')]}'.includes(ch)) depth--;
+        namesTxt += ' ' + nxt;
+      }
       const spec = { level: m[1].length, mod: m[2] || '',
-        names: m[3].replace(/^\(|\)\s*$/g, '')
+        names: namesTxt.replace(/^\(|\)\s*$/g, '')
           .split(',').map((s) => s.trim().replace(/\s+as\s+\w+\s*$/, ''))
           .filter(Boolean) };
       spec.star = spec.names.includes('*');
@@ -350,13 +405,13 @@ export function regexFacts(root, rel, extractor) {
       }
       continue;
     }
-    m = l.match(/^\s*(?:async\s+)?def\s+([A-Za-z_]\w*)/)
-      || l.match(/^\s*class\s+([A-Za-z_]\w*)/)
-      || l.match(/^([A-Za-z_]\w*)\s*(?::[^=]*)?(?:=(?!=)|\s*$)/);
+    m = code.match(/^\s*(?:async\s+)?def\s+([A-Za-z_]\w*)/)
+      || code.match(/^\s*class\s+([A-Za-z_]\w*)/)
+      || code.match(/^([A-Za-z_]\w*)\s*(?::[^=]*)?(?:=(?!=)|\s*$)/);
     if (m) {
       const nm = m[1];
-      const shape = /^\s*(?:async\s+)?def/.test(l) ? 'fn'
-        : /^\s*class/.test(l) ? 'class' : 'const';
+      const shape = /^\s*(?:async\s+)?def/.test(code) ? 'fn'
+        : /^\s*class/.test(code) ? 'class' : 'const';
       out.push(fact({ unit: `${rel}#${nm}`, kind: 'decl', name: nm,
         file: rel, line: li, fidelity: 'regex-degraded', scope: 'file-local',
         extractor, extra: { shape,

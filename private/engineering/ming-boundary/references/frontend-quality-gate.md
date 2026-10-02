@@ -197,6 +197,30 @@ module 边集。三语料差分结果：
   我方未归一原图是严格超集（包对象边对边界分析有效——`__init__`
   可带副作用），非缺陷
 
+**M6 双路对账实录（2026-10-02，regex 降级路 vs AST 路边集核验）**：
+
+降级档一直声称"语义同构"但从未系统验证——写 per-file
+`regexFacts` 探针对全量 py 件做 `(file→to)` 边集对账，django
+3043 件首轮抖出 **15 处分歧 = 4 个真缺陷**：
+
+| 缺陷 | 形态 | 修法 |
+|---|---|---|
+| file-dir 无条件前置根 | `import typing` 在 flask 包内误中兄弟 `typing.py`——包成员目录不进 sys.path | rootsFor 仅非包目录（dir 无 `__init__`）前置，AST 路同步切 rootsFor |
+| self-hit 吞真目标 | 松散目录 `flask.py` 里 `from flask import Flask` 自遮蔽 | resolvePy 自**文件**命中让位下一根；自**包**命中保 pkgDir 继续探子模块（`from django.conf import global_settings` 于 conf/__init__.py 是真边） |
+| 行尾注释混入 names | `from x import views  # noqa` 注释进名字表 → 子模块探测 miss | 注释并入单遍掩蔽扫描（串外 `#` 截断） |
+| 串内括号/撇号污染 | `'('`/`it's` 使 depth 假正 → 后续行整片跳（checks.py:765 注释 `(FIXME` + 下行注释撇号吞 `)` → depth 永久+1）+ docstring 样例假边 + 跨行 `from x import (\n` 丢子模块边 | 单遍扫描统一三引号/单双引号掩蔽 + `#` 截断；from-import 括号未闭续吃行（逐行剥注释+同步 depth） |
+
+**终态**：flask/django 双路边集**完全同构**（regex-only=0、
+ast-only=0）。降级档语义对齐从口头声明变成大语料实证。
+
+**IV8 消费方实证（2026-10-02，首个真实采纳仓）**：
+
+`iv8_rs` 包 49 模块：归一后 ours=99 grimp=93，**missed=0**，
+ours-only=6 全为"我方更强"的口径差——4 条 `_iv8.pyd` 原生扩展边
+（grimp 只构图 `.py`）、1 条 `sys.path.insert` 注入边
+（profile_gate→scripts.check_pairwise_profile——松散根模型恰好
+捕获真实运行时依赖）。M8-python 完成从语料到真实消费方的闭环。
+
 **js 族描述符化实录（2026-10-02，langs/js.mjs 升格）**：
 
 js 系 8 个扩展名归一描述符，但 ast-grep 只供三 grammar——

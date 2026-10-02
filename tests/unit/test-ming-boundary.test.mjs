@@ -117,6 +117,9 @@ export async function run() {
     wfile('src/pkg/index.mjs', 'export const P = 1;\n');
     // '.'/'..' 裸目录 spec（无尾斜杠）——require('.') 差分实证形态
     wfile('src/pkg/self.mjs', 'import { P } from \'.\';\n');
+    // babel 打包产物形态：xregexp.js require('./xregexp') 自指——
+    //   自依赖边 vacuous（grimp/depcruise 均不产），与 py 自环同闸
+    wfile('src/xself.mjs', 'const self = require(\'./xself\');\n');
     wfile('src/nodir/readme.txt', 'not a module\n');
     wfile('vendored/v1/lib.mjs', 'export function vv() {}\n');
     // v1.1b：TypeScript 面——tree-sitter-typescript 规则集应产同构事实
@@ -305,6 +308,8 @@ export async function run() {
       'src/pkg/index.mjs', '裸 . spec 应归 dir/index.* 而非 external');
     assert.equal(byName['./worker.mjs?worker&url']?.extra?.to,
       'src/worker.mjs', 'bundler query 后缀应剥除再落盘解析');
+    assert.ok(!at('src/xself.mjs', 'import').some((x) => x.extra?.to ===
+      'src/xself.mjs'), 'require(自指) 不得产 to==自身 的 vacuous 自环边');
     // v1.6 js 族描述符化断言（langs/js.mjs）：
     // .jsx/.tsx→Tsx、.mts→TypeScript 三桶路由各自产边且相对边解析
     for (const f of ['src/comp.jsx', 'src/comp.tsx', 'src/tmod.mts'])
