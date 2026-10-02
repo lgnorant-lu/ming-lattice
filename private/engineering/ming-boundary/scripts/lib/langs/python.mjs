@@ -77,11 +77,33 @@ export function fromSpec(text) {
 }
 
 const MOD_EXTS = ['.py', '.pyi', '.pyd', '.so', '.pyw'];
-const exists = (root, rel) => fs.existsSync(path.join(root, rel));
-const dirExists = (root, rel) => {
-  try { return fs.statSync(path.join(root, rel)).isDirectory(); }
-  catch { return false; }
-};
+// 大小写精确存在性：existsSync 在 Windows CI 文件系统上大小写不敏感，
+// 而 CPython FileFinder 即使 CI FS 也逐段精确比对模块文件名——
+// `from geos import Point`（类名）必须不能误中 geos/point.py
+// （django grimp 差分实证：幽灵 geos.Point 子模块边）
+const DIR_CACHE = new Map();   // absDir -> Set<entry> | null
+function dirEntries(root, relDir) {
+  const abs = path.join(root, relDir || '.');
+  if (!DIR_CACHE.has(abs)) {
+    let s = null;
+    try { s = new Set(fs.readdirSync(abs)); } catch { /* 目录不存在 */ }
+    DIR_CACHE.set(abs, s);
+  }
+  return DIR_CACHE.get(abs);
+}
+function statExact(root, rel) {
+  const segs = rel.split('/');
+  let d = '';
+  for (const seg of segs) {
+    const es = dirEntries(root, d);
+    if (!es || !es.has(seg)) return null;
+    d = d ? `${d}/${seg}` : seg;
+  }
+  try { return fs.statSync(path.join(root, rel)); }
+  catch { return null; }
+}
+const exists = (root, rel) => statExact(root, rel)?.isFile() ?? false;
+const dirExists = (root, rel) => statExact(root, rel)?.isDirectory() ?? false;
 
 // 模块/包解析 → {to, pkgDir}。pkgDir=可探测子模块的目录（包 init 的目录
 // 或 PEP420 命名空间目录）；纯模块文件 pkgDir=null
@@ -160,7 +182,9 @@ function resolvePy(root, fromRel, spec, roots) {
     if (!spec.mod) {
       // from . import x：包目录必须在（init 或命名空间目录均可），
       // 名字是否兄弟模块由调用方逐名探测
-      if (!base && !dirExists(root, '.')) /* root 总在，防呆 */ return { external: false, dead: true, to: null };
+      if (!base && !fs.existsSync(root)) /* root 总在，防呆（. 走原生检查——
+        readdir 条目不包含 '.' 自身，statExact 会误判根不存在） */
+        return { external: false, dead: true, to: null };
       if (base && !dirExists(root, base))
         return { to: null, external: false, dead: true, base };
       const init = ['.py', '.pyi'].find((e) => exists(root, `${base ? base + '/' : ''}__init__${e}`));
@@ -194,7 +218,10 @@ export function handle(id, m, ctx) {
   if (id === 'py-import') {
     for (const spec of importSpecs(m.text)) {
       const r = resolvePy(root, rel, spec, ctx.run);
-      out.push(edge(rel, line, spec.mod, r, 'py-import', extractor));
+      // 自环 vacuous：__init__.py 内 from . import 把包自身归到
+      //   to==rel——grimp 差分口径不产自环，边界谓词下自依赖无信息
+      if (r.to !== rel)
+        out.push(edge(rel, line, spec.mod, r, 'py-import', extractor));
     }
     return true;
   }
@@ -211,9 +238,13 @@ export function handle(id, m, ctx) {
     const specName = '.'.repeat(spec.level) + spec.mod;
     // 模块/包边总是发（from m import n 对 m 的依赖独立成立）；
     // 名字探测仅当目标是包（pkgDir 非空）时逐名试 <pkgDir>/<name>.py
-    out.push(edge(rel, line, specName || '.', r, mech, extractor));
-    if (inInit) out.push({ ...out[out.length - 1], kind: 'export',
-      extra: { ...out[out.length - 1].extra, mechanism: 'py-reexport' } });
+    // 自环抑制同 py-import（from . import 在 __init__.py 归自身）
+    const selfEdge = r.to === rel;
+    if (!selfEdge) {
+      out.push(edge(rel, line, specName || '.', r, mech, extractor));
+      if (inInit) out.push({ ...out[out.length - 1], kind: 'export',
+        extra: { ...out[out.length - 1].extra, mechanism: 'py-reexport' } });
+    }
     if (!spec.star && r.pkgDir) {
       for (const nm of spec.names) {
         const sub = modFile(root, r.pkgDir === '.' ? '' : r.pkgDir, nm);
@@ -222,6 +253,11 @@ export function handle(id, m, ctx) {
           [spec.mod, nm].filter(Boolean).join('.');
         out.push(edge(rel, line, subName,
           { to: sub.to, external: false }, 'py-from-submodule', extractor));
+        // __init__ 里 from . import x 的 re-export 挂子模块边（旧实现 twin
+        // 在 to==rel 的自环包边上，等于没标——grimp 差分实证修正语义锚点）
+        if (inInit && sub.to !== rel)
+          out.push({ ...out[out.length - 1], kind: 'export',
+            extra: { ...out[out.length - 1].extra, mechanism: 'py-reexport' } });
       }
     }
     return true;
@@ -275,8 +311,9 @@ export function regexFacts(root, rel, extractor) {
       for (const mod of m[1].split(',').map((s) =>
         s.trim().replace(/\s+as\s+\w+\s*$/, '').trim()).filter(Boolean)) {
         const r = resolvePy(root, rel, { level: 0, mod }, roots);
-        out.push({ ...edge(rel, li, mod, r, 'py-import', extractor),
-          fidelity: 'regex-degraded' });
+        if (r.to !== rel)                       // 自环抑制与 AST 路同构
+          out.push({ ...edge(rel, li, mod, r, 'py-import', extractor),
+            fidelity: 'regex-degraded' });
       }
       continue;
     }
@@ -290,16 +327,25 @@ export function regexFacts(root, rel, extractor) {
       const r = resolvePy(root, rel, spec, roots);
       const f = edge(rel, li, '.'.repeat(spec.level) + spec.mod || '.', r,
         spec.star ? 'py-star' : 'py-from', extractor);
-      out.push({ ...f, fidelity: 'regex-degraded' });
-      if (inInit) out.push({ ...f, kind: 'export', fidelity: 'regex-degraded',
-        extra: { ...f.extra, mechanism: 'py-reexport' } });
+      const selfEdge = r.to === rel;           // 自环抑制与 AST 路同构
+      if (!selfEdge) {
+        out.push({ ...f, fidelity: 'regex-degraded' });
+        if (inInit) out.push({ ...f, kind: 'export', fidelity: 'regex-degraded',
+          extra: { ...f.extra, mechanism: 'py-reexport' } });
+      }
       if (!spec.star && r.pkgDir) {
         for (const nm of spec.names) {
           const sub = modFile(root, r.pkgDir === '.' ? '' : r.pkgDir, nm);
-          if (sub) out.push({ ...edge(rel, li,
-            '.'.repeat(spec.level) + [spec.mod, nm].filter(Boolean).join('.'),
-            { to: sub.to, external: false }, 'py-from-submodule', extractor),
-            fidelity: 'regex-degraded' });
+          if (sub) {
+            out.push({ ...edge(rel, li,
+              '.'.repeat(spec.level) + [spec.mod, nm].filter(Boolean).join('.'),
+              { to: sub.to, external: false }, 'py-from-submodule', extractor),
+              fidelity: 'regex-degraded' });
+            if (inInit && sub.to !== rel)
+              out.push({ ...out[out.length - 1], kind: 'export',
+                extra: { ...out[out.length - 1].extra,
+                  mechanism: 'py-reexport' } });
+          }
         }
       }
       continue;

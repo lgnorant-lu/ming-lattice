@@ -191,7 +191,8 @@ export async function run() {
     wfile('pkg/__init__.py', 'from .helper import run\nfrom . import sibling\n');
     wfile('pkg/helper.py', 'MAX = 3\nMAX.__doc__ = "patched"\nrun.__doc__ = "doc"\nANNOT_ONLY: int\ndef run():\n    pass\nclass Runner:\n    def go(self):\n        pass\nRunner._allowed = (1, 2)\nprint(\n    run(),\n    file=sys.stdout,\n)\n');
     wfile('pkg/sibling.py',
-      'from ..pkg import helper\nimport os\nimport pkg.helper\nfrom .sub import deep\n');
+      'from ..pkg import helper\nimport os\nimport pkg.helper\n' +
+      'from .sub import deep\nfrom . import Helper\n');
     wfile('pkg/sub/deep.py',
       'from .. import helper\nimport missing_ext_mod_xyz\nfrom .gone import thing\n');
     // 包索引实证：deep/nest 不在任何惯例根名表——靠 __init__ 链实算导入根；
@@ -448,10 +449,15 @@ export async function run() {
     const INIT = 'pkg/__init__.py';
     assert.equal(at(INIT, 'import').find((x) => x.name === '.helper')
       ?.extra?.to, 'pkg/helper.py', 'from .helper import run 应解包内兄弟');
-    assert.ok(at(INIT, 'import').some((x) => x.name === '.' &&
-      x.extra?.to === INIT), 'from . import x 应发包边到 __init__');
-    assert.ok(at(INIT, 'export').some((x) => x.extra?.mechanism === 'py-reexport'),
-      '__init__.py from-import 应双发 export 边');
+    // grimp M8 差分实证：__init__ 内 from . import x 的包边归到 to==rel
+    // 是 vacuous 自环（grimp 不产）——抑制之，re-export 锚挂子模块边
+    assert.ok(!at(INIT, 'import').some((x) => x.extra?.to === INIT),
+      '__init__.py 内 from . import 不得产 to==自身 的 vacuous 自环边');
+    assert.ok(at(INIT, 'import').some((x) => x.name === '.sibling' &&
+      x.extra?.to === 'pkg/sibling.py'), 'from . import sibling 应产子模块边');
+    assert.ok(at(INIT, 'export').some((x) => x.extra?.mechanism === 'py-reexport' &&
+      x.extra?.to === 'pkg/sibling.py'),
+      'from . import x 的 re-export 应锚到子模块而非自环包边');
     const SIB = 'pkg/sibling.py';
     assert.equal(at(SIB, 'import').find((x) => x.name === '..pkg')
       ?.extra?.to, INIT, 'from ..pkg 应上溯一层包');
@@ -464,6 +470,11 @@ export async function run() {
     assert.ok(subEdge && !subEdge.extra?.dead, '命名空间包不应判死');
     assert.equal(at(SIB, 'import').find((x) => x.name === '.sub.deep')
       ?.extra?.to, 'pkg/sub/deep.py', 'from .sub import deep 应探测到子模块');
+    // 大小写精确：CI 文件系统上 existsSync('Helper.py') 会误中 helper.py——
+    // CPython FileFinder 大小写精确比对（django geos.Point 幽灵边实证）
+    assert.ok(!at(SIB, 'import').some((x) => x.name === '.Helper' ||
+      /Helper\.\w+$/.test(x.extra?.to || '')),
+      'from . import Helper（类名）不得误中小写 helper.py 产幽灵子模块边');
     const DEEP = 'pkg/sub/deep.py';
     assert.equal(at(DEEP, 'import').find((x) => x.name === '..helper')
       ?.extra?.to, 'pkg/helper.py', 'from .. import helper 逐名探测兄弟');

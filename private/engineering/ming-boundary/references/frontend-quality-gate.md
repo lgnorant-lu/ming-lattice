@@ -164,6 +164,39 @@ module 边集。三语料差分结果：
   仅在需要符号级差分时启用
 - 门化地位同 rust M8：报告级 oracle，候"采纳仓需 precise 对账"消费方
 
+**M8-python 试点实录（2026-10-02，grimp@3.17 差分，三仓全精确）**：
+
+`uv venv` + `grimp.build_graph('pkg')`（PYTHONPATH 指包根，src-layout
+指 `src/`）→ `find_modules_directly_imported_by` 边集 vs 我们 module
+边集（modOf：`x/__init__.py→x`、剥 `.py/.pyi`）。三语料差分结果：
+
+| 语料 | ours(归一) | grimp | missed | ours-only | 结论 |
+|---|---|---|---|---|---|
+| flask(+sansio) | 95 | 95 | 0 | 0 | 边集逐条等位 |
+| django | 3231 | 3231 | 0 | 0 | 7083 件规模逐条等位 |
+| requests | 73 | 73 | 0 | 0 | 边集逐条等位 |
+
+- **口径归一规则**：`from P import a,b` 我方发"包对象边（P 的
+  `__init__` 执行是真实依赖）+ 逐名子模块边"；grimp 逐名记——名字
+  是模块→叶子边，非模块名（类/函数）→包边。归一法：同 (file,line)
+  语句组内，回读源行取名字表，**全名皆已解子模块才弃包边**（混合
+  `from django.db import NotSupportedError, models` 中类名须留包边，
+  否则会假 missed——粗归一曾造 35 条伪差）
+- **grimp 使用面实录**：普通包内 PEP420 namespace 子包不随父包遍历
+  （flask/sansio 无 `__init__.py`——须 `build_graph('flask','flask.sansio')`
+  显式补）；查子包触发 `find_spec` **执行父包 `__init__`**，依赖须可
+  导入（flask 需 werkzeug/jinja2 等装齐）——oracle 环境成本记录
+- **差分产出 2 真修复**：① `__init__.py` 内 `from . import x` 的包边
+  归 `to==rel` vacuous 自环——AST/regex 双路抑制（grimp 不产自环），
+  re-export 锚从自环包边改挂子模块边（语义更准）；② **CI 文件系统
+  幽灵子模块边**——`from geos import Point`（类名）的逐名探测
+  `existsSync('Point.py')` 在 Windows 误中 `point.py`；CPython
+  FileFinder 大小写精确比对，改 `statExact` 逐段 readdir 校验
+  （DIR_CACHE 摊销），django 消 172 条幽灵边
+- **判据沉淀**：归一后 missed=0+ours-only=0 是"边语义对齐"的强证据；
+  我方未归一原图是严格超集（包对象边对边界分析有效——`__init__`
+  可带副作用），非缺陷
+
 **js 族描述符化实录（2026-10-02，langs/js.mjs 升格）**：
 
 js 系 8 个扩展名归一描述符，但 ast-grep 只供三 grammar——
