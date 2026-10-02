@@ -10,7 +10,9 @@ export function prepareRun({root,files})  // run 级预处理（可选：python 
 export function sniffFile(abs): boolean   // 可选：无扩展名件 128B 嗅探认领（shebang）
 export const handles: (id) => boolean     // 该语言认哪些 ruleId
 export function handle(id, m, ctx): true  // 匹配→facts 推入 ctx.out
-export function regexFacts(root, rel, extractor): facts[]  // 降级兜底
+export function regexFacts(root, rel, extractor): facts[]  // 降级兜底——
+//   M6 义务：regexFacts 边集 ≡ handle 边集（test-ming-boundary 组17 钉；
+//   单遍掩蔽状态机跨行延续，spec 需用字段两遍法回原行取）
 ```
 
 `ctx = { root, rel, extractor, out, prepared, run }`（run=prepareRun 返回值，
@@ -30,12 +32,12 @@ export function regexFacts(root, rel, extractor): facts[]  // 降级兜底
 
 | 语言 | 边面语法物 | 模块语义速查 | syntactic 可达性 | precise 生态通道 | 闸状态 |
 |---|---|---|---|---|---|
-| Rust | `use`/`mod x;`/`pub use` | crate::/self/super/modDir，cargo crate 根 | [OK] 已落地 | rust-analyzer→SCIP | **已入**（IV8 dogfood） |
-| Python | `import a.b`/`from .x import y` | pkg→dir、`__init__.py`、相对点=父包、PEP420 命名空间目录 | [OK] 已入 `python.mjs`（sysroots 由 __init__ 链实算——prepareRun 包索引，非猜词表；sys.path 动态/`__import__` 诚实缺席） | pyright/scip-python | **已入（v1.3）**——IV8 521py 零边实证过闸 |
+| Rust | `use`/`mod x;`/`pub use` | crate::/self/super/modDir，cargo crate 根 | [OK] 已落地 | rust-analyzer→SCIP（fd 试点 recall 98.2%） | **已入**（IV8 dogfood） |
+| Python | `import a.b`/`from .x import y` | pkg→dir、`__init__.py`、相对点=父包、PEP420 命名空间目录 | [OK] 已入 `python.mjs`（sysroots 由 __init__ 链实算——prepareRun 包索引，非猜词表；sys.path 动态/`__import__` 诚实缺席） | **grimp**（flask/django/requests/IV8 归一后逐条等位；scip-python 归档失效、pyright 无索引导出——已弃） | **已入（v1.3）**——IV8 521py 零边实证过闸 |
 | Go | `import "path"` | module path→dir、`internal/` 约束、需读 go.mod 前缀 | [OK] 大体可行（replace/workspace 面缺席） | gopls/scip-go | 候消费方 |
 | Java | `import a.b.C` | package→目录 1:1 | [OK] 可行（多源根/build 面缺席） | scip-java | 候消费方 |
 | C/C++ | `#include` | quoted=相对、angle=-I 依赖 | [受限] include path 需构建上下文 | clangd→SCIP | 候选，语义面偏深 |
-| TypeScript/JS | `import`/`export`/`require` | 相对路径+index 兜底（已有） | [OK] 已落地 | scip-typescript | **已入** |
+| TypeScript/JS | `import`/`export`/`require`/动态 `import()` | 相对路径+index 兜底+目录 spec+bundler query 后缀剥离 | [OK] 已落地 `js.mjs`（8 扩展名归 3 grammar——`.jsx`→Tsx 路由走 sgconfig languageGlobs；`.d.ts` 多行泛型等 4 处上游 grammar 缺口走文件级豁免） | **depcruise**（express/solid/vite 差分 missed=0——入口闭包口径差须归一） | **已入（v1.6）** |
 | Bash/sh | `source`/`.` | file→file（相对文件目录，.sh/.bash 探测） | [OK] 已入 `sh.mjs`（v1.4）——上游 tags.scm 缺席，decl 词表手写；`$VAR` 动态 source=unresolved+sh-source-computed 不判死；`bash x.sh` 子进程调用不产边 | — | **已入**——宿主仓脚本面审计（21 sh 件+IV8 2 件） |
 | Lua | `require` | `a.b`→`a/b.lua`+init.lua | [OK] 轻量 | — | 候消费方 |
 | Zig | `@import` | file→file 直接 | [OK] 轻量 | — | 候消费方 |
