@@ -46,6 +46,8 @@ export function regexFacts(root, rel, extractor): facts[]  // 降级兜底——
 | Kotlin | `import` | package≠目录 | [受限] 命名空间脱钩 | — | 不建议 syntactic |
 | Swift | `import` | module≠文件 | [受限] 同上 | — | 不建议 syntactic |
 | C# | `using` | namespace≠目录 | [受限] 同上 | csharp-ls | 不建议 syntactic |
+| React (.jsx/.tsx) | 标准 JS/TS | 无专属模块语义 | [OK] **已入**——Tsx 桶收齐，无专属前端 | — | 已入（随 v1.6） |
+| Vue/Svelte (SFC) | `<script>` 块内标准 JS/TS | 需块剥离层（SFC 容器非 grammar 问题）；`<template>` 基本不产边 | [受限] 需 SFC 剥离前置 | vue-tsc/volar、svelte-language-tools | 候消费方——全消费仓 0 文件实测（2026-10-02） |
 
 "不建议 syntactic" = 文件粒度映射失真面大，直接走 precise 通道更诚实。
 
