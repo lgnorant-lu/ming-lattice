@@ -50,6 +50,8 @@ export const rules = EDGE_RULES + '\n---\n' + DECL_KINDS.map((d) =>
   `id: py-decl-${d.kind}\nlanguage: Python\nrule:\n  kind: ${d.kind}\n` +
   (d.inside ? insideRule(d.inside) : '') + namesRuleYaml(d.names))
   .join('\n---\n').trimEnd();
+// M2 覆盖仪读 rulesFor——python 无 refSpecs 变体，直通 canonical
+export const rulesFor = () => rules;
 
 const PY_IDS = new Set(['py-import', 'py-from',
   ...DECL_KINDS.map((d) => `py-decl-${d.kind}`)]);

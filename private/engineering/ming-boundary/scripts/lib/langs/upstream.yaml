@@ -20,3 +20,8 @@ langs:
     grammar: tree-sitter/tree-sitter-python
     rev: 26855eabccb19c6abf499fbc5b8dc7cc9ab8bc64
     tags: queries/tags.scm
+  js:
+    linguist: JavaScript
+    grammar: tree-sitter/tree-sitter-javascript
+    rev: 58404d8cf191d69f2674a8fd507bd5776f46cb11
+    tags: queries/tags.scm

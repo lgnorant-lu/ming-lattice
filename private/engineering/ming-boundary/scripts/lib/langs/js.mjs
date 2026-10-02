@@ -13,6 +13,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fact } from '../facts.mjs';
+import { derived } from './js.derived.mjs';
+import { namesRuleYaml } from './derive.mjs';
 
 export const exts = new Set(['.js', '.mjs', '.cjs', '.jsx',
   '.ts', '.mts', '.cts', '.tsx']);
@@ -43,32 +45,10 @@ rule:
     field: function
     kind: import
 ---
-id: decl-function
-language: JavaScript
-rule:
-  kind: function_declaration
----
-id: decl-generator
-language: JavaScript
-rule:
-  kind: generator_function_declaration
----
-id: decl-class
-language: JavaScript
-rule:
-  kind: class_declaration
----
 id: decl-method
 language: JavaScript
 rule:
   kind: method_definition
----
-id: decl-arrow
-language: JavaScript
-rule:
-  kind: variable_declarator
-  has:
-    kind: arrow_function
 ---
 id: require-call
 language: JavaScript
@@ -80,21 +60,85 @@ rule:
     regex: ^require$
 `.trim();
 
-// TS/TSX 复用同一规则集（tree-sitter-typescript 节点名与 js 同构）——只换 language 头
-export const rules = AST_RULES;                       // canonical（M2 词表覆盖用）
-export const rulesFor = (_refSpecs) => AST_RULES;
-export const rulesForGrammar = (g) =>
-  g === 'JavaScript' ? AST_RULES : AST_RULES.replace(/language: JavaScript/g, `language: ${g}`);
+// ---------- 上游 derived 词表驱动的 decl 规则 ----------
+// tags.scm 已把名链译进规则层（namesRuleYaml）；两类本地补位：
+//   VALUE_FN_OF —— 上游对 var/pair/assign 的 decl 限函数值形态
+//     （value/right:[arrow|fn-expr]），names 只译名链不译值形，手写补位；
+//   HAND_DECL_KINDS —— method_definition 上游限 name:property_identifier，
+//     计算名 [Symbol.iterator] 会漏（vite 实证），保留手写规则承接，
+//     该 kind 不生成防同节点双发。
+const DECL_KINDS = derived.declKinds;
+const VALUE_FN_OF = { variable_declarator: 'value', pair: 'value',
+  assignment_expression: 'right' };
+const HAND_DECL_KINDS = new Set(['method_definition']);
+const SHAPE_OF = { function_declaration: 'function',
+  function_expression: 'function', generator_function: 'generator',
+  generator_function_declaration: 'generator', class: 'class',
+  class_declaration: 'class', variable_declarator: 'arrow',
+  method_definition: 'method',
+  pair: 'pair', assignment_expression: 'assign-fn',
+  export_statement: 'const' };
 
-const DECL_RE = {
-  'decl-function': /function\s*\*?\s*([\w$]+)/,
-  'decl-generator': /function\s*\*?\s*([\w$]+)/,
-  'decl-class': /class\s+([\w$]+)/,
-  'decl-method': /^\s*(?:static\s+)?(?:async\s+)?(?:get\s+|set\s+)?[\*]?\s*(\[[^\]]+\]|[\w$]+)/,
-  'decl-arrow': /^\s*(?:[\w$]+\s*[:,]|(?:const|let|var)\s+)?([\w$]+)\s*=/,
+const declIdOf = (d) =>
+  `js-decl-${d.kind}${d.inside ? '__' + d.inside.join('_') : ''}`;
+
+// derived inside 链转 ast-grep 嵌套 inside 规则（同 python.mjs 约定）
+function insideRule(inside) {
+  let yaml = '', indent = 2;
+  for (let i = inside.length - 1; i >= 0; i--) {
+    yaml += `${' '.repeat(indent)}inside:\n${' '.repeat(indent + 2)}kind: ${inside[i]}\n`;
+    indent += 2;
+  }
+  return yaml;
+}
+// namesRuleYaml '  ' 缩进块 → all: 列表项 '    - ' 形态——`- ` 占两列后
+// 子键须比 has: 位更深，即后续行整体再缩 4（col6 对齐 has=has 值变 null）
+const asAllItem = (block) => block.trimEnd().split('\n')
+  .map((l, i) => (i ? '    ' + l : '    - ' + l.slice(2))).join('\n');
+const valueFnItem = (field) => `    - has:\n        field: ${field}\n` +
+  `        any:\n          - kind: arrow_function\n` +
+  `          - kind: function_expression`;
+
+const DECL_RULES = DECL_KINDS
+  // '_' 通配宿主（upstream (_) 捕获）非合法 ast-grep kind 规则——
+  //   词表留 derived 供 M2 覆盖仪，规则面剔除
+  .filter((d) => d.kind !== '_' && !HAND_DECL_KINDS.has(d.kind))
+  .map((d) => {
+    const head = `id: ${declIdOf(d)}\nlanguage: JavaScript\nrule:\n` +
+      `  kind: ${d.kind}\n` + (d.inside ? insideRule(d.inside) : '');
+    if (VALUE_FN_OF[d.kind])
+      return head + '  all:\n' +
+        (d.names?.length ? asAllItem(namesRuleYaml(d.names)) + '\n' : '') +
+        valueFnItem(VALUE_FN_OF[d.kind]);
+    return head + namesRuleYaml(d.names);
+  }).join('\n---\n');
+
+// TS/TSX 复用同一规则集（tree-sitter-typescript 节点名与 js 同构）——只换 language 头
+export const rules = AST_RULES + '\n---\n' + DECL_RULES;   // canonical（M2 词表覆盖用）
+export const rulesFor = (_refSpecs) => rules;
+export const rulesForGrammar = (g) =>
+  g === 'JavaScript' ? rules
+    : rules.replace(/language: JavaScript/g, `language: ${g}`);
+
+const DECL_METHOD_RE =
+  /^\s*(?:static\s+)?(?:async\s+)?(?:get\s+|set\s+)?[\*]?\s*(\[[^\]]+\]|[\w$]+)/;
+// 生成规则 kind → 名抽取 regex（规则层 has/any 已保证名位存在，此处取字面）
+const DECL_RE_OF = {
+  function_declaration: /function\s*\*?\s*([\w$]+)/,
+  function_expression: /function\s*\*?\s*([\w$]+)/,
+  generator_function: /function\s*\*?\s*([\w$]+)/,
+  generator_function_declaration: /function\s*\*?\s*([\w$]+)/,
+  class: /class\s+([\w$]+)/,
+  class_declaration: /class\s+([\w$]+)/,
+  variable_declarator: /^\s*([\w$]+)\s*=/,
+  pair: /^\s*([\w$]+)\s*:/,
+  assignment_expression: /^\s*(?:[\w$]+\s*\.\s*)*([\w$]+)\s*=(?!=)/,
+  export_statement: /export\s+(?:default\s+)?([\w$]+)\s*=(?!=)/,
 };
 const JS_IDS = new Set(['import-statement', 'export-statement',
-  'dynamic-import', 'require-call', ...Object.keys(DECL_RE)]);
+  'dynamic-import', 'require-call', 'decl-method',
+  ...DECL_KINDS.filter((d) => d.kind !== '_' && !HAND_DECL_KINDS.has(d.kind))
+    .map(declIdOf)]);
 
 // ---------- spec 解析与落地 ----------
 // from 'x' / import('x') / import x=require('y')（TS）/ import 'x' 副作用式
@@ -190,7 +234,11 @@ export function handle(id, m, ctx) {
     }
     return true;
   }
-  const re = DECL_RE[id];
+  // decl 位：decl-method 手写承接 + js-decl-<kind>[__inside] 生成件
+  const kind = id === 'decl-method' ? 'method_definition'
+    : id.startsWith('js-decl-') ? id.slice(8).split('__')[0] : null;
+  const re = kind === 'method_definition' ? DECL_METHOD_RE
+    : kind ? DECL_RE_OF[kind] : null;
   if (re) {
     // 裸名取不出即非可命名 decl（python assignment 修同款）——
     // 不许 slice 兜底：节点文本截断必产畸形名触发 M4
@@ -200,7 +248,7 @@ export function handle(id, m, ctx) {
     out.push(fact({ unit: `${rel}#${nm}`, kind: 'decl',
       name: nm, file: rel, line,
       fidelity: 'syntactic', scope: 'file-local', extractor,
-      extra: { shape: id.replace('decl-', ''),
+      extra: { shape: SHAPE_OF[kind] || kind,
         surface: prepared?.surfaceMarks?.has(nm) ? 'public' : 'internal' } }));
     return true;
   }

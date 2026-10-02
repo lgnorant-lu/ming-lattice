@@ -98,6 +98,14 @@ export async function run() {
       'const arr = async () => 1;',
       'class C { static m() {} get g() { return 1 } }',
       'function* gen() {}',
+      // 上游 derived 词表扩面（js.derived.mjs 12 decl kinds）：
+      //   function/class 表达式形、generator 表达式、赋值声明、对象 pair
+      'const fe = function fnExpr() {};',
+      'const C2 = class Inner {};',
+      'const gf = function* gfN() {};',
+      'x2 = () => {};',
+      'obj2.m2 = function () {};',
+      'const holder = { p: () => {}, q: function () {} };',
     ].join('\n'));
     wfile('vendored/v1/lib.mjs', 'export function vv() {}\n');
     // v1.1b：TypeScript 面——tree-sitter-typescript 规则集应产同构事实
@@ -119,9 +127,11 @@ export async function run() {
     wfile('src/req.ts',
       'import p = require(\'path\');\nexport function xreq() { return p.sep; }\n');
     // 解构 variable_declarator（object/array pattern 名非裸标识符）——
-    // nm 不可得即非可命名 decl，不得 slice 兜底产畸形名（solid/vite 实证教训）
+    // nm 不可得即非可命名 decl，不得 slice 兜底产畸形名（solid/vite 实证教训）。
+    // 右值用标识符/数组字面量——对象字面量 pair `k: () =>` 是上游正位
+    //   decl（js-derived pair 形态），放这会撞断言面
     wfile('src/dstr.mjs',
-      'const { xa, ya } = { xa: () => 1, ya: 2 };\nconst [pa] = [1];\n');
+      'const { xa, ya } = obj;\nconst [pa] = [1];\n');
     // v1.2 Rust 语法级面（ADR-0010 syntactic 档：crate/self/super/外部 crate 四分 + mod 解析）
     wfile('crates/demo/src/lib.rs', [
       'mod dom;',
@@ -263,6 +273,15 @@ export async function run() {
     for (const s of ['function', 'arrow', 'method', 'class', 'generator'])
       assert.ok(shapes.has(s), `缺声明形态 ${s}: ${[...shapes]}`);
     assert.ok(decls.some((d) => d.name === 'm'), 'class 方法 m 应入图');
+    // derived 扩面钉：名取内名（fnExpr/Inner/gfN）非外层变量名；
+    //   pair 产 'p'/'q' 而 holder（值非函数形）不产——上游值形约束实证
+    for (const n of ['fnExpr', 'Inner', 'gfN', 'x2', 'm2', 'p', 'q'])
+      assert.ok(decls.some((d) => d.name === n),
+        `derived 新形态 decl ${n} 应入图`);
+    assert.ok(!decls.some((d) => d.name === 'holder'),
+      'holder 值非函数形不得产 decl（上游 value 约束）');
+    assert.ok(decls.some((d) => d.name === 'm2'
+      && d.extra?.shape === 'assign-fn'), 'member 赋值应取尾段名 m2');
     // v1.6 js 族描述符化断言（langs/js.mjs）：
     // .jsx/.tsx→Tsx、.mts→TypeScript 三桶路由各自产边且相对边解析
     for (const f of ['src/comp.jsx', 'src/comp.tsx', 'src/tmod.mts'])
@@ -1138,6 +1157,34 @@ export async function run() {
         [{ path: ['function'], kind: 'identifier' },
          { path: ['function', 'attribute'], kind: 'identifier' }],
         'derived refKinds 应带双名路径');
+      // 伪节点回归钉（js tags.scm 实证三病）：谓词帧 #x/@doc 参数不当
+      //   宿主、量词锚点原子不占 pending、[...] 捕获展开各候选 kind
+      const SCM_JS = `
+((comment)* @doc .
+  [(class name: (_) @name)
+   (class_declaration name: (_) @name)] @definition.class
+  (#select-adjacent! @doc @definition.class))
+(call_expression
+  function: (identifier) @name) @reference.call
+(#not-match? @name "^(require)$")
+`;
+      const jcaps = parseTags(SCM_JS);
+      assert.ok(jcaps.every((c) => c.inside != null && c.kind &&
+        !c.kind.startsWith('#') && !/^[*+?.]$/.test(c.kind)),
+        '谓词/锚点/量词伪节点不得入捕获');
+      const jcls = jcaps.filter((c) => c.capture === 'definition.class')
+        .map((c) => c.kind).sort();
+      assert.deepEqual(jcls, ['class', 'class_declaration'],
+        '[...] 交替组捕获应展开到各候选 kind');
+      const jd = derive('js', { linguist: 'JavaScript' }, SCM_JS,
+        'JavaScript:\n  extensions:\n    - ".js"\n');
+      assert.deepEqual(jd.declKinds.map((k) => k.kind).sort(),
+        ['class', 'class_declaration'],
+        'derived declKinds 应只含交替组真候选');
+      // '_' 通配名宿主→namesRuleYaml 整条退化（kind:_ 非合法 ast-grep
+      // 规则、裸 field 非正项——js class name:(_)@name 实证）
+      assert.equal(namesRuleYaml([{ path: ['name'], kind: '_' }]), '',
+        'name kind=_ 应整条名约束退化');
       // linguist 行级解析：目标块内 exts 收集、块外不越界
       const LING = `Python:\n  extensions:\n    - ".py"\n    - ".pyi"\nRust:\n  extensions:\n    - ".rs"\n`;
       assert.deepEqual(linguistExts(LING, 'Python'), ['.py', '.pyi']);

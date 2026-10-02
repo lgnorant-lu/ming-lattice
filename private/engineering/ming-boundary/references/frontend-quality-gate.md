@@ -177,6 +177,36 @@ js 系 8 个扩展名归一描述符，但 ast-grep 只供三 grammar——
 - 语料：express(small,.js) / solid(med,ts+tsx) / vite(large,全八扩展名
   单仓覆盖)——三仓 M3=18.5/12.7/36.7 边/KLOC、M4=0、M5 byte-identical
 
+**js upstream 接线实录（2026-10-02，js 入 derived 阵营）**：
+
+`upstream.yaml` 补 js pin（tree-sitter-javascript@58404d8）——js 不再是
+唯一无上游语言；`sync-langs` 产 `js.derived.mjs`（decl=12 ref=3），
+M2 覆盖仪首次对 js 实报 19/119 节点种 = 16%。derived 驱动下
+`js.mjs` 的 decl 规则从手写五形扩到上游全词表：
+
+| 新增承接形态 | 上游 capture | 实证 |
+|---|---|---|
+| function/class 表达式 | `[class/class_declaration]` 交替组展开 | `const C2 = class Inner {}` → Inner |
+| generator 表达式 | generator_function | `function* gfN(){}` |
+| 赋值声明 | assignment_expression names=[left\|left>property] | `x=()=>{}`、`obj.m=fn`→尾段名 |
+| 对象 pair | pair key:property_identifier + 值函数形 | `{p:()=>{}}`→p |
+| exported const | export_statement value>left | `export` 赋值形 |
+
+- **交替组展开与值形补位**：`[...]` 伪帧闭合时捕获按 childKinds
+  展开到各候选、names 按子 kind 分桶（byKind）——组共享 names
+  会互借名路径。`value/right:[arrow|fn-expr]` 上游值形约束
+  names 模型不承载，`VALUE_FN_OF` 手写补 `has:any` 位
+- **两处手写承接**：method_definition 上游限 property_identifier
+  名会漏 `[Symbol.iterator]`（vite 实证）——保留手写规则、该 kind
+  不生成防双发；`_` 通配宿主（`name:(_)@name`）非合法 ast-grep
+  kind，namesRuleYaml 遇 `_` 尾段整条名约束退化（词表留 derived）
+- **谓词/锚点伪节点根治**：parseTags 把 `#pred`/`@doc`/`.*+?` 当过
+  宿主产 `inside=null` 崩溃——谓词帧惰性化（不并 names、不占
+  lastChild）、量词锚点原子不占 pending、invalid host 拒绝
+- **副产修复**：python.mjs 缺 `rulesFor` 导出——M2 对 python 一直
+  静默 0%（历史欠账，js 接线倒逼发现）；补直通 canonical 后实报
+  8/129=6.2%
+
 **derived 字段约束归位（2026-10-02，系统性漏损根治）**：
 
 `derived.mjs` 曾只序列化 `kind`/`inside`/`nameKind`，上游 tags.scm 的
