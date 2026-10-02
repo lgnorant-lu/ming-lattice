@@ -125,6 +125,8 @@ const DOMAIN_DEFS = {
       "review-core-paradigm",
       "explore-core-paradigm",
       "depth-core-paradigm",
+      "mutation-safety-paradigm",
+      "classify-core-paradigm",
       "ming-l-paradigm",
       "ming-skill-forge",
       "ming-experience-direction",
@@ -162,7 +164,9 @@ const DOMAIN_DEFS = {
       "diverse", "alternatives",
       "根因", "深挖", "多深", "iceberg", "root cause", "5 whys", "层级归因",
       // ── vendor 域门：物化/vendoring 裸词意图明确可开门 ──
-      "vendoring", "物化", "materialization", "lockfile", "第三方依赖", "gitlink", "孤本"
+      "vendoring", "物化", "materialization", "lockfile", "第三方依赖", "gitlink", "孤本",
+      // ── mutation-safety/classify 域门：专属无歧义词可开门（预览/分类是泛词不升） ──
+      "dry-run", "whatif", "变更安全", "mutation safety", "幂等", "taxonomy", "枚举设计"
     ],
     // ── weakTriggers（replay 实测）：文档 49:11、日志 8:0、配置 8:0、安全 4:1、
     //    ci 7:0——泛词裸命中全误派（查日志/编辑器配置/整理文档/CI 随口一提都被派工）。
@@ -189,6 +193,8 @@ const DOMAIN_DEFS = {
       "review-core-paradigm": ["消融", "ablation", "过度设计", "over-engineering", "简化审查", "精简代码", "删减抽象", "yagni", "评审", "独立评审", "fresh context", "critic"],
       "explore-core-paradigm": ["发散", "探索", "brainstorm", "diverge", "verbalized sampling", "设计空间", "alternatives", "diverse", "形态学", "premortem", "tree of thoughts"],
       "depth-core-paradigm": ["根因", "深挖", "下潜", "冰山", "iceberg", "root cause", "5 whys", "多深", "层级归因", "临界", "分界"],
+      "mutation-safety-paradigm": ["dry-run", "whatif", "预览", "变更安全", "mutation safety", "idempotent", "幂等", "confirm", "回滚", "plan artifact", "shouldprocess", "check_mode"],
+      "classify-core-paradigm": ["分类", "taxonomy", "枚举设计", "分面", "facet", "mece", "命名空间", "前缀冲突", "分类体系", "enum", "状态机", "kind 字段", "词表"],
       "ming-l-paradigm": ["项目分层", "规范体系", "治理文档", "候审档", "ming-l", "domain", "设计域"],
       "ming-skill-forge": ["新技能", "写技能", "技能包", "skill包", "skill authoring", "skill-creator", "frontmatter", "渐进披露"],
       "ming-experience-direction": ["体验导演", "叙事设计", "产品体验设计", "scrollytelling", "电影感网页", "沉浸式体验", "immersive", "设计宪法", "storyboard", "设计门禁", "媒介映射", "design pipeline"],

@@ -26,6 +26,8 @@ private/engineering/
 ├── review-core-paradigm/              # [A列-评审] 消融实验摘除存活性、独立上下文 critic、人筛回喂、证据收尾
 ├── explore-core-paradigm/             # [A列-发散] 承诺前候选生成：升降模型 + VS尾部采样/异策略/形态学矩阵/premortem + disagree续探agree承诺
 ├── depth-core-paradigm/               # [A列-裁决] finding 下潜深度：动态序贯下潜 + 静态先验绊线 + 可行动性停止判据
+├── mutation-safety-paradigm/          # [A列-变更安全] L0-L5 阶梯 + dry-run 三戒律（同路径/输出同构/零副作用）+ 变更类声明
+├── classify-core-paradigm/            # [A列-分类] 六公理：分面优于鸽笼/决策分化律/封闭词表/豁免排气阀/三平面分离/容忍分层
 ├── ming-l-paradigm/                   # [A列-方法论] Ming-L 九域分层（项目结构规范总图）、粒度分级、候审档
 ├── ming-skill-forge/                  # [A列-方法论] 技能包创作规程 + check-skill.mjs 硬门控
 ├── ming-experience-direction/         # [A列-方法论] 体验导演式设计流水线（文档阶梯/宪法/叙事主干/六门过审/媒介预算）
@@ -41,7 +43,7 @@ private/engineering/
 ```
 Project Stack = 1 个开发工作流 (spec / characterize)
               + 1 套测试组合 (oracle + 语言 + [按需] 场景)
-              + [按需] A 列工程元包 (docs | docs-presentation | obs | sec | contract | config | arch | review | ming-l | experience-direction)
+              + [按需] A 列工程元包 (docs | docs-presentation | obs | sec | contract | config | arch | review | explore | depth | mutation-safety | classify | ming-l | experience-direction)
               + [按需] B 列质量横切包 (overlay-core-paradigm)
               + 该层 scenes/<scene>.md 场景形态差
 ```

@@ -62,3 +62,7 @@
 {"id": "a-062", "query": "项目里哪些模块没人引用了，孤儿文件帮我扫出来", "expect": {"action": "ask", "skills": ["ming-boundary"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "13.2"}
 {"id": "a-063", "query": "立个边界契约：前端目录不许 import 后端内部实现", "expect": {"action": "ask", "skills": ["ming-boundary"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "13.2"}
 {"id": "a-064", "query": "check the repo for dead doc links and broken cross-references", "expect": {"action": "ask", "skills": ["ming-boundary"]}, "tier": "A", "provenance": "scenario", "lang": "en", "of": "13.2"}
+{"id": "a-065", "query": "给这个脚本加个 dry-run 模式，执行前先预览要写哪些文件", "expect": {"domain": "engineering", "skills": ["mutation-safety-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "14.1"}
+{"id": "a-066", "query": "给每个命令声明幂等性和 confirm 档位的执行约束怎么设计", "expect": {"domain": "engineering", "skills": ["mutation-safety-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "14.1", "note": "避开「命令行」弱词干扰——弱词门语义由 10.x 组专测覆盖"}
+{"id": "a-067", "query": "新功能的枚举设计怎么定——加新值还是开新轴", "expect": {"domain": "engineering", "skills": ["classify-core-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "14.1"}
+{"id": "a-068", "query": "design a taxonomy for these finding types — facets not buckets", "expect": {"domain": "engineering", "skills": ["classify-core-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "en", "of": "14.1"}

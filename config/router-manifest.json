@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-02T13:04:09.177Z",
+  "generatedAt": "2026-10-02T14:10:32.376Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -274,6 +274,8 @@
         "review-core-paradigm",
         "explore-core-paradigm",
         "depth-core-paradigm",
+        "mutation-safety-paradigm",
+        "classify-core-paradigm",
         "ming-l-paradigm",
         "ming-skill-forge",
         "ming-experience-direction",
@@ -426,7 +428,14 @@
         "lockfile",
         "第三方依赖",
         "gitlink",
-        "孤本"
+        "孤本",
+        "dry-run",
+        "whatif",
+        "变更安全",
+        "mutation safety",
+        "幂等",
+        "taxonomy",
+        "枚举设计"
       ],
       "weakTriggers": [
         "文档",
@@ -583,6 +592,35 @@
           "层级归因",
           "临界",
           "分界"
+        ],
+        "mutation-safety-paradigm": [
+          "dry-run",
+          "whatif",
+          "预览",
+          "变更安全",
+          "mutation safety",
+          "idempotent",
+          "幂等",
+          "confirm",
+          "回滚",
+          "plan artifact",
+          "shouldprocess",
+          "check_mode"
+        ],
+        "classify-core-paradigm": [
+          "分类",
+          "taxonomy",
+          "枚举设计",
+          "分面",
+          "facet",
+          "mece",
+          "命名空间",
+          "前缀冲突",
+          "分类体系",
+          "enum",
+          "状态机",
+          "kind 字段",
+          "词表"
         ],
         "ming-l-paradigm": [
           "项目分层",
@@ -811,6 +849,7 @@
     "apk-reverse": "ready",
     "arch-core-paradigm": "ready",
     "binary-diff": "ready",
+    "classify-core-paradigm": "ready",
     "config-core-paradigm": "ready",
     "contract-core-paradigm": "ready",
     "depth-core-paradigm": "ready",
@@ -831,6 +870,7 @@
     "ming-l-paradigm": "ready",
     "ming-skill-forge": "ready",
     "mobile-reverse": "ready",
+    "mutation-safety-paradigm": "ready",
     "obs-core-paradigm": "ready",
     "overlay-core-paradigm": "ready",
     "patch-diff-exploit": "ready",
@@ -888,6 +928,25 @@
       "name": "binary-diff",
       "description": "跨版本符号迁移与二进制差分。当你有旧版本的符号/逆向结果，需要快速迁移到新版本时使用。\n  适用场景：内核缺 PDB 用旧版符号推导、程序更新后批量迁移函数名、应用更新后快速定位新偏移。\n  核心方法：用 LLM 做结构化差异比对，程序化输入输出，成本极低（200 函数 ~1 元）。\n  触发关键词：符号迁移、bindiff、跨版本、PDB 缺失、函数偏移迁移、symbol migration、binary diff、版本对比。",
       "triggers": []
+    },
+    "classify-core-paradigm": {
+      "name": "classify-core-paradigm",
+      "description": "分类轴设计元规则——分面分类优于鸽笼枚举、决策分化律（类目存在的唯一理由是下游决策分叉）、封闭词表 fail-closed、豁免排气阀一等存在、三平面分离、容忍分层。当设计枚举/kind/tag/状态机/严重度/域归属等分类面、评审\"该不该加新值/新轴\"、诊断类目膨胀或前缀冲突时使用。触发词：分类、taxonomy、枚举设计、kind 字段、tag 词表、分面、facet、MECE、命名空间、前缀冲突、分类体系、enum、状态机设计。不适用：具体业务对象建模（OOP 类设计走常规 DDD）；权限/ACL 角色设计（sec 域）。",
+      "triggers": [
+        "分类",
+        "taxonomy",
+        "枚举设计",
+        "分面",
+        "facet",
+        "mece",
+        "命名空间",
+        "前缀冲突",
+        "分类体系",
+        "enum",
+        "状态机",
+        "kind 字段",
+        "词表"
+      ]
     },
     "config-core-paradigm": {
       "name": "config-core-paradigm",
@@ -1092,6 +1151,24 @@
       "name": "mobile-reverse",
       "description": "Use for authorized Android or iOS application reverse engineering and security testing, including APK or IPA analysis, runtime instrumentation, SSL pinning, and platform protection checks.",
       "triggers": []
+    },
+    "mutation-safety-paradigm": {
+      "name": "mutation-safety-paradigm",
+      "description": "变更安全范式——凡会写状态的命令按 L0-L5 阶梯声明变更类（read_only/idempotent/non_idempotent）并提供保真 preview。当新增/改造 CLI 或脚本、设计 dry-run/WhatIf、评审\"会不会静默改坏东西\"、为 AI agent 消费面声明可重试性、审计存量无预览写命令时使用。触发词：dry-run、WhatIf、预览、变更安全、mutation safety、idempotent、幂等、confirm、回滚、plan artifact、SupportsShouldProcess、check_mode。不适用：纯查询命令设计（本来 read-only）、运行时业务代码异常处理。",
+      "triggers": [
+        "dry-run",
+        "whatif",
+        "预览",
+        "变更安全",
+        "mutation safety",
+        "idempotent",
+        "幂等",
+        "confirm",
+        "回滚",
+        "plan artifact",
+        "shouldprocess",
+        "check_mode"
+      ]
     },
     "obs-core-paradigm": {
       "name": "obs-core-paradigm",

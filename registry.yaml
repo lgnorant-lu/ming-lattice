@@ -1521,6 +1521,18 @@ private:
     note: "审计下潜深度裁决元规则 (动态序贯下潜 + 静态先验绊线回推 + 可行动性停止判据)"
     deploy:
       claude: true
+  - name: mutation-safety-paradigm
+    path: private/engineering/mutation-safety-paradigm
+    enabled: true
+    note: "变更安全范式 (L0-L5 阶梯 + dry-run 三戒律同路径/输出同构/零副作用 + 变更类三轴声明 + 反模式册)"
+    deploy:
+      claude: true
+  - name: classify-core-paradigm
+    path: private/engineering/classify-core-paradigm
+    enabled: true
+    note: "分类轴设计元规则 (分面优于鸽笼 + 决策分化律 + 封闭词表 + 豁免排气阀 + 三平面分离 + 容忍分层)"
+    deploy:
+      claude: true
   - name: ming-l-paradigm
     metaSystem: true
     path: private/engineering/ming-l-paradigm
