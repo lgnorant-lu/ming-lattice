@@ -28,6 +28,7 @@ import { run as runVerifyGates } from './unit/test-verify-gates.test.mjs';
 import { run as runHostTools } from './unit/test-host-tools.test.mjs';
 import { run as runCorpusMetrics } from './unit/test-corpus-metrics.test.mjs';
 import { run as runDistillIndex } from './unit/test-distill-index.test.mjs';
+import { run as runPropCli } from './unit/test-prop-cli.test.mjs';
 import { run as runSpawnBound } from './unit/test-spawn-bound.test.mjs';
 import { run as runTmpReaper } from './unit/test-tmp-reaper.test.mjs';
 
@@ -90,6 +91,7 @@ export const allSuites = [
   { name: 'host-tools', tier: 'unit', run: runHostTools },
   { name: 'corpus-metrics', tier: 'unit', run: runCorpusMetrics },
   { name: 'distill-index-unit', tier: 'unit', run: runDistillIndex },
+  { name: 'prop-cli', tier: 'unit', run: runPropCli },
   { name: 'spawn-bound', tier: 'unit', run: runSpawnBound },
   { name: 'tmp-reaper', tier: 'unit', run: runTmpReaper },
   { name: 'test-coverage', tier: 'contract', run: () => node('scripts/check-test-coverage.mjs') },

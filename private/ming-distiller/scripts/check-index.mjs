@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gateProposal, queueRows, parseFmFile } from './lib/proposal-schema.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 // MING_DISTILL_DIR 供测试注入隔离库；缺省回仓根 distill/
@@ -19,9 +20,7 @@ const AXES = new Set(['testing', 'docs', 'docs-presentation', 'obs', 'sec', 'con
 const STATUSES = new Set(['active', 'superseded']);
 const SCOPES = new Set(['project-only', 'general']);
 const ID_RE = /^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
-// _proposals 闭集——references/proposals.md §2 契约
-const PROP_STATUSES = new Set(['pending', 'landed', 'rejected']);
-const PROP_TYPES = new Set(['promotion', 'field-feedback', 'package-iteration', 'new-package', 'policy-decision']);
+// _proposals 闭集与门函数已迁入 lib/proposal-schema.mjs（prop.mjs 共享同一事实源）
 
 const issues = [];
 const add = (level, msg) => issues.push({ level, msg });
@@ -63,47 +62,16 @@ function parseIndex(text) {
   return entries;
 }
 
-// ── 条目文件 frontmatter（事实源侧） ──
-function parseFrontmatter(file) {
-  const text = fs.readFileSync(file, 'utf8');
-  const fm = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!fm) return null;
-  const pick = k => {
-    const f = fm[1].match(new RegExp(`^${k}:\\s*(.+?)\\s*$`, 'm'));
-    return f && f[1].replace(/^"(.*)"$/, '$1').replace(/\s+#.*$/, '');
-  };
-  return { id: pick('id'), status: pick('status'), supersedes: pick('supersedes'),
-    revision: pick('revision'), updatedAt: pick('updatedAt'), type: pick('type'),
-    reviewAfter: pick('reviewAfter'), openedAt: pick('openedAt') };
-}
+// ── 条目文件 frontmatter（事实源侧）——8 键投影在 lib 定义，语义不变 ──
+const parseFrontmatter = parseFmFile;
 
 // ── --report：候审队列浮出（报告非门，独立于 INDEX 校验，恒 exit 0） ──
 // 答"现在候审有什么/谁先到期"——pending 在前按距 reviewAfter 天数升序，landed/rejected 殿后。
 if (flags.has('--report')) {
-  const rows = [];
   const PROP_DIR = path.join(DISTILL_DIR, '_proposals');
-  if (fs.existsSync(PROP_DIR)) {
-    const today = Date.parse(new Date().toISOString().slice(0, 10));
-    for (const f of fs.readdirSync(PROP_DIR)) {
-      if (!f.endsWith('.md')) continue;
-      const fm = parseFrontmatter(path.join(PROP_DIR, f)) || {};
-      const days = (fm.reviewAfter && /^\d{4}-\d{2}-\d{2}$/.test(fm.reviewAfter))
-        ? Math.round((Date.parse(fm.reviewAfter) - today) / 86400000) : null;
-      rows.push({ id: fm.id || f.replace(/\.md$/, ''), status: fm.status || '?',
-        openedAt: fm.openedAt || '-', reviewAfter: fm.reviewAfter || '-', days });
-    }
-  }
-  rows.sort((a, b) => {
-    const pa = a.status === 'pending' ? 0 : 1;
-    const pb = b.status === 'pending' ? 0 : 1;
-    if (pa !== pb) return pa - pb;
-    if (a.days === null && b.days === null) return a.id.localeCompare(b.id);
-    if (a.days === null) return 1;
-    if (b.days === null) return -1;
-    return a.days - b.days;
-  });
+  const { rows, pending } = queueRows(PROP_DIR);
   if (flags.has('--json')) {
-    console.log(JSON.stringify({ queue: rows, pending: rows.filter(r => r.status === 'pending').length }, null, 2));
+    console.log(JSON.stringify({ queue: rows, pending }, null, 2));
   } else {
     console.log('proposal queue (report, non-gate):');
     for (const r of rows) {
@@ -189,16 +157,7 @@ else {
       if (!f.endsWith('.md')) continue;
       const label = `_proposals/${f}`;
       const fm = parseFrontmatter(path.join(PROP_DIR, f));
-      if (!fm) { add('E', `${label}: 无 frontmatter（提案须有 id/target/type/status 字段块）`); continue; }
-      const stem = f.replace(/\.md$/, '');
-      if (fm.id && fm.id !== stem) add('E', `${label}: frontmatter id 与文件名不一致（${fm.id}）`);
-      if (!fm.status) add('E', `${label}: 缺 status 字段`);
-      else if (!PROP_STATUSES.has(fm.status)) add('E', `${label}: status 越出闭集: ${fm.status}（pending|landed|rejected）`);
-      if (fm.type && !PROP_TYPES.has(fm.type)) add('E', `${label}: type 越出闭集: ${fm.type}`);
-      // pending 老化提醒（reviewAfter 日期形态才可比；P30D 类时长形态跳过）
-      if (fm.status === 'pending' && fm.reviewAfter && /^\d{4}-\d{2}-\d{2}$/.test(fm.reviewAfter) && fm.reviewAfter < today) {
-        add('W', `${label}: pending 已过 reviewAfter=${fm.reviewAfter}——候审超期应复审（存续/撤回/升格）`);
-      }
+      for (const i of gateProposal(label, f.replace(/\.md$/, ''), fm, today)) issues.push(i);
     }
   }
 }

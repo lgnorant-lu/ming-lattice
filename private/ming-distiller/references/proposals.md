@@ -45,7 +45,8 @@ pending --人审合入--> landed --标注落点（commit/文件），不出区�
 
 - **landed 不删档**：与 Know 只增不隐同纪律——提案是决策史的一部分；
 - **aging**：`pending` 超 **30 天**未裁决应复审（对标 audit `--proposed-days` 默认——提案是裁决请求，不该像 candidates 那样躺 90 天攒证据）；
-- **候审浮出**：`check-index.mjs --report` 打印候审队列（id | status | openedAt | reviewAfter | 距到期天数，pending 在前按到期升序）——报告非门不进退出码，只答"现在候审有什么/谁先到期"；
+- **候审浮出**：`check-index.mjs --report` 或 `prop.mjs report` 打印候审队列（id | status | openedAt | reviewAfter | 距到期天数，pending 在前按到期升序）——报告非门不进退出码，只答"现在候审有什么/谁先到期"；
+- **结构化原语**：`scripts/prop.mjs` 四动词——`new <slug>`（date-slug 分号+模板落盘+写时门校验+同 slug 幂等拒写，`--dry-run` 预览）/ `check`（格式门，与 check-index 共享 `lib/proposal-schema.mjs` 门函数）/ `report`（候审浮出）/ `register`（生成 `_proposals/QUEUE.yaml` 队列投影——生成物禁手编，幂等 noop）；
 - 机器面无：提案量 <3 时纯散文约定；≥3 再考虑进 `check-skill.mjs`（hub 内部门禁——**不是** audit-domains，那是分发给采纳者的项目侧工具，部署面不同）。
 
 ## 4. 纪律
