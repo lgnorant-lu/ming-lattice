@@ -267,6 +267,10 @@ function checkCandidates(pkgNames = new Set(), { skipRouter = false, registryPat
 }
 
 // ---------- --all：registry private 区批量 ----------
+// 覆盖边界（显式豁免，防 parity 审计重报）：
+//   private=自研件 → 本契约全量；deployable=生成投影 → lint-contract+孤儿扫描覆盖，
+//   字段契约豁免（漂移=生成器缺陷非文件缺陷）；vertical/base=上游钉版字节 →
+//   frontmatter 契约归上游（上游允许缺 name 由目录名推断），不外施本仓词表。
 function privateEntries() {
   const block = registrySection('private') || '';
   const entries = [];

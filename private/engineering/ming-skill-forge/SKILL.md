@@ -72,6 +72,8 @@ description 是**唯一常驻的路由面**，写它 = 写触发器：
 
 另：`check-skill.mjs --all` 作为 `skill-conformance` 套件进 `tests/run.mjs`（E 级门禁）；check-skill 行为契约由 `tests/unit/test-check-skill.test.mjs` 锁定。
 
+**`--all` 覆盖边界（显式豁免）**：只扫 registry `private:` 区（自研件）。`deployable:` 是生成投影（sync.ps1 改写产物）——由 lint-contract + fs→registry 孤儿扫描覆盖，字段级契约豁免（漂移=生成器缺陷）；`vertical:`/`base:` 是上游钉版字节——frontmatter 契约归上游（上游允许省 `name` 由目录名推断），不外施本仓词表。
+
 边界：lint 查"这个文件像不像技能"，check-skill 查"这个技能合不合规范"，scaffold 管"新技能从模板出生即合规"。
 
 ## 7. 创作工作流
