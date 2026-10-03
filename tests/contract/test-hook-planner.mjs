@@ -136,6 +136,9 @@ refs/heads/feat 3333333333333333333333333333333333333333 refs/heads/feat 0000000
   const boundaryPlan = createPlan({ stage: 'pre-commit', files: ['private/engineering/ming-boundary/scripts/extract-facts.mjs'] });
   assert.ok(boundaryPlan.jobs.includes('ming-boundary'));
   assert.ok(boundaryPlan.jobs.includes('boundary-live'));
+  const forgePlan = createPlan({ stage: 'pre-commit', files: ['private/engineering/ming-skill-forge/scripts/check-skill.mjs'] });
+  assert.ok(forgePlan.jobs.includes('check-skill-unit'), 'ming-skill-forge change must schedule check-skill-unit');
+  assert.ok(forgePlan.jobs.includes('skill-conformance'));
 
   // 14. tests/ 约定映射——test-<suite>(.test)?.mjs 的同名套件必须被调度
   const propTestPlan = createPlan({ stage: 'pre-commit', files: ['tests/unit/test-prop-cli.test.mjs'] });

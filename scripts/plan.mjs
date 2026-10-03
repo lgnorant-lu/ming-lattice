@@ -33,14 +33,12 @@ export const CATEGORY_RULES = [
       const jobs = ['lint-contract', 'manifest-freshness', 'manifest-unit'];
       if (/^private\/ming-distiller\//i.test(file))
         jobs.push('prop-cli', 'distill-index-unit', 'distill-index');
-      else if (/^private\/ming-skill-forge\//i.test(file))
+      else if (/^private\/engineering\/ming-skill-forge\//i.test(file))
         jobs.push('check-skill-unit', 'skill-conformance', 'skill-index');
       else if (/^private\/engineering\/ming-boundary\//i.test(file))
         jobs.push('ming-boundary', 'boundary-live');
       else if (/^private\/engineering\/ming-l-paradigm\//i.test(file))
         jobs.push('scaffold-domains', 'ming-l-audit');
-      else if (/^private\/ming-recall-forge\//i.test(file))
-        jobs.push('skill-recall', 'recall-eval');
       return jobs;
     }
   },
