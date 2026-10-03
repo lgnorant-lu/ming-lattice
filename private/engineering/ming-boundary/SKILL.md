@@ -47,6 +47,8 @@ node scripts/extract-facts.mjs [--root DIR] [--out FILE]
 
 v1.1 增量面：dir 单元（per-dir 覆盖断言主体）；markdown 适配器产 `docref`（`[x](y)` 死链标 `extra.dead`）+ `mention`（code-span/heading 符号提及，二遍解析 `file#symbol`，歧义标 `scope:unresolved`+`extra.ambiguous`）+ `extra.docrole`（frontmatter→文件名→路径兜底链）；gitignore 适配器以 `git check-ignore` 为 oracle 产 `declare` 边（`extra.source`/行 provenance/`negated`）；re-export 产 `export` 边且 decl 标 `extra.surface=public|internal`。
 
+docmeta 增补面（`lib/docmeta.mjs`——docClass HeaderParser port 参考实现，v1.1 additive）：markdown 头元数据三方进 `file.extra.docmeta`——`frontmatter{fields, fidelity}`（yaml-lite 全值解析失败降 `key-only` 分面不 fail-closed）+ `blockquote{fields}`（首个 block_quote 节点；字段名行界非冒号集、首字符非数字防撞时间戳、全角 `：` ≤12 字符 CJK 标注子规则、悬挂标点/前置 `（` 续行并入、重复名 first-wins）。字段值内 `*.md` 记号产 `docref` 边（`extra.via=docmeta` + `extra.field`/`extra.dialect` 标 provenance）——治理头 relation 字段（Parent/Cross-ref/supersedes 类）的 doc→doc 边；解址双候选：plain 引用仓根相对优先（IV8 实证惯例），文档相对兜底，皆死报仓根归一+`dead`。抽取律源自 IV8 meta_check 254/254 判决级对拍与 10 万件语料压测；spec 无关——类契约消费方自选方言与必填词表。
+
 死链/计算式不丢边：`extra.dead=true`（相对 spec 解析失败）、`extra.mechanism=dynamic-computed`（`import(expr)` 静态不可解）。
 
 ### 2.2 契约评估（check-boundaries.mjs）

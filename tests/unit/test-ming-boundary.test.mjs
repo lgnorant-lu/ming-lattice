@@ -22,6 +22,8 @@ import { findAstGrep }
 import { parseTags, linguistExts, derive, emitDerived,
   checkDerivedConsistency, parseUpstreamPins, namesRuleYaml }
   from '../../private/engineering/ming-boundary/scripts/lib/langs/derive.mjs';
+import { extractDocmeta }
+  from '../../private/engineering/ming-boundary/scripts/lib/docmeta.mjs';
 
 const PKG = path.resolve(import.meta.dirname, '../../private/engineering/ming-boundary');
 const REPO = path.resolve(PKG, '../../..');
@@ -255,6 +257,24 @@ export async function run() {
       '~~~text',
       'also fenced: [tilde](tilde-fence.md)',
       '~~~',
+    ].join('\n'));
+    // docmeta 面：blockquote 头字段（IV8 方言）+ relation 边 + fm 字段
+    wfile('docs/prop.md', [
+      '# 治理提案',
+      '> Status: accepted,',
+      '>   附条件生效续行',            // 悬挂标点续行并入 Status
+      '> Created: 2026-01-01',
+      '> 2026-08-12 03:53 落盘记录',   // 时间戳行——首字符数字非字段
+      '> Parent: `docs/note.md`, docs/missing-ref.md',
+      '> 创建：全角标注方言',
+      '> 纯描述行不成字段',
+    ].join('\n'));
+    wfile('docs/fm-doc.md', [
+      '---',
+      'docrole: spec',
+      'supersedes: docs/note.md',
+      '---',
+      '# fm doc',
     ].join('\n'));
     wfile('src/c.mjs', 'export function dup() {}\n');
     wfile('src/dup2.mjs', 'export function dup() {}\n'); // dup 双定义 → mention 歧义
@@ -608,6 +628,42 @@ export async function run() {
     assert.ok(drNames.includes('src/b.mjs'), '[to b][bref] 引用式应解析成边');
     assert.ok(drNames.includes('docs/note.md'), '[bref2] 快捷式应解析成边');
     assert.ok(!drNames.includes('src/nope.md'), '未使用的 [unused]: 定义不产边');
+    // 8c-docmeta. 头元数据面（lib/docmeta.mjs——HeaderParser port 参考实现）
+    // bq 方言：字段投影 + 续行并入 + 时间戳防撞 + CJK 全角字段
+    const propFile = at('docs/prop.md', 'file')[0];
+    const bqF = propFile?.extra?.docmeta?.blockquote?.fields;
+    assert.equal(bqF?.Status, 'accepted, 附条件生效续行', '悬挂标点续行应并入 Status');
+    assert.equal(bqF?.Created, '2026-01-01', 'bq 字段应抽取');
+    assert.equal(bqF?.['2026-08-12 03'], undefined, '时间戳行不成字段（首字符数字）');
+    assert.equal(bqF?.['创建'], '全角标注方言', '全角：CJK 短名字段应抽取');
+    assert.ok(!Object.keys(bqF ?? {}).some((k) => k.includes('纯描述')),
+      '描述性 > 行不成字段');
+    // relation 边：字段值 *.md 记号产 docref（via:docmeta）+ 死链标记
+    const relDr = facts.filter((x) => x.kind === 'docref' && x.extra?.via === 'docmeta'
+      && x.unit === 'docs/prop.md');
+    assert.ok(relDr.some((x) => x.extra?.to === 'docs/note.md' && x.extra?.field === 'Parent'),
+      'Parent 字段活链应产边');
+    assert.ok(relDr.some((x) => x.extra?.to === 'docs/missing-ref.md' && x.extra?.dead),
+      'Parent 字段死链应标 dead');
+    // fm 方言：字段投影 + yamlFidelity 分面
+    const fmExtra = at('docs/fm-doc.md', 'file')[0]?.extra?.docmeta;
+    assert.equal(fmExtra?.frontmatter?.fields?.docrole, 'spec', 'fm 字段应入 docmeta');
+    assert.equal(fmExtra?.frontmatter?.fidelity, 'full', '良构 fm 应 full fidelity');
+    assert.ok(facts.some((x) => x.kind === 'docref' && x.extra?.via === 'docmeta'
+      && x.unit === 'docs/fm-doc.md' && x.extra?.to === 'docs/note.md'
+      && x.extra?.field === 'supersedes'), 'fm 字段 relation 应产边');
+    // 8c-docmeta+. lib 直测边缘律：EOF 无换行闭合/空 fm/首块仅取/重复名 first-wins
+    const dmEof = extractDocmeta('---\ndocrole: x\n---');
+    assert.equal(dmEof.frontmatter?.fieldMap?.docrole, 'x',
+      'EOF 无换行闭合定界应成 fm（L1 盲区覆盖）');
+    const dmEmpty = extractDocmeta('---\n---\n# t\n');
+    assert.ok(dmEmpty.frontmatter && dmEmpty.frontmatter.fields.length === 0,
+      '空 fm `---\\n---` 应成方言空字段面');
+    const dmTwo = extractDocmeta('> A: 1\n> A: 2\n\n> B: 3\n');
+    assert.equal(dmTwo.blockquote?.fieldMap?.A, '1', '重复字段名 first-wins');
+    assert.equal(dmTwo.blockquote?.fieldMap?.B, undefined, '只取首个 block_quote 节点');
+    const dmNoBq = extractDocmeta('# t\n```\n> fenced: x\n```\n正文。\n');
+    assert.equal(dmNoBq.blockquote, null, 'fence 内 > 行不成头块');
     // 8e-ts. TypeScript 面：TS 规则集产同构 import/decl（v1.1b——TS 仓曾静默零边）
     assert.equal(at('src/mod.ts', 'import')[0]?.extra?.to, 'src/b.mjs',
       '.ts import 应解析');

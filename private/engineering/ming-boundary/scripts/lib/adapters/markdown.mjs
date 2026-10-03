@@ -8,6 +8,7 @@
 //   frontmatter `docrole:` > 文件名 > 目录语义 > H1 关键词 > 'doc'
 import path from 'node:path';
 import { fact, baseName } from '../facts.mjs';
+import { extractDocmeta } from '../docmeta.mjs';
 
 export const MD_EXTRACTOR = 'markdown@1';
 export const MD_EXT = new Set(['.md', '.markdown', '.mdx']);
@@ -129,5 +130,31 @@ export function mdFacts(root, rel, text, fileExists) {
     if (h) for (const m of l.slice(h[0].length).matchAll(/\b([A-Za-z_$][\w$-]*)\s*\(/g))
       cands.push({ name: m[1], line: i + 1 });
   }
-  return { facts, docrole, mentionCands: cands };
+  // docmeta：头元数据（HeaderParser port 参考实现——lib/docmeta.mjs 七条
+  // 抽取律）。relation 字段值内的 *.md 记号产出 docref 边（via:docmeta
+  // 标记来源区别于正文链接边）；解址/死链同 docTarget 纪律
+  const docmeta = extractDocmeta(text);
+  const seenRel = new Set();
+  for (const r of docmeta.relations) {
+    // 治理头字段引用的双候选解址（IV8 实证惯例=仓根相对优先）：
+    //   仓根存在→仓根；文档相对存在→文档相对（同正文 docref 律）；
+    //   皆不存在→plain 引用报仓根归一值+dead（治理字段的意图投影）
+    const cand = docTarget(rel, r.raw);
+    if (cand === null) continue;
+    const plain = !r.raw.startsWith('.') && !r.raw.startsWith('/');
+    const rootRel = plain ? path.posix.normalize(r.raw) : null;
+    let to;
+    if (rootRel && fileExists(rootRel)) to = rootRel;
+    else if (fileExists(cand)) to = cand;
+    else to = rootRel ?? cand;
+    if (seenRel.has(`${to}#${r.field}`)) continue;
+    seenRel.add(`${to}#${r.field}`);
+    const dead = !fileExists(to);
+    facts.push(fact({ unit: rel, kind: 'docref', name: to,
+      file: rel, line: r.line, fidelity: 'exact',
+      scope: dead ? 'unresolved' : 'repo', extractor: MD_EXTRACTOR,
+      extra: { to, via: 'docmeta', field: r.field, dialect: r.dialect,
+        ...(dead ? { dead: true } : {}) } }));
+  }
+  return { facts, docrole, docmeta, mentionCands: cands };
 }

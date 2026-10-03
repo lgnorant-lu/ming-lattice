@@ -1,7 +1,7 @@
 {"v":1,"unit":"README.md","kind":"file","name":"README.md","file":"README.md","fidelity":"exact","scope":"repo","extractor":"walk@1","extra":{"docrole":"readme"}}
 {"v":1,"unit":"README.md","kind":"docref","name":"docs/guide.md","file":"README.md","fidelity":"regex-degraded","scope":"repo","extractor":"markdown@1","line":3,"extra":{"to":"docs/guide.md"}}
 {"v":1,"unit":"docs/","kind":"dir","name":"docs","file":"docs","fidelity":"exact","scope":"repo","extractor":"walk@1"}
-{"v":1,"unit":"docs/guide.md","kind":"file","name":"docs/guide.md","file":"docs/guide.md","fidelity":"exact","scope":"repo","extractor":"walk@1","extra":{"docrole":"api"}}
+{"v":1,"unit":"docs/guide.md","kind":"file","name":"docs/guide.md","file":"docs/guide.md","fidelity":"exact","scope":"repo","extractor":"walk@1","extra":{"docrole":"api","docmeta":{"frontmatter":{"fields":{"docrole":"api"},"fidelity":"full"}}}}
 {"v":1,"unit":"docs/guide.md","kind":"docref","name":"docs/gone.md","file":"docs/guide.md","fidelity":"regex-degraded","scope":"unresolved","extractor":"markdown@1","line":6,"extra":{"to":"docs/gone.md","dead":true}}
 {"v":1,"unit":"docs/guide.md","kind":"docref","name":"src/tool.ps1","file":"docs/guide.md","fidelity":"regex-degraded","scope":"repo","extractor":"markdown@1","line":6,"extra":{"to":"src/tool.ps1"}}
 {"v":1,"unit":"docs/guide.md","kind":"mention","name":"Invoke-Main","file":"docs/guide.md","fidelity":"regex-degraded","scope":"module","extractor":"markdown@1","line":6,"extra":{"to":"src/tool.ps1#Invoke-Main","symbol":"Invoke-Main"}}

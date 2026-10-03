@@ -323,6 +323,13 @@ function main() {
       if (text != null) {
         const md = mdFacts(root, rel, text, fileExists);
         extra = { docrole: md.docrole };
+        const dm = md.docmeta;
+        if (dm && (dm.frontmatter || dm.blockquote)) {
+          extra.docmeta = {};
+          if (dm.frontmatter) extra.docmeta.frontmatter =
+            { fields: dm.frontmatter.fieldMap, fidelity: dm.frontmatter.yamlFidelity };
+          if (dm.blockquote) extra.docmeta.blockquote = { fields: dm.blockquote.fieldMap };
+        }
         pushAll(facts, md.facts);
         for (const c of md.mentionCands) mentionCands.push({ docRel: rel, ...c });
       }
