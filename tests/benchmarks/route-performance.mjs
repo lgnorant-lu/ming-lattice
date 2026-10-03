@@ -132,7 +132,7 @@ function run({ strict = false, contract = false } = {}) {
       manifestResults.push({ scenario: 'manifest.registry_size', scale, registry_entries: registry.private.length, ...timing });
     }
   } finally {
-    fs.rmSync(temp, { recursive: true, force: true });
+    fs.rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
 
   return {

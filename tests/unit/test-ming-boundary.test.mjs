@@ -1729,6 +1729,6 @@ export async function run() {
 
     console.log('  18 组断言全过');
   } finally {
-    fs.rmSync(tmpRoot, { recursive: true, force: true });
+    fs.rmSync(tmpRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
 }

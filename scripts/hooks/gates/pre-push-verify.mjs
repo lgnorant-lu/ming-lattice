@@ -2,6 +2,7 @@
 // 推送前全量命令门（昂贵门；删除分支操作自动跳过）
 // 配置：gate.pre-push-verify.level
 //   gate.pre-push-verify.command=<完整命令行> —— 覆盖默认；采纳仓配自己的推送前命令
+//   gate.pre-push-verify.timeoutMs=<ms> —— 命令预算（默认 900000；超时杀子进程并报超时 finding）
 //   默认命令：node scripts/verify.mjs --profile full；无 scripts/verify.mjs 且未配 command → 缺席
 //   注意：command 是执行面（CI yaml run: 同级惯例）——review .hooksrc diff 时关注该键
 
@@ -10,10 +11,11 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const DEFAULT_COMMAND = 'node scripts/verify.mjs --profile full';
+const DEFAULT_TIMEOUT_MS = 900_000;
 
 export const gate = {
   id: 'pre-push-verify',
-  configKeys: ['command'],
+  configKeys: ['command', 'timeoutMs'],
   stages: ['pre-push'],
   family: 'gate',
   defaultLevel: 'error',
@@ -30,8 +32,13 @@ export const gate = {
       return [];
     }
     const command = ctx.gateConfig?.command ?? DEFAULT_COMMAND;
+    const timeout = parseInt(ctx.gateConfig?.timeoutMs ?? '', 10) || DEFAULT_TIMEOUT_MS;
     console.log(`[pre-push] 正在执行推送前质量门禁: ${command}`);
-    const result = spawnSync(command, { cwd: ctx.root, stdio: 'inherit', shell: true });
+    const result = spawnSync(command, { cwd: ctx.root, stdio: 'inherit', shell: true, timeout });
+    if (result.error?.code === 'ETIMEDOUT' || result.signal) {
+      return [{ gate: 'pre-push-verify', file: '-',
+        message: `推送前命令超时/被终止 (>${timeout}ms): ${command}` }];
+    }
     if (result.status !== 0) {
       return [{ gate: 'pre-push-verify', file: '-', message: `推送前命令未通过 (${command})，禁止推送` }];
     }

@@ -194,7 +194,7 @@ async function runScenario(scenario) {
       const dead = path.join(root, 'dead-target');
       fs.mkdirSync(dead, { recursive: true });
       fs.symlinkSync(dead, dstLink, 'junction');
-      fs.rmSync(dead, { recursive: true, force: true });
+      fs.rmSync(dead, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
       assert.equal(fs.existsSync(path.join(dstLink, 'SKILL.md')), false,
         'precondition: void junction must not resolve SKILL.md');
       const result = await invoke('sync.ps1');
@@ -253,7 +253,9 @@ async function runScenario(scenario) {
     }
     console.log(`[PASS] CLI ${scenario}`);
   } finally {
-    fs.rmSync(temp, { recursive: true, force: true });
+    // Windows 拆台竞态：spawn 子进程/AV 索引器延迟释锁 → EBUSY；
+    // maxRetries+retryDelay 是 Node 对该场景的内建重试（五次 ×300ms 吸收瞬时锁）
+    fs.rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
 }
 

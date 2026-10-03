@@ -17,6 +17,7 @@
 //   编排失败（exit 2/3）→ error finding（契约坏了不能装没看见）。
 //
 // 配置：gate.boundary-edge.level（默认 error）
+//   gate.boundary-edge.timeoutMs=<ms> —— 编排预算（默认 600000，对齐内部 extract 上限）
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,9 +28,11 @@ const RUN_BOUNDARY = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../../private/engineering/ming-boundary/scripts/run-boundary.mjs');
 
+const DEFAULT_TIMEOUT_MS = 600_000;
+
 export const gate = {
   id: 'boundary-edge',
-  configKeys: [],
+  configKeys: ['timeoutMs'],
   stages: ['pre-commit'],
   family: 'gate',
   defaultLevel: 'error',
@@ -42,11 +45,15 @@ export const gate = {
     if (!fs.existsSync(rulesPath)) return []; // 无契约仓——不适用即跳过
     if (!ctx.files.length) return [];
 
+    const timeout = parseInt(ctx.gateConfig?.timeoutMs ?? '', 10) || DEFAULT_TIMEOUT_MS;
     const r = spawnSync(process.execPath, [RUN_BOUNDARY,
       '--root', ctx.root, '--rules', rulesPath,
       '--phase', 'staged', '--staged-units', ctx.files.join(','),
       '--allow-degraded', '--json'],
-      { encoding: 'utf8', maxBuffer: 64 << 20 });
+      { encoding: 'utf8', timeout, maxBuffer: 64 << 20 });
+    if (r.error?.code === 'ETIMEDOUT' || r.signal)
+      return [{ gate: 'boundary-edge', file: '-',
+        message: `边界编排超时/被终止 (>${timeout}ms)——检查 extract/消费方是否挂死` }];
     if (r.error || (r.status !== 0 && r.status !== 1))
       return [{ gate: 'boundary-edge', file: '-',
         message: `边界编排执行失败: ${(r.stderr || r.error?.message || `exit ${r.status}`).slice(0, 200)}` }];

@@ -115,9 +115,20 @@ const contract = fs.existsSync(rulesPath) ? loadRules(rulesPath, A.root) : null;
 if (!contract && !A.facts) die(`无规则文件且未给 --facts: ${rulesPath}`);
 
 // 提取一次（--facts 提供则跳过）
+// 临时产物生命周期：exit 钩子兜底清理——die()/异常早退同样生效，
+// 不被主流程尾部清理点截断；SIGKILL 级硬崩由外部 reaper 兜底（命名域 skc/mb-*）。
+const tmpFiles = [];
+const trackTmp = (p) => {
+  if (!tmpFiles.length) process.on('exit', () => {
+    if (A.keep) return;
+    for (const f of tmpFiles) { try { fs.rmSync(f, { force: true }); } catch { /* 尽力而为 */ } }
+  });
+  tmpFiles.push(p);
+  return p;
+};
 let factsPath = A.facts, tmpFacts = null, tmpSpec = null;
 if (!factsPath) {
-  tmpFacts = path.join(os.tmpdir(), `mb-facts-${process.pid}.jsonl`);
+  tmpFacts = trackTmp(path.join(os.tmpdir(), `mb-facts-${process.pid}.jsonl`));
   const exArgv = [EXTRACT, '--root', A.root, '--out', tmpFacts];
   // staged 相位=增量语义：只抽 staged 单元集（pre-commit 面全仓抽取=25s 不可行）
   if (A.phase === 'staged' && A.staged?.length)
@@ -127,7 +138,7 @@ if (!factsPath) {
   // 契约自带 producers.ref 条款 → 转 JSON 规格喂 extract（机制词表住采纳仓
   // 契约里，kit 不内嵌 ops-register 这类私有词——生产/消费职责分离）
   if (contract?.producers?.ref?.length) {
-    tmpSpec = path.join(os.tmpdir(), `mb-spec-${process.pid}.json`);
+    tmpSpec = trackTmp(path.join(os.tmpdir(), `mb-spec-${process.pid}.json`));
     fs.writeFileSync(tmpSpec, JSON.stringify({ ref: contract.producers.ref }));
     exArgv.push('--emit-spec', tmpSpec);
   }
@@ -160,7 +171,7 @@ if (A.factsExtra?.length) {
     }
     merged += (merged.length && !merged.endsWith('\n') ? '\n' : '') + chunk;
   }
-  const mergedPath = path.join(os.tmpdir(), `mb-facts-merged-${process.pid}.jsonl`);
+  const mergedPath = trackTmp(path.join(os.tmpdir(), `mb-facts-merged-${process.pid}.jsonl`));
   fs.writeFileSync(mergedPath, merged);
   factsPath = mergedPath;
 }
@@ -200,7 +211,8 @@ if (runEval && !hasRules) {
 if (runEval) {
   const argv = [CHECK, '--facts', factsPath, '--rules', rulesPath, '--json'];
   if (A.phase === 'staged' && A.staged?.length) argv.push('--staged', A.staged.join(','));
-  const r = spawnSync(process.execPath, argv, { encoding: 'utf8', maxBuffer: 512 << 20 });
+  const r = spawnSync(process.execPath, argv,
+    { encoding: 'utf8', timeout: 600_000, maxBuffer: 512 << 20 });
   if (r.error || (r.status !== 0 && r.status !== 1))
     errors.push(`evaluator crash: ${r.stderr || r.error?.message}`);
   else {
@@ -258,8 +270,8 @@ try {
 findings.sort((a, b) => (a.unit || '').localeCompare(b.unit || '')
   || (a.line || 0) - (b.line || 0) || (a.rule || '').localeCompare(b.rule || ''));
 
-if (tmpFacts && !A.keep) fs.rmSync(tmpFacts, { force: true });
-if (tmpSpec && !A.keep) fs.rmSync(tmpSpec, { force: true });
+// 临时文件清理由 process.on('exit') 兜底（trackTmp 登记处）——
+// 此处不再手写 rmSync，防止新增 die() 路径绕过清理
 const hasErr = findings.some(f => f.severity === 'error') || errors.length > 0;
 // root/phase 回显走 stderr——JSON 模式同样须可见（错上下文跑的诊断锚）
 console.error(`[run-boundary] root=${A.root} phase=${A.phase} consumers=${picked.map(c => c.id).join(',') || '-'}` +

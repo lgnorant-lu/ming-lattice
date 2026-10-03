@@ -139,6 +139,6 @@ export function run() {
       assert.ok(r.stdout.includes('metaSystem'), '应警示 metaSystem 声明');
     }
   } finally {
-    for (const d of cleanups) fs.rmSync(d, { recursive: true, force: true });
+    for (const d of cleanups) fs.rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
 }

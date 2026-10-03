@@ -47,7 +47,7 @@ export async function run() {
     assert.equal(resolveLevel('demo', 'warn', cfg), 'error', 'local 覆盖应生效');
     assert.equal(resolveLevel('emoji', 'warn', cfg), 'error', '旧键 emojiLevel 应别名到 gate.emoji');
     assert.equal(resolveLevel('secrets', 'error', cfg), 'error', '默认级兜底');
-    fs.rmSync(dir, { recursive: true, force: true });
+    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
 
   // 2. matcher 语义（lint-staged 兼容面）
@@ -106,7 +106,7 @@ export async function run() {
       ], set);
       assert.equal(marked[0].fresh, false, '挪行旧违规应冻结');
       assert.equal(marked[1].fresh, true, '新违规应报出');
-    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
   }
 
   // 5. SKIP/等级契约 + git 态 skipIf
@@ -172,7 +172,7 @@ export async function run() {
       execFileSync('git', ['add', 'bad2.md'], { cwd: dir });
       r = spawnSync(process.execPath, [engine, 'pre-commit'], { cwd: dir, encoding: 'utf8' });
       assert.equal(r.status, 1, 'baseline 只冻旧账，新增仍拦');
-    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
   }
 
   // 7. secrets 多层规则 + commit-msg 策略注入（假 ctx 直跑门，无需 git）
@@ -286,7 +286,7 @@ export async function run() {
       // extraTrailers 追加禁尾
       r = await runMsg('feat: x\n\nSigned-off-by: bot <b@x>\n', { extraTrailers: '^Signed-off-by' });
       assert.ok(r.some(f => !f.level), 'extraTrailers 应拦截');
-    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
   }
 
   // 8. chores 族：声明式构建 + post-merge 端到端（suggest-only 永不阻断）
@@ -338,7 +338,7 @@ export async function run() {
       assert.equal(r.status, 0, `chore 永不阻断: ${r.stderr}`);
       assert.ok(r.stderr.includes('演示提醒文案'), `post-merge 应提醒 chore: ${r.stderr}`);
       assert.ok(r.stderr.includes('watched.txt'), '应列出触发文件');
-    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
   }
 
   // 9. run fix 自愈：whitespace 门修工作区 + 报告清单
@@ -382,7 +382,7 @@ export async function run() {
       assert.equal(bDry.status, 0, bDry.stderr);
       assert.ok(bDry.stdout.includes('dry-run'), 'baseline --dry-run 应标 dry-run 前缀');
       assert.ok(!fs.existsSync(path.join(dir, '.hooks-baseline.json')), 'dry-run 不得写冻结档');
-    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
   }
 
   // 10. 采纳层自检（shim 模板对账 / 引用可达 / 孤儿配置键）
@@ -419,7 +419,7 @@ export async function run() {
       fs.writeFileSync(path.join(gdir, 'pre-commit'), shimScript('pre-commit'));
       fs.writeFileSync(path.join(gdir, 'post-merge'), shimScript('post-merge', path.join(eng, 'engine.mjs').replace(/\\/g, '/')));
       assert.deepEqual(checkAdoptionHealth(dir), [], '修复后应零 finding');
-    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
 
     // 孤儿配置键：.hooksrc 指向未装载的门
     assert.deepEqual(orphanGateIds({ secrets: { level: 'warn' }, ghost: { level: 'error' } }, new Set(['secrets'])), ['ghost']);
@@ -461,7 +461,7 @@ export async function run() {
       assert.equal(resolveGateConfigFor(cfg, 'emoji', 'docs/adr/x.md').depth, undefined);
       // 畸形节诊断：[bad/**] 的 plain.key 非法 + 空节不算 gate 键
       assert.ok(cfg.sectionWarnings.some(w => w.includes('bad/**') && w.includes('plain.key')), '非 gate.* 键被告警');
-    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
   }
 
   // 12. toc 门：节检测/形状校验/漂移/手写跳过/insert/slug/分节 off
@@ -529,7 +529,7 @@ export async function run() {
       const n = fs.readFileSync(path.join(dir, 'n.md'), 'utf8');
       assert.ok(n.includes('## 目录\n1. [A](#a)'), 'H1 后插入目录节');
       assert.ok(n.indexOf('## 目录') < n.indexOf('## A'), '目录在正文标题前');
-    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
   }
 
   // 13. 解耦面：command 键参数化 + emoji 精确文件名根语义（仓专默认值→配置的边界回测）
@@ -548,7 +548,7 @@ export async function run() {
       const bad = await itGate.run({ root: dir, files: ['x.md'], gateConfig: { command: `"${node}" bad.mjs` } });
       assert.equal(bad.length, 1);
       assert.ok(bad[0].message.includes('bad.mjs'), 'finding 应含失败命令');
-    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
 
     const { gate: emojiGate } = await import('../../scripts/hooks/gates/emoji.mjs');
     // 精确文件名只认根：docs/** 覆盖下的 README 查，vendor 深层 README 不查
@@ -581,7 +581,7 @@ export async function run() {
       const st = readState(sdir);
       assert.equal(st.gatesHash, 'hash-abc');
       assert.ok(st.lastRun['review-after'], 'trust 写入保留 lastRun');
-    } finally { fs.rmSync(sdir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(sdir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
 
     // review-after 门：到期 warn / 未到期静默 / globs 空 off / globs 域外不扫
     const { gate: raGate } = await import('../../scripts/hooks/gates/review-after.mjs');
@@ -601,7 +601,7 @@ export async function run() {
       assert.ok(rf[0].message.includes('2000-01-01'));
       assert.deepEqual(await raGate.run({ root: rdir, gateConfig: { globs: '' } }), [], 'globs 空=off-until-configured');
       assert.deepEqual(await raGate.run({ root: rdir, gateConfig: {} }), [], '未配 globs=off');
-    } finally { fs.rmSync(rdir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(rdir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
 
     // vendor-boundary 门：staged∩vertical  ⊆ registry sourceGone 白名单——非孤本拦截/孤本放行/域外不扫
     const { gate: vbGate } = await import('../../scripts/hooks/gates.local/vendor-boundary.mjs');
@@ -629,14 +629,14 @@ export async function run() {
       // 孤本目录本体作 gitlink 提交（恰好等于 path，无 / 后缀）→ 拦截
       const link = await vbGate.run({ root: vdir, files: ['vertical/gone-one'] });
       assert.equal(link.length, 1, '孤本 gitlink 指针不得入仓');
-    } finally { fs.rmSync(vdir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(vdir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
 
     // registry.yaml 缺席 → 门不适用静默跳过（下游复用 kit 的仓无此契约）
     {
       const noreg = tempRepo();
       try {
         assert.deepEqual(await vbGate.run({ root: noreg, files: ['vertical/anything/x.js'] }), [], '无 registry 不判');
-      } finally { fs.rmSync(noreg, { recursive: true, force: true }); }
+      } finally { fs.rmSync(noreg, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
     }
 
     // deploy-drift 门（仓专）：registry deploy 声明 ⟺ 客户端链接目录
@@ -678,8 +678,8 @@ export async function run() {
         try {
           assert.deepEqual(await ddGate.run({ root: bare, gateConfig: { target: tdir } }), [], '无 registry 不判');
           assert.deepEqual(await ddGate.run({ root: ddir, gateConfig: { target: path.join(ddir, 'nonexist') } }), [], '无客户端目录不判');
-        } finally { fs.rmSync(bare, { recursive: true, force: true }); }
-      } finally { fs.rmSync(ddir, { recursive: true, force: true }); }
+        } finally { fs.rmSync(bare, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
+      } finally { fs.rmSync(ddir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
     }
 
     // e2e：cadence 节流——首跑告警盖戳→次跑跳过→改旧戳再跑复报
@@ -710,7 +710,7 @@ export async function run() {
       fs.writeFileSync(sf, JSON.stringify(st));
       r = runCheck();
       assert.ok((r.stdout + r.stderr).includes('2000-01-01'), '戳过期后复报');
-    } finally { fs.rmSync(edir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(edir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
   }
 
   // 15. 键空间对账：checkKeyspace（tmpl↔configKeys + .hooksrc 拼错键捕获）
@@ -749,7 +749,7 @@ export async function run() {
       const tf = checkKeyspace(dir, fakeGates);
       assert.equal(tf.length, 5, 'tmpl 违例并入');
       assert.ok(tf.some(f => f.file === '.hooksrc.tmpl' && f.message.includes('toc.mood')), 'tmpl 错键捕获');
-    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
 
     // meta：出厂十门均带 configKeys 自描述字段（模块即 SoT）
     for (const f of fs.readdirSync(path.join(root, 'scripts/hooks/gates')).filter(x => x.endsWith('.mjs'))) {
@@ -809,7 +809,7 @@ export async function run() {
       r = co('0'.repeat(40), shaB);
       assert.equal(r.status, 0);
       assert.ok((r.stdout + r.stderr).includes('deps/lock.json'), '零 SHA 退化 all 源仍命中');
-    } finally { fs.rmSync(cdir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(cdir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
   }
 
   // 17. 采纳元数据：state.adoption 记录 + engine list 落后对账
@@ -845,7 +845,7 @@ export async function run() {
       r = spawnSync(process.execPath, [engine, 'list'], { cwd: adir, encoding: 'utf8' });
       assert.equal(r.status, 0, '源仓不可达不崩');
       assert.ok((r.stdout + r.stderr).includes('kit 来源'), '记录值仍打印');
-    } finally { fs.rmSync(adir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(adir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
   }
 
   // 18. 消融审计修复回测：chore: 前缀归一化（level/cadence/gateConfigFor）+ decl 键面完整
@@ -868,7 +868,7 @@ export async function run() {
       fs.writeFileSync(path.join(kdir, '.hooksrc'),
         'gate.d.stages=post-merge\ngate.d.skipIf=merge\nchore.c.stages=post-checkout\n');
       assert.deepEqual(checkKeyspace(kdir, []), [], 'decl stages/skipIf + chore.stages 合法不误报');
-    } finally { fs.rmSync(kdir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(kdir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
 
     // e2e：chore cadence 真实生效 + chore.level=off 关闭 + SKIP 裸 id
     const edir = tempRepo();
@@ -902,7 +902,7 @@ export async function run() {
         fs.readFileSync(path.join(edir, '.hooksrc'), 'utf8') + '\nchore.c.level=off\n');
       r = pc();
       assert.ok(!(r.stdout + r.stderr).includes('提醒件'), 'chore.level=off 应静默');
-    } finally { fs.rmSync(edir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(edir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
   }
 
   // 19. link-rot 门：URL 提取/探测分类（localhost 注入——禁真网络）+ run() 接线 + cadence e2e
@@ -930,7 +930,7 @@ export async function run() {
       const seen = scanLinks(sdir, ['docs/a.md', 'src/b.js'], ['docs/**'], ['skip.me']);
       assert.deepEqual([...seen.keys()], ['https://u1.dev/a'], 'glob 域+ignore+去重');
       assert.equal(seen.get('https://u1.dev/a').line, 1, '首见行号');
-    } finally { fs.rmSync(sdir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(sdir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
 
     // —— localhost server 注入（oracle=HTTP 状态语义，确定性无真网络）——
     const server = http.createServer((req, res) => {
@@ -969,7 +969,7 @@ export async function run() {
         assert.ok(f.some(x => x.message.includes('截断')), 'maxUrls 截断提示');
         f = await linkRot.run({ root: rdir, gateConfig: {} });
         assert.equal(f.length, 0, 'off-until-configured');
-      } finally { fs.rmSync(rdir, { recursive: true, force: true }); }
+      } finally { fs.rmSync(rdir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
 
       // 全军覆没 → 单条疑似离线（拒连端口）
       const ndir = tempRepo();
@@ -979,7 +979,7 @@ export async function run() {
         const f = await linkRot.run({ root: ndir, gateConfig: { globs: '**/*.md' } });
         assert.equal(f.length, 1, '合并单条不刷屏');
         assert.ok(f[0].message.includes('疑似离线'), '离线语义');
-      } finally { fs.rmSync(ndir, { recursive: true, force: true }); }
+      } finally { fs.rmSync(ndir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
 
       // —— e2e：engine post-merge + cadence 节流 ——
       const edir = tempRepo();
@@ -1001,7 +1001,7 @@ export async function run() {
           `post-checkout 首跑死链告警: ${r.stdout}${r.stderr}`);
         r = pm();
         assert.ok((r.stdout + r.stderr).includes('cadence 未到跳过: link-rot'), 'cadence 节流生效');
-      } finally { fs.rmSync(edir, { recursive: true, force: true }); }
+      } finally { fs.rmSync(edir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
     } finally {
       server.closeAllConnections?.();
       server.close();
@@ -1021,7 +1021,7 @@ export async function run() {
       const lc = loadHookConfig(cdir);
       assert.equal(lc.trailerLevel, 'error', '行内注释剥离（老解析器污染回测）');
       assert.equal(lc.emojiLevel, 'warn', 'local 合并');
-    } finally { fs.rmSync(cdir, { recursive: true, force: true }); }
+    } finally { fs.rmSync(cdir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
 
     // —— commitMsgPolicy 装配 ——
     const p1 = commitMsgPolicy({}, { types: 'feat,fix,collect' });
@@ -1068,8 +1068,8 @@ export async function run() {
       const b2 = cm(e2, 'fix: x\n\nCo-Authored-By: a@b.c');
       assert.equal(b2.status, 0, '未配置仓标准 trailer 放行（政策不烧死）');
     } finally {
-      fs.rmSync(e1, { recursive: true, force: true });
-      fs.rmSync(e2, { recursive: true, force: true });
+      fs.rmSync(e1, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
+      fs.rmSync(e2, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
     }
   }
 

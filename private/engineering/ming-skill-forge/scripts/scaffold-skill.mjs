@@ -128,7 +128,7 @@ for (const i of issues) console.log(`[${i.level}] ${i.msg}`);
 const eCount = issues.filter(i => i.level === 'E').length;
 console.log(`\n自证: E=${eCount} W=${issues.filter(i => i.level === 'W').length} I=${issues.filter(i => i.level === 'I').length}`);
 if (eCount) {
-  fs.rmSync(destDir, { recursive: true, force: true });
+  fs.rmSync(destDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   die(`生成物未过检（E=${eCount}）——已回滚 ${path.relative(REPO_ROOT, destDir)}`);
 }
 

@@ -209,7 +209,7 @@ export function run() {
       assert.match(real.stdout, /已就绪\(pin一致\) 1: moved/);
     }
   } finally {
-    for (const r of roots) fs.rmSync(r, { recursive: true, force: true });
+    for (const r of roots) fs.rmSync(r, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
   console.log('[PASS] fetch.mjs CLI 契约全绿');
 }

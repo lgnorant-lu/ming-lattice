@@ -34,6 +34,7 @@ gate.pii.exclude=vertical/**
 #    由 scripts/plan.mjs 做影响面计划，docs-only 提交免测放行）
 lintLevel=error
 gate.impact-test.command=node scripts/verify.mjs --profile affected
+gate.impact-test.timeoutMs=600000
 
 # 6. AI 署名 trailer 门禁（拦截 Generated with / Co-Authored-By 字段；署名即作者本人）
 trailerLevel=error

@@ -242,7 +242,7 @@ export function run() {
 
     console.log('  -> external pins, provenance, local entries, lockfiles, schema validation and freshness gate passed');
   } finally {
-    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
 }
 

@@ -270,7 +270,7 @@ private:
 
     console.log('  -> event schema, independent channel, correlation ID and redaction checks passed');
   } finally {
-    fs.rmSync(temp, { recursive: true, force: true });
+    fs.rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
 }
 

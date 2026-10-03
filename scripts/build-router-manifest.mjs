@@ -308,7 +308,8 @@ const RECIPES = {
 export function buildRouterManifest({ repoRoot = ROOT_DIR, registry, write = false, generatedAt = new Date().toISOString() } = {}) {
   registry ??= JSON.parse(execFileSync('pwsh', ['-NoProfile', '-File',
     path.join(ROOT_DIR, 'scripts/read-registry.ps1'), '-RegistryPath', path.join(repoRoot, 'registry.yaml')],
-  { encoding: 'utf8', timeout: 30000, maxBuffer: 4 * 1024 * 1024 }));
+  // 30s→120s：pwsh 冷启动+大 registry YAML 解析在负载/AV 扫描下实测 ETIMEDOUT flake
+  { encoding: 'utf8', timeout: 120_000, maxBuffer: 4 * 1024 * 1024 }));
   const units = new Map();
   for (const base of registry.base || []) {
     for (const [name, clients] of Object.entries(base.modules || {})) {

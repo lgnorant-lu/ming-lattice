@@ -135,6 +135,6 @@ export async function run() {
 
     console.log('  -> verify-gates: profile 表/传播/事件契约/secrets/pii/link-rot/覆盖登记 全绿');
   } finally {
-    fs.rmSync(tmp, { recursive: true, force: true });
+    fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
 }

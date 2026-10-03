@@ -12,7 +12,7 @@ export function run() {
   try {
     // 1. JSON mode test on real repo
     const jsonRun = spawnSync('pwsh', ['-NoProfile', '-File', path.join(root, 'scripts/lint.ps1'), '-Json'], {
-      cwd: root, encoding: 'utf8', timeout: 30000
+      cwd: root, encoding: 'utf8', timeout: 120_000
     });
     assert.equal(jsonRun.status, 0, `lint -Json failed: ${jsonRun.stderr}`);
     const issues = JSON.parse(jsonRun.stdout.trim());
@@ -60,7 +60,7 @@ private:
       '-RegistryPath', fixtureRegistry,
       '-RepoRoot', fixtureDir,
       '-Json'
-    ], { cwd: root, encoding: 'utf8', timeout: 30000 });
+    ], { cwd: root, encoding: 'utf8', timeout: 120_000 });
     assert.equal(fixtureJsonRun.status, 0, `fixture JSON run failed: ${fixtureJsonRun.stderr}`);
     const fixtureIssues = JSON.parse(fixtureJsonRun.stdout.trim());
     assert.equal(fixtureIssues.length, 3, 'synthetic fixture must produce exactly 3 issues');
@@ -75,7 +75,7 @@ private:
     const fixtureTextRun = spawnSync('pwsh', ['-NoProfile', '-File', path.join(root, 'scripts/lint.ps1'), '-RegistryPath', fixtureRegistry, '-RepoRoot', fixtureDir], {
       cwd: root,
       encoding: 'utf8',
-      timeout: 30000,
+      timeout: 120_000,
       env: { ...process.env, MING_SKILLS_EVENT_FILE: eventFile, MING_SKILLS_WORK_UNIT_ID: 'lint-contract-1' }
     });
     assert.equal(fixtureTextRun.status, 0, `fixture text run failed: ${fixtureTextRun.stderr}`);
@@ -100,7 +100,7 @@ private:
 
     console.log(`  -> text, JSON and event modes verified (${jsonErrors} real-repo errors, synthetic fixtures passed)`);
   } finally {
-    fs.rmSync(temp, { recursive: true, force: true });
+    fs.rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
 }
 

@@ -61,7 +61,7 @@ export function run() {
     assert.ok(!fs.readdirSync(path.join(root, 'config')).some(name => name.endsWith('.tmp')));
     console.log('[PASS] manifest availability, invalid inputs, read-only build and isolated output');
   } finally {
-    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
 }
 

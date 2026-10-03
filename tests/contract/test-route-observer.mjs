@@ -42,7 +42,7 @@ export function run() {
     const payload = {
       hook_event_name: 'UserPromptSubmit',
       session_id: 'sess-abc123',
-      transcript_path: 'C:/Users/x/.claude/projects/p/sess-abc123.jsonl',
+      transcript_path: 'D:/profiles/x/.claude/projects/p/sess-abc123.jsonl',
       cwd: 'D:/proj',
       prompt: '帮我给这个 Go 函数写表驱动测试'
     };
@@ -137,7 +137,7 @@ export function run() {
 
     console.log('  -> stdout-empty, exit-0, full-decision, truncation, rotation and adapter checks passed');
   } finally {
-    fs.rmSync(temp, { recursive: true, force: true });
+    fs.rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
 }
 
