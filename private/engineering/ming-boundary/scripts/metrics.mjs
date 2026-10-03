@@ -26,6 +26,18 @@ const SGCONFIG = path.join(PKG, 'scripts/lib/sgconfig.yml');
 const EXTRACT = path.join(PKG, 'scripts', 'extract-facts.mjs');
 const CMDLINE_BUDGET = 24000; // 字符——Win32 CreateProcess 32K 上限留裕量
 
+// 临时产物生命周期：exit 钩子兜底清理——die()/异常早退同样生效（run-boundary 同形态）。
+// 正常路径仍就地 rmSync 早删；登记处只兜非正常退出。SIGKILL 级硬崩由外部 reaper
+// （scripts/clean-temp.mjs，skc-*/mb-* 命名域）兜底。
+const tmpFiles = [];
+const trackTmp = (p) => {
+  if (!tmpFiles.length) process.on('exit', () => {
+    for (const f of tmpFiles) { try { fs.rmSync(f, { force: true }); } catch { /* 尽力而为 */ } }
+  });
+  tmpFiles.push(p);
+  return p;
+};
+
 function die(msg, code = 2) { console.error(`[metrics] ${msg}`); process.exit(code); }
 
 function parseArgs(argv) {
@@ -106,7 +118,8 @@ function m1ParseRate(bin, langName, files, errGlobs) {
 }
 
 function extractFacts(root) {
-  const out = path.join(os.tmpdir(), `mb-metrics-${process.pid}-${Math.random().toString(36).slice(2)}.jsonl`);
+  const out = trackTmp(path.join(os.tmpdir(),
+    `skc-mb-metrics-${process.pid}-${Math.random().toString(36).slice(2)}.jsonl`));
   const r = spawnSync(process.execPath, [EXTRACT, '--root', root, '--out', out],
     { encoding: 'utf8' });
   if (r.status !== 0) die(`extract-facts 失败(${root}): ${(r.stderr || r.stdout || '').slice(0, 300)}`);
@@ -169,7 +182,8 @@ function m7Fixtures(c, root, allFiles) {
   const uniq = [...new Set(specs.flatMap(p => p.files || []))];
   const byFile = new Map();
   if (uniq.length) {
-    const out = path.join(os.tmpdir(), `mb-fix-${process.pid}-${Math.random().toString(36).slice(2)}.jsonl`);
+    const out = trackTmp(path.join(os.tmpdir(),
+      `skc-mb-fix-${process.pid}-${Math.random().toString(36).slice(2)}.jsonl`));
     const r = spawnSync(process.execPath,
       [EXTRACT, '--root', root, '--files', uniq.map(rel).join(','), '--out', out],
       { encoding: 'utf8' });

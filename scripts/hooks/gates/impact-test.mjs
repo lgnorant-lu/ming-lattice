@@ -12,7 +12,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnBound } from '../lib/spawn-bound.mjs';
 
 const DEFAULT_COMMAND = 'node tests/run.mjs --require-all';
 const DEFAULT_TIMEOUT_MS = 600_000;
@@ -34,13 +34,16 @@ export const gate = {
     const command = ctx.gateConfig?.command ?? DEFAULT_COMMAND;
     const timeout = parseInt(ctx.gateConfig?.timeoutMs ?? '', 10) || DEFAULT_TIMEOUT_MS;
     console.log(`[pre-commit] 执行提交前命令门禁: ${command}`);
-    const r = spawnSync(command, { cwd: ctx.root, stdio: 'inherit', shell: true, timeout });
-    if (r.error?.code === 'ETIMEDOUT' || r.signal) {
+    // spawnBound：timeout 命中绞整棵进程树——shell:true 的 timeout 只杀 shell，
+    // 孙进程逃逸成孤儿（spawn-bound.mjs 头注，Node #64406 生态位缺口）
+    const r = await spawnBound(command, { cwd: ctx.root, timeoutMs: timeout });
+    if (r.timedOut || r.signal) {
       return [{ gate: 'impact-test', file: '-',
-        message: `提交前命令超时/被终止 (>${timeout}ms): ${command}——检查命令是否挂死` }];
+        message: `提交前命令超时/被终止 (>${timeout}ms，进程树已绞杀): ${command}——检查命令是否挂死` }];
     }
-    if (r.status !== 0) {
-      return [{ gate: 'impact-test', file: '-', message: `提交前命令失败 (${command})，禁止提交！` }];
+    if (r.error || r.status !== 0) {
+      return [{ gate: 'impact-test', file: '-',
+        message: `提交前命令失败 (${command})${r.error ? ': ' + r.error.message : ''}，禁止提交！` }];
     }
     return [];
   },

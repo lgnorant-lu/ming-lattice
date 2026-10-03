@@ -110,6 +110,19 @@ function resolveConsumers(section, root, warnings) {
 
 // ---------- 主流程 ----------
 const A = parseArgs(process.argv);
+
+// 启动期收割（bounded best-effort，substrate orphan_reaper 形态）：
+// 只碰 skc-*/遗留 mb-* transit 前缀且超龄者；SKC_REAP_OFF=1 可关。
+// 收割失败不阻断主流程；private 不许 import scripts（R6）故走 spawn 非 import。
+try {
+  if (process.env.SKC_REAP_OFF !== '1') {
+    const CLEAN_TEMP = path.join(HERE, '..', '..', '..', '..', 'scripts', 'clean-temp.mjs');
+    if (fs.existsSync(CLEAN_TEMP))
+      spawnSync(process.execPath, [CLEAN_TEMP, '--apply', '--quiet', '--budget', '2000'],
+        { stdio: 'ignore', timeout: 15_000 });
+  }
+} catch { /* 收割面 best-effort */ }
+
 const rulesPath = A.rules ? path.resolve(A.rules) : path.join(A.root, 'boundaries.yaml');
 const contract = fs.existsSync(rulesPath) ? loadRules(rulesPath, A.root) : null;
 if (!contract && !A.facts) die(`无规则文件且未给 --facts: ${rulesPath}`);
@@ -128,7 +141,7 @@ const trackTmp = (p) => {
 };
 let factsPath = A.facts, tmpFacts = null, tmpSpec = null;
 if (!factsPath) {
-  tmpFacts = trackTmp(path.join(os.tmpdir(), `mb-facts-${process.pid}.jsonl`));
+  tmpFacts = trackTmp(path.join(os.tmpdir(), `skc-mb-facts-${process.pid}.jsonl`));
   const exArgv = [EXTRACT, '--root', A.root, '--out', tmpFacts];
   // staged 相位=增量语义：只抽 staged 单元集（pre-commit 面全仓抽取=25s 不可行）
   if (A.phase === 'staged' && A.staged?.length)
@@ -138,7 +151,7 @@ if (!factsPath) {
   // 契约自带 producers.ref 条款 → 转 JSON 规格喂 extract（机制词表住采纳仓
   // 契约里，kit 不内嵌 ops-register 这类私有词——生产/消费职责分离）
   if (contract?.producers?.ref?.length) {
-    tmpSpec = trackTmp(path.join(os.tmpdir(), `mb-spec-${process.pid}.json`));
+    tmpSpec = trackTmp(path.join(os.tmpdir(), `skc-mb-spec-${process.pid}.json`));
     fs.writeFileSync(tmpSpec, JSON.stringify({ ref: contract.producers.ref }));
     exArgv.push('--emit-spec', tmpSpec);
   }
@@ -171,7 +184,7 @@ if (A.factsExtra?.length) {
     }
     merged += (merged.length && !merged.endsWith('\n') ? '\n' : '') + chunk;
   }
-  const mergedPath = trackTmp(path.join(os.tmpdir(), `mb-facts-merged-${process.pid}.jsonl`));
+  const mergedPath = trackTmp(path.join(os.tmpdir(), `skc-mb-facts-merged-${process.pid}.jsonl`));
   fs.writeFileSync(mergedPath, merged);
   factsPath = mergedPath;
 }

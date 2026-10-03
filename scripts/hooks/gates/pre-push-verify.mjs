@@ -8,7 +8,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnBound } from '../lib/spawn-bound.mjs';
 
 const DEFAULT_COMMAND = 'node scripts/verify.mjs --profile full';
 const DEFAULT_TIMEOUT_MS = 900_000;
@@ -34,13 +34,15 @@ export const gate = {
     const command = ctx.gateConfig?.command ?? DEFAULT_COMMAND;
     const timeout = parseInt(ctx.gateConfig?.timeoutMs ?? '', 10) || DEFAULT_TIMEOUT_MS;
     console.log(`[pre-push] 正在执行推送前质量门禁: ${command}`);
-    const result = spawnSync(command, { cwd: ctx.root, stdio: 'inherit', shell: true, timeout });
-    if (result.error?.code === 'ETIMEDOUT' || result.signal) {
+    // spawnBound：timeout 命中绞整棵进程树（spawn-bound.mjs 头注）
+    const result = await spawnBound(command, { cwd: ctx.root, timeoutMs: timeout });
+    if (result.timedOut || result.signal) {
       return [{ gate: 'pre-push-verify', file: '-',
-        message: `推送前命令超时/被终止 (>${timeout}ms): ${command}` }];
+        message: `推送前命令超时/被终止 (>${timeout}ms，进程树已绞杀): ${command}` }];
     }
-    if (result.status !== 0) {
-      return [{ gate: 'pre-push-verify', file: '-', message: `推送前命令未通过 (${command})，禁止推送` }];
+    if (result.error || result.status !== 0) {
+      return [{ gate: 'pre-push-verify', file: '-',
+        message: `推送前命令未通过 (${command})${result.error ? ': ' + result.error.message : ''}，禁止推送` }];
     }
     return [];
   },

@@ -28,6 +28,8 @@ import { run as runVerifyGates } from './unit/test-verify-gates.test.mjs';
 import { run as runHostTools } from './unit/test-host-tools.test.mjs';
 import { run as runCorpusMetrics } from './unit/test-corpus-metrics.test.mjs';
 import { run as runDistillIndex } from './unit/test-distill-index.test.mjs';
+import { run as runSpawnBound } from './unit/test-spawn-bound.test.mjs';
+import { run as runTmpReaper } from './unit/test-tmp-reaper.test.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const startedAt = process.hrtime.bigint();
@@ -88,10 +90,12 @@ export const allSuites = [
   { name: 'host-tools', tier: 'unit', run: runHostTools },
   { name: 'corpus-metrics', tier: 'unit', run: runCorpusMetrics },
   { name: 'distill-index-unit', tier: 'unit', run: runDistillIndex },
+  { name: 'spawn-bound', tier: 'unit', run: runSpawnBound },
+  { name: 'tmp-reaper', tier: 'unit', run: runTmpReaper },
   { name: 'test-coverage', tier: 'contract', run: () => node('scripts/check-test-coverage.mjs') },
   { name: 'boundary-live', tier: 'contract', run: () => {
     // 真仓事实提取 + 根级 boundaries.yaml 契约评估（ADR-0008 实例化闸门）
-    const factsFile = path.join(os.tmpdir(), `mb-live-${process.pid}.jsonl`);
+    const factsFile = path.join(os.tmpdir(), `skc-mb-live-${process.pid}.jsonl`);
     try {
       node('private/engineering/ming-boundary/scripts/extract-facts.mjs', '--out', factsFile);
       node('private/engineering/ming-boundary/scripts/check-boundaries.mjs', '--facts', factsFile);

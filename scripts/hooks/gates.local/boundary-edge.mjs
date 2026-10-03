@@ -21,7 +21,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnBoundArgv } from '../lib/spawn-bound.mjs';
 import { fileURLToPath } from 'node:url';
 
 const RUN_BOUNDARY = path.resolve(
@@ -46,14 +46,19 @@ export const gate = {
     if (!ctx.files.length) return [];
 
     const timeout = parseInt(ctx.gateConfig?.timeoutMs ?? '', 10) || DEFAULT_TIMEOUT_MS;
-    const r = spawnSync(process.execPath, [RUN_BOUNDARY,
+    // spawnBoundArgv capture 形态：timeout/maxBuffer 命中绞整棵进程树
+    // （run-boundary 内部的 extract/消费方子进程随之清，不再孤儿逃逸）
+    const r = await spawnBoundArgv(process.execPath, [RUN_BOUNDARY,
       '--root', ctx.root, '--rules', rulesPath,
       '--phase', 'staged', '--staged-units', ctx.files.join(','),
       '--allow-degraded', '--json'],
-      { encoding: 'utf8', timeout, maxBuffer: 64 << 20 });
-    if (r.error?.code === 'ETIMEDOUT' || r.signal)
+      { cwd: ctx.root, timeoutMs: timeout, capture: true, maxBuffer: 64 << 20 });
+    if (r.timedOut || r.signal)
       return [{ gate: 'boundary-edge', file: '-',
-        message: `边界编排超时/被终止 (>${timeout}ms)——检查 extract/消费方是否挂死` }];
+        message: `边界编排超时/被终止 (>${timeout}ms，进程树已绞杀)——检查 extract/消费方是否挂死` }];
+    if (r.overflow)
+      return [{ gate: 'boundary-edge', file: '-',
+        message: 'run-boundary 输出超 maxBuffer——stdout 爆量，检查消费方是否失控打印' }];
     if (r.error || (r.status !== 0 && r.status !== 1))
       return [{ gate: 'boundary-edge', file: '-',
         message: `边界编排执行失败: ${(r.stderr || r.error?.message || `exit ${r.status}`).slice(0, 200)}` }];

@@ -106,6 +106,8 @@ trailerLevel=error        # → gate.commit-msg.level（AI 尾巴等）
 # gate.<id>.command=<完整命令行>   # 仓级命令覆盖默认（CI yaml run: 同级执行面——review diff 关注）
 # gate.impact-test.command=node tests/run.mjs --require-all       # 默认即此；未配且无 tests/run.mjs 自动缺席
 # gate.pre-push-verify.command=node scripts/verify.mjs --profile full
+# gate.impact-test.timeoutMs=600000      # 命令预算；超时绞整棵进程树并拦截（防门命令挂死=永卡）
+# gate.pre-push-verify.timeoutMs=900000
 
 # ── 引擎级配置 ──
 # integrityLevel=warn    # gates/ 目录 hash 变化提示等级（warn|off）
