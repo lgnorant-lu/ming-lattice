@@ -47,6 +47,21 @@ export const gate = {
     for (const w of trailerRes.warnings ?? []) {
       findings.push({ gate: 'commit-msg', file: '-', level: 'warn', message: w });
     }
+    // STANDARDS §1.3/1.4 文档规范的 warn 级浮现——不阻断，违例可见；
+    // merge/revert 豁免（外来形态），type 词表外（chore/sync 上游件）豁免
+    if (!/^Merge |^Revert /i.test(subject)) {
+      if (!/[一-鿿]/.test(subject)) {
+        findings.push({ gate: 'commit-msg', file: '-', level: 'warn',
+          message: 'subject 应以中文描述（STANDARDS §1.3 文档规范）' });
+      }
+      const type = (subject.match(/^(\w+)[:(]/) || [])[1];
+      const body = rawMsg.slice(rawMsg.indexOf('\n') + 1).trim();
+      if (['feat', 'fix', 'refactor', 'docs'].includes(type)
+          && (!body || !/实施内容[:：]/.test(body) || !/本提交不授权[:：]/.test(body) || !/已执行审阅[:：]/.test(body))) {
+        findings.push({ gate: 'commit-msg', file: '-', level: 'warn',
+          message: `${type} 类非琐碎提交正文应含三段式标记（实施内容:/本提交不授权:/已执行审阅:——STANDARDS §1.4 文档规范）` });
+      }
+    }
     return findings;
   },
 };

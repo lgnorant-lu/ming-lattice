@@ -1076,6 +1076,19 @@ export async function run() {
       assert.equal(b1.status, 1, '配置仓署名禁令拦截');
       const b2 = cm(e2, 'fix: x\n\nCo-Authored-By: a@b.c');
       assert.equal(b2.status, 0, '未配置仓标准 trailer 放行（政策不烧死）');
+      // —— 文档规范 warn 级浮现（STANDARDS §1.3/1.4——不阻断，违例可见）——
+      const w1 = cm(e1, 'fix(verify): english subject only');
+      assert.equal(w1.status, 0, 'warn 级浮现不阻断提交');
+      assert.ok((w1.stdout + w1.stderr).includes('subject 应以中文描述'), '英文 subject 应 warn 浮现');
+      assert.ok((w1.stdout + w1.stderr).includes('三段式'), '缺三段式正文应 warn 浮现');
+      const w2 = cm(e1, 'fix(verify): 中文主题\n\n实施内容:\n- a\n本提交不授权:\n- b\n已执行审阅: c');
+      assert.ok(!(w2.stdout + w2.stderr).includes('三段式'), '合规三段式不应 warn');
+      assert.ok(!(w2.stdout + w2.stderr).includes('中文描述'), '中文 subject 不应 warn');
+      const w3 = cm(e1, 'Merge branch x');
+      assert.ok(!(w3.stdout + w3.stderr).includes('中文描述'), 'merge 提交豁免');
+      const w4 = cm(e1, 'collect: vendored repo');
+      assert.equal(w4.status, 0, 'collect 类型合法');
+      assert.ok(!(w4.stdout + w4.stderr).includes('三段式'), '词表外 type 豁免三段式');
     } finally {
       fs.rmSync(e1, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
       fs.rmSync(e2, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });

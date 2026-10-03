@@ -73,7 +73,8 @@ status: normative
 2. **Type 白名单**：词表权威 = `.hooksrc` 的 `gate.commit-msg.types`；语义注释见 `docs/STANDARDS.md §1.2`。
 3. **Trailer 禁令**：`gate.commit-msg.bannedTrailers`（CSV 正则，整体替换——kit 默认空表，禁尾是仓级政策）+ `gate.commit-msg.extraTrailers`（追加）。本仓配 `^Generated with\b,^Co-Authored-By\s*:`（清史后署名政策）。CSV 内 regex 不可含逗号，多条用 `|` 交替或分列。
 4. **Emoji/乱码**：检测提交主题的 Unicode Emoji（`emojiLevel`，kit 默认 warn——本仓 `error`）与 GBK 乱码字符（`mojibakeLevel`，默认 `error`）。
-5. **其余配置键**：`gate.commit-msg.subjectMaxLen`（主题长度上限，warn 级，0=不限）、`gate.commit-msg.pattern`/`patternHint`（正则整体覆盖+报错文案）、`requireCommitMsg=false`（整门关闭）。
+5. **文档规范 warn 浮现**：subject 无 CJK 字符→warn（STANDARDS §1.3 中文先行）；feat/fix/refactor/docs 类正文缺三段式标记（`实施内容:`/`本提交不授权:`/`已执行审阅:`）→warn（§1.4）。不阻断；`Merge `/`Revert ` 与词表外 type 豁免。
+6. **其余配置键**：`gate.commit-msg.subjectMaxLen`（主题长度上限，warn 级，0=不限）、`gate.commit-msg.pattern`/`patternHint`（正则整体覆盖+报错文案）、`requireCommitMsg=false`（整门关闭）。
 
 > [!TIP]
 > **写作辅助（git 原生机制）**：仓根 `.gitmessage` 存在时，install-hooks 自动 `git config commit.template .gitmessage`——提交模板文件约定，与 `core.hooksPath` 同车道，内容各仓自写（`#` 行提交时剥离）。

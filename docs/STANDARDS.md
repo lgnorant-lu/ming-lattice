@@ -61,7 +61,8 @@ status: normative
 可选后缀行 `关联:` 指认 TODO 条目/ADR/distill 条目（一行内，
 不展开正文——动机正文属于 ADR/distill，body 不建第二真相源）。
 琐碎提交（typo/纯格式）不适用。本约定为文档规范非门禁——
-commit-msg 门仍只校验 subject。
+commit-msg 门对 subject 中文化与三段式标记作 **warn 级浮现**
+（违例可见不阻断；merge/revert 与词表外 type 豁免）。
 
 ---
 
