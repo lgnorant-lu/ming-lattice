@@ -28,11 +28,21 @@ export const CATEGORY_RULES = [
   {
     name: 'skills',
     test: file => /^(?:private|deployable|vertical|base)\//i.test(file),
-    jobs: [
-      'lint-contract',
-      'manifest-freshness',
-      'manifest-unit'
-    ]
+    resolveJobs: file => {
+      // 包级覆盖映射：改动某包脚本必须带回其专属套件，默认三件套只管 lint/manifest 面
+      const jobs = ['lint-contract', 'manifest-freshness', 'manifest-unit'];
+      if (/^private\/ming-distiller\//i.test(file))
+        jobs.push('prop-cli', 'distill-index-unit', 'distill-index');
+      else if (/^private\/ming-skill-forge\//i.test(file))
+        jobs.push('check-skill-unit', 'skill-conformance', 'skill-index');
+      else if (/^private\/engineering\/ming-boundary\//i.test(file))
+        jobs.push('ming-boundary', 'boundary-live');
+      else if (/^private\/engineering\/ming-l-paradigm\//i.test(file))
+        jobs.push('scaffold-domains', 'ming-l-audit');
+      else if (/^private\/ming-recall-forge\//i.test(file))
+        jobs.push('skill-recall', 'recall-eval');
+      return jobs;
+    }
   },
   {
     name: 'router',
@@ -91,29 +101,62 @@ export const CATEGORY_RULES = [
       if (/test-yaml-lite/.test(file)) return ['yaml-contract'];
       if (/test-cli-tools/.test(file)) return ['cli-isolated'];
       if (/test-hook-planner/.test(file)) return ['hook-planner'];
+      // 显式覆盖：文件名与套件名不同词的（约定回退兜不住）
+      if (/test-check-skill/.test(file)) return ['check-skill-unit', 'skill-conformance'];
+      if (/test-distill-index/.test(file)) return ['distill-index-unit', 'distill-index'];
+      if (/test-fetch/.test(file)) return ['fetch-cli'];
+      // 约定回退：test-<suite>(.test)?.mjs → 同名套件（须在全集内，防拼写臆造）
+      const m = file.match(/^tests\/[^/]+\/test-([a-z0-9-]+)\.(?:test\.)?mjs$/);
+      if (m && ALL_SUITE_NAMES.includes(m[1])) return [m[1]];
       return ['hook-validation', 'manifest-unit', 'adapter-contract'];
     }
   }
 ];
 
+// 受测套件总表——与 tests/run.mjs allSuites 逐名同步；
+// test-hook-planner 做源级对表断言（run.mjs 无 main 守护不可 import），漂移即红
 export const ALL_SUITE_NAMES = [
-  'hook-validation',
-  'manifest-unit',
-  'route-golden',
   'adapter-contract',
+  'boundary-live',
+  'check-skill-unit',
+  'cli-isolated',
+  'corpus-metrics',
+  'distill-index',
+  'distill-index-unit',
+  'fetch-cli',
+  'hook-engine',
+  'hook-index',
+  'hook-planner',
+  'hook-validation',
+  'host-tools',
+  'lexical-layer',
+  'lint-contract',
+  'manifest-freshness',
+  'manifest-unit',
+  'ming-boundary',
+  'ming-l-audit',
   'observability-contract',
+  'prop-cli',
+  'recall-eval',
+  'registry-parity',
   'route-decision-compatibility',
-  'supply-chain-gate',
+  'route-effects',
+  'route-golden',
+  'route-observer',
+  'route-safety',
   'sbom-generation',
   'sca-generation',
-  'lint-contract',
-  'hook-planner',
-  'route-effects',
-  'route-safety',
-  'hook-index',
-  'yaml-contract',
-  'cli-isolated',
-  'manifest-freshness'
+  'scaffold-domains',
+  'scaffold-skill',
+  'skill-conformance',
+  'skill-index',
+  'skill-recall',
+  'spawn-bound',
+  'supply-chain-gate',
+  'test-coverage',
+  'tmp-reaper',
+  'verify-gates',
+  'yaml-contract'
 ];
 
 /**

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createPlan, ALL_SUITE_NAMES } from '../../scripts/plan.mjs';
@@ -121,7 +122,28 @@ refs/heads/feat 3333333333333333333333333333333333333333 refs/heads/feat 0000000
   assert.equal(unknownSuiteRes.status, 2, 'unknown suite must exit with code 2');
   assert.match(unknownSuiteRes.stderr, /unknown suite: nonexistent-suite-xyz/);
 
-  console.log('  -> plan schema, fail-closed, monotonicity, categories, pre-push parsing and CLI contract passed');
+  // 12. 套件总表漂移断言——ALL_SUITE_NAMES 必须镜像 run.mjs allSuites
+  // （run.mjs 无 main 守护不可 import，源级正则抽取 { name, tier } 行）
+  const runSrc = fs.readFileSync(path.join(root, 'tests/run.mjs'), 'utf8');
+  const realSuites = [...runSrc.matchAll(/name:\s*'([a-z0-9-]+)',\s*tier:/g)].map(x => x[1]).sort();
+  assert.deepEqual([...ALL_SUITE_NAMES].sort(), realSuites,
+    'ALL_SUITE_NAMES drifted from run.mjs allSuites — sync scripts/plan.mjs');
+
+  // 13. skills 子路径覆盖映射——包脚本改动必须带回其专属套件
+  const distillerPlan = createPlan({ stage: 'pre-commit', files: ['private/ming-distiller/scripts/prop.mjs'] });
+  for (const s of ['prop-cli', 'distill-index-unit', 'distill-index'])
+    assert.ok(distillerPlan.jobs.includes(s), `ming-distiller change must schedule ${s}`);
+  const boundaryPlan = createPlan({ stage: 'pre-commit', files: ['private/engineering/ming-boundary/scripts/extract-facts.mjs'] });
+  assert.ok(boundaryPlan.jobs.includes('ming-boundary'));
+  assert.ok(boundaryPlan.jobs.includes('boundary-live'));
+
+  // 14. tests/ 约定映射——test-<suite>(.test)?.mjs 的同名套件必须被调度
+  const propTestPlan = createPlan({ stage: 'pre-commit', files: ['tests/unit/test-prop-cli.test.mjs'] });
+  assert.deepEqual(propTestPlan.jobs, ['prop-cli']);
+  const checkSkillTestPlan = createPlan({ stage: 'pre-commit', files: ['tests/unit/test-check-skill.test.mjs'] });
+  assert.ok(checkSkillTestPlan.jobs.includes('check-skill-unit'));
+
+  console.log('  -> plan schema, fail-closed, monotonicity, categories, pre-push parsing, CLI contract, suite-table drift and sub-path mapping passed');
 }
 
 if (process.argv[1]?.endsWith('test-hook-planner.mjs')) run();
