@@ -6,7 +6,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-const ROOT = path.resolve(import.meta.dirname, '../..');
+export const PLAN_ROOT = path.resolve(import.meta.dirname, '..');
+const ROOT = PLAN_ROOT;
 
 export const GLOBAL_UPGRADE_PATTERNS = [
   /^registry\.yaml$/,
@@ -16,7 +17,8 @@ export const GLOBAL_UPGRADE_PATTERNS = [
   /^scripts\/lib\//,
   /^tests\/run\.mjs$/,
   /^config\/router-manifest\.json$/,
-  /^private\/ming-skills-router\//
+  /^private\/ming-skills-router\//,
+  /^scripts\/(?:plan|verify)\.mjs$/   // 门禁脊柱自体——改动必全量（规划器/执行器失聪双向危险）
 ];
 
 export const CATEGORY_RULES = [
@@ -79,6 +81,19 @@ export const CATEGORY_RULES = [
     jobs: [
       'observability-contract'
     ]
+  },
+  {
+    // 具名映射：白名单 basename 才归类；其余 scripts/* 落 unknown→full（保守兜底）
+    name: 'scripts',
+    test: file => /^scripts\/(?:check-skill-index|check-test-coverage|check-supply-chain|clean-temp|emit-operational-event|fetch)\.mjs$/.test(file),
+    resolveJobs: file => ({
+      'check-skill-index.mjs': ['skill-index'],
+      'check-test-coverage.mjs': ['test-coverage'],
+      'check-supply-chain.mjs': ['supply-chain-gate', 'sbom-generation', 'sca-generation'],
+      'clean-temp.mjs': ['tmp-reaper'],
+      'emit-operational-event.mjs': ['observability-contract'],
+      'fetch.mjs': ['fetch-cli'],
+    })[file.split('/').pop()] ?? []
   },
   {
     name: 'tests',
@@ -246,16 +261,14 @@ export function createPlan({ stage = 'pre-commit', files = [] } = {}) {
  * 获取当前 git 暂存区文件列表
  */
 export function getStagedFiles(cwd = ROOT) {
-  try {
-    const output = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'], {
-      cwd,
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'ignore']
-    });
-    return output.split('\0').filter(Boolean);
-  } catch {
-    return [];
-  }
+  // fail-closed：git 探测失败不得静默当"零暂存"——零任务=verify 直接放行，
+  // 吞错会把受影响的受影响门变白名单。抛出让门禁以非零码挡下。
+  const output = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'], {
+    cwd,
+    encoding: 'utf8',
+    stdio: ['pipe', 'pipe', 'pipe']
+  });
+  return output.split('\0').filter(Boolean);
 }
 
 /**

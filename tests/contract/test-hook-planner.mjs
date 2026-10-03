@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { createPlan, ALL_SUITE_NAMES } from '../../scripts/plan.mjs';
+import { createPlan, ALL_SUITE_NAMES, PLAN_ROOT } from '../../scripts/plan.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 
@@ -88,6 +88,15 @@ export async function run() {
     '--unknown-arg'
   ], { encoding: 'utf8' });
   assert.equal(invalidRes.status, 2);
+
+  // 9b. ROOT 锚定回归——getStagedFiles 的 git cwd 必须是仓根。
+  //   scripts/plan.mjs 曾以 '../..' 上溯到仓父目录（D:\dogepy），
+  //   git diff 静默失败 → 空文件集 → 受影响调度全量失聪（静默兜底全量）。
+  //   锚定：PLAN_ROOT 内须存在仓根标志件（registry.yaml + tests/run.mjs）。
+  assert.ok(fs.existsSync(path.join(PLAN_ROOT, 'registry.yaml')),
+    'PLAN_ROOT 应是仓根——registry.yaml 缺席说明上溯级数漂移');
+  assert.ok(fs.existsSync(path.join(PLAN_ROOT, 'tests', 'run.mjs')),
+    'PLAN_ROOT 应是仓根——tests/run.mjs 缺席说明上溯级数漂移');
 
   // 10. pre-push stdin ref 范围解析契约 (多 ref, 新分支, 删除分支)
   const { parsePushLines } = await import('../../scripts/hooks/pre-push.mjs');
