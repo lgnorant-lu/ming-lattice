@@ -11,13 +11,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PROP_STATUSES, PROP_TYPES, PROP_AGING_DAYS, SLUG_RE,
-  gateProposal, queueRows, parseFmText } from './lib/proposal-schema.mjs';
+import { PROP_TYPES, SLUG_RE, ID_SCHEMES,
+  gateProposal, queueRows, parseFmText,
+  loadDocclassConfig, proposalGateCfg } from './lib/proposal-schema.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const DISTILL_DIR = process.env.MING_DISTILL_DIR || path.join(REPO_ROOT, 'distill');
 const PROP_DIR = path.join(DISTILL_DIR, '_proposals');
 const TODAY = new Date().toISOString().slice(0, 10);
+
+// docclass.yaml（L4）：states 子集/agingDays/idScheme 由配置声明；解析失败分档——
+// check 以 E 级 issue 计入、写动词（new/register）fail-closed、report 只 warn。
+const { cfg: propCfg, errors: cfgErrs } = proposalGateCfg(loadDocclassConfig(DISTILL_DIR));
 
 // ── 参数解析 ──
 const args = process.argv.slice(2);
@@ -49,10 +54,17 @@ if (verb === 'new') {
   if (!opts.type) { console.error('缺 --type（词表: ' + [...PROP_TYPES].join('|') + '）'); process.exit(2); }
   if (!PROP_TYPES.has(opts.type)) { console.error(`type 越出闭集: ${opts.type}（${[...PROP_TYPES].join('|')}）`); process.exit(2); }
   if (!opts.target) { console.error('缺 --target（提案指向的包/文档路径）'); process.exit(2); }
+  if (cfgErrs.length) { for (const e of cfgErrs) console.error(`[config] ${e}`); process.exit(2); }
+  if (!ID_SCHEMES.has(propCfg.idScheme)) {
+    console.error(`docclass.yaml 声明 idScheme=${propCfg.idScheme}——未实现（已建: ${[...ID_SCHEMES].join('|')}），fail-closed`); process.exit(2);
+  }
+  if (!propCfg.states.has('pending')) {
+    console.error('docclass.yaml states 子集缺 pending——new 无法生成合法初态，fail-closed'); process.exit(2);
+  }
   const openedAt = opts['opened-at'] ?? TODAY;
   if (!DATE_RE.test(openedAt)) { console.error(`--opened-at 非日期形态: ${openedAt}`); process.exit(2); }
   let reviewAfter = opts['review-after'];
-  if (!reviewAfter) reviewAfter = 'P30D';
+  if (!reviewAfter) reviewAfter = `P${propCfg.agingDays}D`;
   const durM = reviewAfter.match(/^P(\d+)D$/);
   if (durM) reviewAfter = new Date(Date.parse(openedAt) + Number(durM[1]) * 86400000).toISOString().slice(0, 10);
   if (!DATE_RE.test(reviewAfter)) { console.error(`--review-after 非 <YYYY-MM-DD|PnD>: ${opts['review-after']}`); process.exit(2); }
@@ -95,7 +107,7 @@ reviewAfter: ${reviewAfter}
 | r1 | ${TODAY} | 初稿 | — |
 `;
   // 写时校验（local staging 无 commit 门可达——L3 硬门前置到此处）
-  const issues = gateProposal(`_proposals/${id}.md`, id, parseFmText(content), TODAY)
+  const issues = gateProposal(`_proposals/${id}.md`, id, parseFmText(content), TODAY, propCfg)
     .filter(i => i.level === 'E');
   if (issues.length) {
     console.error(`写时门拦截——生成物自身违例（实现缺陷）:`);
@@ -122,12 +134,13 @@ reviewAfter: ${reviewAfter}
 // ── prop check ──
 if (verb === 'check') {
   const issues = [];
+  for (const e of cfgErrs) issues.push({ level: 'E', msg: e });
   if (fs.existsSync(PROP_DIR)) {
     for (const f of fs.readdirSync(PROP_DIR)) {
       if (!f.endsWith('.md')) continue;
       const label = `_proposals/${f}`;
       const text = fs.existsSync(path.join(PROP_DIR, f)) ? fs.readFileSync(path.join(PROP_DIR, f), 'utf8') : '';
-      for (const i of gateProposal(label, f.replace(/\.md$/, ''), parseFmText(text), TODAY)) issues.push(i);
+      for (const i of gateProposal(label, f.replace(/\.md$/, ''), parseFmText(text), TODAY, propCfg)) issues.push(i);
     }
   }
   const counts = { E: 0, W: 0 };
@@ -144,6 +157,7 @@ if (verb === 'check') {
 
 // ── prop report ──
 if (verb === 'report') {
+  for (const e of cfgErrs) console.error(`[config-W] ${e}`);
   const { rows, pending } = queueRows(PROP_DIR);
   if (flags.has('--json')) { jsonOut({ queue: rows, pending }); process.exit(0); }
   console.log('proposal queue (report, non-gate):');
@@ -159,6 +173,7 @@ if (verb === 'report') {
 // 本仓 staging 为 gitignored 本地内容区，无手编登记册——QUEUE.yaml 是
 // scan 结果的规范化投影，供 hooks/外部工具免解析消费；幂等：无变化即 noop。
 if (verb === 'register') {
+  if (cfgErrs.length) { for (const e of cfgErrs) console.error(`[config] ${e}`); process.exit(2); }
   const { rows, pending } = queueRows(PROP_DIR);
   const lines = [
     'schemaVersion: "1.0"',

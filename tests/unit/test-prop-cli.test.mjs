@@ -127,7 +127,56 @@ export function run() {
     r = runProp(lib, ['frobnicate']);
     assert.equal(r.status, 2);
 
-    // 9. lib 直测：gateProposal/parseFmText 单元面（词表+aging 边界）
+    // 9. docclass.yaml 配置面（L4）：states 子集收窄改变判决
+    lib = mkLib();
+    writeProp(lib, '2026-09-20-rejected-one.md', PROP_FM('2026-09-20-rejected-one', 'rejected'));
+    r = runProp(lib, ['check']);
+    assert.equal(r.status, 0, '默认词表下 rejected 合法');
+    fs.writeFileSync(path.join(lib, 'docclass.yaml'),
+      'schemaVersion: 1\ndocClasses:\n  - name: proposal\n    states:\n      - pending\n      - landed\n', 'utf8');
+    r = runProp(lib, ['check']);
+    assert.equal(r.status, 1, 'config states 子集收窄后 rejected 应越出闭集');
+    assert.ok(r.stdout.includes('status 越出闭集: rejected（pending|landed）'), `配置子集应驱动闭集判词: ${r.stdout}`);
+
+    // 10. 配置 fail-closed：非法 states 值 / 畸形 YAML → check 计 E；写动词 exit 2
+    lib = mkLib();
+    fs.writeFileSync(path.join(lib, 'docclass.yaml'),
+      'schemaVersion: 1\ndocClasses:\n  - name: proposal\n    states:\n      - pending\n      - draft\n', 'utf8');
+    r = runProp(lib, ['check']);
+    assert.equal(r.status, 1);
+    assert.ok(r.stdout.includes('含非法值 draft'), `非法子集值应 fail-closed: ${r.stdout}`);
+    r = runProp(lib, ['new', 'x', '--type', 'promotion', '--target', 'x/']);
+    assert.equal(r.status, 2, '配置违例时写动词应 fail-closed');
+    assert.ok(r.stderr.includes('含非法值 draft'), '应点名非法值');
+    fs.writeFileSync(path.join(lib, 'docclass.yaml'), 'docClasses: [', 'utf8');
+    r = runProp(lib, ['check']);
+    assert.equal(r.status, 1, '畸形 YAML 应计 E');
+    assert.ok(r.stdout.includes('解析失败') || r.stdout.includes('缺 docClasses'), '应报解析失败');
+
+    // 11. idScheme 未实现值 → new fail-closed（防静默错号）
+    lib = mkLib();
+    fs.writeFileSync(path.join(lib, 'docclass.yaml'),
+      'schemaVersion: 1\ndocClasses:\n  - name: proposal\n    idScheme: PROP-NNNN\n', 'utf8');
+    r = runProp(lib, ['new', 'x', '--type', 'promotion', '--target', 'x/']);
+    assert.equal(r.status, 2);
+    assert.ok(r.stderr.includes('idScheme=PROP-NNNN'), `未实现 idScheme 应点名: ${r.stderr}`);
+    // states 子集缺 pending → new 自产件必违规，fail-closed 不落地
+    fs.writeFileSync(path.join(lib, 'docclass.yaml'),
+      'schemaVersion: 1\ndocClasses:\n  - name: proposal\n    states:\n      - landed\n', 'utf8');
+    r = runProp(lib, ['new', 'x', '--type', 'promotion', '--target', 'x/']);
+    assert.equal(r.status, 2, 'states 缺 pending 时 new 应拒建');
+    assert.ok(r.stderr.includes('缺 pending'), '应点名缺 pending');
+
+    // 12. agingDays 配置驱动 new 默认 reviewAfter
+    lib = mkLib();
+    fs.writeFileSync(path.join(lib, 'docclass.yaml'),
+      'schemaVersion: 1\ndocClasses:\n  - name: proposal\n    agingDays: 7\n', 'utf8');
+    r = runProp(lib, ['new', 'quick', '--type', 'promotion', '--target', 'x/', '--opened-at', '2026-10-01']);
+    assert.equal(r.status, 0, `agingDays 配置下 new 应成功: ${r.stderr}`);
+    const qt = fs.readFileSync(path.join(lib, '_proposals', '2026-10-01-quick.md'), 'utf8');
+    assert.ok(qt.includes('reviewAfter: 2026-10-08'), 'agingDays=7 应生成 openedAt+7d');
+
+    // 13. lib 直测：gateProposal/parseFmText 单元面（词表+aging 边界）
     const fmWild = parseFmText(PROP_FM('x', 'wild-status'));
     const gi = gateProposal('_proposals/x.md', 'x', fmWild, '2026-10-03');
     assert.ok(gi.some(i => i.level === 'E' && i.msg.includes('status 越出闭集')), 'lib 门直测: 野生 status 应 E');

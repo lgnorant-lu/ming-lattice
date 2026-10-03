@@ -6,7 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { gateProposal, queueRows, parseFmFile } from './lib/proposal-schema.mjs';
+import { gateProposal, queueRows, parseFmFile, loadDocclassConfig, proposalGateCfg } from './lib/proposal-schema.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 // MING_DISTILL_DIR 供测试注入隔离库；缺省回仓根 distill/
@@ -150,6 +150,10 @@ else {
   }
 
   // ── _proposals 格式门（不登记 INDEX，但 frontmatter 须守 references/proposals.md §2 契约） ──
+  // docclass.yaml（L4 config）：states 子集等轴可由 <distill>/docclass.yaml 声明——
+  // 缺席回退内置契约；配置解析/词表违例按 E 计（fail-closed）。
+  const { cfg: propCfg, errors: cfgErrs } = proposalGateCfg(loadDocclassConfig(DISTILL_DIR));
+  for (const e of cfgErrs) add('E', e);
   const PROP_DIR = path.join(DISTILL_DIR, '_proposals');
   if (fs.existsSync(PROP_DIR)) {
     const today = new Date().toISOString().slice(0, 10);
@@ -157,7 +161,7 @@ else {
       if (!f.endsWith('.md')) continue;
       const label = `_proposals/${f}`;
       const fm = parseFrontmatter(path.join(PROP_DIR, f));
-      for (const i of gateProposal(label, f.replace(/\.md$/, ''), fm, today)) issues.push(i);
+      for (const i of gateProposal(label, f.replace(/\.md$/, ''), fm, today, propCfg)) issues.push(i);
     }
   }
 }

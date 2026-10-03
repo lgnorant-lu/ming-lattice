@@ -3,6 +3,7 @@
 // ——词表/解析/门函数只在此定义一次，防"手抄第二字段表"漂移。
 import fs from 'node:fs';
 import path from 'node:path';
+import { parseYamlLite } from '../../../engineering/ming-boundary/scripts/lib/yaml.mjs';
 
 // 生命周期词表与门契约：references/proposals.md §2
 export const PROP_STATUSES = new Set(['pending', 'landed', 'rejected']);
@@ -10,6 +11,7 @@ export const PROP_TYPES = new Set(['promotion', 'field-feedback', 'package-itera
 export const PROP_AGING_DAYS = 30;   // pending 复审阈值（§3 aging）
 export const DATE_SLUG_RE = /^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const ID_SCHEMES = new Set(['date-slug']);   // PROP-NNNN 候审——oracle 未建不实现
 
 // ── frontmatter 抽取（字段+span 主权；值=标量单行，行内注释剥离） ──
 export function frontmatterBody(text) {
@@ -37,9 +39,52 @@ export function parseFmFile(file) {
   return parseFmText(fs.readFileSync(file, 'utf8'));
 }
 
+// ── docclass.yaml 配置面（L4——canonical 子集配置，缺省回退内置契约） ──
+// <distill>/docclass.yaml 声明 proposal docClass；缺席=内置契约全量生效（零漂移）。
+// 可配置轴: states（⊆ PROP_STATUSES 子集）/ agingDays / staging / idScheme——
+// type 词表是机制本体不可配（外部零词表配置共识）。
+export function loadDocclassConfig(distillDir) {
+  const file = path.join(distillDir, 'docclass.yaml');
+  if (!fs.existsSync(file)) return { spec: null, errors: [] };
+  let spec = null;
+  const errors = [];
+  try { spec = parseYamlLite(fs.readFileSync(file, 'utf8')); }
+  catch (e) { errors.push(`docclass.yaml 解析失败: ${String(e.message ?? e).slice(0, 80)}`); }
+  if (spec && !Array.isArray(spec.docClasses)) errors.push('docclass.yaml 缺 docClasses 列表');
+  return { spec, errors };
+}
+
+// 提取 proposal class 的有效门禁参数（cfg=null → 全默认；非法子集值记 errors）
+export function proposalGateCfg(loaded) {
+  const cfg = { states: PROP_STATUSES, typeVocab: PROP_TYPES, idScheme: 'date-slug',
+    staging: null, agingDays: PROP_AGING_DAYS };
+  const errors = [...(loaded?.errors ?? [])];
+  const cls = (loaded?.spec?.docClasses ?? []).find(c => c && c.name === 'proposal');
+  if (!cls) return { cfg, errors };
+  if (cls.states) {
+    if (!Array.isArray(cls.states) || !cls.states.length)
+      errors.push('docclass.yaml: proposal.states 须为非空列表');
+    else {
+      const bad = cls.states.filter(s => !PROP_STATUSES.has(s));
+      if (bad.length) errors.push(`docclass.yaml: proposal.states 含非法值 ${bad.join(',')}——须 ⊆ canonical 闭集（${[...PROP_STATUSES].join('|')}）`);
+      else cfg.states = new Set(cls.states);
+    }
+  }
+  if (cls.agingDays !== undefined) {
+    if (Number.isFinite(cls.agingDays) && cls.agingDays > 0) cfg.agingDays = cls.agingDays;
+    else errors.push(`docclass.yaml: proposal.agingDays 须为正整数`);
+  }
+  if (cls.idScheme !== undefined) cfg.idScheme = cls.idScheme;
+  if (cls.staging !== undefined) cfg.staging = cls.staging;
+  return { cfg, errors };
+}
+
 // ── 提案格式门（_proposals 单文件判定，check-index §proposals 同源） ──
 // label=人读标签（如 `_proposals/<f>`） stem=文件名去 .md today=YYYY-MM-DD
-export function gateProposal(label, stem, fm, today) {
+// cfg=proposalGateCfg 产物；缺席=内置契约（PROP_STATUSES/PROP_TYPES）
+export function gateProposal(label, stem, fm, today, cfg = null) {
+  const states = cfg?.states ?? PROP_STATUSES;
+  const typeVocab = cfg?.typeVocab ?? PROP_TYPES;
   const issues = [];
   if (!fm) {
     issues.push({ level: 'E', msg: `${label}: 无 frontmatter（提案须有 id/target/type/status 字段块）` });
@@ -49,9 +94,9 @@ export function gateProposal(label, stem, fm, today) {
     issues.push({ level: 'E', msg: `${label}: frontmatter id 与文件名不一致（${fm.id}）` });
   if (!fm.status)
     issues.push({ level: 'E', msg: `${label}: 缺 status 字段` });
-  else if (!PROP_STATUSES.has(fm.status))
-    issues.push({ level: 'E', msg: `${label}: status 越出闭集: ${fm.status}（pending|landed|rejected）` });
-  if (fm.type && !PROP_TYPES.has(fm.type))
+  else if (!states.has(fm.status))
+    issues.push({ level: 'E', msg: `${label}: status 越出闭集: ${fm.status}（${[...states].join('|')}）` });
+  if (fm.type && !typeVocab.has(fm.type))
     issues.push({ level: 'E', msg: `${label}: type 越出闭集: ${fm.type}` });
   // pending 老化提醒（reviewAfter 日期形态才可比；P30D 类时长形态跳过）
   if (fm.status === 'pending' && fm.reviewAfter && /^\d{4}-\d{2}-\d{2}$/.test(fm.reviewAfter) && fm.reviewAfter < today)
