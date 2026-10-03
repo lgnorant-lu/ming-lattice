@@ -38,7 +38,7 @@ export const CATEGORY_RULES = [
       else if (/^private\/engineering\/ming-skill-forge\//i.test(file))
         jobs.push('check-skill-unit', 'skill-conformance', 'skill-index');
       else if (/^private\/engineering\/ming-boundary\//i.test(file))
-        jobs.push('ming-boundary', 'boundary-live');
+        jobs.push('ming-boundary', 'docclass', 'boundary-live');
       else if (/^private\/engineering\/ming-l-paradigm\//i.test(file))
         jobs.push('scaffold-domains', 'ming-l-audit');
       return jobs;
@@ -136,6 +136,7 @@ export const ALL_SUITE_NAMES = [
   'corpus-metrics',
   'distill-index',
   'distill-index-unit',
+  'docclass',
   'fetch-cli',
   'hook-engine',
   'hook-index',

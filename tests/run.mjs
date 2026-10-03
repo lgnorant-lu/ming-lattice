@@ -24,6 +24,7 @@ import { run as runHookPlannerContract } from './contract/test-hook-planner.mjs'
 import { run as runRouteObserver } from './contract/test-route-observer.mjs';
 import { run as runFetchCli } from './unit/test-fetch.test.mjs';
 import { run as runMingBoundary } from './unit/test-ming-boundary.test.mjs';
+import { run as runDocclass } from './unit/test-docclass.test.mjs';
 import { run as runVerifyGates } from './unit/test-verify-gates.test.mjs';
 import { run as runHostTools } from './unit/test-host-tools.test.mjs';
 import { run as runCorpusMetrics } from './unit/test-corpus-metrics.test.mjs';
@@ -87,6 +88,7 @@ export const allSuites = [
   { name: 'hook-engine', tier: 'unit', git: true, run: runHookEngine },
   { name: 'fetch-cli', tier: 'unit', git: true, run: runFetchCli },
   { name: 'ming-boundary', tier: 'unit', run: runMingBoundary },
+  { name: 'docclass', tier: 'unit', run: runDocclass },
   { name: 'verify-gates', tier: 'unit', run: runVerifyGates },
   { name: 'host-tools', tier: 'unit', run: runHostTools },
   { name: 'corpus-metrics', tier: 'unit', run: runCorpusMetrics },

@@ -19,6 +19,8 @@
 //      死链判定归消费方——docmeta 只产 raw 引用）
 //   L7 yaml 值解析 best-effort——yaml-lite 全值解析失败降 key-only 分面，
 //      不 fail-closed（零缩进列表/| 块标量/jinja 值属合法方言残余）
+//   L8 标量值剥 `\s+#` 行内注释——治理头 `field: v   # 注记` 惯例实证
+//      （本仓 14 提案 9 件带尾注）；`x.md#frag` 锚点无前置空格不误剥
 import { parseYamlLite } from './yaml.mjs';
 
 const FM_OPEN = /^---[ \t]*$/;
@@ -31,12 +33,14 @@ const FIELD_CJK = /^([^\d\s][^:：\n]{0,11})：\s*(.*)$/;
 const HANG_TAIL = /[+,，、；、（]\s*$/;
 const MD_REF = /[\w.:/-]+\.md(?:#[\w-]+)?/g;
 
+// 行内注释剥离（L8——双方言统一；`x.md#frag` 无前置空格不命中）
+const INLINE_COMMENT = /\s+#.*$/;
 // 单字段行判定 → {name, value} | null
 function fieldLine(c) {
   const a = c.match(FIELD_ASCII);
-  if (a) return { name: a[1].trim(), value: a[2].trim() };
+  if (a) return { name: a[1].trim(), value: a[2].replace(INLINE_COMMENT, '').trim() };
   const k = c.match(FIELD_CJK);
-  if (k) return { name: k[1].trim(), value: k[2].trim() };
+  if (k) return { name: k[1].trim(), value: k[2].replace(INLINE_COMMENT, '').trim() };
   return null;
 }
 
@@ -70,7 +74,8 @@ export function extractDocmeta(text) {
       }
       let yamlFidelity = 'full';
       try { parseYamlLite(body.join('\n') + '\n'); } catch { yamlFidelity = 'key-only'; }
-      fm = { fields, fieldMap, yamlFidelity, span: { start: 1, end: end + 1 } };
+      fm = { fields, fieldMap, yamlFidelity, body: body.join('\n'),
+        span: { start: 1, end: end + 1 } };
       i = end + 1;
     }
   }
