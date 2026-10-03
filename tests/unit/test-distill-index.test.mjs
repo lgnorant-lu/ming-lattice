@@ -111,6 +111,25 @@ export function run() {
     r = runCheck(lib, ['--strict']);
     assert.equal(r.status, 1, '--strict 下 W 应阻断');
 
+    // 9. --report 候审浮出：pending 在前按到期升序、landed 殿后、恒 exit 0、INDEX 缺席亦可用
+    lib = mkLib(); // 不写 INDEX.yaml——report 独立于主校验
+    writeProp(lib, '2026-09-20-overdue.md',
+      '---\nid: 2026-09-20-overdue\ntarget: x/\ntype: new-package\nstatus: pending\nopenedAt: 2026-09-20\nreviewAfter: 2026-09-25\n---\n\n正文。\n');
+    writeProp(lib, '2026-10-01-future.md',
+      '---\nid: 2026-10-01-future\ntarget: x/\ntype: new-package\nstatus: pending\nopenedAt: 2026-10-01\nreviewAfter: 2099-01-01\n---\n\n正文。\n');
+    writeProp(lib, '2026-09-10-done.md',
+      '---\nid: 2026-09-10-done\ntarget: x/\ntype: new-package\nstatus: landed\nopenedAt: 2026-09-10\n---\n\n正文。\n');
+    r = runCheck(lib, ['--report']);
+    assert.equal(r.status, 0, '--report 非门禁恒 exit 0');
+    const qIdx = r.stdout.indexOf('proposal queue');
+    const iOver = r.stdout.indexOf('2026-09-20-overdue');
+    const iFut = r.stdout.indexOf('2026-10-01-future');
+    const iDone = r.stdout.indexOf('2026-09-10-done');
+    assert.ok(qIdx >= 0 && iOver > qIdx && iFut > iOver && iDone > iFut,
+      `pending 应按到期升序、landed 殿后:\n${r.stdout}`);
+    assert.ok(r.stdout.includes('overdue'), '超期件应标 overdue');
+    assert.ok(/queue: total=3 pending=2/.test(r.stdout), '应输出队列合计');
+
     console.log('  distill-index 契约断言全过');
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });

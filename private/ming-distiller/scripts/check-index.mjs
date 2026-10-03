@@ -28,7 +28,7 @@ const add = (level, msg) => issues.push({ level, msg });
 
 // ── 参数解析（fail-closed，与全仓 CLI 同构） ──
 const args = process.argv.slice(2);
-const BOOL_FLAGS = new Set(['--json', '--strict']);
+const BOOL_FLAGS = new Set(['--json', '--strict', '--report']);
 const flags = new Set();
 for (const a of args) {
   if (!BOOL_FLAGS.has(a)) { console.error(`unknown flag: ${a}`); process.exit(2); }
@@ -74,7 +74,45 @@ function parseFrontmatter(file) {
   };
   return { id: pick('id'), status: pick('status'), supersedes: pick('supersedes'),
     revision: pick('revision'), updatedAt: pick('updatedAt'), type: pick('type'),
-    reviewAfter: pick('reviewAfter') };
+    reviewAfter: pick('reviewAfter'), openedAt: pick('openedAt') };
+}
+
+// ── --report：候审队列浮出（报告非门，独立于 INDEX 校验，恒 exit 0） ──
+// 答"现在候审有什么/谁先到期"——pending 在前按距 reviewAfter 天数升序，landed/rejected 殿后。
+if (flags.has('--report')) {
+  const rows = [];
+  const PROP_DIR = path.join(DISTILL_DIR, '_proposals');
+  if (fs.existsSync(PROP_DIR)) {
+    const today = Date.parse(new Date().toISOString().slice(0, 10));
+    for (const f of fs.readdirSync(PROP_DIR)) {
+      if (!f.endsWith('.md')) continue;
+      const fm = parseFrontmatter(path.join(PROP_DIR, f)) || {};
+      const days = (fm.reviewAfter && /^\d{4}-\d{2}-\d{2}$/.test(fm.reviewAfter))
+        ? Math.round((Date.parse(fm.reviewAfter) - today) / 86400000) : null;
+      rows.push({ id: fm.id || f.replace(/\.md$/, ''), status: fm.status || '?',
+        openedAt: fm.openedAt || '-', reviewAfter: fm.reviewAfter || '-', days });
+    }
+  }
+  rows.sort((a, b) => {
+    const pa = a.status === 'pending' ? 0 : 1;
+    const pb = b.status === 'pending' ? 0 : 1;
+    if (pa !== pb) return pa - pb;
+    if (a.days === null && b.days === null) return a.id.localeCompare(b.id);
+    if (a.days === null) return 1;
+    if (b.days === null) return -1;
+    return a.days - b.days;
+  });
+  if (flags.has('--json')) {
+    console.log(JSON.stringify({ queue: rows, pending: rows.filter(r => r.status === 'pending').length }, null, 2));
+  } else {
+    console.log('proposal queue (report, non-gate):');
+    for (const r of rows) {
+      const d = r.days === null ? '-' : (r.days < 0 ? `${r.days}d overdue` : `${r.days}d`);
+      console.log(`  ${r.id} | ${r.status} | opened=${r.openedAt} | reviewAfter=${r.reviewAfter} | ${d}`);
+    }
+    console.log(`queue: total=${rows.length} pending=${rows.filter(r => r.status === 'pending').length}`);
+  }
+  process.exit(0);
 }
 
 // ── 主校验 ──
