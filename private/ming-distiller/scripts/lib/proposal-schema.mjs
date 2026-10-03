@@ -12,6 +12,9 @@ export const PROP_AGING_DAYS = 30;   // pending 复审阈值（§3 aging）
 export const DATE_SLUG_RE = /^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const ID_SCHEMES = new Set(['date-slug']);   // PROP-NNNN 候审——oracle 未建不实现
+export const DOCCLASS_SCHEMA_VERSION = 1;           // docclass.yaml 首日携带的版本钉
+export const STAGING_KINDS = new Set(['local', 'committed']);   // staging 可见性闭集
+export const HEADER_DIALECTS = new Set(['yaml-frontmatter']);   // proposal 消费方只会此方言
 
 // ── frontmatter 抽取（字段+span 主权；值=标量单行，行内注释剥离） ──
 export function frontmatterBody(text) {
@@ -51,6 +54,12 @@ export function loadDocclassConfig(distillDir) {
   try { spec = parseYamlLite(fs.readFileSync(file, 'utf8')); }
   catch (e) { errors.push(`docclass.yaml 解析失败: ${String(e.message ?? e).slice(0, 80)}`); }
   if (spec && !Array.isArray(spec.docClasses)) errors.push('docclass.yaml 缺 docClasses 列表');
+  if (spec && spec.schemaVersion !== DOCCLASS_SCHEMA_VERSION)
+    errors.push(`docclass.yaml: schemaVersion 须为 ${DOCCLASS_SCHEMA_VERSION}（首日携带的版本钉，缺席或越值 fail-closed）`);
+  if (spec && Array.isArray(spec.docClasses))
+    for (const [i, c] of spec.docClasses.entries())
+      if (!c || typeof c.name !== 'string' || !c.name)
+        errors.push(`docclass.yaml: docClasses[${i}] 缺 name 字段`);
   return { spec, errors };
 }
 
@@ -71,11 +80,19 @@ export function proposalGateCfg(loaded) {
     }
   }
   if (cls.agingDays !== undefined) {
-    if (Number.isFinite(cls.agingDays) && cls.agingDays > 0) cfg.agingDays = cls.agingDays;
+    if (Number.isInteger(cls.agingDays) && cls.agingDays > 0) cfg.agingDays = cls.agingDays;
     else errors.push(`docclass.yaml: proposal.agingDays 须为正整数`);
   }
-  if (cls.idScheme !== undefined) cfg.idScheme = cls.idScheme;
-  if (cls.staging !== undefined) cfg.staging = cls.staging;
+  if (cls.idScheme !== undefined) {
+    if (ID_SCHEMES.has(cls.idScheme)) cfg.idScheme = cls.idScheme;
+    else errors.push(`docclass.yaml: proposal.idScheme 未实现: ${cls.idScheme}（可用: ${[...ID_SCHEMES].join('|')}——新 scheme 先落机制再登记）`);
+  }
+  if (cls.staging !== undefined) {
+    if (STAGING_KINDS.has(cls.staging)) cfg.staging = cls.staging;
+    else errors.push(`docclass.yaml: proposal.staging 越出闭集: ${cls.staging}（${[...STAGING_KINDS].join('|')}）`);
+  }
+  if (cls.header !== undefined && !HEADER_DIALECTS.has(cls.header))
+    errors.push(`docclass.yaml: proposal.header 方言未实现: ${cls.header}（proposal 门只懂 ${[...HEADER_DIALECTS].join('|')}）`);
   return { cfg, errors };
 }
 

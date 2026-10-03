@@ -153,13 +153,32 @@ export function run() {
     assert.equal(r.status, 1, '畸形 YAML 应计 E');
     assert.ok(r.stdout.includes('解析失败') || r.stdout.includes('缺 docClasses'), '应报解析失败');
 
+    // 10b. 版本钉/词表/方言/整数语义——装载时 fail-closed 全覆盖
+    fs.writeFileSync(path.join(lib, 'docclass.yaml'),
+      'docClasses:\n  - name: proposal\n', 'utf8');
+    r = runProp(lib, ['check']);
+    assert.equal(r.status, 1);
+    assert.ok(r.stdout.includes('schemaVersion'), `缺版本钉应计 E: ${r.stdout}`);
+    fs.writeFileSync(path.join(lib, 'docclass.yaml'),
+      'schemaVersion: 2\ndocClasses:\n  - name: proposal\n', 'utf8');
+    r = runProp(lib, ['check']);
+    assert.equal(r.status, 1);
+    assert.ok(r.stdout.includes('schemaVersion'), '越值版本钉应计 E');
+    fs.writeFileSync(path.join(lib, 'docclass.yaml'),
+      'schemaVersion: 1\ndocClasses:\n  - name: proposal\n    staging: vault\n    header: blockquote\n    agingDays: 30.5\n', 'utf8');
+    r = runProp(lib, ['check']);
+    assert.equal(r.status, 1);
+    assert.ok(r.stdout.includes('staging 越出闭集'), `非法 staging 应点名: ${r.stdout}`);
+    assert.ok(r.stdout.includes('header 方言未实现'), `未实现 header 方言应点名: ${r.stdout}`);
+    assert.ok(r.stdout.includes('agingDays 须为正整数'), `非整数 agingDays 应点名: ${r.stdout}`);
+
     // 11. idScheme 未实现值 → new fail-closed（防静默错号）
     lib = mkLib();
     fs.writeFileSync(path.join(lib, 'docclass.yaml'),
       'schemaVersion: 1\ndocClasses:\n  - name: proposal\n    idScheme: PROP-NNNN\n', 'utf8');
     r = runProp(lib, ['new', 'x', '--type', 'promotion', '--target', 'x/']);
     assert.equal(r.status, 2);
-    assert.ok(r.stderr.includes('idScheme=PROP-NNNN'), `未实现 idScheme 应点名: ${r.stderr}`);
+    assert.ok(r.stderr.includes('PROP-NNNN'), `未实现 idScheme 装载时 fail-closed 应点名: ${r.stderr}`);
     // states 子集缺 pending → new 自产件必违规，fail-closed 不落地
     fs.writeFileSync(path.join(lib, 'docclass.yaml'),
       'schemaVersion: 1\ndocClasses:\n  - name: proposal\n    states:\n      - landed\n', 'utf8');
