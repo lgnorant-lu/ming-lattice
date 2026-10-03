@@ -990,7 +990,8 @@ export async function run() {
         fs.writeFileSync(path.join(edir, '.hooksrc'), [
           'lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off',
           'gate.impact-test.level=off', 'gate.review-after.level=off',
-          `gate.link-rot.globs=docs/**`, 'gate.link-rot.cadence=2s', 'gate.link-rot.timeoutMs=3000',
+          // 窗口给 30s：2s 在并发负载下超窗（盖戳在门跑完后，run1 尾部门+run2 冷启动可破 2s）
+          `gate.link-rot.globs=docs/**`, 'gate.link-rot.cadence=30s', 'gate.link-rot.timeoutMs=3000',
         ].join('\n'));
         execFileSync('git', ['add', '.'], { cwd: edir });
         const engine = path.join(edir, 'scripts/hooks/engine.mjs');
@@ -999,8 +1000,16 @@ export async function run() {
         let r = pm();
         assert.ok((r.stdout + r.stderr).includes('link-rot') && (r.stdout + r.stderr).includes('死链'),
           `post-checkout 首跑死链告警: ${r.stdout}${r.stderr}`);
+        const sf = path.join(edir, '.git/hook-engine-state.json');
+        assert.ok(JSON.parse(fs.readFileSync(sf, 'utf8')).lastRun['link-rot'], '首跑盖戳');
         r = pm();
         assert.ok((r.stdout + r.stderr).includes('cadence 未到跳过: link-rot'), 'cadence 节流生效');
+        // 改旧戳→确定性到期复跑（同 review-after e2e 的状态注入先例）
+        const st = JSON.parse(fs.readFileSync(sf, 'utf8'));
+        st.lastRun['link-rot'] = '2000-01-01T00:00:00.000Z';
+        fs.writeFileSync(sf, JSON.stringify(st));
+        r = pm();
+        assert.ok((r.stdout + r.stderr).includes('死链'), '戳过期后死链复报');
       } finally { fs.rmSync(edir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
     } finally {
       server.closeAllConnections?.();
