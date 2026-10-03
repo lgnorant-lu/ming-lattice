@@ -49,6 +49,7 @@ export function regexFacts(root, rel, extractor): facts[]  // 降级兜底——
 | C/C++ | `#include` | quoted=相对、angle=-I 依赖 | [受限] include path 需构建上下文 | clangd→SCIP | 候选，语义面偏深 |
 | TypeScript/JS | `import`/`export`/`require`/动态 `import()` | 相对路径+index 兜底+目录 spec+bundler query 后缀剥离 | [OK] 已落地 `js.mjs`（8 扩展名归 3 grammar——`.jsx`→Tsx 路由走 sgconfig languageGlobs；`.d.ts` 多行泛型等 4 处上游 grammar 缺口走文件级豁免） | **depcruise**（express/solid/vite 差分 missed=0——入口闭包口径差须归一） | **已入（v1.6）** |
 | Bash/sh | `source`/`.` | file→file（相对文件目录，.sh/.bash 探测） | [OK] 已入 `sh.mjs`（v1.4）——上游 tags.scm 缺席，decl 词表手写；`$VAR` 动态 source=unresolved+sh-source-computed 不判死；`bash x.sh` 子进程调用不产边 | — | **已入**——宿主仓脚本面审计（21 sh 件+IV8 2 件） |
+| Markdown | 无边面——块骨架 decl（frontmatter/section×2方言/blockquote-head/fence/refdef） | 消费方=docClass/docmeta 图层（头载体定位/section 层级/fence 掩蔽面）；`.mdx` 走 sgconfig languageGlobs | [OK] 已入 `markdown.mjs`——上游 tags.scm 缺席词表手写（node-types.json 对账金源）；行内 link/code_span 属上游未 bundle 的 inline grammar 诚实缺席；regexFacts 行扫描同构兜底经 6,438 件全仓差分对齐 tree-sitter-md 语义（M6 parity 组19 钉板：BOM/缩进ATX/setext-listish/fence 上下文/html_block 全谱/refdef 包法/utf8-fatal） | — | **已入**——消费方 docmeta/docClass 在位；IV8 254/254 判决对拍基线 |
 | Lua | `require` | `a.b`→`a/b.lua`+init.lua | [OK] 轻量 | — | 候消费方 |
 | Zig | `@import` | file→file 直接 | [OK] 轻量 | — | 候消费方 |
 | Ruby | `require`/`require_relative` | load path 半动态 | [受限] 可降级 | sorbet | 候消费方 |

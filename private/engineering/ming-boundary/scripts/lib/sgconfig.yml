@@ -4,3 +4,4 @@
 #   vite/solid 语料实证：.jsx 走 JavaScript 必报 ERROR。
 languageGlobs:
   Tsx: ["*.jsx"]
+  Markdown: ["*.mdx"]

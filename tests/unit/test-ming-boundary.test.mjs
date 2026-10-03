@@ -1783,7 +1783,73 @@ export async function run() {
       assert.equal(oR1, oR2, 'reachable 输出应确定性一致');
     }
 
-    console.log('  18 组断言全过');
+    // ---------- 组 19: markdown 前端 M6 parity——regexFacts decl ≡ AST decl ----------
+    //   6,438 件全仓语料差分抖出的语法件行为全钉：
+    //   BOM/缩进ATX/闭合#尾/`#`单名；setext 段首行+listish 阻断；
+    //   fence 上下文配对（top/q/list/孤儿/dedent-kill/EOF无尾换行/空行内容）；
+    //   html_block 全谱（comment/decl-qgt终止/type-7吞fence记号）；
+    //   refdef title 合法包法；utf8-fatal 拒解与 sg 同败。
+    if (hasSg) {
+      const { regexFacts: mdRegex } = await import(
+        '../../private/engineering/ming-boundary/scripts/lib/langs/markdown.mjs');
+      const R7 = path.join(tmpRoot, 'm6md');
+      const w7 = (rel, text) => {
+        const p = path.join(R7, rel);
+        fs.mkdirSync(path.dirname(p), { recursive: true });
+        fs.writeFileSync(p, text, 'utf8');
+      };
+      // a：BOM + 缩进 ATX + 闭合#尾 + `#`单名 + refdef 正/负例
+      w7('a.md', '\uFEFF# Top\n   ## Indented\n## Closed ##\n#\n' +
+        '[t]: /u "ti"\n[bad]: x bare tail\n');
+      // b：setext 矩阵——`=`/`--`/单`-`下划线 + listish 阻断 + 段落组
+      w7('b.md', 'Title One\n=\n\nDouble\n--\n\nSingle\n-\n\n' +
+        '- item\n---\n\npara after\n===\n');
+      // c：fence 上下文——top + list内含空行 + quote内含
+      w7('c.md', '```js\nx\n```\n\n- it\n  ```py\n  a\n\n  b\n  ```\n\n' +
+        '> q\n> ```\n> t\n> ```\n');
+      // d：html_block——comment 掩蔽 + type-7 吞 fence 记号 + decl-qgt 终止
+      w7('d.md', '<!-- c\n# hid\n-->\n\n# Real1\n\n<Before>\n' +
+        '```markdown\nx\n```\n</Before>\n\n# Real2\n\n' +
+        '<!ENTITY x SYSTEM "f">\nswallow\n> endq\n\n# Real3\n');
+      // e：EOF 无尾换行的孤 ``` → 语法件不成节点（t51）
+      w7('e.md', 'x\n```');
+      // f：GBK 字节——utf8-fatal 拒解与 sg 同败归零
+      {
+        const p = path.join(R7, 'f.md');
+        fs.writeFileSync(p, Buffer.concat([
+          Buffer.from('# T '), Buffer.from([0xb2, 0xe2]),
+          Buffer.from('\n\n```js\nx\n```\n')]));
+      }
+      // g：多行段落 setext——徽章连行 + `---`（名=段首行）
+      w7('g.md', '[![A](u1)](l1)\n[![B](u2)](l2)\n---\n');
+      // h：dedent-kill——item fence 死於 col0 行，缩进 ``` 开新 top
+      w7('h.md', '- **tool** ok\n  ```bash\n  cmd\n# Dedented\n' +
+        '  ```\ntail\n```\n');
+
+      const out7 = path.join(tmpRoot, 'm6md.jsonl');
+      runNode([EXTRACT, '--root', R7, '--out', out7]);
+      const astMd = parseJsonl(fs.readFileSync(out7, 'utf8'));
+      const dk = (x) => `${x.extra?.shape}|${x.name}|${x.line}`;
+      const declSet = (facts, rel) => facts
+        .filter((x) => x.kind === 'decl' && x.file === rel).map(dk);
+      const mdDual = (rel) => {
+        const want = declSet(astMd, rel);
+        const got = declSet(
+          mdRegex(R7, rel, 'regex-probe').map((f) => ({ ...f, file: rel })),
+          rel);
+        assert.deepEqual([...got].sort(), [...want].sort(),
+          `${rel} markdown decl 双路应一致`);
+      };
+      for (const rel of ['a.md', 'b.md', 'c.md', 'd.md', 'e.md', 'f.md',
+        'g.md', 'h.md']) mdDual(rel);
+      // 直断钉：GBK 拒解零产出（sg 不在位亦成立——契约=utf8 语料）
+      assert.equal(mdRegex(R7, 'f.md', 'regex-probe').length, 0,
+        'GBK/非法 utf8 文件应 fail-closed 零产出');
+    } else {
+      console.log('    (跳过组19: ast-grep 不在位)');
+    }
+
+    console.log('  19 组断言全过');
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }

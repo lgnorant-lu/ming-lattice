@@ -26,6 +26,7 @@ import * as rustLang from './lib/langs/rust.mjs';
 import * as pythonLang from './lib/langs/python.mjs';
 import * as shLang from './lib/langs/sh.mjs';
 import * as jsLang from './lib/langs/js.mjs';
+import * as mdLang from './lib/langs/markdown.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 // -c 项目配置：languageGlobs 把 .jsx 挂 Tsx grammar（默认 JavaScript 不含 JSX）。
@@ -357,6 +358,8 @@ function main() {
     const rsFiles = files.filter((f) => RUST_EXT.has(f.ext) && inScope(f));
     const pyFiles = files.filter((f) => PY_EXT.has(f.ext) && inScope(f));
     const shFiles = files.filter((f) => SH_EXT.has(f.ext) && inScope(f));
+    // md AST 面受 --no-md-scan 同门约束（块骨架 decl 属 markdown 扫描面）
+    const mdFiles = a.mdScan ? files.filter((f) => mdLang.exts.has(f.ext) && inScope(f)) : [];
     // 无扩展名件认领：描述符可选 sniffFile 做 128B 级嗅探（shebang）——
     // .githooks 钩件即此面入场。注意 ast-grep 按规则语言的扩展名过滤目标
     // 文件，无扩展名件进 ast 桶也静默跳过——故 sniffed 件不走 astFiles，
@@ -369,7 +372,7 @@ function main() {
       }
     }
     const astFiles = [...jsFiles, ...tsFiles, ...tsxFiles, ...rsFiles, ...pyFiles,
-      ...shFiles];
+      ...shFiles, ...mdFiles];
 
     // js 降级路径已入描述符 jsLang.regexFacts（与 ENOBUFS 爆管降级同一实现）
     const jsRegexFacts = (f) => jsLang.regexFacts(root, f.rel, regId);
@@ -379,7 +382,7 @@ function main() {
     const pyRun = pyFiles.length
       ? pythonLang.prepareRun({ root, files: pyFiles }) : null;
     if (astFiles.length && !sg && !a.allowDegraded) {
-      die(`ast-grep 前端缺失而 js/ts/rs/py/sh 文件 ${astFiles.length} 个待抽——` +
+      die(`ast-grep 前端缺失而 js/ts/rs/py/sh/md 文件 ${astFiles.length} 个待抽——` +
         `fail-closed 拒降级（ADR-0008 D2）；确需降级传 --allow-degraded`, 3);
     } else if (astFiles.length && sg) {
       const matches = [];
@@ -394,7 +397,8 @@ function main() {
       for (const [bucket, rules] of
         [...[...jsBuckets].map(([g, fs]) => [fs, jsLang.rulesForGrammar(g)]),
          [rsFiles, rustLang.rulesFor(rustRefSpecs)],
-         [pyFiles, pythonLang.rules], [shFiles, shLang.rules]]) {
+         [pyFiles, pythonLang.rules], [shFiles, shLang.rules],
+         [mdFiles, mdLang.rules]]) {
         if (!bucket.length) continue;
         const r = runAstGrep(sg.bin, bucket.map((f) => path.join(root, f.rel)), rules);
         pushAll(matches, r.matches);
@@ -428,6 +432,8 @@ function main() {
           ? pythonLang.prepare(ms) : null;
         const jsPrepared = jsLang.exts.has(path.posix.extname(rel))
           ? jsLang.prepare(ms) : null;
+        const mdPrepared = mdLang.exts.has(path.posix.extname(rel))
+          ? mdLang.prepare(ms) : null;
         for (const m of ms) {
           const line = m.range.start.line + 1;
           const id = m.ruleId;
@@ -442,6 +448,9 @@ function main() {
               out: facts, prepared: pyPrepared, run: pyRun });
           } else if (shLang.handles(id)) {
             shLang.handle(id, m, { root, rel, extractor: astId, out: facts });
+          } else if (mdLang.handles(id)) {
+            mdLang.handle(id, m, { root, rel, extractor: astId,
+              out: facts, prepared: mdPrepared });
           }
         }
       }
@@ -458,7 +467,9 @@ function main() {
                 ? pythonLang.regexFacts(root, f.rel, regId)
                 : SH_EXT.has(f.ext)
                   ? shLang.regexFacts(root, f.rel, regId)
-                  : jsRegexFacts(f));
+                  : mdLang.exts.has(f.ext)
+                    ? mdLang.regexFacts(root, f.rel, regId)
+                    : jsRegexFacts(f));
         }
         console.error(`[extract-facts] ${degraded.size} 个 js/ts 文件 ast-grep 失败` +
           `降 regex（巨型混淆/边界输入面）: ${[...rels].slice(0, 5).join(', ')}`);
@@ -471,7 +482,9 @@ function main() {
             ? pythonLang.regexFacts(root, f.rel, regId)
             : SH_EXT.has(f.ext)
               ? shLang.regexFacts(root, f.rel, regId)
-              : jsRegexFacts(f));
+              : mdLang.exts.has(f.ext)
+                ? mdLang.regexFacts(root, f.rel, regId)
+                : jsRegexFacts(f));
     }
     for (const f of psFiles) {
       const text = fs.readFileSync(path.join(root, f.rel), 'utf8');
