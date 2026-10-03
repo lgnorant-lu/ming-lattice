@@ -244,9 +244,11 @@ export function evaluateDoc(rel, text, spec, ctx = {}) {
     return typeof cur === 'object' ? undefined : cur;
   };
 
-  // required：字段名在场即满足（multiline 折叠值可能为空串——key 在场≠空）
+  // required：空值=缺报（meta_check `not fields[key]` 语义对齐——在场性
+  // 判定分两层：required/conditional.require 要非空，freshness/states/vocab
+  // 仅在场性，空值字段照常参与约束判定）
   for (const f of cls.required)
-    if (resolve(f) === undefined)
+    if (resolve(f) === undefined || resolve(f) === '')
       issues.push({ level: 'E', rule: 'required', field: f, msg: `${label}: 缺 ${f} 字段` });
 
   // freshness：anyOf 至少一字段在场
@@ -302,7 +304,7 @@ export function evaluateDoc(rel, text, spec, ctx = {}) {
     if (!hits) continue;
     const desc = Object.entries(cond.when).map(([f, w]) => `${f}=${typeof w === 'object' ? `notIn(${w.notIn?.join('|')})` : w}`).join(' ∧ ');
     for (const f of asList(cond.require))
-      if (resolve(f) === undefined)
+      if (resolve(f) === undefined || resolve(f) === '')
         issues.push({ level, rule: 'conditional', field: f,
           msg: `${label}: ${desc} 须带 ${f} 字段` });
     for (const [cf, cv] of Object.entries(cond.check ?? {})) {

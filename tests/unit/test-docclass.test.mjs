@@ -203,6 +203,23 @@ export function run() {
       BQ_DOC(['Created: 2026-01-01', 'Status: active', 'Scope: x', 'Last Audit: 2026-03-01']),
       iv8, { today });
     assert.ok(!r.issues.some((i) => i.rule === 'freshness'), 'anyOf 部分在场应满足');
+    // 空值=缺报（meta_check `not fields[key]` 语义对齐）：required 要非空，
+    // 但空值字段仍在场——states/vocab 约束照常判定
+    r = evaluateDoc('docs/conventions/x.md',
+      BQ_DOC(['Created: 2026-01-01', 'Status:', 'Scope: x', 'Updated: 2026-02-02']),
+      iv8, { today });
+    assert.ok(r.issues.some((i) => i.level === 'E' && i.rule === 'required'
+      && i.field === 'Status'), '空值 required 字段应 E');
+    r = evaluateDoc('docs/roadmap/v0.8/analysis/d.md',
+      BQ_DOC(['Created: 2026-01-01', 'Status:', 'Superseded-By: x.md']), iv8, { today });
+    assert.ok(r.issues.some((i) => i.rule === 'required' && i.field === 'Status')
+      && r.issues.some((i) => i.rule === 'states'),
+      '空值 Status 应同时产 required E 与 states E（meta_check 同判）');
+    // conditional.require 同律：空值目标字段应触发 warn
+    r = evaluateDoc('docs/roadmap/v0.8/analysis/d.md',
+      BQ_DOC(['Created: 2026-01-01', 'Status: superseded', 'Superseded-By:']), iv8, { today });
+    assert.ok(r.issues.some((i) => i.level === 'W' && i.msg.includes('Superseded-By')),
+      '空值 Superseded-By 应视作缺字段触发 conditional W');
     // states vocab + tolerate
     r = evaluateDoc('docs/roadmap/v0.8/analysis/d.md',
       BQ_DOC(['Created: 2026-01-01', 'Status: record']), iv8, { today });
