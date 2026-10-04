@@ -150,6 +150,9 @@ async function runStage(stage, opts = {}) {
     // 对 `git rm tests/...` 类提交必须仍跑，否则覆盖自毁零门禁放行
     if (ctx.files.length === 0 && stage === 'pre-commit' && !integrityBlocking
         && !hasStagedChanges(root)) return 0;
+    // stagedEmpty 回填：skipIf=staged-empty 的求值依赖作用域文件集，
+    // detectGitState 构造时清单未出（range/all 源同语义=空集即空）
+    gitState.stagedEmpty = ctx.files.length === 0;
     if (src.source === 'staged') {
       const metaMap = batchMeta(root, ctx.files);
       ctx.meta = p => metaMap.get(p);

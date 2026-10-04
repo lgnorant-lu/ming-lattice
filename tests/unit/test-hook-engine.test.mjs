@@ -126,6 +126,9 @@ export async function run() {
     assert.ok(shouldSkip(['ref:main'], state));
     assert.ok(!shouldSkip(['ref:dev'], state));
     assert.ok(!shouldSkip(['rebase'], state));
+    // staged-empty token：null(未回填)=不命中，true=命中——引擎在清单算出后回填
+    assert.ok(shouldSkip(['staged-empty'], { ...state, stagedEmpty: true }));
+    assert.ok(!shouldSkip(['staged-empty'], { ...state, stagedEmpty: null }));
   }
 
   // 6. 端到端：temp repo 走 engine.mjs 真进程——声明式门拦截 + exit 契约 + SKIP 放行
