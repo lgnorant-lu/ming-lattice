@@ -67,12 +67,18 @@ async function runStage(stage, opts = {}) {
   const root = repoRoot();
   const cfg = loadHookEngineConfig(root);
 
-  // gates/ 完整性提示（透明性特性：变化可见，不阻断）
+  // gates/ 完整性检查（透明性特性：变化可见；integrityLevel=error 于阻断
+  // 阶段升格拦截——fail-closed 防门禁被篡改静默降级，engine trust 重签为正路）
   const integrityLevel = cfg.flat.integrityLevel ?? 'warn';
+  const integrityBreach = integrityLevel !== 'off'
+    && checkIntegrity(root, NATIVE_GATES_DIR) === 'changed';
+  const integrityBlocking = integrityBreach && integrityLevel === 'error'
+    && BLOCKING_STAGES.has(stage);
   if (integrityLevel !== 'off') {
-    const st = checkIntegrity(root, NATIVE_GATES_DIR);
-    if (st === 'changed') {
-      console.warn('[engine] [WARN] gates/ 目录内容与上次确认不一致（分支切换或手工改动）——确认无误请执行: node scripts/hooks/engine.mjs trust');
+    if (integrityBreach) {
+      const imsg = 'gates/ 目录内容与上次确认不一致（分支切换或手工改动）——确认无误请执行: node scripts/hooks/engine.mjs trust';
+      if (integrityBlocking) console.error(`[engine] [ERROR] ${imsg}`);
+      else console.warn(`[engine] [WARN] ${imsg}`);
     }
     // 采纳层健康：.githooks shim 模板对账 + 引擎引用可达性
     for (const f of checkAdoptionHealth(root)) {
@@ -169,6 +175,10 @@ async function runStage(stage, opts = {}) {
   const errors = [];
   const warnings = [];
   let skippedExpensive = false;
+  if (integrityBlocking) {
+    errors.push({ gate: 'integrity', file: '-', level: 'error', resolvedLevel: 'error',
+      message: 'gates/ 完整性与信任基线不一致——改动门禁后须 engine trust 重签，或回退未授权改动' });
+  }
 
   const execGates = async (list) => {
     for (const g of list) {
