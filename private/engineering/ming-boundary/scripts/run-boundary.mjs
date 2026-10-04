@@ -30,9 +30,11 @@ const BUILTIN = {
   metrics:         { outputs: 'report', phases: ['staged', 'ci', 'manual'], level: 'note', mutates: false },
   'emit-skeleton': { outputs: 'files',  phases: ['manual'],                 level: 'note', mutates: true },
   diff:            { outputs: 'report', phases: ['ci', 'manual'],           level: 'warn', mutates: false },
+  docclass:        { outputs: 'findings', phases: ['staged', 'ci', 'manual'], level: 'warn', mutates: false },
 };
 const KNOWN_CKEY = new Set(
-  ['entry', 'phases', 'level', 'outputs', 'mutates', 'timeout_ms', 'baseline', 'args', 'note']);
+  ['entry', 'phases', 'level', 'outputs', 'mutates', 'timeout_ms', 'baseline',
+   'spec', 'args', 'note']);
 const KNOWN_PHASE = new Set(['staged', 'ci', 'manual']);
 const KNOWN_OUT = new Set(['findings', 'report', 'files']);
 const DEFAULT_TIMEOUT = 120_000;

@@ -9,8 +9,16 @@
 // fixture 全部内联——不触仓库真 spec 与真文档。
 
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { loadSpecText, classify, evaluateDoc, scanDocs }
   from '../../private/engineering/ming-boundary/scripts/lib/docclass.mjs';
+
+const REPO = path.resolve(import.meta.dirname, '../..');
+const RUN_BOUNDARY = path.join(REPO,
+  'private/engineering/ming-boundary/scripts/run-boundary.mjs');
 
 const load = (text) => loadSpecText(text);
 const loadOk = (text) => {
@@ -368,6 +376,69 @@ docClasses:
       FM('id: 2026-01-01-x\nstatus: wild\nopenedAt: 2026-01-01'), l4, { today });
     assert.ok(r2.issues.some((i) => i.rule === 'states' && i.msg.includes('wild')),
       'states 简写词表野生值应 E');
+  }
+
+  // ── 组 7: consumers/docclass driving port——run-boundary 全链端到端 ──
+  //   遍历域=facts file facts；classify 先筛后读件；findings 协议映射
+  //   （E→error/W→warn、rule=docclass:<rule>:<field>）；spec 装载失败
+  //   fail-closed=crash finding 非白放。
+  {
+    const R = fs.mkdtempSync(path.join(os.tmpdir(), 'dc-port-'));
+    try {
+      fs.mkdirSync(path.join(R, 'docs'), { recursive: true });
+      fs.writeFileSync(path.join(R, 'boundaries.yaml'),
+        'version: 1\ndomains: []\nconsumers:\n  docclass:\n    spec: spec.yaml\n');
+      fs.writeFileSync(path.join(R, 'spec.yaml'), `
+schemaVersion: 1
+header: yaml-frontmatter
+docClasses:
+  - name: entry
+    match:
+      path: "docs/*.md"
+    required: [id, status]
+    gates:
+      missingFrontmatter: error
+`);
+      fs.writeFileSync(path.join(R, 'docs', 'a.md'),
+        '---\nid: a\nstatus: active\n---\n# A\n');
+      fs.writeFileSync(path.join(R, 'docs', 'b.md'), '---\nid: b\n---\n# B\n');
+      fs.writeFileSync(path.join(R, 'docs', 'nohead.md'), '# 无头文档\n');
+      const facts = path.join(R, 'facts.jsonl');
+      fs.writeFileSync(facts, ['docs/a.md', 'docs/b.md', 'docs/nohead.md',
+        'notes/free.md'].map((r) =>
+        JSON.stringify({ kind: 'file', file: r })).join('\n'));
+      const run = (extra = []) => spawnSync(process.execPath,
+        [RUN_BOUNDARY, '--root', R, '--phase', 'ci', '--only', 'docclass',
+         '--facts', facts, '--json', ...extra], { encoding: 'utf8' });
+
+      // 正常面：b 缺 status→error finding；nohead 无 fm→header error；
+      // a 干净；notes/free.md 未匹配类不评估
+      let r = run();
+      assert.equal(r.status, 1, `违例面应 exit1: ${r.stderr}`);
+      const findings = JSON.parse(r.stdout).findings
+        .filter((f) => f.via === 'docclass');
+      const rules = findings.map((f) => `${f.unit}|${f.rule}|${f.severity}`);
+      assert.ok(rules.includes('docs/b.md|docclass:required:status|error'),
+        `required 缺报应 error: ${JSON.stringify(rules)}`);
+      assert.ok(rules.includes('docs/nohead.md|docclass:header|error'),
+        `无头应 header error: ${JSON.stringify(rules)}`);
+      assert.ok(!findings.some((f) => f.unit === 'docs/a.md'),
+        '合规件不应产 finding');
+      assert.ok(!findings.some((f) => f.unit === 'notes/free.md'),
+        '未治理路径不应评估');
+
+      // spec 缺席→fail-closed crash finding（门禁不白放）
+      fs.writeFileSync(path.join(R, 'boundaries.yaml'),
+        'version: 1\ndomains: []\nconsumers:\n  docclass:\n    spec: gone.yaml\n');
+      r = run();
+      assert.equal(r.status, 1);
+      const crash = JSON.parse(r.stdout).findings
+        .find((f) => f.rule === 'docclass:crash');
+      assert.ok(crash && crash.severity === 'error',
+        'spec 缺席应 docclass:crash error');
+    } finally {
+      fs.rmSync(R, { recursive: true, force: true });
+    }
   }
 
   console.log('  docclass 断言全过');

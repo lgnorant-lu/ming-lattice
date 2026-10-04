@@ -128,9 +128,12 @@ staged 文件集（含 `.md` 与 `.gitignore`）→ `extract-facts --files` → 
 （evaluator 恒在，不进 consumers 段）。`boundaries.yaml` 顶层 `consumers:` 段逐 id 列举
 激活（列举=唯一激活通道，列名无实现 fail-closed）。解析序：`entry:`（仓根内）→
 `boundary.consumers/<id>.mjs`（采纳侧约定区，安装器永不覆写）→ `consumers/<id>.mjs`（内置件）。
-内置三公民：`metrics`（report，诊断遥测）、`emit-skeleton`（files，manual-only，
+内置四公民：`metrics`（report，诊断遥测）、`emit-skeleton`（files，manual-only，
 拓扑推断起草 `boundaries.suggested.yaml`，永不覆盖既有文件，推断规则一律 warn）、
-`diff`（report，事实面差分，需 `baseline:`）。协议与元数据全集见 `scripts/consumers/README.md`。
+`diff`（report，事实面差分，需 `baseline:`）、`docclass`（findings，docClass 头
+判定——`lib/docclass.mjs` 内核的 driving port；`spec:` 必填仓根内路径，遍历域
+=facts file facts 故 classify 纯路径先筛、命中类才读件；staged 相位只见暂存
+单元、gitignored 治理文档本机照判而 CI 真空过）。协议与元数据全集见 `scripts/consumers/README.md`。
 空契约面（采纳初期只有 consumers 无 rules）：evaluator 自动跳过+warning 而非撞
 domains 硬性校验——evaluator 也只是消费方之一。`diff` 的 baseline 建议放仓根之外
 或 gitignored——置根内会被 walk 计成新文件事实（baseline.jsonl 自己上 +added 清单）。

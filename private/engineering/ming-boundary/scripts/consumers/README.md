@@ -10,6 +10,7 @@ evaluator（check-boundaries.mjs）恒在，不在 `consumers:` 段列举。
 | `metrics` | report | staged/ci/manual | 否 | 事实面统计 + fidelity 降级遥测（采纳诊断用） |
 | `emit-skeleton` | files | manual | **是** | 从观察拓扑起草 `boundaries.suggested.yaml`（推断稿，一律 warn 级，须人工审） |
 | `diff` | report | ci/manual | 否 | 事实面差分（config.baseline 必填，仓根相对路径） |
+| `docclass` | findings | staged/ci/manual | 否 | docClass 头判定（config.spec=docclass.yaml 必填）——classify 纯路径先筛、命中类才读件；遍历域=facts file facts（gitignored 治理文档本机照判、CI 真空过） |
 
 ## 选用与配置
 
@@ -41,6 +42,7 @@ consumers:
 | `mutates` | files 型必填 true | 写文件型消费方声明；无 `--apply` 时只准产出 `planned` |
 | `entry` | 否 | 显式入口路径（仓根相对，越界即拒） |
 | `baseline` | diff 必填 | 基线 facts.jsonl 路径 |
+| `spec` | docclass 必填 | docClass spec（docclass.yaml）仓根相对路径，越界即拒 |
 | `timeout_ms` | 否 | 默认 120s |
 | `args` | 否 | 追加 argv |
 

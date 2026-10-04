@@ -1,0 +1,77 @@
+# boundaries.docclass.yaml — 本仓 docClass spec（boundaries.yaml consumers.docclass 配置面）
+# 消费方: private/engineering/ming-boundary/scripts/consumers/docclass.mjs
+#         （lib/docclass.mjs 内核驱动——spec 装载 fail-closed）
+# 语义: 受治理文档的头字段契约——staged/ci 相位经 run-boundary 执行；
+#       distill/ 为 gitignored 本机区，本机照判、CI 无该文件集即真空通过。
+# 注意: 与 distill/docclass.yaml 不同物——那是 proposal-schema 注册表
+#       （staging/idScheme/agingDays 生命周期语义），本件是头字段判定 spec。
+schemaVersion: 1
+header: yaml-frontmatter
+matchOrder: first
+docClasses:
+  # matchOrder:first——窄模式提案类须先于宽模式条目类（_proposals 亦中
+  # distill/*/*.md）
+  - name: distill-proposal
+    match:
+      path: "distill/_proposals/*.md"
+    required:
+      - id
+      - status
+      - type
+    fields:
+      id:
+        equalsFilenameStem: true    # <date>-<slug>.md 文件名即 id（提案协议）
+      status:
+        vocab:
+          - pending
+          - landed
+          - rejected
+      type:
+        vocab:
+          - promotion
+          - field-feedback
+          - package-iteration
+          - new-package
+          - policy-decision
+      reviewAfter:
+        pattern: "^\\d{4}-\\d{2}-\\d{2}$|^P\\d+D$"
+    gates:
+      missingFrontmatter: error
+  - name: distill-entry
+    match:
+      path: "distill/*/*.md"
+      notPath: "distill/_proposals/*"
+    required:
+      - id
+      - status
+      - revision
+      - updatedAt
+    fields:
+      id:
+        equalsFilenameStem: true    # 条目协议同制——文件名即 id
+      status:
+        vocab:
+          - active
+          - superseded
+      revision:
+        pattern: "^\\d+$"
+      updatedAt:
+        pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+      scope:
+        vocab:
+          - project-only
+          - general
+    gates:
+      missingFrontmatter: warn      # 条目面软警告——自由笔记不强制头
+  - name: skill-package
+    match:
+      name: SKILL.md
+      # 自有层才受治理——vertical/base 物化件是上游账面非本仓文档
+      any:
+        - path: "deployable/**"
+        - path: "private/**"
+    required:
+      - name
+      - description
+    gates:
+      missingFrontmatter: error

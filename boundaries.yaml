@@ -122,3 +122,10 @@ rules:
   covered: []
   isolated: []
   parity: []
+
+# consumers 段——run-boundary 相位分发面（列举是唯一激活通道）。
+# docclass：docClass 头判定（lib/docclass.mjs 内核 driving port）——
+# spec 即本仓治理文档头字段契约；staged/ci 相位生效。
+consumers:
+  docclass:
+    spec: boundaries.docclass.yaml
