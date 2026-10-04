@@ -141,7 +141,13 @@ foreach ($s in $sources) {
         if ($refPath -eq '' -or $refPath -match '^[A-Za-z]:[\\/]') { continue }  # 空引用 / 绝对盘符路径跳过
         if ($refPath -match '^(url|text|alt|link|path|file|xxx|example)$') { continue }  # markdown 语法示例占位符
         $full = Join-Path (Split-Path $skillMd -Parent) ($refPath -replace '/', '\')
-        if (-not (Test-Path $full)) {
+        # 越包链接判据：整包符号链接部署后，'..' 出包即指向客户端目录——
+        # 本地仓内存在的目标在部署端必是断链（false-green 缺口类）
+        $resolved = [IO.Path]::GetFullPath($full)
+        $srcRoot = [IO.Path]::GetFullPath($s.src).TrimEnd('\', '/')
+        if (-not $resolved.StartsWith($srcRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+            $issues += [ordered]@{ level = 'W'; name = $s.name; msg = "链接越出包根(部署后断链): $ref"; file = $skillMd }
+        } elseif (-not (Test-Path $full)) {
             $issues += [ordered]@{ level = 'W'; name = $s.name; msg = "引用的文件不存在: $ref"; file = $skillMd }
         }
     }
