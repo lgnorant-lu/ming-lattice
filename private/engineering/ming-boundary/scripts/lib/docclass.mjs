@@ -326,10 +326,15 @@ export function evaluateDoc(rel, text, spec, ctx = {}) {
     });
     if (!hits) continue;
     const desc = Object.entries(cond.when).map(([f, w]) => `${f}=${typeof w === 'object' ? `notIn(${w.notIn?.join('|')})` : w}`).join(' ∧ ');
+    // cond.msg 为 warn/error 消息模板（IV8 meta_check 契约）：
+    // {field}=缺报字段名、{when.X}=when 字段实际值——require 缺报与
+    // check 违例同享模板；无模板回退自动生成描述
+    const _tpl = (f) => cond.msg.replaceAll('{field}', f)
+      .replace(/\{when\.(\w+)\}/g, (_, w) => String(resolve(w) ?? ''));
     for (const f of asList(cond.require))
       if (resolve(f) === undefined || resolve(f) === '')
         issues.push({ level, rule: 'conditional', field: f,
-          msg: `${label}: ${desc} 须带 ${f} 字段` });
+          msg: `${label}: ${cond.msg ? _tpl(f) : `${desc} 须带 ${f} 字段`}` });
     for (const [cf, cv] of Object.entries(cond.check ?? {})) {
       const v = resolve(cf);
       if (v === undefined) continue;
@@ -337,7 +342,7 @@ export function evaluateDoc(rel, text, spec, ctx = {}) {
         const bound = cv['lt-date'] === 'today' ? today : cv['lt-date'];
         if (DATE_RE.test(String(v)) && String(v) < bound)
           issues.push({ level, rule: 'conditional-check', field: cf,
-            msg: `${label}: ${desc} 且 ${cf}=${v} < ${bound}——${cond.msg ?? '到期项应复审'}` });
+            msg: `${label}: ${desc} 且 ${cf}=${v} < ${bound}——${cond.msg ? _tpl(cf) : '到期项应复审'}` });
       }
     }
   }

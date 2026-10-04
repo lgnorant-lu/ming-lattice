@@ -52,6 +52,7 @@ docClasses:
           Status: superseded
         require: [Superseded-By]
         level: warn
+        msg: "superseded doc missing \`{field}\` (status={when.Status})"
       - when:
           Status: implemented
         require: [Implemented-In]
@@ -253,6 +254,11 @@ export function run() {
       BQ_DOC(['Created: 2026-01-01', 'Status: superseded']), iv8, { today });
     assert.ok(r.issues.some((i) => i.level === 'W' && i.msg.includes('Superseded-By')),
       'superseded 缺 Superseded-By 应 W');
+    // cond.msg 模板渲染（IV8 meta_check 契约）：{field}=缺报字段、
+    // {when.X}=when 字段实际值——require 缺报同享模板非仅 check
+    assert.ok(r.issues.some((i) => i.rule === 'conditional'
+      && i.msg.includes('missing `Superseded-By`') && i.msg.includes('status=superseded')),
+      `msg 模板应渲染占位符: ${JSON.stringify(r.issues)}`);
     r = evaluateDoc('docs/roadmap/v0.8/analysis/d.md',
       BQ_DOC(['Created: 2026-01-01', 'Status: superseded', 'Superseded-By: docs/roadmap/v0.9/new.md']),
       iv8, { today });
