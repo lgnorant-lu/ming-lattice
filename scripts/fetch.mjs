@@ -106,7 +106,14 @@ for (const e of targets) {
 
   let repairOnly = false;
   if (fs.existsSync(dir)) {
-    if (!fs.existsSync(path.join(dir, '.git'))) {
+    const gitMeta = path.join(dir, '.git');
+    if (fs.existsSync(gitMeta) && !fs.statSync(gitMeta).isDirectory()) {
+      // .git 是 gitfile（submodule/linked-worktree 指针）：remote 对账/set-url 会劫持
+      // 它本不属于自己的 remote——不收养不修改，报人工裁决
+      results.notRepo.push(`${e.name} (.git 为 gitfile——submodule/worktree 须人工处理)`);
+      continue;
+    }
+    if (!fs.existsSync(gitMeta)) {
       // 非 git 目录（游离文件残留/手工拷贝）：不收养不覆盖，报人工裁决
       results.notRepo.push(`${e.name} (存在非 git 目录——清空或迁走后重跑)`);
       continue;
@@ -184,10 +191,10 @@ for (const e of targets) {
     }
     git(dir, ['config', 'core.longpaths', 'true']);
     try {
-      git(dir, ['fetch', '--depth=1', '--no-tags', 'origin', e.pin]);
+      git(dir, ['-c', 'transfer.fsckObjects=true', 'fetch', '--depth=1', '--no-tags', 'origin', e.pin]);
     } catch {
       // pin 不在浅可达面（服务端未开 allowReachableSHA1InWant 或 pin 悬死）→ 回退全量
-      git(dir, ['fetch', '--no-tags', 'origin']);
+      git(dir, ['-c', 'transfer.fsckObjects=true', 'fetch', '--no-tags', 'origin']);
     }
     git(dir, ['checkout', '-qf', '--detach', e.pin]);
     results.fetched.push(e.name);

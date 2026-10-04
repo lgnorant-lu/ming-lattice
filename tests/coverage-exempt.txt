@@ -7,3 +7,4 @@ scripts/test.sh — POSIX 透传壳：仅转发 tests/run.mjs，语义与已测�
 scripts/patch-deployable.ps1 — 候审债务：deployable 改写器的 WhatIf/写面矩阵测试待补（登记为显性缺口）
 scripts/verify-cache.ps1 — 候审债务：checkCache 完整性校验测试待补（登记为显性缺口）
 private/engineering/ming-boundary/scripts/sync-langs.mjs — 网络取数生成器（curl 拉 pinned 上游 tags.scm/linguist）；单测离线约束不适用——确定性由 derived 产物消费断言间接覆盖
+private/engineering/ming-boundary/scripts/consumers/nslaw.mjs — 候审债务：命名空间法律消费方在途件（untracked 开发中），契约测试待随其落地补

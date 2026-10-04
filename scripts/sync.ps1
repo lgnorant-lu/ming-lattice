@@ -165,7 +165,8 @@ foreach ($u in $units) {
             $modeStat.link++
         } else {
             if ($IsWindows) {
-                robocopy $u.src $dst /E /NFL /NDL /NJH /NJS /NP | Out-Null
+                # /XJ: 不穿越 junction——源内含 reparse point 时防把链外内容整棵复制进部署面
+                robocopy $u.src $dst /E /XJ /NFL /NDL /NJH /NJS /NP | Out-Null
                 if ($LASTEXITCODE -ge 8) { throw "sync_copy_failed: $($u.name) code=$LASTEXITCODE" }
             } else {
                 Copy-Item -LiteralPath $u.src -Destination $dst -Recurse -ErrorAction Stop

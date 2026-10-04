@@ -129,7 +129,9 @@ foreach ($sectionName in @('base', 'vertical')) {
                 $entry.updated = $true
                 $stats.updated++
                 if ($hasGit) {
-                    $logs = git -C $path log --oneline "$localHead..FETCH_HEAD" 2>$null | Select-Object -First 10
+                    # 远端 commit subject 是不可信输入——剥离控制字符（ESC/C0-C1），防终端转义注入
+                    $logs = git -C $path log --oneline "$localHead..FETCH_HEAD" 2>$null | Select-Object -First 10 |
+                        ForEach-Object { $_ -replace '[\x00-\x1f\x7f-\x9f]', '' }
                     if ($logs) { $entry.summary = @($logs) }
                 }
             }
