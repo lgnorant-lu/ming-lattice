@@ -71,12 +71,12 @@ async function runStage(stage, opts = {}) {
   // 阶段升格拦截——fail-closed 防门禁被篡改静默降级，engine trust 重签为正路）
   const integrityLevel = cfg.flat.integrityLevel ?? 'warn';
   const integrityBreach = integrityLevel !== 'off'
-    && checkIntegrity(root, NATIVE_GATES_DIR) === 'changed';
+    && checkIntegrity(root, HOOKS_DIR) === 'changed';
   const integrityBlocking = integrityBreach && integrityLevel === 'error'
     && BLOCKING_STAGES.has(stage);
   if (integrityLevel !== 'off') {
     if (integrityBreach) {
-      const imsg = 'gates/ 目录内容与上次确认不一致（分支切换或手工改动）——确认无误请执行: node scripts/hooks/engine.mjs trust';
+      const imsg = 'hooks 树(engine/gates/gates.local/lib)内容与上次确认不一致（分支切换或手工改动）——确认无误请执行: node scripts/hooks/engine.mjs trust';
       if (integrityBlocking) console.error(`[engine] [ERROR] ${imsg}`);
       else console.warn(`[engine] [WARN] ${imsg}`);
     }
@@ -181,7 +181,7 @@ async function runStage(stage, opts = {}) {
   let skippedExpensive = false;
   if (integrityBlocking) {
     errors.push({ gate: 'integrity', file: '-', level: 'error', resolvedLevel: 'error',
-      message: 'gates/ 完整性与信任基线不一致——改动门禁后须 engine trust 重签，或回退未授权改动' });
+      message: 'hooks 树完整性与信任基线不一致——改动门禁/引擎/lib 后须 engine trust 重签，或回退未授权改动' });
   }
 
   const execGates = async (list) => {
@@ -400,7 +400,7 @@ async function main() {
       return await runStage(group === 'ci' ? 'ci' : 'check', { fileSource: source });
     }
     if (cmd === 'baseline') return await cmdBaseline(rest.includes('--dry-run'));
-    if (cmd === 'trust') { writeTrust(repoRoot()); console.log('[engine] gates/ 完整性存值已更新'); return 0; }
+    if (cmd === 'trust') { writeTrust(repoRoot()); console.log('[engine] hooks 树完整性存值已更新'); return 0; }
     if (cmd === 'list') return await cmdList();
     if (cmd === 'commit-msg') return await runStage('commit-msg', { msgPath: rest[0] });
     if (cmd === 'post-merge') return await runStage('post-merge');

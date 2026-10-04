@@ -12,15 +12,24 @@ import { HOOK_STAGES, shimScript, shimEngineRef } from './shims.mjs';
 
 const STATE_FILE = 'hook-engine-state.json';
 
-function hashDir(dir) {
+// 信任基线覆盖域：决定执行语义的全部件——gates.local 不签=本地门可被静默
+// 降级；lib 不签=resolveLevel/分派逻辑可整体旁路（integrityLevel=error 成空门）；
+// engine.mjs 自身同理。升级后首跑报 changed → engine trust 重签即新基线。
+const INTEGRITY_PARTS = ['engine.mjs', 'gates', 'gates.local', 'lib'];
+
+export function hashHooksTree(hooksDir) {
   const h = createHash('sha1');
-  if (!fs.existsSync(dir)) return h.digest('hex');
-  const walk = d => fs.readdirSync(d, { withFileTypes: true })
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
-  for (const f of walk(dir)) {
-    h.update(path.relative(dir, f));
-    h.update(fs.readFileSync(f));
+  for (const name of INTEGRITY_PARTS) {
+    const abs = path.join(hooksDir, name);
+    if (!fs.existsSync(abs)) continue;
+    if (fs.statSync(abs).isFile()) { h.update(name + '\0'); h.update(fs.readFileSync(abs)); continue; }
+    const walk = d => fs.readdirSync(d, { withFileTypes: true })
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
+    for (const f of walk(abs)) {
+      h.update(name + '/' + path.relative(abs, f).replace(/\\/g, '/') + '\0');
+      h.update(fs.readFileSync(f));
+    }
   }
   return h.digest('hex');
 }
@@ -30,11 +39,11 @@ function stateFilePath(root) {
 }
 
 /**
- * 比对 gates 目录 hash。
+ * 比对 hooks 树 hash（engine.mjs/gates/gates.local/lib 四件签名）。
  * 返回 'ok' | 'bootstrap'（首见自动建档） | 'changed'（待 trust 再确认）
  */
-export function checkIntegrity(root, gatesDir) {
-  const current = hashDir(gatesDir);
+export function checkIntegrity(root, hooksDir) {
+  const current = hashHooksTree(hooksDir);
   const sf = stateFilePath(root);
   if (!fs.existsSync(sf)) {
     writeTrust(root, current);
@@ -49,7 +58,7 @@ export function checkIntegrity(root, gatesDir) {
 }
 
 export function writeTrust(root, hash) {
-  const current = hash ?? hashDir(path.join(root, 'scripts/hooks/gates'));
+  const current = hash ?? hashHooksTree(path.join(root, 'scripts/hooks'));
   writeState(root, { gatesHash: current, trustedAt: new Date().toISOString() });
 }
 
