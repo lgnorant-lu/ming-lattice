@@ -1,0 +1,533 @@
+{
+  "corpusVersion": 1,
+  "note": "docclass 双引擎（mjs 内核 ↔ IV8 docclass_eval.py）共享语料——装载对拍 + 判决对拍。孪生件: skills-collection/tests/fixtures/docclass-xlang/cases.json ↔ IV8/tests/fixtures/docclass-xlang-cases.json——改动须两仓同步。expect 为逐引擎期望——\"accept/reject 不同\"即有意子集边界而非缺陷。",
+  "loadCases": [
+    {
+      "id": "minimal",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n",
+      "expect": {
+        "mjs": "accept",
+        "py": "accept"
+      }
+    },
+    {
+      "id": "anyof-synonym",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      anyOf:\n        - path: \"a/*\"\n",
+      "expect": {
+        "mjs": "accept",
+        "py": "accept"
+      },
+      "note": "anyOf 归一化为 any 同义"
+    },
+    {
+      "id": "states-shorthand",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    states: [draft, active]\n",
+      "expect": {
+        "mjs": "accept",
+        "py": "accept"
+      },
+      "note": "states 列表简写"
+    },
+    {
+      "id": "states-statusfield",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    statusField: State\n    states: [a, b]\n",
+      "expect": {
+        "mjs": "accept",
+        "py": "accept"
+      },
+      "note": "statusField 作 states.field 缺省"
+    },
+    {
+      "id": "freshness-warn",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    freshness:\n      anyOf: [d]\n      level: warn\n",
+      "expect": {
+        "mjs": "accept",
+        "py": "accept"
+      }
+    },
+    {
+      "id": "inert-meta-keys",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    staging: local\n    idScheme: date-slug\n    agingDays: 30\n",
+      "expect": {
+        "mjs": "accept",
+        "py": "accept"
+      },
+      "note": "惰性声明键——须归一化透传不吞"
+    },
+    {
+      "id": "cond-notin",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    conditional:\n      - when:\n          S:\n            notIn: [a]\n        require: [F]\n",
+      "expect": {
+        "mjs": "accept",
+        "py": "accept"
+      }
+    },
+    {
+      "id": "cond-msg-template",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    conditional:\n      - when:\n          S: a\n        require: [F]\n        msg: \"missing `{field}` s={when.S}\"\n",
+      "expect": {
+        "mjs": "accept",
+        "py": "accept"
+      }
+    },
+    {
+      "id": "bad-schemaversion",
+      "spec": "schemaVersion: 2\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "missing-schemaversion",
+      "spec": "header: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "unknown-file-key",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\nbogusKey: 1\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "unknown-class-key",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    bogusAxis: 1\n    match:\n      path: \"a/*\"\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "unknown-match-key",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n      glob: \"x\"\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "notpath-alone",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      notPath: \"z/*\"\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      },
+      "note": "notPath 须配至少一包含键"
+    },
+    {
+      "id": "scalar-match-path",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: 5\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "matchorder-all",
+      "spec": "schemaVersion: 1\nmatchOrder: all\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "cond-level-bad",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    conditional:\n      - when:\n          S: a\n        require: [F]\n        level: loud\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "when-notin-scalar",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    conditional:\n      - when:\n          S:\n            notIn: active\n        require: [F]\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "when-list-value",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    conditional:\n      - when:\n          S: [a]\n        require: [F]\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "require-nonstring",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    required: [5]\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "msg-nonstring",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    conditional:\n      - when:\n          S: a\n        require: [F]\n        msg: 3\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "states-tolerate-scalar",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    states:\n      field: s\n      vocab: [a]\n      tolerate: x\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "freshness-level-bad",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    freshness:\n      anyOf: [d]\n      level: loud\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "freshness-empty-anyof",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    freshness:\n      anyOf: []\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "empty-docclasses",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses: []\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "dup-class-name",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n  - name: x\n    match:\n      path: \"b/*\"\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "bad-dialect",
+      "spec": "schemaVersion: 1\nheader: toml-fm\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      }
+    },
+    {
+      "id": "fields-multiline",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    fields:\n      f1:\n        multiline: true\n",
+      "expect": {
+        "mjs": "reject",
+        "py": "reject"
+      },
+      "note": "multiline 已出词表（投机键消融）"
+    },
+    {
+      "id": "fields-rule",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    fields:\n      f1:\n        vocab: [a]\n",
+      "expect": {
+        "mjs": "accept",
+        "py": "reject"
+      },
+      "note": "subset: fields 键 py 未实现"
+    },
+    {
+      "id": "gates-rule",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    gates:\n      missingFrontmatter: warn\n",
+      "expect": {
+        "mjs": "accept",
+        "py": "reject"
+      },
+      "note": "subset: gates py 未实现"
+    },
+    {
+      "id": "class-header",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    header: blockquote-head\n",
+      "expect": {
+        "mjs": "accept",
+        "py": "reject"
+      },
+      "note": "subset: 类级 header py 未实现"
+    },
+    {
+      "id": "yaml-frontmatter-header",
+      "spec": "schemaVersion: 1\nheader: yaml-frontmatter\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n",
+      "expect": {
+        "mjs": "accept",
+        "py": "reject"
+      },
+      "note": "subset: fm 方言 py 抽取面外"
+    },
+    {
+      "id": "check-ltdate",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n    conditional:\n      - when:\n          S: a\n        check:\n          F:\n            lt-date: today\n",
+      "expect": {
+        "mjs": "accept",
+        "py": "reject"
+      },
+      "note": "subset: check 算子 py 未实现"
+    },
+    {
+      "id": "absent-header",
+      "spec": "schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: \"a/*\"\n",
+      "expect": {
+        "mjs": "accept",
+        "py": "reject"
+      },
+      "note": "边界: py 显式拒缺省 header（fail-closed 选位）；mjs 允许（docmeta 双侧抽取）"
+    }
+  ],
+  "verdictCases": [
+    {
+      "id": "clean",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: governed\n    match:\n      path: \"docs/g/*.md\"\n    required: [Created, Status]\n    freshness:\n      anyOf: [Updated]\n    states:\n      field: Status\n      vocab: [draft, active, archived]\n      tolerate: [record]\n    conditional:\n      - when:\n          Status: archived\n        require: [Archived-At]\n        level: warn\n      - when:\n          Status:\n            notIn: [draft, active]\n        require: [Note]\n",
+      "docs": [
+        {
+          "path": "docs/g/a.md",
+          "text": "# 标题\n> Created: 2026-01-01\n> Status: active\n> Updated: 2026-02-01\n\n正文。\n"
+        }
+      ],
+      "expect": {
+        "docs/g/a.md": {
+          "class": "governed",
+          "errors": [],
+          "warns": []
+        }
+      }
+    },
+    {
+      "id": "required-missing",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: governed\n    match:\n      path: \"docs/g/*.md\"\n    required: [Created, Status]\n    freshness:\n      anyOf: [Updated]\n    states:\n      field: Status\n      vocab: [draft, active, archived]\n      tolerate: [record]\n    conditional:\n      - when:\n          Status: archived\n        require: [Archived-At]\n        level: warn\n      - when:\n          Status:\n            notIn: [draft, active]\n        require: [Note]\n",
+      "docs": [
+        {
+          "path": "docs/g/a.md",
+          "text": "# 标题\n> Status: active\n> Updated: 2026-02-01\n\n正文。\n"
+        }
+      ],
+      "expect": {
+        "docs/g/a.md": {
+          "class": "governed",
+          "errors": [
+            [
+              "required",
+              "Created"
+            ]
+          ],
+          "warns": []
+        }
+      }
+    },
+    {
+      "id": "required-empty",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: governed\n    match:\n      path: \"docs/g/*.md\"\n    required: [Created, Status]\n    freshness:\n      anyOf: [Updated]\n    states:\n      field: Status\n      vocab: [draft, active, archived]\n      tolerate: [record]\n    conditional:\n      - when:\n          Status: archived\n        require: [Archived-At]\n        level: warn\n      - when:\n          Status:\n            notIn: [draft, active]\n        require: [Note]\n",
+      "docs": [
+        {
+          "path": "docs/g/a.md",
+          "text": "# 标题\n> Created:\n> Status: active\n> Updated: 2026-02-01\n\n正文。\n"
+        }
+      ],
+      "expect": {
+        "docs/g/a.md": {
+          "class": "governed",
+          "errors": [
+            [
+              "required",
+              "Created"
+            ]
+          ],
+          "warns": []
+        }
+      }
+    },
+    {
+      "id": "freshness-absent",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: governed\n    match:\n      path: \"docs/g/*.md\"\n    required: [Created, Status]\n    freshness:\n      anyOf: [Updated]\n    states:\n      field: Status\n      vocab: [draft, active, archived]\n      tolerate: [record]\n    conditional:\n      - when:\n          Status: archived\n        require: [Archived-At]\n        level: warn\n      - when:\n          Status:\n            notIn: [draft, active]\n        require: [Note]\n",
+      "docs": [
+        {
+          "path": "docs/g/a.md",
+          "text": "# 标题\n> Created: 2026-01-01\n> Status: active\n\n正文。\n"
+        }
+      ],
+      "expect": {
+        "docs/g/a.md": {
+          "class": "governed",
+          "errors": [
+            [
+              "freshness",
+              null
+            ]
+          ],
+          "warns": []
+        }
+      }
+    },
+    {
+      "id": "freshness-warn-bucket",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: governed\n    match:\n      path: \"docs/g/*.md\"\n    required: [Created, Status]\n    freshness:\n      anyOf: [Updated]\n      level: warn\n    states:\n      field: Status\n      vocab: [draft, active, archived]\n      tolerate: [record]\n    conditional:\n      - when:\n          Status: archived\n        require: [Archived-At]\n        level: warn\n      - when:\n          Status:\n            notIn: [draft, active]\n        require: [Note]\n",
+      "docs": [
+        {
+          "path": "docs/g/a.md",
+          "text": "# 标题\n> Created: 2026-01-01\n> Status: active\n\n正文。\n"
+        }
+      ],
+      "expect": {
+        "docs/g/a.md": {
+          "class": "governed",
+          "errors": [],
+          "warns": [
+            [
+              "freshness",
+              null
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "id": "states-invalid",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: governed\n    match:\n      path: \"docs/g/*.md\"\n    required: [Created, Status]\n    freshness:\n      anyOf: [Updated]\n    states:\n      field: Status\n      vocab: [draft, active, archived]\n      tolerate: [record]\n    conditional:\n      - when:\n          Status: archived\n        require: [Archived-At]\n        level: warn\n      - when:\n          Status:\n            notIn: [draft, active]\n        require: [Note]\n",
+      "docs": [
+        {
+          "path": "docs/g/a.md",
+          "text": "# 标题\n> Created: 2026-01-01\n> Status: bogus\n> Updated: 2026-02-01\n\n正文。\n"
+        }
+      ],
+      "expect": {
+        "docs/g/a.md": {
+          "class": "governed",
+          "errors": [
+            [
+              "states",
+              "Status"
+            ]
+          ],
+          "warns": []
+        }
+      }
+    },
+    {
+      "id": "states-tolerate",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: governed\n    match:\n      path: \"docs/g/*.md\"\n    required: [Created, Status]\n    freshness:\n      anyOf: [Updated]\n    states:\n      field: Status\n      vocab: [draft, active, archived]\n      tolerate: [record]\n    conditional:\n      - when:\n          Status: archived\n        require: [Archived-At]\n        level: warn\n      - when:\n          Status:\n            notIn: [draft, active]\n        require: [Note]\n",
+      "docs": [
+        {
+          "path": "docs/g/a.md",
+          "text": "# 标题\n> Created: 2026-01-01\n> Status: record\n> Updated: 2026-02-01\n\n正文。\n"
+        }
+      ],
+      "expect": {
+        "docs/g/a.md": {
+          "class": "governed",
+          "errors": [
+            [
+              "conditional",
+              "Note"
+            ]
+          ],
+          "warns": []
+        }
+      },
+      "note": "record 豁免硬门但命中 notIn(draft,active) when → conditional 派生"
+    },
+    {
+      "id": "states-absent-unjudged",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: governed\n    match:\n      path: \"docs/g/*.md\"\n    required: [Created, Status]\n    freshness:\n      anyOf: [Updated]\n    states:\n      field: Status\n      vocab: [draft, active, archived]\n      tolerate: [record]\n    conditional:\n      - when:\n          Status: archived\n        require: [Archived-At]\n        level: warn\n      - when:\n          Status:\n            notIn: [draft, active]\n        require: [Note]\n",
+      "docs": [
+        {
+          "path": "docs/g/a.md",
+          "text": "# 标题\n> Created: 2026-01-01\n> Updated: 2026-02-01\n\n正文。\n"
+        }
+      ],
+      "expect": {
+        "docs/g/a.md": {
+          "class": "governed",
+          "errors": [
+            [
+              "required",
+              "Status"
+            ]
+          ],
+          "warns": []
+        }
+      },
+      "note": "Status 缺席→required 缺报；states 在场性不判；when 缺席不命中"
+    },
+    {
+      "id": "cond-hit-warn",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: governed\n    match:\n      path: \"docs/g/*.md\"\n    required: [Created, Status]\n    freshness:\n      anyOf: [Updated]\n    states:\n      field: Status\n      vocab: [draft, active, archived]\n      tolerate: [record]\n    conditional:\n      - when:\n          Status: archived\n        require: [Archived-At]\n        level: warn\n      - when:\n          Status:\n            notIn: [draft, active]\n        require: [Note]\n",
+      "docs": [
+        {
+          "path": "docs/g/a.md",
+          "text": "# 标题\n> Created: 2026-01-01\n> Status: archived\n> Updated: 2026-02-01\n\n正文。\n"
+        }
+      ],
+      "expect": {
+        "docs/g/a.md": {
+          "class": "governed",
+          "errors": [
+            [
+              "conditional",
+              "Note"
+            ]
+          ],
+          "warns": [
+            [
+              "conditional",
+              "Archived-At"
+            ]
+          ]
+        }
+      },
+      "note": "archived→Archived-At(warn)；notIn 亦命中→Note(error)"
+    },
+    {
+      "id": "cond-skip-invalid-when",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: governed\n    match:\n      path: \"docs/g/*.md\"\n    required: [Created, Status]\n    freshness:\n      anyOf: [Updated]\n    states:\n      field: Status\n      vocab: [draft, active, archived]\n      tolerate: [record]\n    conditional:\n      - when:\n          Status: archived\n        require: [Archived-At]\n        level: warn\n      - when:\n          Status:\n            notIn: [draft, active]\n        require: [Note]\n",
+      "docs": [
+        {
+          "path": "docs/g/a.md",
+          "text": "# 标题\n> Created: 2026-01-01\n> Status: bogus\n> Updated: 2026-02-01\n\n正文。\n"
+        }
+      ],
+      "expect": {
+        "docs/g/a.md": {
+          "class": "governed",
+          "errors": [
+            [
+              "states",
+              "Status"
+            ]
+          ],
+          "warns": []
+        }
+      },
+      "note": "when 字段违例→conditional 全条跳过（bogus 虽 notIn 命中也不派生）"
+    },
+    {
+      "id": "unclassified",
+      "spec": "schemaVersion: 1\nheader: blockquote-head\ndocClasses:\n  - name: governed\n    match:\n      path: \"docs/g/*.md\"\n    required: [Created, Status]\n    freshness:\n      anyOf: [Updated]\n    states:\n      field: Status\n      vocab: [draft, active, archived]\n      tolerate: [record]\n    conditional:\n      - when:\n          Status: archived\n        require: [Archived-At]\n        level: warn\n      - when:\n          Status:\n            notIn: [draft, active]\n        require: [Note]\n",
+      "docs": [
+        {
+          "path": "docs/other/a.md",
+          "text": "# 标题\n> Status: active\n\n正文。\n"
+        }
+      ],
+      "expect": {
+        "docs/other/a.md": {
+          "class": null,
+          "errors": [],
+          "warns": []
+        }
+      }
+    }
+  ]
+}

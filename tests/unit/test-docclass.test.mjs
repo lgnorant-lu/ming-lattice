@@ -468,5 +468,34 @@ docClasses:
     }
   }
 
+  // ── 组 8: 双引擎共享语料（IV8 docclass_eval.py 对拍契约面） ──
+  // 语料孪生件: IV8 tests/fixtures/docclass-xlang-cases.json——两仓同步。
+  // expect 为逐引擎期望：accept/reject 分歧=有意子集边界而非缺陷。
+  {
+    const corpus = JSON.parse(fs.readFileSync(
+      path.join(REPO, 'tests/fixtures/docclass-xlang/cases.json'), 'utf8'));
+    for (const c of corpus.loadCases) {
+      const r = load(c.spec);
+      const ok = r.spec !== null && r.errors.length === 0;
+      assert.equal(ok, c.expect.mjs === 'accept',
+        `loadCase ${c.id}: mjs 期望 ${c.expect.mjs}，实际 ${ok ? 'accept' : 'reject'}${r.errors.length ? ' (' + r.errors[0].slice(0, 80) + ')' : ''}`);
+    }
+    const vec = (issues, lvl) => issues.filter((i) => i.level === lvl)
+      .map((i) => [i.rule, i.field ?? null]);
+    for (const c of corpus.verdictCases) {
+      const spec = loadOk(c.spec);
+      for (const doc of c.docs) {
+        const exp = c.expect[doc.path];
+        const r = evaluateDoc(doc.path, doc.text, spec, { today });
+        assert.equal(r.className ?? null, exp.class,
+          `verdictCase ${c.id}/${doc.path} 类归判`);
+        assert.deepEqual(vec(r.issues, 'E'), exp.errors,
+          `verdictCase ${c.id}/${doc.path} errors 向量`);
+        assert.deepEqual(vec(r.issues, 'W'), exp.warns,
+          `verdictCase ${c.id}/${doc.path} warns 向量`);
+      }
+    }
+  }
+
   console.log('  docclass 断言全过');
 }
