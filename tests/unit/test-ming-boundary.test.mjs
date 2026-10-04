@@ -1241,8 +1241,8 @@ export async function run() {
         { prefix: 'ADR-<NNNN>', pattern: '^ADR-\\d{4}$', domain: 'gov', ordering: 'alloc', role: 'id' },
         { prefix: 'XX-<n>', pattern: '^XX-\\d+$', domain: 'x', ordering: 'alloc', role: 'value' },
         { prefix: 'DEAD-<n>', pattern: '^DEAD-\\d+$', domain: 'x', ordering: 'alloc', role: 'id' }] }));
-      cf('docs/idx/reg.md', '# 登记表\n| ID | t |\n|---|---|\n| A1 | x |\n| A3 | y |\n| WS-1 | z |\n');
-      cf('docs/idx/other.md', '# 第二定义位\n| A1 | dup |\n|---|---|\n'); // 撞名
+      cf('docs/idx/reg.md', '# 登记表\n| ID | t |\n|---|---|\n| MR-ID | name |\n| A1 | x |\n| A3 | y |\n| WS-1 | z |\n');
+      cf('docs/idx/other.md', '# 第二定义位\n| A1 | dup |\n|---|---|\n| MR-ID | name |\n'); // 撞名 A1；MR-ID 为模板表头须跳过
       cf('docs/a.md', '# a\n引用 A1、WS-1、未登记 A9、WS-9z、XX-3 局部。\n');
       cf('docs/b.md', '# b\nA3 引自别处；BUG-1 BUG-7 BUG-9 成族；TEC-9 走 extra。\n```\nA99 围栏不算\n```\n');
       cf('docs/c.md', '## 定义段\n定义 **A7** 在文中。\n');
@@ -1281,6 +1281,8 @@ export async function run() {
         '围栏内 token 不得计入');
       assert.ok(!j.findings.some(f => f.observed?.includes('XX-3')),
         'value 角色族不做悬空检查');
+      assert.ok(!j.findings.some(f => f.observed?.includes('MR-ID')),
+        'X-ID 模板表头单元格不得成 def/collision');
       // 双通道：findings 与 report 同到
       const rep = j.reports.find(x => x.id === 'nslaw');
       assert.ok(rep && rep.text.includes('namespace'), 'nslaw report 段须在场');

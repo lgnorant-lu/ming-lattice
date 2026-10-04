@@ -6,8 +6,9 @@
 //       findings 行先出（'{' 起头 JSONL），报告文本随后（runner 双通道收编）。
 // config 键：
 //   registry           必填——ming.1 namespaces.json（prefix/pattern/domain/ordering/role/note）
-//   defs[]             实例登记源：{path, mode, pattern?, field?}
+//   defs[]             实例登记源：{path, mode, pattern?, field?, local?}
 //                      mode=first_col|heading|bold|tokens|filename|json_field|section_list
+//                      local=true 文档局部定义位（只消解同文件引用，不入全局）
 //   scan_exts          扫描扩展名（缺省 ['.md']）
 //   scan_exclude       追加豁免 globs（内联）
 //   scan_exclude_from  豁免清单文件（行首 glob + # 注释；@既有 work_id_exempt_globs 同款）
@@ -135,16 +136,30 @@ const readRel = (rel) => {
 };
 
 // ---------- defs 提取 ----------
-const defined = new Map();  // id -> Set(file:line)
-const defLines = new Set(); // `${rel}:${line}`——def 位行不再计为引用
-const defSrc = [];          // [{rel, mode, found}]
+const defined = new Map();    // id -> Set(file:line)——全局定义位
+const localDefs = new Map();  // rel -> Set(id)——文档局部定义位（只消解同文件引用）
+const strictIds = new Set();  // 权威登记源（first_col/json_field/section_list）定义的 id——format 检查面
+const strictSites = new Map(); // id -> Set('rel:line')——权威位撞名判定面
+const defLines = new Set();   // `${rel}:${line}`——def 位行不再计为引用
+const defSrc = [];            // [{rel, mode, found}]
 const DEF_OK = new Set(['first_col', 'heading', 'bold', 'tokens', 'filename', 'json_field', 'section_list']);
+const STRICT_MODE = new Set(['first_col', 'json_field', 'section_list']);
 const IDISH = /^[A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*$/; // 定义位粗形（须含数字或杠）
-const addDef = (id, rel, line) => {
+const addDef = (id, rel, line, strict, local) => {
   if (!IDISH.test(id) || !/[0-9-]/.test(id)) return;
+  defLines.add(`${rel}:${line}`);
+  if (local) {
+    if (!localDefs.has(rel)) localDefs.set(rel, new Set());
+    localDefs.get(rel).add(id);
+    return;
+  }
+  if (strict) {
+    strictIds.add(id);
+    if (!strictSites.has(id)) strictSites.set(id, new Set());
+    strictSites.get(id).add(`${rel}:${line}`);
+  }
   if (!defined.has(id)) defined.set(id, new Set());
   defined.get(id).add(`${rel}:${line}`);
-  defLines.add(`${rel}:${line}`);
 };
 
 for (const d of [].concat(cfg.defs || [])) {
@@ -155,6 +170,9 @@ for (const d of [].concat(cfg.defs || [])) {
       `${rel}: ${mode}`, '修 defs 条目');
     continue;
   }
+  // strict 权威登记表位（形态错出 format finding）；harvest 模态静默接纳。
+  // local=true：定义位只消解同文件引用（文档局部编号，不入全局 def 空间）
+  const strict = STRICT_MODE.has(mode), local = d.local === true;
   const abs = path.resolve(root, rel);
   let found = 0;
   if (mode === 'filename') {
@@ -163,7 +181,7 @@ for (const d of [].concat(cfg.defs || [])) {
     if (fs.existsSync(abs)) {
       for (const ent of fs.readdirSync(abs, { withFileTypes: true })) {
         const m = ent.name.match(re);
-        if (m) { addDef(m[0], `${rel}/${ent.name}`.replace(/\/\//g, '/'), 1); found++; }
+        if (m) { addDef(m[0], `${rel}/${ent.name}`.replace(/\/\//g, '/'), 1, strict, local); found++; }
       }
     } else emit('nslaw:config', 'error', '(nslaw)', 0, 'defs.path 存在', rel, '修 defs');
   } else if (mode === 'json_field') {
@@ -175,7 +193,7 @@ for (const d of [].concat(cfg.defs || [])) {
         const fm = String(d.field || '').match(/^(\w+)\[\]\.(\w+)$/);
         const arr = fm ? j[fm[1]] : null;
         for (const it of [].concat(arr || []))
-          if (it && typeof it[fm[2]] === 'string') { addDef(it[fm[2]], rel, 1); found++; }
+          if (it && typeof it[fm[2]] === 'string') { addDef(it[fm[2]], rel, 1, strict, local); found++; }
       } catch (e) { emit('nslaw:config', 'error', '(nslaw)', 0, 'defs.path 为合法 JSON',
         `${rel}: ${e.message}`, '修 defs'); }
     }
@@ -190,26 +208,29 @@ for (const d of [].concat(cfg.defs || [])) {
       if (inFence) continue;
       if (mode === 'first_col') {
         const m = line.match(/^\|\s*`?([A-Za-z][A-Za-z0-9_.-]*)`?\s*\|/);
-        if (m) { addDef(m[1], rel, i + 1); found++; }
+        // `X-ID` 形 = 表头模板单元格（| MR-ID | name | ...），非实例分配
+        if (m && !/^(?:[A-Z][A-Z0-9]*-)?ID$/.test(m[1])) {
+          addDef(m[1], rel, i + 1, strict, local); found++;
+        }
       } else if (mode === 'heading') {
         const m = line.match(/^#{1,6}\s+`?([A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*)/);
-        if (m) { addDef(m[1], rel, i + 1); found++; }
+        if (m) { addDef(m[1], rel, i + 1, strict, local); found++; }
       } else if (mode === 'bold') {
         for (const m of line.matchAll(/\*\*([A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*)\*\*/g)) {
-          addDef(m[1], rel, i + 1); found++;
+          addDef(m[1], rel, i + 1, strict, local); found++;
         }
       } else if (mode === 'tokens') {
-        if (LABEL_ANY) for (const m of line.matchAll(LABEL_ANY)) { addDef(m[1], rel, i + 1); found++; }
+        if (LABEL_ANY) for (const m of line.matchAll(LABEL_ANY)) { addDef(m[1], rel, i + 1, strict, local); found++; }
       } else if (mode === 'section_list') {
         const secM = line.match(/^## ([A-Z])\.\s/);
         if (secM) sectionLetter = secM[1];
         if (/^## /.test(line) && !secM) sectionLetter = null;
         const itemM = sectionLetter && line.match(/^(\d+)\.\s/);
-        if (itemM) { addDef(`${sectionLetter}${itemM[1]}`, rel, i + 1); found++; }
+        if (itemM) { addDef(`${sectionLetter}${itemM[1]}`, rel, i + 1, strict, local); found++; }
       }
     }
   }
-  defSrc.push({ rel, mode, found });
+  defSrc.push({ rel, mode, found, local });
 }
 
 // ---------- 引用扫描 ----------
@@ -251,9 +272,11 @@ for (const rel of scanFiles) {
       bump(ns, tok, rel);
       if (ns.role !== 'value') {
         refs.push({ id: tok, rel, line: i + 1 });
-        // 同行同 token 多次出现只报一次（dedupe 按 tok|rel|line）
+        // 同行同 token 多次出现只报一次（dedupe 按 tok|rel|line）；
+        // 局部定义位只消解同文件引用（文档局部编号语义）
         const dk = `${tok}|${rel}|${i + 1}`;
-        if (!defined.has(tok) && !seenDangling.has(dk)) {
+        const isDef = defined.has(tok) || (localDefs.get(rel) || new Set()).has(tok);
+        if (!isDef && !seenDangling.has(dk)) {
           seenDangling.add(dk);
           emit('nslaw:dangling', 'warn', rel, i + 1, `${tok} 有定义位`,
             '引用无登记', '登记到 defs 源或停用改写');
@@ -277,11 +300,18 @@ for (const rel of scanFiles) {
 const defsChecked = defSrc.length > 0;
 for (const [id, sites] of defined) {
   const files = [...new Set([...sites].map(s => s.split(':')[0]))];
-  if (files.length > 1)
-    emit('nslaw:collision', 'error', files[0], 0, '标号单一定义位',
-      `${id} 定义于 ${files.join(', ')}`, '保留唯一定义位');
-  if (!isRegistered(id))
-    emit('nslaw:format', 'warn', sites.values().next().value.split(':')[0], 0,
+  // 撞名只在权威登记位（strict 模态）上判：harvest 模态（文件名/tokens/
+  // heading）本质不声称所有权，多账本共同登记是合法镜像——唯一性义务
+  // 只压在登记表位上
+  const ss = strictSites.get(id);
+  if (ss && ss.size > 1) {
+    const sfiles = [...new Set([...ss].map(s => s.split(':')[0]))];
+    emit('nslaw:collision', 'error', sfiles[0], 0, '标号单一定义位',
+      `${id} 权威定义于 ${[...ss].join(', ')}`, '保留唯一登记位');
+  }
+  // format 只查权威登记表位——harvest 模态抓到什么算什么，不校验形态
+  if (strictIds.has(id) && !isRegistered(id))
+    emit('nslaw:format', 'warn', files[0], 0,
       'def 匹配已登记命名空间格式', id, '修形态或在 registry 登记格式');
 }
 const minFam = Number.isFinite(+cfg.min_family) ? +cfg.min_family : 2;
@@ -338,16 +368,19 @@ for (const [id] of defined) if (!refsCount.has(id)) dead++;
 const danglingCount = new Map(); // ns.prefix -> n
 for (const r of refs) {
   const ns = nsOf(r.id);
-  if (ns && !defined.has(r.id))
+  const isDef = defined.has(r.id) || (localDefs.get(r.rel) || new Set()).has(r.id);
+  if (ns && !isDef)
     danglingCount.set(ns.prefix, (danglingCount.get(ns.prefix) || 0) + 1);
 }
 for (const [pre, n] of danglingCount)
   if (nsStats.has(pre)) nsStats.get(pre).dangling = n;
 
 const totalRefs = [...nsStats.values()].reduce((s, r) => s + r.refs, 0);
+const localCount = [...localDefs.values()].reduce((s, set) => s + set.size, 0);
 report.push(`nslaw: registry=${cfg.registry} (${nsl.length} ns, id=${idNs.length})` +
-  ` defs=${defined.size} ids/${defSrc.length} sources  scan=${scanFiles.length} files` +
-  `  refs=${totalRefs} (id-role ${refs.length})  tokens=${facts.length} facts`);
+  ` defs=${defined.size} ids${localCount ? ` (+${localCount} local)` : ''}/${defSrc.length} sources` +
+  `  scan=${scanFiles.length} files  refs=${totalRefs} (id-role ${refs.length})` +
+  `  tokens=${facts.length} facts`);
 if (!defsChecked) report.push('（无 defs 源——悬空引用检查关闭）');
 report.push('');
 report.push('  ' + 'namespace'.padEnd(22) + 'role'.padEnd(7) + 'defs'.padStart(6) +
