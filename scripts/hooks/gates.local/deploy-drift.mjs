@@ -41,7 +41,7 @@ export const gate = {
   configKeys: ['target'],
   stages: ['pre-commit', 'post-merge', 'post-checkout'],
   family: 'gate',
-  defaultLevel: 'warn',
+  defaultLevel: 'error', // 2026-10-04 warn→error 升格——声明未物化=真实漂移非提醒
   needsAllFiles: false,
   globs: [],
   exclude: [],
