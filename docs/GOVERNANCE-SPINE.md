@@ -199,9 +199,9 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - ~~vertical vendored 字节入库~~——**已清偿**（2026-09-23 `f5ba0f95`→`25ff03c`：vertical 转**物化区**——远端仅存索引(repo+pin 全 40 位回填)，`scripts/fetch.mjs` 一键物化，`vendor-boundary` 门把守 staged∩vertical ⊆ sourceGone 白名单；4 孤本(ruyi 下架族)保留入库；`.git` 188M→9M；史中另清出 35 个 gitlink 误入库残留——铁律#1 事故的历史实体）
 - vendored LICENSE 覆盖缺口——96 vendored 中 32 个无 LICENSE 文件；**物化制落地后再分发面已缩至 4 个 ruyi 孤本**（远端仅存链接不分发字节，灰区自然消解大半）；残留问题=孤本无上游许可 + 本仓自身 LICENSE 选型待定
 - githook 族 skill 增补商讨设计组件——门规变更/新门设计的讨论通道设计件（用户口述方向，细节待成形）
-- author-identity 门（外部先例已查实）——`git var GIT_AUTHOR_IDENT` 取生效身份 → 哨兵名单拦截(t@t/test@test/fixture@*/空) 或白名单域校验；先例：spuder git-hooks(author+committer 双查)、chump pre-commit-git-identity(夹具身份烙进正式仓的事故修复门)、Git::MoreHooks mailmap 校验、conform(GPG签名+身份+org 对账)。本仓适用形态：单作者仓——策略=身份必须 ∈ {noreply}，防止 QQ 邮箱回流公开史。注意 author≠committer 语义（amend/cherry-pick/-s signoff 用 committer 侧）
+- ~~author-identity 门~~——**机制已落地**（2026-10-15：`gates/author-identity.mjs` 出厂门——`git var GIT_AUTHOR/COMMITTER_IDENT` 双查，哨兵占位+CN 个人邮箱域（pii 同族词表）+`allow` 白名单 glob+`check=both|author|committer`；组21 e2e 七态断言）。**余项=本仓激活**：当前身份仍是个人邮箱，`git config user.email` 属用户域——.hooksrc 暂置 warn 持续提醒，迁移后翻 error+`allow=*@users.noreply.github.com`。副产发现：fixture 仓不设身份会回退全局配置——tempRepo 已补中性身份（CI 无全局配置同类防护）
 - ~~PII/卫生扫描门~~——**已清偿**（2026-09-27：`gates/pii.mjs` 共享门落地——staged blob 索引保真扫描；家目录路径 `C:\Users\x`/`/Users/x`=error、`/home/x`=warn、CN 个人邮箱域(qq/foxmail/163 等)=error、手机号=warn、私网 IP 显式弃扫（文档合法密度太高）；fixture 名白名单内置；`.hooksrc` 接线 `gate.pii.level=error`+`exclude=vertical/**`；e2e 实测暂存含 qq 邮箱文件被拦 exit 1）
-- 大文件门——pre-commit check-added-large-files 同型(staged 阈值, 默认 500KB)；本仓 vendored 大二进制合法入库故须配 exempt 路径(vertical/)或高阈值 warn 级
+- ~~大文件门~~——**已落地**（`gates/large-file.mjs` 出厂件：staged blob `maxMB`（默认 50）阈值 error 级 + `exclude` 豁免键；vendored 大二进制合法入库时可配 `gate.large-file.exclude=vertical/**`。2026-10-15 销账——候审条为过时登记）
 - repo-health 门——repolinter(todogroup/New Relic 在用)+conform license 策略先例：根必需文件在场断言(LICENSE/SECURITY.md/README)、社区健康文件覆盖；本仓 LICENSE 缺席即此类门的活靶
 - ~~DCO/Signed-off-by~~——已评估不适用：多贡献者 IP 证明机制，单作者仓无受益面；记录防复建。commit 签名(GPG/SSH/sigstore)另案候审——公开仓供应链价值真实存在
 - evil-merge 检测——merge commit tree≠双亲干净合并=走私变更面(Glyndor workflow 先例)；当前线性史单人仓不适用，分叉协作启用时再立

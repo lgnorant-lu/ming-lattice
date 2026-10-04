@@ -32,6 +32,12 @@ trailerLevel=error        # → gate.commit-msg.level（AI 尾巴等）
 # ── pii 个人数据卫生门 ──
 # gate.pii.level=error             # 家目录路径/CN个人邮箱域=error；/home/与手机号=warn；fixture 名白名单内置
 # gate.pii.exclude=a/**            # 追加排除 glob（vendored/文档示例目录走此键）
+
+# ── author-identity 提交身份门（与 pii 同源防线：pii 扫内容，本门堵 author/committer 元数据）──
+# gate.author-identity.level=error # 哨兵占位(t@t/*@example.*/*@localhost/空邮箱)+CN个人邮箱域命中即拦
+# gate.author-identity.allow=*@users.noreply.github.com  # CSV 白名单 glob：配后 email 必须命中（单作者公开仓推荐）
+# gate.author-identity.deny=me@corp.example              # CSV 追加哨兵 glob
+# gate.author-identity.check=both  # both|author|committer（amend/cherry-pick 用 committer 侧，默认双查）
 # gate.secrets.exclude=a/**,b/**   # 追加排除 glob（默认空——仓专目录走此键）
 
 # ── commit-msg 策略词表（采纳项目改配置不改代码；kit 默认=Conventional 11 型+空禁尾表）──

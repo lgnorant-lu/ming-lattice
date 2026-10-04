@@ -15,9 +15,18 @@ import { HOOK_STAGES, REPO_ENGINE_REF, shimScript, shimEngineRef } from '../../s
 
 const root = path.resolve(import.meta.dirname, '../..');
 
+// 门禁语境执行（pre-commit 钩子内跑全量套件）时，git commit 向 hook 注入
+// GIT_AUTHOR_*/GIT_COMMITTER_* 环境变量——经 env 链传入 fixture 仓的 git var
+// 会解析出真实提交身份而非 fixture 配置。模块装载即剥离，隔离真实身份污染。
+for (const k of Object.keys(process.env))
+  if (/^GIT_(AUTHOR|COMMITTER)_/.test(k)) delete process.env[k];
+
 function tempRepo() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ming-engine-'));
   execFileSync('git', ['init', '-q', dir]);
+  // 中性身份 fixture——不设则 git var 回退全局/CI 无配置两歧
+  execFileSync('git', ['config', 'user.email', 'fixture@users.noreply.github.com'], { cwd: dir });
+  execFileSync('git', ['config', 'user.name', 'fixture'], { cwd: dir });
   return dir;
 }
 
@@ -202,6 +211,7 @@ export async function run() {
       execFileSync('git', ['commit', '-qm', 'seed'], { cwd: dir });
       fs.writeFileSync(path.join(dir, '.hooksrc'), [
         'lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off',
+        'gate.author-identity.level=off',   // t@t 身份会抢 error 短路面
         'gate.impact-test.level=error', 'gate.impact-test.command=node fail.mjs',
       ].join('\n'));
       execFileSync('git', ['rm', '-q', 'tracked.md'], { cwd: dir });
@@ -1165,5 +1175,70 @@ export async function run() {
     }
   }
 
-  console.log('  -> hook-engine: 20 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度/键空间对账/post-checkout/采纳元数据/消融修复/link-rot/commit-spec模型化）');
+  // 21. author-identity 门：哨兵/个人域/白名单三态 + author vs committer 语义（e2e）
+  {
+    const dir = tempRepo();
+    try {
+      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(dir, 'scripts/hooks'), { recursive: true });
+      const base = ['lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off'];
+      fs.writeFileSync(path.join(dir, '.hooksrc'),
+        [...base, 'gate.author-identity.level=error'].join('\n'));
+      const engine = path.join(dir, 'scripts/hooks/engine.mjs');
+      const idcfg = (email, name = 't') => {
+        execFileSync('git', ['config', 'user.email', email], { cwd: dir });
+        execFileSync('git', ['config', 'user.name', name], { cwd: dir });
+      };
+      const run = (env = {}) =>
+        spawnSync(process.execPath, [engine, 'pre-commit'],
+          { cwd: dir, encoding: 'utf8', env: { ...process.env, ...env } });
+      fs.writeFileSync(path.join(dir, 'ok.md'), 'x\n');
+      execFileSync('git', ['add', 'ok.md'], { cwd: dir });
+
+      idcfg('t@t');
+      let r = run();
+      assert.equal(r.status, 1, '哨兵 t@t 应拦');
+      assert.ok((r.stderr + r.stdout).includes('author'), '应点名身份侧');
+
+      idcfg('12345+x@users.noreply.github.com');
+      r = run();
+      assert.equal(r.status, 0, 'noreply 身份应放行');
+
+      idcfg('99999@' + 'qq.com');   // 拼串防 pii 门自咬固件字面量
+      r = run();
+      assert.equal(r.status, 1, 'CN 个人邮箱域应拦（pii 同族词表）');
+
+      // 白名单模式：allow 命中才放行
+      fs.writeFileSync(path.join(dir, '.hooksrc'),
+        [...base, 'gate.author-identity.level=error',
+          'gate.author-identity.allow=*@users.noreply.github.com'].join('\n'));
+      idcfg('someone@gmail.com');
+      r = run();
+      assert.equal(r.status, 1, '白名单外邮箱应拦');
+      idcfg('12345+x@users.noreply.github.com');
+      r = run();
+      assert.equal(r.status, 0, '白名单内放行');
+
+      // author≠committer：env 注入脏 author + 干净 committer
+      fs.writeFileSync(path.join(dir, '.hooksrc'),
+        [...base, 'gate.author-identity.level=error',
+          'gate.author-identity.check=committer'].join('\n'));
+      r = run({ GIT_AUTHOR_EMAIL: 'test@test', GIT_AUTHOR_NAME: 'x' });
+      assert.equal(r.status, 0, 'check=committer 只查 committer 侧');
+      fs.writeFileSync(path.join(dir, '.hooksrc'),
+        [...base, 'gate.author-identity.level=error'].join('\n'));
+      r = run({ GIT_AUTHOR_EMAIL: 'test@test', GIT_AUTHOR_NAME: 'x' });
+      assert.equal(r.status, 1, 'check=both 脏 author 应拦');
+
+      // warn 级不阻断（本仓迁移期形态——报告仍应出现）
+      fs.writeFileSync(path.join(dir, '.hooksrc'),
+        [...base, 'gate.author-identity.level=warn'].join('\n'));
+      r = run({ GIT_AUTHOR_EMAIL: 'test@test', GIT_AUTHOR_NAME: 'x' });
+      assert.equal(r.status, 0, 'warn 级不阻断');
+      assert.ok((r.stderr + r.stdout).includes('author-identity'), 'warn 应仍报告');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
+    }
+  }
+
+  console.log('  -> hook-engine: 21 组断言全部通过（归组/matcher/声明式/baseline/等级/端到端/多层密钥+策略/chores/fix/采纳自检/分节解析/toc门/解耦面/周期维度/键空间对账/post-checkout/采纳元数据/消融修复/link-rot/commit-spec模型化/author-identity）');
 }

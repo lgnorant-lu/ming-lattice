@@ -31,6 +31,13 @@ gate.secrets.b64Level=error
 gate.pii.level=error
 gate.pii.exclude=vertical/**
 
+# author-identity 提交身份门（与 pii 同源防线：pii 扫内容，本门堵元数据）
+# warn 待定——本仓当前身份为个人邮箱（待迁移 noreply；迁移属用户 git config 域）。
+# 迁移后翻 error + allow 白名单：
+# gate.author-identity.level=error
+# gate.author-identity.allow=*@users.noreply.github.com
+gate.author-identity.level=warn
+
 # 5. 自动化测试门禁（提交前命令门——command 键指向 verify affected：
 #    由 scripts/plan.mjs 做影响面计划，docs-only 提交免测放行）
 lintLevel=error

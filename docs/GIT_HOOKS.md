@@ -51,7 +51,7 @@ status: normative
 
 `scripts/hooks/engine.mjs` 是统一调度器；门禁规则分两源：
 
-- **原生码门** `scripts/hooks/gates/*.mjs`：导出 `gate` 对象 `{id, stages, defaultLevel, expensive?, needsAllFiles?, globs?, exclude?, available?(ctx), run(ctx)→findings[]}`。secrets/mojibake/emoji/large-file/commit-msg/impact-test/pre-push-verify/whitespace/toc/review-after/link-rot/pii 十二门为出厂目录。
+- **原生码门** `scripts/hooks/gates/*.mjs`：导出 `gate` 对象 `{id, stages, defaultLevel, expensive?, needsAllFiles?, globs?, exclude?, available?(ctx), run(ctx)→findings[]}`。secrets/mojibake/emoji/large-file/commit-msg/impact-test/pre-push-verify/whitespace/toc/review-after/link-rot/pii/author-identity 十三门为出厂目录。
 - **声明式正则门** `.hooksrc` 内 `gate.<id>.<key>` 平铺键——覆盖"单模式+单消息"长尾检查，零代码：
   ```ini
   gate.no-debugger.level=error
@@ -94,6 +94,11 @@ status: normative
    - CN 个人邮箱域（qq/foxmail/163/126/139/sina/sohu/aliyun/yeah/189）报 error；gmail/outlook 等国际域不扫（示例合法密度太高）。
    - 中国手机号 `1[3-9]xxxxxxxxx` 报 warn；私网 IP 显式弃扫；fixture 名白名单（user/test/alice/ctf 等）内置豁免。
    - 配置：`gate.pii.level` / `gate.pii.exclude`（本仓 `.hooksrc` 排除 `vertical/**`）。
+3c. **提交身份门（author-identity，与 pii 同源防线——pii 扫内容，本门堵 author/committer 元数据）**：
+   - 哨兵占位命中即拦：`t@t`/`test@test`/`*@example.*`/`*@localhost`/`*@*.local|lan|internal|test|invalid`/空邮箱；CN 个人邮箱域与 pii 同族词表。
+   - author≠committer：amend/cherry-pick/-s 用 committer 侧——`gate.author-identity.check=both`（默认）双查。
+   - 白名单模式：`gate.author-identity.allow` CSV glob（如 `*@users.noreply.github.com`）配置后 email 必须命中——单作者公开仓推荐形态；`deny` 追加哨兵 glob。
+   - 本仓现状：`level=warn`——当前身份仍为个人邮箱待迁移（`git config user.email` 用户域），迁移后翻 error+allow 白名单。
 4. **提交前命令门（impact-test，昂贵门）**：
    - 通用形态：`gate.impact-test.command` 执行仓级命令，非零退出即拦截（lint-staged 命令配置同构）；未配且无 `tests/run.mjs` 自动缺席。
    - 本仓实例：`.hooksrc` 配 `command=node scripts/verify.mjs --profile affected`——由 `scripts/plan.mjs` 分析暂存快照做影响面计划：纯文档变动免测放行；特定域变动仅执行受影响套件；关键全局配置或未知路径 fail-closed 升级全量。

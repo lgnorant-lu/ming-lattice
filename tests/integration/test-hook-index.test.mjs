@@ -16,7 +16,8 @@ for (const scenario of ['staged-secret', 'unstaged-secret', 'deleted-working-fil
       fs.writeFileSync(path.join(root, '.hooksrc'),
         'lintLevel=off\nsecretLevel=error\n'
         + 'gate.whitespace.level=off\ngate.toc.level=off\ngate.pii.level=off\n'
-        + 'gate.mojibake.level=off\ngate.emoji.level=off\ngate.review-after.level=off\n');
+        + 'gate.mojibake.level=off\ngate.emoji.level=off\ngate.review-after.level=off\n'
+        + 'gate.author-identity.level=off\n');
       execFileSync('git', ['init', '-q', root], { timeout: 30_000 });
       const file = scenario === 'unicode-path' ? '\u914d\u7f6e space.json' : 'config.json';
       const full = path.join(root, file);
