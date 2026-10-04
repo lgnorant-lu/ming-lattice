@@ -85,7 +85,7 @@ export const CATEGORY_RULES = [
   {
     // 具名映射：白名单 basename 才归类；其余 scripts/* 落 unknown→full（保守兜底）
     name: 'scripts',
-    test: file => /^scripts\/(?:check-skill-index|check-test-coverage|check-supply-chain|clean-temp|emit-operational-event|fetch)\.mjs$/.test(file),
+    test: file => /^scripts\/(?:check-skill-index|check-test-coverage|check-supply-chain|clean-temp|emit-operational-event|fetch|scaffold-repo)\.mjs$/.test(file),
     resolveJobs: file => ({
       'check-skill-index.mjs': ['skill-index'],
       'check-test-coverage.mjs': ['test-coverage'],
@@ -93,6 +93,7 @@ export const CATEGORY_RULES = [
       'clean-temp.mjs': ['tmp-reaper'],
       'emit-operational-event.mjs': ['observability-contract'],
       'fetch.mjs': ['fetch-cli'],
+      'scaffold-repo.mjs': ['scaffold-repo'],
     })[file.split('/').pop()] ?? []
   },
   {
@@ -113,6 +114,7 @@ export const CATEGORY_RULES = [
       if (/test-hook-index/.test(file)) return ['hook-index'];
       if (/test-yaml-lite/.test(file)) return ['yaml-contract'];
       if (/test-cli-tools/.test(file)) return ['cli-isolated'];
+      if (/test-scaffold-repo/.test(file)) return ['scaffold-repo'];
       if (/test-hook-planner/.test(file)) return ['hook-planner'];
       // 显式覆盖：文件名与套件名不同词的（约定回退兜不住）
       if (/test-check-skill/.test(file)) return ['check-skill-unit', 'skill-conformance'];
@@ -161,6 +163,7 @@ export const ALL_SUITE_NAMES = [
   'sbom-generation',
   'sca-generation',
   'scaffold-domains',
+  'scaffold-repo',
   'scaffold-skill',
   'skill-conformance',
   'skill-index',

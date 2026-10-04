@@ -22,6 +22,7 @@ docs/                    STANDARDS(工程总纲)/GOVERNANCE-SPINE(工件本体�
 
 - **全量测试自举**: `pwsh scripts/test.ps1 --require-all` 或 `node tests/run.mjs --require-all`（单元、20 条黄金、路由安全、暂存区 Hook、隔离 CLI 集成）
 - **安装 Git 门禁**: `pwsh scripts/install-hooks.ps1`（配置 core.hooksPath 指向 .githooks）；`-Target <repo>` 铺门禁 kit 到外仓，`+ -WithBoundary` 连 ming-boundary 组件+门+boundaries.yaml 模板一起铺
+- **仓库采纳编排**: `node scripts/scaffold-repo.mjs --target <repo>`——域骨架(scaffold-domains)+门禁 kit(install-hooks -Target)+自检 单入口；`--with-boundary`/`--skip-*`/`--dry-run` 可选
 - **部署到客户端**: `pwsh scripts/sync.ps1`（支持 `-DryRun` 演练预览，链接到 .cc-switch/skills）
 - **激活 Claude**: `.cc-switch/skills` → 符号链接补到 `~/.claude/skills`（Claude 启动时快照, 重启生效）
 - **更新检测**: `pwsh scripts/update.ps1`（支持 `-DryRun` 演练；缓存优先, TTL 7 天; `sourceGone: true` 条目零网络跳过）

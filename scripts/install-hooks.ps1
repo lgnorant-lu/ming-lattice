@@ -42,6 +42,20 @@ if ($Target) {
             Copy-Item -Destination $dstHooks -Recurse -Force
     }
 
+    # 1.5 gates.local/ 住所播种——只带 README.md（作者契约指路），不带本仓私门；
+    #     采纳侧从空目录+契约说明起步（已存在 README 不覆盖——采纳侧可自改）
+    $localDst = Join-Path $dstHooks 'gates.local'
+    $localReadme = Join-Path $localDst 'README.md'
+    if (-not (Test-Path $localReadme)) {
+        if ($PSCmdlet.ShouldProcess($localReadme, '播种 gates.local/README')) {
+            New-Item -ItemType Directory -Path $localDst -Force | Out-Null
+            Copy-Item (Join-Path $srcHooks 'gates.local/README.md') $localReadme
+            Write-Host "[scaffold] gates.local/ <- README 契约种子（私门住所）" -ForegroundColor Gray
+        }
+    } else {
+        Write-Host "[scaffold] gates.local/README 已存在，跳过" -ForegroundColor Yellow
+    }
+
     # 2. .githooks/ shims
     $dstShims = Join-Path $dest '.githooks'
     if ($PSCmdlet.ShouldProcess($dstShims, '复制 .githooks shim')) {
