@@ -78,6 +78,9 @@ docClasses:
       path: "distill/*/*.md"
       notPath: "distill/_proposals/*"
     required: [id, status]
+    staging: local
+    idScheme: date-slug
+    agingDays: 30
     fields:
       status:
         vocab: [active, superseded]
@@ -177,6 +180,7 @@ export function run() {
       ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    conditional:\n      - when:\n          Status: [a]\n', '值须为字符串或算子映射'],
       ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    conditional:\n      - when:\n          Status: active\n        require: [5]\n', 'require 项须为非空字符串'],
       ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    conditional:\n      - when:\n          Status: active\n        require: [f]\n        msg: 3\n', 'msg 须为字符串'],
+      ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    fields:\n      f1:\n        multiline: true\n', '未知键 multiline'],
     ];
     for (const [t, frag] of badValues) {
       r = load(t);
@@ -201,6 +205,11 @@ export function run() {
     assert.equal(classify('distill/proj/note.md', sc)?.name, 'distill-entry');
     // name glob 匹配 basename
     assert.equal(classify('private/p/sk/SKILL.md', sc)?.name, 'skill-package');
+    // 惰性声明键归一化后原样透传（IV8 dict(c) 同款——词表内键不得被吞）
+    const entry = sc.classes.find((c) => c.name === 'distill-entry');
+    assert.equal(entry.staging, 'local');
+    assert.equal(entry.idScheme, 'date-slug');
+    assert.equal(entry.agingDays, 30);
   }
 
   // ── 组 3: evaluate 判定面（IV8 blockquote 方言） ──

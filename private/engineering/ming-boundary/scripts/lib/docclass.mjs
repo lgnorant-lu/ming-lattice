@@ -9,7 +9,7 @@
 // 类级键: name / match{path|name|any|anyOf|exactPath|notPath} / required[]
 //   / freshness{anyOf[]} / states{field,vocab,tolerate}|states[vocab 简写]
 //   / fields{<f>:{pattern|vocab|tolerate|equalsFilenameStem|role|target|
-//     multiline|nested}} / conditional[{when,require,check,level,msg}]
+//     nested}} / conditional[{when,require,check,level,msg}]
 //   / gates{missingFrontmatter:error|warn|off} / header / staging / idScheme
 //   / agingDays / statusField
 // 闭集纪律：未知键装载即 fail-closed（schemaVersion=1 是闭契约——
@@ -31,7 +31,7 @@ const CLASS_KEYS = new Set(['name', 'match', 'required', 'freshness', 'states',
   'agingDays', 'statusField']);
 const MATCH_KEYS = new Set(['path', 'name', 'any', 'anyOf', 'exactPath', 'notPath']);
 const FIELD_KEYS = new Set(['pattern', 'vocab', 'tolerate', 'equalsFilenameStem',
-  'role', 'target', 'multiline', 'nested']);
+  'role', 'target', 'nested']);
 const GATE_KEYS = new Set(['missingFrontmatter']);
 const LEVELS = new Set(['error', 'warn', 'off']);
 const COND_KEYS = new Set(['when', 'require', 'check', 'level', 'msg']);
@@ -176,6 +176,8 @@ function normalizeSpec(spec) {
           vocab: c.states.vocab, tolerate: asList(c.states.tolerate) };
       }
       return {
+        ...c,  // 惰性声明键（staging/idScheme/agingDays/statusField）原样透传——
+               // 词表内键不得被归一化吞掉（IV8 dict(c) 同款语义）
         name: c.name,
         match: m,
         header: c.header ?? null,
