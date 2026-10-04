@@ -51,7 +51,12 @@ export function buildDeclarativeGates(cfg) {
           let content;
           try { content = ctx.read(p); } catch { continue; }
           let m; re.lastIndex = 0;
+          let hitCount = 0;
           while ((m = re.exec(content))) {
+            // 命中放大帽：pattern 过宽（如 `.`）时每字符一 finding 会爆量
+            // ——封顶后继续扫描只记总数，末尾补一条截断说明
+            if (hitCount >= 50) { hitCount++; continue; }
+            hitCount++;
             findings.push({
               gate: id,
               file: p,
@@ -61,6 +66,14 @@ export function buildDeclarativeGates(cfg) {
             });
             if (this.once) break;
             if (m[0] === '') re.lastIndex += 1; // 防空匹配死循环
+          }
+          if (hitCount > 50) {
+            findings.push({
+              gate: id,
+              file: p,
+              line: 0,
+              message: `${this.message}（本文件命中 ${hitCount} 处，仅列前 50 条）`,
+            });
           }
         }
         return findings;

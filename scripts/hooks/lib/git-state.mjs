@@ -20,7 +20,7 @@ export function detectGitState(root, staged = null) {
     stagedEmpty: staged ? staged.length === 0 : null,
   };
   try {
-    state.branch = execFileSync('git', ['symbolic-ref', '--short', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+    state.branch = execFileSync('git', ['symbolic-ref', '--short', 'HEAD'], { cwd: root, encoding: 'utf8', timeout: 60_000 }).trim();
   } catch { /* detached HEAD */ }
   return state;
 }

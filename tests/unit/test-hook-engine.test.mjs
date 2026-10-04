@@ -83,6 +83,14 @@ export async function run() {
     assert.equal(found2.length, 1, 'once=true 逐文件单报');
     const broken = gates.find(g => g.id === 'broken');
     assert.equal(broken.broken, true, '非法 pattern 转 error 级诊断门');
+    // 命中放大帽：宽 pattern 每字符命中 → 50 finding + 1 截断说明，不爆量
+    const flood = buildDeclarativeGates({ gates: {
+      any: { pattern: '.', globs: '*', level: 'warn' },
+    }, chores: {}, flat: {} })[0];
+    const floodOut = await flood.run.call(flood, {
+      files: ['big.txt'], read: () => 'x'.repeat(120) });
+    assert.equal(floodOut.length, 51, '50 finding + 1 截断说明');
+    assert.ok(floodOut[50].message.includes('仅列前 50 条'), '截断说明在列');
   }
 
   // 4. baseline：身份去行号（行漂移不产生假新增）+ 冻结/新增判别
@@ -719,6 +727,10 @@ export async function run() {
       assert.ok((r.stdout + r.stderr).includes('2000-01-01'), `首跑应告警: ${r.stdout}${r.stderr}`);
       const sf = path.join(edir, '.git/hook-engine-state.json');
       assert.ok(JSON.parse(fs.readFileSync(sf, 'utf8')).lastRun['review-after'], '首跑盖戳');
+      // 确定性节流：写未来时戳使窗口不可过期（原 30s 墙钟窗在高负载下 flake）
+      const st0 = JSON.parse(fs.readFileSync(sf, 'utf8'));
+      st0.lastRun['review-after'] = new Date(Date.now() + 3600_000).toISOString();
+      fs.writeFileSync(sf, JSON.stringify(st0));
       r = runCheck();
       assert.ok((r.stdout + r.stderr).includes('cadence 未到跳过: review-after'), '节流期内跳过');
       assert.ok(!(r.stdout + r.stderr).includes('2000-01-01'), '节流期内不复报');
@@ -907,6 +919,10 @@ export async function run() {
       const sf = path.join(edir, '.git/hook-engine-state.json');
       assert.ok(JSON.parse(fs.readFileSync(sf, 'utf8')).lastRun['chore:c'], 'chore 盖戳键=bare 前缀 id');
 
+      // 确定性节流：写未来时戳使窗口不可过期（去墙钟 flake 源）
+      const stc = JSON.parse(fs.readFileSync(sf, 'utf8'));
+      stc.lastRun['chore:c'] = new Date(Date.now() + 3600_000).toISOString();
+      fs.writeFileSync(sf, JSON.stringify(stc));
       r = pc();
       assert.ok((r.stdout + r.stderr).includes('cadence 未到跳过: chore:c'), 'chore cadence 节流生效（修复前死键）');
 
@@ -1020,6 +1036,10 @@ export async function run() {
           `post-checkout 首跑死链告警: ${r.stdout}${r.stderr}`);
         const sf = path.join(edir, '.git/hook-engine-state.json');
         assert.ok(JSON.parse(fs.readFileSync(sf, 'utf8')).lastRun['link-rot'], '首跑盖戳');
+        // 确定性节流：写未来时戳（去墙钟 flake 源，同 review-after 先例）
+        const stf = JSON.parse(fs.readFileSync(sf, 'utf8'));
+        stf.lastRun['link-rot'] = new Date(Date.now() + 3600_000).toISOString();
+        fs.writeFileSync(sf, JSON.stringify(stf));
         r = pm();
         assert.ok((r.stdout + r.stderr).includes('cadence 未到跳过: link-rot'), 'cadence 节流生效');
         // 改旧戳→确定性到期复跑（同 review-after e2e 的状态注入先例）

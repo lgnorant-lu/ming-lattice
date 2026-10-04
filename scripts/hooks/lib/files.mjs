@@ -6,18 +6,25 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// git 子进程超时下限——index 锁/LFS/UNC 路径挂起不得让 hook 永久阻塞
+// （调用方 opts 可覆盖；60s 远超正常仓 git 操作量级）
+const GIT_TIMEOUT_MS = 60_000;
+
 export function makeGit(root) {
   return (args, opts = {}) => execFileSync('git', args, {
-    cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...opts,
+    cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+    timeout: GIT_TIMEOUT_MS, ...opts,
   });
 }
 
 export function repoRoot(cwd = process.cwd()) {
-  return execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8' }).trim();
+  return execFileSync('git', ['rev-parse', '--show-toplevel'],
+    { cwd, encoding: 'utf8', timeout: GIT_TIMEOUT_MS }).trim();
 }
 
 export function gitDir(root) {
-  return path.resolve(root, execFileSync('git', ['rev-parse', '--git-dir'], { cwd: root, encoding: 'utf8' }).trim());
+  return path.resolve(root, execFileSync('git', ['rev-parse', '--git-dir'],
+    { cwd: root, encoding: 'utf8', timeout: GIT_TIMEOUT_MS }).trim());
 }
 
 /**
