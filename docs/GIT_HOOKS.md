@@ -59,12 +59,12 @@ status: normative
   gate.no-debugger.pattern=\bdebugger\b|console\.(log|debug)
   gate.no-debugger.message=调试语句残留
   gate.no-debugger.once=true            # 可选：逐文件单报
-  gate.no-debugger.skipIf=merge,rebase  # 可选：git 态条件（merge/rebase/cherry-pick/ref:<branch>）
+  gate.no-debugger.skipIf=merge,rebase  # 可选：git 态条件（merge/rebase/cherry-pick/ref:<branch>/staged-empty）
   ```
 - 项目私有门目录 `gates.local/`（入仓的项目特有门）；个人配置覆盖 `.hooksrc.local`（gitignore）。
 - **chores 族**（非阻断自动化，`chore.<id>.*` 声明式键）：`watch`（变更监看 globs）+ `message`（提醒文案）+ `stages`（默认 post-merge）。**suggest-only 铁律**：只打印提醒、永不执行命令、exit 恒 0——`.hooksrc` 是仓内跟踪文件，自动执行会把配置变成代码注入面（提案审计裁决）。
 - 退出码契约：`0` 通过 / `1` 门禁拦截 / `2` 引擎故障（fail-closed 且可分辨）。
-- **索引保真不变量**：staged 源下 gate 经 `ctx.read` 读 `git show :path` 索引 blob，原生门禁止 `fs.read` 工作区；`run ci`/`baseline` 走 `git ls-files` + 工作区读（CI 读已提交态，无污染问题）。
+- **索引保真不变量**：staged 源下 gate 经 `ctx.read` 读索引 blob——实现为 **sha 寻址**（`git ls-files -s -z` 建文件名→blob-sha 表 + `git cat-file blob <sha>`）；原生门禁止 `fs.read` 工作区；`run ci`/`baseline` 走 `git ls-files` + 工作区读（CI 读已提交态，无污染问题）。**禁用 `git show :<path>`/`<rev>:<path>`**：revspec 内层解析 pathspec 魔法——`(top)x` 读出 `x` 的 blob、`!/x` fatal（git 文档化行为，`GIT_LITERAL_PATHSPECS` 管不了 revspec 位）；`--` 后 pathspec 位用 `GIT_LITERAL_PATHSPECS=1` 字面化。
 
 ### 2.1 `commit-msg` 检查项
 1. **主题格式**：`<type>(<scope>): <subject>`
@@ -73,7 +73,7 @@ status: normative
 2. **Type 白名单**：词表权威 = `.hooksrc` 的 `gate.commit-msg.types`；语义注释见 `docs/STANDARDS.md §1.2`。
 3. **Trailer 禁令**：`gate.commit-msg.bannedTrailers`（CSV 正则，整体替换——kit 默认空表，禁尾是仓级政策）+ `gate.commit-msg.extraTrailers`（追加）。本仓配 `^Generated with\b,^Co-Authored-By\s*:`（清史后署名政策）。CSV 内 regex 不可含逗号，多条用 `|` 交替或分列。
 4. **Emoji/乱码**：检测提交主题的 Unicode Emoji（`emojiLevel`，kit 默认 warn——本仓 `error`）与 GBK 乱码字符（`mojibakeLevel`，默认 `error`）。
-5. **文档规范 warn 浮现**：subject 无 CJK 字符→warn（STANDARDS §1.3 中文先行）；feat/fix/refactor/docs 类正文缺三段式标记（`实施内容:`/`本提交不授权:`/`已执行审阅:`）→warn（§1.4）。不阻断；`Merge `/`Revert ` 与词表外 type 豁免。
+5. **文档规范（error 级）**：subject 无 CJK 字符→error（STANDARDS §1.3 中文先行）；feat/fix/refactor/docs 类正文缺三段式标记（`实施内容:`/`本提交不授权:`/`已执行审阅:`）→error（§1.4）。`Merge `/`Revert ` 与词表外 type 豁免。（2026-10 warn→error 升格：可忽略的 warn=可忽略的规范）
 6. **其余配置键**：`gate.commit-msg.subjectMaxLen`（主题长度上限，warn 级，0=不限）、`gate.commit-msg.pattern`/`patternHint`（正则整体覆盖+报错文案）、`requireCommitMsg=false`（整门关闭）。
 
 > [!TIP]
@@ -155,7 +155,7 @@ lintLevel=error         # error | warn | off（默认 error: lint 失败阻断�
 
 **等级解析序**：`gate.<id>.level` > 旧键别名（`emojiLevel→emoji` / `mojibakeLevel→mojibake` / `secretLevel→secrets` / `lintLevel→impact-test` / `trailerLevel→commit-msg`）> 门默认级。`.hooksrc.local`（gitignore）在 `.hooksrc` 之上覆盖。
 
-**键空间对账**（integrityLevel 族，warn 不阻断）：`.hooksrc`/`.hooksrc.local`/`.hooksrc.tmpl` 中的 `gate.<id>.<key>`、`chore.<id>.<key>` 对账真实键空间——通用键（`level`/`globs`/`exclude`/`cadence`）+ 原生门 `configKeys` 自描述字段 + 声明式键（`pattern`/`message`/`once`）+ chore 键（`watch`/`message`/`once`）。拼错键（如 `gate.toc.dept`）与 tmpl 文档漂移都会告警——配置指向不存在的键不再静默失效。
+**键空间对账**（随 `integrityLevel` 分级）：`.hooksrc`/`.hooksrc.local`/`.hooksrc.tmpl` 中的 `gate.<id>.<key>`、`chore.<id>.<key>` 对账真实键空间——通用键（`level`/`globs`/`exclude`/`cadence`）+ 原生门 `configKeys` 自描述字段 + 声明式键（`pattern`/`message`/`once`/`skipIf`）+ chore 键（`watch`/`message`/`once`）。拼错键（如 `gate.toc.dept`）与 tmpl 文档漂移都会告警——配置指向不存在的键不再静默失效。（声明式门命中帽=硬编码 50/文件，超出合并截断摘要——非配置键）
 
 ### 3.1 baseline 冻结（棕场接入）
 
@@ -164,7 +164,7 @@ lintLevel=error         # error | warn | off（默认 error: lint 失败阻断�
 ### 3.2 临时豁免与完整性
 
 - `SKIP=<gate1>,<gate2> git commit ...`：临时豁免点名门（pre-commit/overcommit 生态惯例名）；`required` 级不吃 SKIP。
-- **gates/ 完整性提示**：`engine.mjs` 每次运行比对 `gates/` 目录 hash 与 `.git/hook-engine-state.json` 存值，不一致时打 warn（透明性特性——变化可见，不阻断）；确认无误后 `node scripts/hooks/engine.mjs trust` 再确认。`integrityLevel=off` 可关。
+- **hooks 树完整性**：`engine.mjs` 每次运行对 `engine.mjs`+`gates/`+`gates.local/`+`lib/` 整树 hash 比对 `.git/hook-engine-state.json` 存值——`integrityLevel=warn` 打 warn（透明性特性）；`=error` 在阻断 stage 下拦截提交（本仓 .hooksrc 配置）；`=off` 可关。信任基线覆盖全部行为承载件（lib/ 的 resolveLevel 等同样能改变门禁行为）。确认改动无误后 `node scripts/hooks/engine.mjs trust` 再确认。**防绕**：零暂存文件时引擎原本早退跳过完整性检查——已修（`--allow-empty` 空提交不再可绕）。
 - **CI 增量扫描**：`node scripts/hooks/engine.mjs run check --range=origin/main...HEAD`——PR 相对基线分支的变更扫描（gitleaks `--log-opts` 同语义），checkout 后无暂存区概念的 CI 环境用此入口。
 - **自愈**：`node scripts/hooks/engine.mjs run fix`——`fixable` 门（whitespace：行尾空白/EOF 换行；toc：目录节重写/插壳）重写工作区文件并报告清单；**不碰 index**，re-stage 由用户确认（刻意避开 lint-staged stash 路线的数据丢失前科）。`run fix --dry-run` 走同一遍历路径只报告不写盘。
 - **baseline 预览**：`node scripts/hooks/engine.mjs baseline --dry-run`——按门分组预告将冻结的违规数，不写 `.hooks-baseline.json`。

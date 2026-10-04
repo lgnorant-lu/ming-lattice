@@ -149,3 +149,39 @@ Claude Code **启动时快照** skills 列表——补链后新 skill 要**重�
 - **LoseNine**：ruyipage 系 4 仓真死（sourceGone）；Restore-JS/Crack-JS-Spider 复活已采；原创资产基本见底
 - **观望清单**：全部清零（jshookmcp/xtrace/uiautodev 已采, cy_jsvmp gone, sdenv-ng npm 参考）
 - **下轮候选**：游戏安全、JSVMP 引擎层、SSA/IR 方法论已落地；新方向等用户指定
+
+## 九、git/门禁脚本安全坑（2026-10 审计轮沉淀）
+
+文件名与 registry 值进 git argv 的四个真实注入/逃逸类——均已在双仓实证修复：
+
+### 9.1 `git show :<path>` / `<rev>:<path>` 的 pathspec 魔法注入
+
+`:path` revspec 内层解析 pathspec 魔法（git 文档化行为）：
+- `(top)x` → 读出 `x` 的 blob 而非 `(top)x`（staged 内容读串对象=密扫逃逸）
+- `!/x` → exclude 魔法直接 fatal
+- **`GIT_LITERAL_PATHSPECS=1` 管不了 revspec 位**（只管 `--` 后 pathspec 位）——实测确认
+
+**正解 = sha 两步寻址**：`git ls-files -s -z`（索引）或 `git ls-tree -r -z <rev>`（树）建"文件名→blob sha"表 → `git cat-file blob <sha>`。sha 是 40-hex 无歧义。skills-collection `hooks/lib/files.mjs`、IV8 `check_staged_secrets`/`check_seam_gate`/`check_staged` 均已落地同模式。
+
+### 9.2 `--` 后 pathspec 位仍解析魔法
+
+`git diff -- <name>` 中 `(top)x` 命中 `x` 的 diff 而非自身。修法：`env GIT_LITERAL_PATHSPECS=1` + 传**仓根相对路径**（不是绝对路径——绝对路径的前导盘符虽部分自保护，但相对名才是 pathspec 的正确语义）。IV8 `check_shim_triage`/`check_work_ids`/`check_seam_gate` 已接线。
+
+### 9.3 registry/配置值进 git argv 须拦 `-` 前缀
+
+`git ls-remote <repo>`/`git fetch origin <refspec>` 的位置参数若来自 registry/配置：
+- `-` 前缀即选项注入——`ls-remote --upload-pack=<bin>`、`fetch --upload-pack=<bin>` 均远端侧任意执行
+- 校验锚：repo 拒 `-` 前缀；pin 限 40-hex；路径 `resolve` 后钉仓根
+- 已修：fetch.mjs（pin/repo/path 三校验）、update.ps1（ls-remote `-` 前缀拦）
+
+### 9.4 枚举吞错 = 门禁静默缺席（fail-open）
+
+`except → return []` / `|| true` 把 git 探测失败变成"无暂存文件"→ 全部门触发判空跳过 → 提交放行。规矩：**枚举失败必须传播**（Python `check=True` 不带 except / bash 顶层探测先行）；`grep` 无匹配退 1 用 `|| true` 是合法的（grep 1≠git 失败），但 git 本身失败要拦。IV8 `check_install_dispatch`/`check_staged_secrets`/`pre-commit` 顶层探测已修。
+
+### 9.5 `grep -E` 不支持 `(?:…)` 非捕获组
+
+POSIX ERE 无非捕获组语法——写进模式整个静默不命中（`grep -q` 退 1 当"未命中"=扫描失效）。曾致 IV8 pre-push token 扫描失效一轮。**ERE 侧用裸 `(...)`**；Python/JS 正则不受限。跨脚本复制正则时逐宿主核对方言。
+
+### 9.6 门校验对象 = 暂存 blob 非工作树
+
+`git add` 后工作树再改：查工作树的门会误 FAIL 有效提交；反向 stage 脏→恢复工作树则放行脏索引。门禁该读 `git cat-file blob <staged-sha>`（同 9.1 寻址）；`is_file()` 类工作树存在性守卫对暂存语义是错的。IV8 `check_staged`(TOC)/`check_work_ids` 已修。

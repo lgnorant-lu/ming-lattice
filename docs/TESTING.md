@@ -111,7 +111,9 @@ node scripts/build-router-manifest.mjs --check
 
 ## 门禁与限制
 
-已安装的 pre-commit 对暂存 blob 扫描，再执行严格测试模式。测试读取工作树，因此部分暂存不等于对完整待提交树进行了隔离验证，提交前仍需审阅 staged/unstaged 差异。
+已安装的 pre-commit 对暂存 blob 扫描（sha 寻址读索引对象，非 `git show :<path>`——revspec 内层解析 pathspec 魔法），再执行严格测试模式。测试读取工作树，因此部分暂存不等于对完整待提交树进行了隔离验证，提交前仍需审阅 staged/unstaged 差异。
+
+时间敏感的 e2e 断言（cadence/节流类）不靠墙钟窗口——向 `state.json` 注入未来时戳再触发第二跑，窗口不可过期（2026-10 实测 30s 窗高负载过期 flake 三次后固化）。
 
 通过这些测试不代表所有 Skill 内容正确、真实客户端遵循限制或所有 OS 已通过。当前没有完整 JSON Schema 验证器、跨客户端效果评估、实际浏览器 E2E、规模基准或自动变异活动；不要用 passed 比例代替这些证据。
 

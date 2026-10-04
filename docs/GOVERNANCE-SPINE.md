@@ -161,7 +161,19 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - emit-operational-event 静默死——五调用点全吞 stderr（telemetry 不阻塞业务是取舍），等 observability 消费方要可诊断性
 - ~~sync void-junction 负路径~~——**已清偿**（2026-09-27：test-cli-tools 增 `sync-void-junction` 场景——预置死 junction 先验虚空(Test-Path 穿透=False)→sync 检出"非本仓旧链"删建治愈→SKILL.md 可解析断言落地；verify-fail exit-1 分支系运中腐化兜底（校验全在部署前），黑盒不可达不伪造）
 - verify-cache strict 模式——纯诊断永 exit 0，等 CI 化/门化需求
-- update.ps1 余项——TOCTOU 回写覆盖、main\|master 分支限定、DETECT-FAIL 与 sourceGone 同桶、shallow 边界 log 缺失，均等痛点实例
+- update.ps1 余项——ls-remote `-` 前缀选项注入已修（`f074962`）；余项 TOCTOU 回写覆盖、main\|master 分支限定、DETECT-FAIL 与 sourceGone 同桶、shallow 边界 log 缺失，均等痛点实例
+
+**已清偿（2026-10-15 hooks 引擎/脚本审计轮，IV8 侧同款记于其 TODO-infrastructure 与 git-hooks-conventions）**：
+
+- ~~`git show :<path>` pathspec 魔法注入~~——**已清偿**（`0e92910`：staged 文件名可控制 revspec 内层魔法——`:(top)x` 读出 `x` 的 blob（密扫逃逸）、`!/x` fatal；`GIT_LITERAL_PATHSPECS` 实证管不了 revspec 位。修法=sha 两步寻址 `ls-files -s -z`→`cat-file blob <sha>`，root 键缓存；IV8 侧 seam_gate/secrets/check_staged 四处同源修复）
+- ~~纯删除提交零门禁放行~~——**已清偿**（`da4fd65`：`git rm tests/run.mjs`→ACMR 清单空→引擎早退→impact-test 永不跑，覆盖自毁成绿。修法=引擎早退改 `hasStagedChanges` 探针（含 D 位），plan.mjs ACMR→ACMRD；e2e 断言固件）
+- ~~integrity 信任基线只签 gates/~~——**已清偿**（`04d5f2f`+`362f6a8`：①覆盖域扩至 engine/gates/gates.local/lib 四件——lib/resolveLevel 与 gates.local 真门同入签名；②零暂存早退吞洞——篡改门件+`--allow-empty` 曾打印 ERROR 后 exit 0）
+- ~~registry 值进 git argv 无形状校验~~——**已清偿**（`da4fd65`+`f074962`：fetch.mjs pin 限 40-hex/repo 拒 `-` 前缀/path 钉仓根——`--upload-pack=` 位注入关闭；update.ps1 ls-remote 同款 `-` 前缀拦）
+- ~~git 子进程零超时~~——**已清偿**（`e8940f4`：makeGit/repoRoot/gitDir/git-state 全链 60s 默认（opts 可覆盖）——index 锁/LFS/UNC 挂起曾使 pre-commit 永久阻塞）
+- ~~声明式门命中放大 + 零宽死循环~~——**已清偿**（`e8940f4`+`acc7118`：`pattern=.` 每字符一 finding 爆内存→每文件帽 50+截断摘要；自咬回归=帽 `continue` 越过空匹配守卫致 `x*` lastIndex 冻结——空匹配前进压帽前判断修复）
+- ~~`stagedEmpty` 死 token~~——**已清偿**（`89cff7b`：detectGitState 未接 staged 实参→`skipIf=staged-empty` 恒不命中；回填接线+组5断言）
+- ~~lint 相对链接越包 false-green~~——**已清偿**（`11c6d29`：`../` 越包链接本地存在→PASS，部署后必断链；GetFullPath 归一化+包根钉守，语料零误报）
+- ~~cadence e2e 墙钟 flake×3~~——**已清偿**（`e8940f4`：30s 窗高负载过期→二跑前注未来时戳，断言确定性）
 
 **候审（2026-09-22 设计迭代轮新增，详情见 _proposals/2026-09-22-explore-converge-loop-paradigm.md 及会话设计链）**：
 
