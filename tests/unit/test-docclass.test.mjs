@@ -164,6 +164,18 @@ export function run() {
       ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    conditional:\n      - when:\n          Status: x\n        check:\n          f1:\n            gt: today\n', '算子未实现'],
       ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    freshness:\n      anyOf: []\n', 'freshness'],
       ['schemaVersion: 1\nmatchOrder: all\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n', 'matchOrder 仅实现 first'],
+      // ── 值形状钉（双引擎镜像校验面，审计补硬） ──
+      ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: 5\n', 'match.path 须为字符串或字符串列表'],
+      ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: ["a/*", 7]\n', 'match.path 须为字符串或字符串列表'],
+      ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    freshness:\n      anyOf: [d]\n      level: loud\n', 'freshness.level 仅 error|warn'],
+      ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    states:\n      field: status\n      vocab: [a]\n      tolerate: x\n', 'states.tolerate 须为字符串列表'],
+      ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    states: [a, 3]\n', 'states 简写须为字符串列表'],
+      ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    fields:\n      f1:\n        vocab: [1, x]\n', 'fields.f1.vocab 须为非空字符串列表'],
+      ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    fields:\n      f1:\n        tolerate: z\n', 'fields.f1.tolerate 须为字符串列表'],
+      ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    conditional:\n      - when:\n          Status:\n            notIn: active\n', 'notIn 须为字符串列表'],
+      ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    conditional:\n      - when:\n          Status: [a]\n', '值须为字符串或算子映射'],
+      ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    conditional:\n      - when:\n          Status: active\n        require: [5]\n', 'require 项须为非空字符串'],
+      ['schemaVersion: 1\ndocClasses:\n  - name: x\n    match:\n      path: "a/*"\n    conditional:\n      - when:\n          Status: active\n        require: [f]\n        msg: 3\n', 'msg 须为字符串'],
     ];
     for (const [t, frag] of badValues) {
       r = load(t);

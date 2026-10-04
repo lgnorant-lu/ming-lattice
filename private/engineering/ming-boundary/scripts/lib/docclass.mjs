@@ -81,16 +81,24 @@ function validateSpec(spec, errors, label) {
     validateMatch(c.match, `${tag} match`, errors);
     for (const f of asList(c.required))
       if (typeof f !== 'string' || !f) errors.push(`${tag} required 项须为非空字符串`);
-    if (c.freshness !== undefined)
-      if (!c.freshness || !Array.isArray(c.freshness.anyOf) || !c.freshness.anyOf.length)
+    if (c.freshness !== undefined) {
+      if (!c.freshness || !_isStrList(c.freshness.anyOf) || !c.freshness.anyOf.length)
         errors.push(`${tag} freshness 须为 {anyOf: [非空字段名列表]}`);
+      else if (c.freshness.level !== undefined && !['error', 'warn'].includes(c.freshness.level))
+        errors.push(`${tag} freshness.level 仅 error|warn`);
+    }
     if (c.states !== undefined && !Array.isArray(c.states)) {
       const s = c.states;
-      if (!s || typeof s !== 'object' || !Array.isArray(s.vocab) || !s.vocab.length)
+      if (!s || typeof s !== 'object' || !_isStrList(s.vocab) || !s.vocab.length)
         errors.push(`${tag} states 须为 vocab 列表或 {field,vocab,tolerate}`);
-      else if (s.field !== undefined && typeof s.field !== 'string')
-        errors.push(`${tag} states.field 须为字段名`);
-    }
+      else {
+        if (s.field !== undefined && typeof s.field !== 'string')
+          errors.push(`${tag} states.field 须为字段名`);
+        if (s.tolerate !== undefined && !_isStrList(s.tolerate))
+          errors.push(`${tag} states.tolerate 须为字符串列表`);
+      }
+    } else if (Array.isArray(c.states) && !_isStrList(c.states))
+      errors.push(`${tag} states 简写须为字符串列表`);
     if (c.fields !== undefined) {
       if (!c.fields || typeof c.fields !== 'object' || Array.isArray(c.fields))
         errors.push(`${tag} fields 须为映射`);
@@ -104,8 +112,10 @@ function validateSpec(spec, errors, label) {
           try { new RegExp(fd.pattern); }
           catch { errors.push(`${tag} fields.${fn}.pattern 非法正则: ${fd.pattern}`); }
         }
-        if (fd.vocab !== undefined && (!Array.isArray(fd.vocab) || !fd.vocab.length))
-          errors.push(`${tag} fields.${fn}.vocab 须为非空列表`);
+        if (fd.vocab !== undefined && (!_isStrList(fd.vocab) || !fd.vocab.length))
+          errors.push(`${tag} fields.${fn}.vocab 须为非空字符串列表`);
+        if (fd.tolerate !== undefined && !_isStrList(fd.tolerate))
+          errors.push(`${tag} fields.${fn}.tolerate 须为字符串列表`);
         if (fd.role !== undefined && !FIELD_ROLES.has(fd.role))
           errors.push(`${tag} fields.${fn}.role 未实现: ${fd.role}`);
       }
@@ -126,11 +136,18 @@ function validateSpec(spec, errors, label) {
       if (!cond.when || typeof cond.when !== 'object' || !Object.keys(cond.when).length)
         errors.push(`${ctag} 缺 when 条件`);
       else for (const [wf, wv] of Object.entries(cond.when)) {
-        if (wv && typeof wv === 'object') {
+        if (wv && typeof wv === 'object' && !Array.isArray(wv)) {
           for (const op of Object.keys(wv))
             if (!WHEN_OPS.has(op)) errors.push(`${ctag} when.${wf} 算子未实现: ${op}`);
-        }
+          if (wv.notIn !== undefined && !_isStrList(wv.notIn))
+            errors.push(`${ctag} when.${wf}.notIn 须为字符串列表`);
+        } else if (typeof wv !== 'string')
+          errors.push(`${ctag} when.${wf} 值须为字符串或算子映射`);
       }
+      for (const f of asList(cond.require))
+        if (typeof f !== 'string' || !f) errors.push(`${ctag} require 项须为非空字符串`);
+      if (cond.msg !== undefined && typeof cond.msg !== 'string')
+        errors.push(`${ctag} msg 须为字符串`);
       for (const [cf, cv] of Object.entries(cond.check ?? {})) {
         if (!cv || typeof cv !== 'object') { errors.push(`${ctag} check.${cf} 须为算子映射`); continue; }
         for (const op of Object.keys(cv))
@@ -174,10 +191,16 @@ function normalizeSpec(spec) {
   return out;
 }
 
+const _isStrList = (v) => Array.isArray(v) && v.every((x) => typeof x === 'string');
+const _isStrOrList = (v) => typeof v === 'string' || _isStrList(v);
+
 function validateMatch(m, tag, errors) {
   if (!m || typeof m !== 'object' || Array.isArray(m)) { errors.push(`${tag} 缺省或须为映射`); return; }
   for (const k of Object.keys(m))
     if (!MATCH_KEYS.has(k)) errors.push(`${tag} 未知键 ${k}`);
+  for (const k of ['path', 'name', 'exactPath', 'notPath'])
+    if (m[k] !== undefined && !_isStrOrList(m[k]))
+      errors.push(`${tag}.${k} 须为字符串或字符串列表`);
   const hasInclude = m.path !== undefined || m.name !== undefined
     || m.exactPath !== undefined || m.any !== undefined || m.anyOf !== undefined;
   if (!hasInclude) errors.push(`${tag} 须至少一条包含键（path/name/exactPath/any）`);
