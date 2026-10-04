@@ -129,3 +129,11 @@ rules:
 consumers:
   docclass:
     spec: boundaries.docclass.yaml
+  # nslaw：标识命名空间法律——docs/namespaces.json 为形态契约（ming.1，立法归
+  # ming-l-paradigm），ADR-NNNN 实例经文件名定义位提取；ci/manual 相位全仓审计
+  nslaw:
+    registry: docs/namespaces.json
+    defs:
+      - path: docs/adr
+        mode: filename
+        pattern: '^ADR-\d{4}'

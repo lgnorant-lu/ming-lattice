@@ -11,6 +11,7 @@ evaluator（check-boundaries.mjs）恒在，不在 `consumers:` 段列举。
 | `emit-skeleton` | files | manual | **是** | 从观察拓扑起草 `boundaries.suggested.yaml`（推断稿，一律 warn 级，须人工审） |
 | `diff` | report | ci/manual | 否 | 事实面差分（config.baseline 必填，仓根相对路径） |
 | `docclass` | findings | staged/ci/manual | 否 | docClass 头判定（config.spec=docclass.yaml 必填）——classify 纯路径先筛、命中类才读件；遍历域=facts file facts（gitignored 治理文档本机照判、CI 真空过） |
+| `nslaw` | findings+report | ci/manual | 否 | 标识命名空间法律（config.registry=ming.1 namespaces.json 必填）——defs×refs join 审计：悬空引用/撞名/格式/未登记族/散文-机读漂移 + per-ns 统计 |
 
 ## 选用与配置
 
@@ -45,18 +46,27 @@ consumers:
 | `spec` | docclass 必填 | docClass spec（docclass.yaml）仓根相对路径，越界即拒 |
 | `domains_from` | 否 | metrics 命名空间段的契约路径（仓根相对，缺省 `boundaries.yaml`；契约缺席则跳过该段） |
 | `out` | 否 | emit-skeleton 输出路径（仓根相对，缺省 `boundaries.suggested.yaml`；越界拒、已存在拒写） |
+| `registry` | nslaw 必填 | ming.1 namespaces.json 仓根相对路径（schema 归 ming-l-paradigm 立法） |
+| `defs` | 否 | nslaw 实例登记源 `[{path, mode, pattern?, field?}]`；mode ∈ first_col/heading/bold/tokens/filename（path=目录，pattern 整段 match 即 ID）/json_field/section_list |
+| `scan_exts` | 否 | nslaw 扫描扩展名（缺省 `[".md"]`） |
+| `scan_exclude` | 否 | nslaw 追加豁免 globs（叠加契约 exemptions） |
+| `scan_exclude_from` | 否 | nslaw 豁免清单文件（行首 glob + `#` 注释） |
+| `prose_from` | 否 | nslaw 散文登记处文档——表内反引号前缀与 registry 双向互锁 |
+| `contract_from` | 否 | nslaw 豁免来源契约（缺省 `boundaries.yaml`） |
+| `min_family` | 否 | nslaw 未登记族最少成员数（缺省 2） |
 | `timeout_ms` | 否 | 默认 120s |
 | `args` | 否 | 追加 argv |
 
 未知键 → config warning。未知 phase/outputs → CONFIG error。
 
-## 消费方协议 v1
+## 消费方协议 v1.1
 
 调起：`node <entry> --facts <jsonl> --root <root> --config <entry-json> [--apply]`
 
 - `outputs: findings` → stdout 逐行 JSONL `{"rule","severity","unit","file","line"?,"expect","observed","fix"}`，runner 归并按 (unit,line,rule) 排序并加 `via:<id>`
 - `outputs: report` → stdout 自由文本，runner 加 `== [id] ==` 头输出
 - `outputs: files` → stdout JSON `{planned:[],written:[],preview?}`；**无 `--apply` 只准 planned+preview，不得写盘**
+- v1.1 双通道：`outputs: [findings, report]`——`{` 起头可解析行入 findings，其余行收编为 report 文本；`files` 独占 stdout 不得组合
 - 非零退出 → error finding `<id>:crash`（stderr 截 500 字进 fix）
 
 ## 防线（先例固化）
@@ -68,7 +78,9 @@ consumers:
 
 ## 候审位（未实现，按消费拉动再落）
 
-`extends:` 预设段（键名已注册）/ reachable / unique / n-way parity / cardinality / 通用查询引擎。
+`extends:` 预设段（键名已注册）/ reachable / unique / n-way parity / cardinality / 通用查询引擎；
+audit-domains §7 → 共享 lib 收敛（ming-l-paradigm 原生实现暂留）；
+emit-skeleton 吃 nslaw unregistered-family 报告反起草 namespaces.json 草案。
 
 ## 设计血统（外部先例 2026-09 调研固化）
 

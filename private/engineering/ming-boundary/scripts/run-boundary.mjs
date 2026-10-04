@@ -4,11 +4,13 @@
 //        [--facts-extra E.jsonl[,E2…]] （外部适配器事实并入——语义档证据源通道）
 //        [--phase staged|ci|manual] [--staged-units a,b] [--only id,...]
 //        [--apply] [--json] [--keep-facts] [--allow-degraded]
-// 消费方协议 v1（临时稿）:
+// 消费方协议 v1.1:
 //   调起: node <entry> --facts <path> --root <root> --config <entry-json> [--apply]
 //   outputs=findings → stdout 逐行 JSONL finding {rule,severity,unit,...}
 //   outputs=report   → stdout 自由文本
 //   outputs=files    → stdout JSON {planned:[],written:[],preview?};无 --apply 只准 planned(+preview)
+//   v1.1: outputs 可列表化 [findings, report]——'{' 起头且可解析行=findings，
+//         其余行在 report 同时声明时收编为 report 文本；files 独占不可组合。
 //   非零退出 → 计 error finding <id>:crash
 import fs from 'node:fs';
 import os from 'node:os';
@@ -31,10 +33,13 @@ const BUILTIN = {
   'emit-skeleton': { outputs: 'files',  phases: ['manual'],                 level: 'note', mutates: true },
   diff:            { outputs: 'report', phases: ['ci', 'manual'],           level: 'warn', mutates: false },
   docclass:        { outputs: 'findings', phases: ['staged', 'ci', 'manual'], level: 'warn', mutates: false },
+  nslaw:           { outputs: ['findings', 'report'], phases: ['ci', 'manual'], level: 'warn', mutates: false },
 };
 const KNOWN_CKEY = new Set(
   ['entry', 'phases', 'level', 'outputs', 'mutates', 'timeout_ms', 'baseline',
-   'spec', 'args', 'note', 'domains_from', 'out']);
+   'spec', 'args', 'note', 'domains_from', 'out',
+   'registry', 'defs', 'scan_exts', 'scan_exclude', 'scan_exclude_from',
+   'prose_from', 'min_family', 'contract_from']);
 const KNOWN_PHASE = new Set(['staged', 'ci', 'manual']);
 const KNOWN_OUT = new Set(['findings', 'report', 'files']);
 const DEFAULT_TIMEOUT = 120_000;
@@ -83,13 +88,16 @@ function resolveConsumers(section, root, warnings) {
     for (const k of Object.keys(cfg))
       if (!KNOWN_CKEY.has(k)) warnings.push(`consumer ${id}: 未知键 '${k}'`);
     const meta = { ...(BUILTIN[id] || {}), ...cfg };
-    meta.outputs = meta.outputs || 'findings';
+    meta.outputs = [].concat(meta.outputs || 'findings');
     meta.phases = meta.phases || ['ci', 'manual'];
     meta.level = meta.level || 'warn';
     for (const p of meta.phases)
       if (!KNOWN_PHASE.has(p)) errors.push(`consumer ${id}: 未知 phase '${p}'`);
-    if (!KNOWN_OUT.has(meta.outputs)) errors.push(`consumer ${id}: 未知 outputs '${meta.outputs}'`);
-    if (meta.outputs === 'files' && meta.mutates !== true)
+    for (const o of meta.outputs)
+      if (!KNOWN_OUT.has(o)) errors.push(`consumer ${id}: 未知 outputs '${o}'`);
+    if (meta.outputs.includes('files') && meta.outputs.length > 1)
+      errors.push(`consumer ${id}: outputs=files 独占 stdout JSON 契约，不得与其他通道组合`);
+    if (meta.outputs.includes('files') && meta.mutates !== true)
       errors.push(`consumer ${id}: outputs=files 必须 mutates:true`);
     let entry = null;
     if (cfg.entry) {
@@ -206,12 +214,18 @@ if (stagedNoUnits && contract)
   errors.push('CONFIG --phase staged 需 --staged-units <逗号清单>（否则 ∀ 族在部分视图上误评）');
 
 const findings = [], reports = [];
+// 返回剩余非 finding 行——outputs 同含 report 时由调用方收编为报告文本
 const pushFindings = (via, text) => {
+  const rest = [];
   for (const line of text.split('\n')) {
     if (!line.trim()) continue;
-    try { const f = JSON.parse(line); f.via = f.via || via; findings.push(f); }
-    catch { /* findings 型通道混入非 JSON 行=忽略（report 文本走 reports） */ }
+    if (line.startsWith('{')) {
+      try { const f = JSON.parse(line); f.via = f.via || via; findings.push(f); continue; }
+      catch { /* '{' 起头的坏 JSON 行落回 report 文本 */ }
+    }
+    rest.push(line);
   }
+  return rest.join('\n');
 };
 
 // 采纳空契约面：无 rules 的仓（emit/diff/metrics 先行、契约后补）evaluator
@@ -251,10 +265,14 @@ for (const c of picked) {
       fix: r.stderr?.slice(0, 500) || '见 stderr', via: c.id });
     continue;
   }
-  if (c.meta.outputs === 'findings') pushFindings(c.id, r.stdout);
-  else {
+  const outs = c.meta.outputs;
+  if (outs.includes('findings')) {
+    const rest = pushFindings(c.id, r.stdout);
+    if (outs.includes('report') && rest.trim())
+      reports.push({ id: c.id, outputs: 'report', text: rest.trimEnd() });
+  } else {
     let text = r.stdout.trimEnd();
-    if (c.meta.outputs === 'files') {          // files 型: JSON 契约, preview 友好显示
+    if (outs.includes('files')) {              // files 型: JSON 契约, preview 友好显示
       try {
         const j = JSON.parse(text);
         text = `planned=${JSON.stringify(j.planned || [])}` +
@@ -262,7 +280,7 @@ for (const c of picked) {
           (j.preview ? `\n${j.preview}` : '');
       } catch { /* 非 JSON 输出原样透传 */ }
     }
-    reports.push({ id: c.id, outputs: c.meta.outputs, text });
+    reports.push({ id: c.id, outputs: outs.join('+'), text });
   }
 }
 

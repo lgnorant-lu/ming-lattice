@@ -1227,6 +1227,78 @@ export async function run() {
         'stderr 应点名 --facts-extra 与行号');
     }
 
+    // ---------- 组 13b: nslaw——命名空间法律消费方 + outputs 双通道协议 ----------
+    {
+      const C = path.join(tmpRoot, 'ns-repo');
+      const cf = (rel, s) => {
+        const p = path.join(C, rel);
+        fs.mkdirSync(path.dirname(p), { recursive: true });
+        fs.writeFileSync(p, s, 'utf8');
+      };
+      cf('ns.json', JSON.stringify({ version: 'ming.1', namespaces: [
+        { prefix: 'A<n>', pattern: '^A\\d+$', domain: 'w', ordering: 'alloc', role: 'id' },
+        { prefix: 'WS-<n>', pattern: '^WS-\\d+[a-z]?$', domain: 'w', ordering: 'alloc', role: 'id' },
+        { prefix: 'ADR-<NNNN>', pattern: '^ADR-\\d{4}$', domain: 'gov', ordering: 'alloc', role: 'id' },
+        { prefix: 'XX-<n>', pattern: '^XX-\\d+$', domain: 'x', ordering: 'alloc', role: 'value' },
+        { prefix: 'DEAD-<n>', pattern: '^DEAD-\\d+$', domain: 'x', ordering: 'alloc', role: 'id' }] }));
+      cf('docs/idx/reg.md', '# 登记表\n| ID | t |\n|---|---|\n| A1 | x |\n| A3 | y |\n| WS-1 | z |\n');
+      cf('docs/idx/other.md', '# 第二定义位\n| A1 | dup |\n|---|---|\n'); // 撞名
+      cf('docs/a.md', '# a\n引用 A1、WS-1、未登记 A9、WS-9z、XX-3 局部。\n');
+      cf('docs/b.md', '# b\nA3 引自别处；BUG-1 BUG-7 BUG-9 成族。\n```\nA99 围栏不算\n```\n');
+      cf('docs/c.md', '## 定义段\n定义 **A7** 在文中。\n');
+      cf('docs/adr/ADR-0001-x.md', '# ADR-0001\n');
+      cf('boundaries.yaml', 'version: 1\n' +
+        'domains:\n  - name: docs\n    match: "docs/**"\n' +
+        'consumers:\n  nslaw:\n' +
+        '    registry: ns.json\n' +
+        '    defs:\n' +
+        '      - path: docs/idx/reg.md\n' +
+        '        mode: first_col\n' +
+        '      - path: docs/idx/other.md\n' +
+        '        mode: first_col\n' +
+        '      - path: docs/c.md\n' +
+        '        mode: bold\n' +
+        '      - path: docs/adr\n' +
+        '        mode: filename\n');
+      const RB = path.join(PKG, 'scripts/run-boundary.mjs');
+      const r = runNode([RB, '--root', C, '--phase', 'ci', '--only', 'nslaw', '--json'],
+        { encoding: 'utf8' });
+      const j = JSON.parse(r.stdout);
+      // findings：悬空 A9/WS-9z、撞名 A1、未登记族 BUG
+      assert.ok(j.findings.some(f => f.rule === 'nslaw:dangling' && f.observed === '引用无登记'),
+        '悬空引用须出 dangling finding');
+      assert.ok(j.findings.some(f => f.rule === 'nslaw:dangling' && f.expect.includes('A9')),
+        'A9 须悬空');
+      assert.ok(j.findings.some(f => f.rule === 'nslaw:collision' && f.observed.includes('A1')),
+        'A1 双文件定义须出 collision error');
+      assert.ok(j.findings.some(f => f.rule === 'nslaw:unregistered-family' &&
+        f.observed.includes('BUG')), 'BUG 族须出 unregistered-family');
+      assert.ok(!j.findings.some(f => f.observed?.includes('A99')),
+        '围栏内 token 不得计入');
+      assert.ok(!j.findings.some(f => f.observed?.includes('XX-3')),
+        'value 角色族不做悬空检查');
+      // 双通道：findings 与 report 同到
+      const rep = j.reports.find(x => x.id === 'nslaw');
+      assert.ok(rep && rep.text.includes('namespace'), 'nslaw report 段须在场');
+      assert.ok(rep.text.includes('DEAD-<n>'), '零观测命名空间须列入报告');
+      assert.ok(rep.text.includes('A<n>') && rep.text.includes('defs'), '统计表须含 per-ns 行');
+      // outputs 列表 lint：files 组合拒
+      cf('boundaries.yaml', 'version: 1\nconsumers:\n  nslaw:\n    registry: ns.json\n' +
+        '    outputs: [files, report]\n');
+      const r2 = runNode([RB, '--root', C, '--phase', 'ci', '--only', 'nslaw', '--json'],
+        { encoding: 'utf8' });
+      const j2 = JSON.parse(r2.stdout);
+      assert.ok(j2.errors.some(e => e.includes('files') && e.includes('组合')),
+        'files 与其他通道组合须 CONFIG 拒');
+      // registry 缺 → nslaw:config error finding
+      cf('boundaries.yaml', 'version: 1\nconsumers:\n  nslaw: {}\n');
+      const r3 = runNode([RB, '--root', C, '--phase', 'ci', '--only', 'nslaw', '--json'],
+        { encoding: 'utf8' });
+      const j3 = JSON.parse(r3.stdout);
+      assert.ok(j3.findings.some(f => f.rule === 'nslaw:config'),
+        'registry 缺须出 config error finding');
+    }
+
     // ---------- 组 14: derive.mjs 纯核（DDT 矩阵）+ pin↔derived 对账（CDC） ----------
     {
       // DDT: tags.scm S-expr 形态矩阵 → 捕获归属期望

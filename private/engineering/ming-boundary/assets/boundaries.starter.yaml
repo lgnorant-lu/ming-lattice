@@ -81,6 +81,13 @@ rules:
 #     baseline: .boundary/baseline.facts.jsonl
 #   docclass:
 #     spec: docclass.yaml      # 必填——docClass spec 仓根相对路径
+#   nslaw:                     # 标识命名空间法律（findings+report 双通道，ci/manual）
+#     registry: namespaces.json  # 必填——ming.1 登记表（schema 归 ming-l-paradigm）
+#     defs:                    # 实例登记源，mode ∈ first_col|heading|bold|tokens|filename|json_field|section_list
+#       - path: docs/registry.md
+#         mode: first_col
+#     # prose_from: docs/conventions/naming.md  # 散文登记处与 registry 双向互锁（可选）
+#     # scan_exclude_from: .workid-exempt.txt   # 行首 glob 豁免清单（可选）
 #   my-check:
 #     entry: boundary.consumers/my-check.mjs   # 须解析在仓根内，越界即拒
 #     phases: [ci]
