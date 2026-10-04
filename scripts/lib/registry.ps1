@@ -34,6 +34,13 @@ function Read-SkillRegistry {
             if ([string]::IsNullOrWhiteSpace($item.path) -or [IO.Path]::IsPathRooted($item.path) -or $item.path -match '(^|[\\/])\.\.([\\/]|$)|:') {
                 throw "registry_invalid_path: $($item.name)"
             }
+            # source(deployable 上游源目录) 与 path 同规则：仓根相对、禁 .. 禁盘符
+            if ($null -ne $item.source -and ([string]::IsNullOrWhiteSpace($item.source) -or [IO.Path]::IsPathRooted($item.source) -or $item.source -match '(^|[\\/])\.\.([\\/]|$)|:')) {
+                throw "registry_invalid_source: $($item.name)"
+            }
+            if ($section -eq 'deployable' -and $item.family -eq 'mirror' -and [string]::IsNullOrWhiteSpace($item.source)) {
+                throw "registry_mirror_source_missing: $($item.name)"
+            }
             $clientsByName = [ordered]@{}
             if ($section -eq 'base') {
                 if ($item.modules -isnot [System.Collections.IDictionary]) { throw "registry_invalid_modules: $($item.name)" }

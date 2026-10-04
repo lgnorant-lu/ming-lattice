@@ -74,4 +74,23 @@ foreach ($name in @('android-reverse', 'ios-reverse')) {
 # xbs 硬编码他人路径 → 说明性占位
 Fix-Paths 'xbs-ast-deobfuscation' 'C:\\Users\\25198\\(?:\\[\w.-]+)*' '%USERPROFILE%\\.codex\\skills'
 
+# ── 3. name 恒等扫（自动面——name 契约恒等于目录名, 新 mirror 无需再登表）─────
+# description 精要化是编辑判断留在上表；name 对齐是纯机械规则, 全覆盖 deployable/*
+foreach ($dirItem in Get-ChildItem $dep -Directory) {
+    $f = Join-Path $dirItem.FullName 'SKILL.md'
+    if (-not (Test-Path $f)) { continue }
+    $t = Get-Content $f -Raw
+    if ($t -notmatch '(?ms)^---\s*\n(.*?)\n---') { continue }
+    $fm = $Matches[1]
+    $cur = [regex]::Match($fm, '(?m)^name\s*:\s*([^\r\n]+)')
+    if ($cur.Success -and $cur.Groups[1].Value.Trim().Trim('"', "'") -ne $dirItem.Name) {
+        $fmNew = $fm -replace '(?m)^name\s*:.*$', "name: $($dirItem.Name)"
+        $body = $t.Substring($Matches[0].Length)
+        if ($PSCmdlet.ShouldProcess($f, "name 对齐目录名 $($dirItem.Name)")) {
+            Set-Content -Path $f -Value ("---`n" + $fmNew + "`n---" + $body) -Encoding UTF8
+            Write-Host "[FIX-NAME] $($dirItem.Name)"
+        }
+    }
+}
+
 Write-Host "`npatch 完成"

@@ -102,6 +102,11 @@ async function runScenario(scenario) {
       await spawnAsync('git', ['-C', remote, 'clone', '-q', '.', path.join(root, 'vertical', 'foo')]);
       body += `vertical:\n  - name: foo\n    path: vertical/foo\n    repo: ${remote}\n    pin: abc1234\n    enabled: true\n    deploy: {}\n    checkCache:\n      lastCheckedAt: 2020-01-01\n      lastRemoteHead: ${remoteHead}\n`;
     }
+    if (['preserve-wrapper', 'build-whatif', 'missing-wrapper-source'].includes(scenario)) {
+      // deployable 边表已迁入 registry(source: 字段)——fixture 须登记条目
+      // build-deployable 才认此模块；missing-wrapper-source 不给源目录即走缺源失败
+      body += 'deployable:\n  - name: hello-js-reverse\n    family: mirror\n    path: deployable/hello-js-reverse\n    source: vertical/hello-js-reverse-skill\n    enabled: true\n    deploy: {}\n';
+    }
     const registry = path.join(root, 'registry.yaml');
     fs.writeFileSync(registry, body);
     const invoke = (script, ...args) => spawnAsync('pwsh', ['-NoProfile', '-File', path.join(project, 'scripts', script),

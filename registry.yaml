@@ -1257,9 +1257,12 @@ deployable:
   # 部署包装层 (SKILL.md 改写件: 改名/描述精要/路径修复), 内容 symlink 指向 vertical 源
   # family: mirror=内容经符号链接包装 vendored/base/private 源 | authored=目录本体即源
   #         (registry-parity 套件持续互证 声明↔fs 实态)
+  # source: 上游源目录(仓根相对)。mirror 必填=链接根(build-deployable 经此建符号链接,
+  #         parity 验每条链接解析回该目录); authored 选填=SKILL.md 抄本出处溯源
   - name: hello-js-reverse
     family: mirror
     path: deployable/hello-js-reverse
+    source: vertical/hello-js-reverse-skill
     enabled: true
     domain: js
     note: JSVMP 双路径实战(v3.4.1), 需 camoufox-reverse MCP
@@ -1268,6 +1271,7 @@ deployable:
   - name: rust-reverse
     family: mirror
     path: deployable/rust-reverse
+    source: vertical/rust-reverse-engineering-skill/skills/rust-reverse-engineering
     enabled: true
     domain: bin
     note: Rust 二进制专项, 补基座短板
@@ -1276,6 +1280,7 @@ deployable:
   - name: android-reverse
     family: mirror
     path: deployable/android-reverse
+    source: vertical/android-reverse-claude-skill/plugins/android-reverse-engineering/skills/android-reverse-engineering
     enabled: true
     domain: apk
     note: 自适应 Frida 绕过/Fragment 注入/Firebase 矩阵
@@ -1284,6 +1289,7 @@ deployable:
   - name: ios-reverse
     family: mirror
     path: deployable/ios-reverse
+    source: vertical/ios-reverse-claude-skill/skills/ios-reverse-engineering
     enabled: true
     domain: ios
     note: iOS 静态逆向(路径变量已修复)
@@ -1292,6 +1298,7 @@ deployable:
   - name: rs-js-reverse
     family: authored
     path: deployable/rs-js-reverse
+    source: vertical/js-reverse-715494637/jsr-reverse/references
     enabled: true
     domain: js
     note: 瑞数/RS 专项(基座覆盖为零), 5 份专项 references
@@ -1300,6 +1307,7 @@ deployable:
   - name: ctf-pwn
     family: mirror
     path: deployable/ctf-pwn
+    source: vertical/ctf-skills/ctf-pwn
     enabled: true
     domain: ctf
     deploy:
@@ -1307,6 +1315,7 @@ deployable:
   - name: ctf-web
     family: mirror
     path: deployable/ctf-web
+    source: vertical/ctf-skills/ctf-web
     enabled: true
     domain: ctf
     deploy:
@@ -1314,6 +1323,7 @@ deployable:
   - name: ctf-reverse
     family: mirror
     path: deployable/ctf-reverse
+    source: vertical/ctf-skills/ctf-reverse
     enabled: true
     domain: ctf
     deploy:
@@ -1321,6 +1331,7 @@ deployable:
   - name: ctf-crypto
     family: mirror
     path: deployable/ctf-crypto
+    source: vertical/ctf-skills/ctf-crypto
     enabled: true
     domain: ctf
     deploy:
@@ -1328,6 +1339,7 @@ deployable:
   - name: ctf-misc
     family: mirror
     path: deployable/ctf-misc
+    source: vertical/ctf-skills/ctf-misc
     enabled: true
     domain: ctf
     deploy:
@@ -1335,6 +1347,7 @@ deployable:
   - name: ctf-forensics
     family: mirror
     path: deployable/ctf-forensics
+    source: vertical/ctf-skills/ctf-forensics
     enabled: true
     domain: ctf
     deploy:
@@ -1342,6 +1355,7 @@ deployable:
   - name: xbs-ast-deobfuscation
     family: mirror
     path: deployable/xbs-ast-deobfuscation
+    source: vertical/xbs-reverse-skill/ast-deobfuscation
     enabled: true
     domain: js
     note: AST 流水线+站点混淆专档(硬编码路径已修)
@@ -1350,6 +1364,7 @@ deployable:
   - name: xbs-verify-patcher
     family: mirror
     path: deployable/xbs-verify-patcher
+    source: vertical/xbs-reverse-skill/web-verify-patcher
     enabled: true
     domain: js
     note: 验证码求解编排(基座空白)
@@ -1358,6 +1373,7 @@ deployable:
   - name: areclaw-analyze-apk
     family: authored
     path: deployable/areclaw-analyze-apk
+    source: vertical/areclaw/.claude/skills/analyze-apk
     enabled: true
     domain: apk
     deploy:
@@ -1365,6 +1381,7 @@ deployable:
   - name: areclaw-compare-versions
     family: authored
     path: deployable/areclaw-compare-versions
+    source: vertical/areclaw/.claude/skills/compare-versions
     enabled: true
     domain: apk
     deploy:
@@ -1372,6 +1389,7 @@ deployable:
   - name: areclaw-find-api
     family: authored
     path: deployable/areclaw-find-api
+    source: vertical/areclaw/.claude/skills/find-api
     enabled: true
     domain: apk
     deploy:
@@ -1379,6 +1397,7 @@ deployable:
   - name: areclaw-intercept
     family: authored
     path: deployable/areclaw-intercept
+    source: vertical/areclaw/.claude/skills/intercept
     enabled: true
     domain: apk
     deploy:
@@ -1386,6 +1405,7 @@ deployable:
   - name: areclaw-register
     family: authored
     path: deployable/areclaw-register
+    source: vertical/areclaw/.claude/skills/register
     enabled: true
     domain: apk
     deploy:
@@ -1393,6 +1413,7 @@ deployable:
   - name: malware-ioc-extraction
     family: authored
     path: deployable/malware-ioc-extraction
+    source: vertical/malware-re-skills/.agents/skills/re-ioc-extraction
     enabled: true
     domain: mw
     note: IOC YAML schema+证据规则
@@ -1409,6 +1430,7 @@ deployable:
   - name: web-reverse-iv8
     family: mirror
     path: deployable/web-reverse-iv8
+    source: vertical/web-reverse-iv8
     enabled: true
     domain: js
     note: iv8 补环境全链 skill(v9.33, HAR追踪→定位→反混淆→iv8环境→本地验证, 阶段门硬阻断; frontmatter 元数据滞留 v9.6)
@@ -1427,6 +1449,7 @@ deployable:
   - name: ruyipage-skill
     family: mirror
     path: deployable/ruyipage-skill
+    source: vertical/ruyipage-skill
     enabled: true
     domain: web
     note: ruyiPage 官方 skill v1.2(BiDi 原生/人机化/指纹浏览器/反爬)
@@ -1435,6 +1458,7 @@ deployable:
   - name: reverse-skill-router
     family: mirror
     path: deployable/reverse-skill-router
+    source: base/reverse-skill/skills
     enabled: true
     domain: routing
     note: 路由总控基座(base/reverse-skill/skills/SKILL.md 组装: 路由执行契约+master-route.ps1+case-init+ops 门禁), 全部 symlink 指向 base 单一事实源

@@ -21,7 +21,7 @@ function canonicalView() {
   const reg = JSON.parse(out);
   const view = {};
   for (const sec of SECTIONS) {
-    view[sec] = new Set((reg[sec] || []).map(e => [e.name ?? null, e.path ?? null, e.domain ?? null, e.family ?? null].join('|')));
+    view[sec] = new Set((reg[sec] || []).map(e => [e.name ?? null, e.path ?? null, e.domain ?? null, e.family ?? null, e.source ?? null].join('|')));
   }
   return view;
 }
@@ -41,38 +41,62 @@ function liteView() {
     for (const e of block.matchAll(/-\s*name:\s*(\S+)[\s\S]*?(?=\n\s*-\s*name:|$)/g)) {
       const b = e[0];
       const pick = k => unq((b.match(new RegExp(`^\\s*${k}:\\s*(\\S+)`, 'm')) || [null, null])[1]);
-      view[sec].add([unq(e[1]), pick('path'), pick('domain'), pick('family')].join('|'));
+      view[sec].add([unq(e[1]), pick('path'), pick('domain'), pick('family'), pick('source')].join('|'));
     }
   }
   return view;
 }
 
-// deployable family 标记 vs 文件系统实态互证（声明面 = 测量面）：
-//   family:mirror  → 目录内含 ≥1 符号链接/junction
+// deployable family/source 声明 vs 文件系统实态互证（声明面 = 测量面）：
+//   family:mirror  → 目录内含 ≥1 符号链接/junction，且每条链接解析回 source 声明目录内
 //   family:authored → 目录内零符号链接
 //   缺 family 声明 → 违例（双族混杂面必须显式归属——deployable 不再是均质假设）
+//   mirror 缺 source → 违例（边表在 registry，脚本不另立映射）
 function familyCheck() {
   const text = fs.readFileSync(REGISTRY, 'utf8');
   const m = text.match(/^deployable:\s*$/m);
-  if (!m) return [];
+  if (!m) return { bad: [], warn: [] };
   const rest = text.slice(m.index + m[0].length);
   const nextTop = rest.search(/^\S/m);
   const block = nextTop < 0 ? rest : rest.slice(0, nextTop);
-  const bad = [];
+  const bad = [], warn = [];
   for (const e of block.matchAll(/-\s*name:\s*(\S+)[\s\S]*?(?=\n\s*-\s*name:|$)/g)) {
     const name = e[1];
     const fam = (e[0].match(/^\s*family:\s*(\S+)/m) || [])[1];
+    const src = (e[0].match(/^\s*source:\s*(\S+)/m) || [])[1];
     const dir = path.join(REPO, 'deployable', name);
     let linkCount = 0;
+    const topLinks = new Map();   // 顶层名 -> 解析后真实路径
     try {
-      for (const ent of fs.readdirSync(dir, { withFileTypes: true, recursive: true }))
-        if (ent.isSymbolicLink()) linkCount++;
+      for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (ent.isSymbolicLink())
+          topLinks.set(ent.name, fs.realpathSync(path.join(dir, ent.name)));
+      }
+      linkCount = fs.readdirSync(dir, { withFileTypes: true, recursive: true })
+        .filter(e => e.isSymbolicLink()).length;
     } catch { continue; } // 目录缺失交给 lint 面管
     const actual = linkCount > 0 ? 'mirror' : 'authored';
-    if (fam !== actual)
+    if (fam !== actual) {
       bad.push(`${name}: 声明 family=${fam ?? '(缺)'} 但实测 ${actual}（${linkCount} links）`);
+      continue;
+    }
+    if (fam !== 'mirror') continue;
+    if (!src) { bad.push(`${name}: family=mirror 但缺 source 声明`); continue; }
+    const srcAbs = path.resolve(REPO, src) + path.sep;
+    for (const [ln, real] of topLinks) {
+      if (!real.startsWith(srcAbs) && real !== srcAbs.slice(0, -1))
+        bad.push(`${name}: 链接 ${ln} 解析到 ${real}——越出声明 source=${src}`);
+    }
+    // 完备性是观察面非违例——筛选镜像（只链子集, 跳过 README/tests 等噪音件）是合法形态
+    try {
+      for (const ent of fs.readdirSync(path.join(REPO, src), { withFileTypes: true })) {
+        if (ent.name === 'SKILL.md' || ent.name === '.git') continue;
+        if (!topLinks.has(ent.name))
+          warn.push(`${name}: 源顶层 ${ent.name} 未链接（筛选镜像项, 有意则忽略）`);
+      }
+    } catch { bad.push(`${name}: source 目录 ${src} 不存在`); }
   }
-  return bad;
+  return { bad, warn };
 }
 
 export function run() {
@@ -96,8 +120,9 @@ export function run() {
   }
   console.log(`  parity 一致：${SECTIONS.map(s => `${s}=${canon[s].size}`).join(' ')}`);
 
-  // deployable family 声明 vs fs 实态（mirror=有链接/authored=零链接）
-  const famBad = familyCheck();
-  assert.deepEqual(famBad, [], `family 声明漂移:\n${famBad.join('\n')}`);
+  // deployable family/source 声明 vs fs 实态（mirror=有链接且链回 source/authored=零链接）
+  const { bad: famBad, warn: famWarn } = familyCheck();
+  assert.deepEqual(famBad, [], `family/source 声明漂移:\n${famBad.join('\n')}`);
+  for (const w of famWarn) console.log(`  [i] ${w}`);
   console.log('  family 标记与 fs 实态一致（24 deployable）');
 }
