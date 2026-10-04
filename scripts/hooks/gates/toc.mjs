@@ -120,7 +120,7 @@ export const gate = {
   configKeys: ['depth', 'titles', 'mode', 'minHeadings', 'slug'],
   stages: ['pre-commit'],
   family: 'gate',
-  defaultLevel: 'warn',
+  defaultLevel: 'error',
   fixable: true,
   globs: ['*.md'],
   exclude: [], // 仓专排除走 gate.toc.exclude 配置（如 vertical/**,base/**）——默认值须仓中性

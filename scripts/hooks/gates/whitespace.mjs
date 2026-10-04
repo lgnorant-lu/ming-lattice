@@ -27,7 +27,7 @@ export const gate = {
   configKeys: [],
   stages: ['pre-commit'],
   family: 'gate',
-  defaultLevel: 'warn',
+  defaultLevel: 'error',
   fixable: true,
   globs: ['*'],
   exclude: [], // 仓专排除走 gate.whitespace.exclude 配置（如 vertical/**）——默认值须仓中性

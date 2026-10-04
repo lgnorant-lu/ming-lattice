@@ -18,7 +18,7 @@ export const gate = {
   configKeys: [],
   stages: ['pre-commit', 'post-merge', 'post-checkout'],
   family: 'gate',
-  defaultLevel: 'warn',
+  defaultLevel: 'error',
   needsAllFiles: true,
   globs: ['*'],
   exclude: [],

@@ -35,7 +35,7 @@ function scanHomePaths(content, file, findings) {
   for (const [re, label, level] of [
     [WIN_HOME, 'Windows 家目录', 'error'],
     [MAC_HOME, 'macOS 家目录', 'error'],
-    [NIX_HOME, 'Linux 家目录', 'warn'],
+    [NIX_HOME, 'Linux 家目录', 'error'],
   ]) {
     re.lastIndex = 0;
     let m;
@@ -81,7 +81,7 @@ export const gate = {
       CN_PHONE.lastIndex = 0;
       while ((m = CN_PHONE.exec(content)) !== null) {
         findings.push({
-          gate: 'pii', file: p, level: 'warn',
+          gate: 'pii', file: p, level: 'error',
           matchText: m[0],
           message: `疑似手机号: ${m[0]}（若非测试夹具请脱敏）`,
         });

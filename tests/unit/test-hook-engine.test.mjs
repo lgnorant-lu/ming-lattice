@@ -239,7 +239,7 @@ export async function run() {
     assert.ok(l0.every(f => f.matchText.startsWith('keyfile:')), 'L0 身份用文件名');
   }
 
-  // 7b. pii 卫生门：家目录路径/个人邮箱域=error，/home/与手机号=warn，fixture 名豁免
+  // 7b. pii 卫生门：家目录路径/个人邮箱域/手机号=error（2026-10-04 全升格），fixture 名豁免
   {
     const { gate: pii } = await import('../../scripts/hooks/gates/pii.mjs');
     const mkCtx = (fileMap) => ({ files: Object.keys(fileMap), gateConfig: {}, read: p => fileMap[p] });
@@ -248,8 +248,8 @@ export async function run() {
       'a.md': '路径 C:\\Users\\realperson\\docs 写死\n',   // Windows 家目录 → error
       'b.md': '见 /Users/' + 'alice-dev/.config 配置\n',   // macOS 家目录 → error（拆开防本文件被 pii 门自拦）
       'c.md': 'mail me at some.one@' + 'qq.com thx\n',     // CN 个人邮箱 → error
-      'd.md': '日志在 /home/' + 'deployer/app.log\n',      // /home/ 具名 → warn
-      'e.md': '联系电话 ' + '139' + '12345678\n',          // CN 手机号 → warn
+      'd.md': '日志在 /home/' + 'deployer/app.log\n',      // /home/ 具名 → error（升格）
+      'e.md': '联系电话 ' + '139' + '12345678\n',          // CN 手机号 → error（升格）
       // 豁免面
       'f.md': '示例路径 C:\\Users\\test\\ 或 /Users/user/\n', // fixture 名豁免
       'g.md': '/home/ctf/flag 与 /home/alice/ 均为示例\n',   // fixture 名豁免
@@ -260,8 +260,8 @@ export async function run() {
     const f = await pii.run(mkCtx(files));
     const err = f.filter(x => x.level === 'error');
     const warn = f.filter(x => x.level === 'warn');
-    assert.equal(err.length, 3, `error 命中=家目录2+邮箱1，实际 ${err.map(x => x.message).join(';')}`);
-    assert.equal(warn.length, 2, `warn 命中=/home/+手机，实际 ${warn.map(x => x.message).join(';')}`);
+    assert.equal(err.length, 5, `error 命中=家目录3+邮箱1+手机1，实际 ${err.map(x => x.message).join(';')}`);
+    assert.equal(warn.length, 0, `warn 桶应空（升格后无 warn 级命中），实际 ${warn.map(x => x.message).join(';')}`);
     assert.ok(f.every(x => !/^f|g|h|i|j\.md$/.test(x.file)), 'fixture/白名单/弃扫面不得命中');
   }
 
@@ -280,9 +280,9 @@ export async function run() {
       assert.ok(r.some(f => !f.level), '默认白名单拒 wip');
       r = await runMsg('wip(core): 进行中\n', { types: 'wip,feat,fix' });
       assert.ok(!r.some(f => !f.level), 'types 覆盖应放行 wip');
-      // subjectMaxLen → warn 级提示不拦
+      // subjectMaxLen → 配置上限违例即拦（2026-10-04 warn→error 升格）
       r = await runMsg('feat: ' + '很'.repeat(80) + '\n', { subjectMaxLen: '50' });
-      assert.ok(r.some(f => f.level === 'warn' && f.message.includes('超长')), '超长应 warn');
+      assert.ok(r.some(f => !f.level && f.message.includes('超长')), '超长应 error 级命中');
       // extraTrailers 追加禁尾
       r = await runMsg('feat: x\n\nSigned-off-by: bot <b@x>\n', { extraTrailers: '^Signed-off-by' });
       assert.ok(r.some(f => !f.level), 'extraTrailers 应拦截');
@@ -1070,23 +1070,26 @@ export async function run() {
         fs.writeFileSync(path.join(d, 'msg.txt'), msg);
         return spawnSync(process.execPath, [eng(d), 'commit-msg', 'msg.txt'], { cwd: d, encoding: 'utf8' });
       };
-      assert.equal(cm(e1, 'collect: vendored repo').status, 0, '配置仓 collect 放行');
-      assert.equal(cm(e2, 'collect: vendored repo').status, 1, '未配置仓 collect 拦截（仓中性）');
-      const b1 = cm(e1, 'fix: x\n\nCo-Authored-By: a@b.c');
+      assert.equal(cm(e1, 'collect: 采集 vendored repo').status, 0, '配置仓 collect 放行');
+      assert.equal(cm(e2, 'collect: 采集 vendored repo').status, 1, '未配置仓 collect 拦截（仓中性）');
+      const okBody = '\n\n实施内容: x\n本提交不授权: y\n已执行审阅: z';
+      const b1 = cm(e1, 'fix: 修复' + okBody + '\n\nCo-Authored-By: a@b.c');
       assert.equal(b1.status, 1, '配置仓署名禁令拦截');
-      const b2 = cm(e2, 'fix: x\n\nCo-Authored-By: a@b.c');
+      const b2 = cm(e2, 'fix: 修复' + okBody + '\n\nCo-Authored-By: a@b.c');
       assert.equal(b2.status, 0, '未配置仓标准 trailer 放行（政策不烧死）');
-      // —— 文档规范 warn 级浮现（STANDARDS §1.3/1.4——不阻断，违例可见）——
+      // —— 文档规范阻断级（STANDARDS §1.3/1.4——2026-10-04 warn→error 升格）——
       const w1 = cm(e1, 'fix(verify): english subject only');
-      assert.equal(w1.status, 0, 'warn 级浮现不阻断提交');
-      assert.ok((w1.stdout + w1.stderr).includes('subject 应以中文描述'), '英文 subject 应 warn 浮现');
-      assert.ok((w1.stdout + w1.stderr).includes('三段式'), '缺三段式正文应 warn 浮现');
+      assert.equal(w1.status, 1, '英文 subject 升格后阻断提交');
+      assert.ok((w1.stdout + w1.stderr).includes('subject 应以中文描述'), '英文 subject 应点名');
+      assert.ok((w1.stdout + w1.stderr).includes('三段式'), '缺三段式正文应点名');
       const w2 = cm(e1, 'fix(verify): 中文主题\n\n实施内容:\n- a\n本提交不授权:\n- b\n已执行审阅: c');
-      assert.ok(!(w2.stdout + w2.stderr).includes('三段式'), '合规三段式不应 warn');
-      assert.ok(!(w2.stdout + w2.stderr).includes('中文描述'), '中文 subject 不应 warn');
+      assert.equal(w2.status, 0, '合规提交应放行');
+      assert.ok(!(w2.stdout + w2.stderr).includes('三段式'), '合规三段式不应命中');
+      assert.ok(!(w2.stdout + w2.stderr).includes('中文描述'), '中文 subject 不应命中');
       const w3 = cm(e1, 'Merge branch x');
+      assert.equal(w3.status, 0, 'merge 提交豁免放行');
       assert.ok(!(w3.stdout + w3.stderr).includes('中文描述'), 'merge 提交豁免');
-      const w4 = cm(e1, 'collect: vendored repo');
+      const w4 = cm(e1, 'collect: 采集 vendored repo');
       assert.equal(w4.status, 0, 'collect 类型合法');
       assert.ok(!(w4.stdout + w4.stderr).includes('三段式'), '词表外 type 豁免三段式');
     } finally {

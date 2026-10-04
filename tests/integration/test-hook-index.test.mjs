@@ -13,7 +13,10 @@ for (const scenario of ['staged-secret', 'unstaged-secret', 'deleted-working-fil
       const root = path.join(temp, 'repo with spaces');
       // 引擎化后 check.mjs 是薄入口——整套 hooks 目录（engine/lib/gates）都需就位
       fs.cpSync(path.join(project, 'scripts/hooks'), path.join(root, 'scripts/hooks'), { recursive: true });
-      fs.writeFileSync(path.join(root, '.hooksrc'), 'lintLevel=off\nsecretLevel=error\n');
+      fs.writeFileSync(path.join(root, '.hooksrc'),
+        'lintLevel=off\nsecretLevel=error\n'
+        + 'gate.whitespace.level=off\ngate.toc.level=off\ngate.pii.level=off\n'
+        + 'gate.mojibake.level=off\ngate.emoji.level=off\ngate.review-after.level=off\n');
       execFileSync('git', ['init', '-q', root], { timeout: 30_000 });
       const file = scenario === 'unicode-path' ? '\u914d\u7f6e space.json' : 'config.json';
       const full = path.join(root, file);

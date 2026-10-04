@@ -17,16 +17,17 @@ gate.emoji.globs=private/**,docs/**,README.md
 mojibakeLevel=error
 gate.mojibake.exclude=vertical/**
 
-# 4. 敏感密钥拦截（三层规则：L1 签名层 19 模式 / L2 通用赋值+熵检 warn / L3 UTF-16+b64 编码配对 warn）
+# 4. 敏感密钥拦截（三层规则全 error：L1 签名层 19 模式 / L2 通用赋值+熵检 / L3 UTF-16+b64 编码配对）
 #    vertical/** 为 vendored 上游内容——其 fixture 假密钥非本仓安全面（供应链层管 provenance，不管内容）
+#    L2/L3 由 warn 升 error（2026-10-04 全局升格）——误报走模式收紧/排除而非降级容忍
 secretLevel=error
 gate.secrets.exclude=vertical/**
-gate.secrets.genericLevel=warn
-gate.secrets.b64Level=warn
+gate.secrets.genericLevel=error
+gate.secrets.b64Level=error
 
 # 4b. 个人数据卫生（与 secrets 互补：secrets 管密钥，pii 管个人标识）
-#     家目录路径(C:\Users\xxx /Users/xxx)=error、CN 个人邮箱域=error、
-#     /home/xxx 与手机号=warn（CTF/示例合法密度高，fixture 名白名单在内）
+#     家目录路径(三平台)/CN 个人邮箱域/手机号全=error（2026-10-04 升格；
+#     CTF/示例误报走 FIXTURE_NAMES 白名单与脱敏正路）
 gate.pii.level=error
 gate.pii.exclude=vertical/**
 
@@ -43,9 +44,14 @@ trailerLevel=error
 gate.whitespace.exclude=vertical/**
 gate.toc.exclude=vertical/**,base/**
 
-# 8. 候审档到期提醒（周期维度：reviewAfter 日期到期 warn；cadence 节流 7 天）
+# 8. 候审档到期门（周期维度：reviewAfter 到期 error——晋升/延期/废弃三选一；
+#    cadence 节流 7 天；2026-10-04 由提醒 warn 升格阻断）
 gate.review-after.globs=distill/_proposals/*.md
 gate.review-after.cadence=7d
+
+# 8b. 门禁完整性（gates/ 目录与信任基线不一致=阻截——fail-closed 防门被篡改
+#     静默降级；改动门禁后执行 node scripts/hooks/engine.mjs trust 重签）
+integrityLevel=error
 
 # 9. 死链检查（周期维度：post-merge/post-checkout 非阻断；cadence 节流 7 天）
 gate.link-rot.globs=docs/**,private/**/*.md,README.md,AGENTS.md
