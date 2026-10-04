@@ -8,8 +8,8 @@
   "properties": {
     "ming_v":     { "type": "string", "pattern": "^ming\\.\\d+(\\.\\d+)?$", "description": "Ming-L 协议版本" },
     "project":    { "type": "string" },
-    "tier":       { "enum": ["minimal", "standard", "full"], "description": "采纳档：minimal=META+namespaces+1spec+findings / standard=+dev+spec分层+软门 / full=九域+全查+硬门" },
-    "domains":    { "type": "array", "items": { "enum": ["meta","spec","dev","plan","gov","exp","verify","ops","know","req"] }, "uniqueItems": true, "description": "已实例化域集——未列域的矩阵空格检查静默" },
+    "tier":       { "enum": ["minimal", "standard", "full", "custom"], "description": "采纳档：minimal=META+namespaces+1spec+findings / standard=+dev+spec分层+软门 / full=九域+全查+硬门 / custom=自定义域集（--domains 显式集的诚实标）" },
+    "domains":    { "type": "array", "items": { "enum": ["meta","spec","dev","plan","gov","exp","verify","ops","know","req"] }, "uniqueItems": true, "description": "已实例化域集——未列域的矩阵空格检查静默；req=前向登记预留域（无 scaffold 模板，实例化前先补 EMITS 模板）" },
     "gates":      { "enum": ["off", "soft", "hard"], "default": "soft", "description": "门控档：与 tier 正交；hard=CI/pre-commit 接线" },
     "namespaces": { "type": "string", "default": "namespaces.json", "description": "标号登记表路径（相对 ming.yaml 所在目录；声明而缺失=audit E 级）" },
     "adr_dir":    { "type": "string", "default": "adr", "description": "ADR 目录锚点（相对 docs 根的路径片段，支持嵌套如 arch/decisions）——棕场命名向下兼容位" },

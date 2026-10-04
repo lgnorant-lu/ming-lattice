@@ -22,9 +22,10 @@ function deriveLayers() {
   const layers = new Set(['private', 'private/engineering']);
   if (!fs.existsSync(REGISTRY)) return layers;
   const reg = fs.readFileSync(REGISTRY, 'utf8');
-  for (const m of reg.matchAll(/path:\s*(private\/[^\s#]+?)\s*(?:#.*)?$/gm)) {
-    const parent = m[1].replace(/\/[^/]+$/, '');
-    if (parent !== m[1]) layers.add(parent);
+  for (const ln of reg.split('\n')) {
+    if (/^\s*#/.test(ln)) continue; // 注释行的 path: 不得偷渡进层白名单
+    const m = ln.match(/path:\s*(private\/[^\s#]+?)\s*(?:#.*)?$/);
+    if (m) { const parent = m[1].replace(/\/[^/]+$/, ''); if (parent !== m[1]) layers.add(parent); }
   }
   return layers;
 }
@@ -89,7 +90,7 @@ for (const root of SCAN_ROOTS) {
 }
 let candGraduation = false;
 if (fs.existsSync(REGISTRY)) {
-  const reg = fs.readFileSync(REGISTRY, 'utf8');
+  const reg = fs.readFileSync(REGISTRY, 'utf8').split('\n').filter(l => !/^\s*#/.test(l)).join('\n'); // 注释行不参与名碰撞
   const candM = reg.match(/^candidates:\s*\n([\s\S]*)$/m); // candidates 是末区
   const active = candM ? reg.slice(0, candM.index) : reg;
   if (new RegExp(`name:\\s*${escRe(name)}\\b`).test(active)) die(`重名碰撞: registry.yaml 已有 ${name} 条目`);

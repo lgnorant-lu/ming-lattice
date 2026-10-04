@@ -95,7 +95,8 @@ function check(name, problems) {
   const y = read(t, 'ming.yaml');
   if (!y.includes('- know')) p.push('ming.yaml domains 缺 know');
   if (y.includes('- spec')) p.push('ming.yaml domains 不该有 spec');
-  check('--domains 显式覆盖 tier', p);
+  if (!y.includes('tier: custom')) p.push('显式域集≠任一档时应标 tier: custom（tier 按实发集反推，防错标）');
+  check('--domains 显式覆盖 tier + 诚实标', p);
 }
 
 // ── 5. 幂等：二次运行 skip(exists)，手改不被吞 ──
@@ -121,7 +122,7 @@ function check(name, problems) {
   check('--force 覆写语义', p);
 }
 
-// ── 7. 未知域 unknown-skip 不炸 ──
+// ── 7. 未知域 unknown-skip 不炸，且不登记 ming.yaml（防声明未实例化自伤）──
 {
   const t = path.join(tmp(), 'docs');
   const r = runScaffold(t, ['--domains', 'meta,bogus']);
@@ -129,7 +130,8 @@ function check(name, problems) {
   if (!r.stdout.includes('unknown-skip')) p.push('未报 unknown-skip');
   if (r.status !== 0) p.push(`未知域致 exit=${r.status}`);
   if (!exists(t, 'META.md')) p.push('已知域被连坐');
-  check('未知域降级提示不中断', p);
+  if (read(t, 'ming.yaml').includes('- bogus')) p.push('未知域被登记进 domains 声明——生成物自伤');
+  check('未知域降级提示不中断且不登记', p);
 }
 
 // ── 8. 默认调用（无参）= standard 形态 ──

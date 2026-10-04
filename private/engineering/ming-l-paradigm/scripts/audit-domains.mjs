@@ -65,7 +65,7 @@ const add = (level, msg, file) => issues.push({ level, msg, file: file || target
 // --ming-schema 覆盖包内默认路径：项目本地扩展 schema 可声明自定义域（=自定义域机制的免费通道）
 const BUILTIN_VOCAB = {
   domains: ['meta', 'spec', 'dev', 'plan', 'gov', 'exp', 'verify', 'ops', 'know', 'req'],
-  tier: ['minimal', 'standard', 'full'],
+  tier: ['minimal', 'standard', 'full', 'custom'],
   gates: ['off', 'soft', 'hard'],
 };
 let VOCAB = BUILTIN_VOCAB;

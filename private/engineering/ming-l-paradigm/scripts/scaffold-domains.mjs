@@ -3,10 +3,12 @@
 // 用法: node scaffold-domains.mjs --target <docs-dir> [--domains meta,spec,dev,findings,plan] [--tier minimal|standard|full] [--project NAME] [--force]
 // 行为: 按 assets/templates/ 实例化域骨架 + namespaces.json/ming.yaml 播种；
 //       默认不覆盖已存在文件（幂等可重放），--force 才覆写。
-// 自证: 生成物应能立即过 audit-domains.mjs 体检（骨架即合规形态）。
-// 采纳档预设: minimal=meta,spec,findings / standard=+dev / full=九域（ming.yaml 记录采纳声明）。
+// 自证: 生成后自动跑 audit-domains.mjs——E 级即 exit 1（骨架即合规形态的执行面）。
+// 采纳档预设: minimal=meta,spec,findings / standard=+dev / full=九域；--domains 自定义集 → tier 记 custom。
+// 未知域降级 unknown-skip：不发件亦不登记 ming.yaml（降级不连坐，但防声明未实例化自伤）。
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -81,18 +83,29 @@ if (!fs.existsSync(nsDest) || force) {
 }
 
 // ming.yaml——项目形态声明（配置层）：tier/domains/gates/namespaces 指针
+// domains 只登记实发域（EMITS 有模板者）——unknown-skip 域不进声明，防"声明未实例化"自伤；
+// tier 按实发域集反推诚实档：与某档全同=该档，否则 custom（schema enum 已含）
+const emitted = domains.filter(d => EMITS[d]);
+const sameSet = (a, b) => a.length === b.length && a.every(x => b.includes(x));
+const effTier = Object.keys(TIER_DOMAINS).find(t => sameSet(TIER_DOMAINS[t], domains)) || 'custom';
 const cfgDest = path.join(target, 'ming.yaml');
 if (!fs.existsSync(cfgDest) || force) {
   const body = fs.readFileSync(path.join(SKILL_DIR, 'assets/templates/ming.yaml.tmpl'), 'utf8')
     .replaceAll('{{project}}', project)
-    .replaceAll('{{tier}}', tier || 'standard')
-    .replaceAll('{{domain_lines}}', domains.filter(d => d !== 'findings').map(d => `  - ${d}`).join('\n') || '  - meta');
+    .replaceAll('{{tier}}', effTier)
+    .replaceAll('{{domain_lines}}', emitted.filter(d => d !== 'findings').map(d => `  - ${d}`).join('\n') || '  - meta');
   fs.writeFileSync(cfgDest, body);
   results.push({ rel: 'ming.yaml', action: 'written' });
 } else {
   results.push({ rel: 'ming.yaml', action: 'skip(exists)' });
 }
 
-console.log(`scaffold-domains: ${target}  project=${project}  tier=${tier || '(custom)'}`);
+console.log(`scaffold-domains: ${target}  project=${project}  tier=${effTier}`);
 for (const r of results) console.log(`  ${r.action.padEnd(14)} ${r.rel}`);
-console.log(`\n下一步: node audit-domains.mjs ${target} 验证生成物`);
+
+// 自证步（docstring 承诺"骨架即合规"的执行面）：生成物过 audit-domains，E 级即 exit 1。
+// 不回滚——target 常是棕场既有 docs/，删目录会误伤用户文件；失败信息由 audit 明细给出。
+const audit = spawnSync('node', [path.join(SKILL_DIR, 'scripts', 'audit-domains.mjs'), target], { encoding: 'utf8' });
+process.stdout.write(audit.stdout || '');
+process.stderr.write(audit.stderr || '');
+process.exit(audit.status ?? 1);
