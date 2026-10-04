@@ -181,6 +181,14 @@ export async function run() {
       r = spawnSync(process.execPath, [engine, 'pre-commit'], { cwd: dir, encoding: 'utf8' });
       assert.equal(r.status, 1, 'baseline 只冻旧账，新增仍拦');
 
+      // pathspec 魔法文件名：(top)x 须读自身 blob 非 x（sha 寻址免疫）
+      fs.writeFileSync(path.join(dir, '(top)magic.md'), 'has BADWORD\n');
+      execFileSync('git', ['add', '--', ':(literal)(top)magic.md'], { cwd: dir });
+      r = spawnSync(process.execPath, [engine, 'pre-commit'], { cwd: dir, encoding: 'utf8' });
+      assert.equal(r.status, 1, '魔法前缀文件名不应逃逸扫描');
+      assert.ok((r.stderr + r.stdout).includes('(top)magic.md'), '应点名魔法文件名');
+      execFileSync('git', ['reset'], { cwd: dir });
+
       // integrityLevel=error：篡改门件 + 零暂存 → 仍拦
       // （fail-closed 不得被零暂存早退吞——--allow-empty 绕过路径）
       execFileSync('git', ['reset'], { cwd: dir });

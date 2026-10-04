@@ -49,15 +49,35 @@ export function listUnstagedOverlap(root, staged) {
   return staged.filter(f => set.has(f));
 }
 
+// 索引 sha 表：文件名→blob sha。
+// ":<path>" revspec 会解析 pathspec 魔法——(top)/(exclude)/! 前缀文件名
+// 注入可致读错 blob 或 fatal 逃逸；sha 寻址无歧义，ls-files 一次建表。
+const _shaMapCache = new Map(); // root→shaMap（引擎单次调用内索引稳定）
+function stagedShaMap(root) {
+  const hit = _shaMapCache.get(root);
+  if (hit) return hit;
+  const git = makeGit(root);
+  const out = git(['ls-files', '-s', '-z']);
+  const map = new Map();
+  for (const rec of out.split('\0').filter(Boolean)) {
+    // 记录形: <mode> <sha> <stage>\t<name>（name 经 -z 原样，可含任意字节）
+    const m = rec.match(/^\d+ ([0-9a-f]{40}) (\d+)\t([\s\S]*)$/);
+    if (m && m[2] === '0' && !map.has(m[3])) map.set(m[3], m[1]);
+  }
+  _shaMapCache.set(root, map);
+  return map;
+}
+
 /**
- * 批量对象元数据（单次 cat-file --batch-check，输入序=输出序）
+ * 批量对象元数据（ls-files 取 sha + cat-file --batch-check，输入序=输出序）
  */
 export function batchMeta(root, staged) {
   const git = makeGit(root);
   const map = new Map();
   if (staged.length === 0) return map;
   try {
-    const input = staged.map(p => `:${p}`).join('\n') + '\n';
+    const shas = stagedShaMap(root);
+    const input = staged.map(p => shas.get(p) ?? '0'.repeat(40)).join('\n') + '\n';
     const out = git(['cat-file', '--batch-check'], { input });
     const lines = out.trim().split('\n');
     for (let i = 0; i < lines.length && i < staged.length; i++) {
@@ -69,11 +89,13 @@ export function batchMeta(root, staged) {
 }
 
 /**
- * 读 staged blob 内容（索引保真——不碰工作区）
+ * 读 staged blob 内容（索引保真——不碰工作区；sha 寻址不受文件名魔法影响）
  */
 export function readStaged(root, relPath) {
   const git = makeGit(root);
-  return git(['show', `:${relPath}`]);
+  const sha = stagedShaMap(root).get(relPath);
+  if (!sha) throw new Error(`staged 无此文件: ${relPath}`);
+  return git(['cat-file', 'blob', sha]);
 }
 
 /**
