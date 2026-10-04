@@ -34,7 +34,7 @@ const BUILTIN = {
 };
 const KNOWN_CKEY = new Set(
   ['entry', 'phases', 'level', 'outputs', 'mutates', 'timeout_ms', 'baseline',
-   'spec', 'args', 'note']);
+   'spec', 'args', 'note', 'domains_from', 'out']);
 const KNOWN_PHASE = new Set(['staged', 'ci', 'manual']);
 const KNOWN_OUT = new Set(['findings', 'report', 'files']);
 const DEFAULT_TIMEOUT = 120_000;

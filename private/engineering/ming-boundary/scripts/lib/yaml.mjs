@@ -103,6 +103,13 @@ export function parseYamlLite(text) {
     return parseMap(first.indent);
   }
 
+  // 重复键=静默覆盖（YAML last-wins）——对契约文件即"死配置"信号，
+  // warn 不 throw（兼容既有 yaml 使用者；契约侧另有 lint 位）
+  const seen = (obj, key, ln) => {
+    if (Object.hasOwn(obj, key))
+      console.error(`[yaml-lite] 第${ln}行: 重复键 '${key}'——后者覆盖前者`);
+  };
+
   function parseMap(indent) {
     const obj = {};
     while (pos < lines.length) {
@@ -112,6 +119,7 @@ export function parseYamlLite(text) {
       const kv = splitKeyVal(l.text, l.ln);
       if (!kv) throw new Error(`第${l.ln}行: 无法解析 '${l.text.slice(0, 40)}'`);
       pos++;
+      seen(obj, kv.key, l.ln);
       if (kv.hasVal) { obj[kv.key] = kv.val; continue; }
       // key: 无行内值——子块或空
       if (pos < lines.length && lines[pos].indent > l.indent) {
@@ -141,6 +149,7 @@ export function parseYamlLite(text) {
           const ckv = splitKeyVal(c.text, c.ln);
           if (!ckv) throw new Error(`第${c.ln}行: 无法解析 '${c.text.slice(0, 40)}'`);
           pos++;
+          seen(item, ckv.key, c.ln);
           if (ckv.hasVal) item[ckv.key] = ckv.val;
           else if (pos < lines.length && lines[pos].indent > c.indent) item[ckv.key] = parseBlock(c.indent + 1);
           else item[ckv.key] = null;

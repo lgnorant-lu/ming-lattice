@@ -74,9 +74,13 @@ rules:
 # consumers:
 #   metrics:
 #     phases: [ci, manual]
+#     # domains_from 缺省即本文件——契约在场时 metrics 追加命名空间段
+#     # （per-domain 分桶 + 域间边矩阵）；显式键仅为可读性。
 #   emit-skeleton:
 #   diff:
 #     baseline: .boundary/baseline.facts.jsonl
+#   docclass:
+#     spec: docclass.yaml      # 必填——docClass spec 仓根相对路径
 #   my-check:
 #     entry: boundary.consumers/my-check.mjs   # 须解析在仓根内，越界即拒
 #     phases: [ci]
