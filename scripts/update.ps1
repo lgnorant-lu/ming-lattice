@@ -107,6 +107,15 @@ foreach ($sectionName in @('base', 'vertical')) {
                 }
             }
         } else {
+            # registry 值进 git argv 前必须校验：ls-remote 支持
+            # --upload-pack=<bin>（远端侧任意执行）——'-' 前缀即选项注入面
+            if ($item.repo.TrimStart().StartsWith('-')) {
+                Write-Host "  [SKIP] $($item.name): registry repo 值非法（'-' 前缀，选项注入面）" -ForegroundColor Yellow
+                $entry.remote = 'DETECT-FAIL'
+                $stats.skip++
+                $report += $entry
+                continue
+            }
             $ls = git ls-remote $item.repo HEAD 2>$null | Select-Object -First 1
             if ($ls) { $remoteHead = (($ls -split '\s+')[0]).Substring(0, 7) }
         }
