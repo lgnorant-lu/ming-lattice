@@ -189,6 +189,24 @@ export async function run() {
       assert.ok((r.stderr + r.stdout).includes('(top)magic.md'), '应点名魔法文件名');
       execFileSync('git', ['reset'], { cwd: dir });
 
+      // 纯删除提交：ACMR 清单空≠无变更——needsAllFiles 门必须仍跑
+      // （`git rm tests/...` 类覆盖自毁不得零门禁放行；command 由 .hooksrc 注入）
+      execFileSync('git', ['config', 'user.email', 't@t'], { cwd: dir });
+      execFileSync('git', ['config', 'user.name', 't'], { cwd: dir });
+      fs.writeFileSync(path.join(dir, 'tracked.md'), 'ok\n');
+      fs.writeFileSync(path.join(dir, 'fail.mjs'), 'process.exit(7)\n');
+      execFileSync('git', ['add', 'tracked.md', 'fail.mjs'], { cwd: dir });
+      execFileSync('git', ['commit', '-qm', 'seed'], { cwd: dir });
+      fs.writeFileSync(path.join(dir, '.hooksrc'), [
+        'lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off',
+        'gate.impact-test.level=error', 'gate.impact-test.command=node fail.mjs',
+      ].join('\n'));
+      execFileSync('git', ['rm', '-q', 'tracked.md'], { cwd: dir });
+      r = spawnSync(process.execPath, [engine, 'pre-commit'], { cwd: dir, encoding: 'utf8' });
+      assert.equal(r.status, 1, '纯删除提交应仍跑 needsAllFiles 门');
+      assert.ok((r.stderr + r.stdout).includes('impact-test'), '应点名命令门禁');
+      execFileSync('git', ['reset', '-q', '--hard', 'HEAD'], { cwd: dir });
+
       // integrityLevel=error：篡改门件 + 零暂存 → 仍拦
       // （fail-closed 不得被零暂存早退吞——--allow-empty 绕过路径）
       execFileSync('git', ['reset'], { cwd: dir });

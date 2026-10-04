@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { loadHookEngineConfig, resolveLevel, resolveGateConfigFor, parseSkipSet, parseCadence, LEVELS } from './lib/config.mjs';
-import { repoRoot, fileSource, batchMeta, listUnstagedOverlap, makeGit } from './lib/files.mjs';
+import { repoRoot, fileSource, batchMeta, listUnstagedOverlap, makeGit, hasStagedChanges } from './lib/files.mjs';
 import { detectGitState, shouldSkip } from './lib/git-state.mjs';
 import { loadBaseline, freshFindings, writeBaseline, baselinePath } from './lib/baseline.mjs';
 import { checkIntegrity, writeTrust, checkAdoptionHealth, orphanGateIds, checkKeyspace, lastRunAt, stampRun, readState } from './lib/integrity.mjs';
@@ -146,7 +146,10 @@ async function runStage(stage, opts = {}) {
       throw e;
     }
     // integrityBlocking 不得被零暂存早退吞掉——fail-closed 语义优先
-    if (ctx.files.length === 0 && stage === 'pre-commit' && !integrityBlocking) return 0;
+    // 纯删除提交同理：ACMR 清单空≠无变更——needsAllFiles 门(impact-test/verify affected)
+    // 对 `git rm tests/...` 类提交必须仍跑，否则覆盖自毁零门禁放行
+    if (ctx.files.length === 0 && stage === 'pre-commit' && !integrityBlocking
+        && !hasStagedChanges(root)) return 0;
     if (src.source === 'staged') {
       const metaMap = batchMeta(root, ctx.files);
       ctx.meta = p => metaMap.get(p);

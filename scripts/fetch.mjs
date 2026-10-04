@@ -86,11 +86,23 @@ if (only) {
 
 const results = { fetched: [], skippedPin: [], skippedGone: [], skippedDisabled: [], skippedNoRepo: [], notRepo: [], drifted: [], remoteAligned: [], failed: [] };
 
+// registry 是 SoT 也是输入面——形状校验在消费点（flag 注入/越根写防于拼错与恶意条目）
+const SHA_RE = /^[0-9a-f]{40}$/i;
+const entryDir = (e) => {
+  const p = path.resolve(REPO_ROOT, e.path || `vertical/${e.name}`);
+  return p.startsWith(REPO_ROOT + path.sep) ? p : null;
+};
+
 for (const e of targets) {
   if (e.sourceGone === 'true') { results.skippedGone.push(e.name); continue; }
   if (e.enabled === 'false') { results.skippedDisabled.push(e.name); continue; }
   if (!e.repo || !e.pin) { results.skippedNoRepo.push(e.name); continue; }
-  const dir = path.join(REPO_ROOT, e.path || `vertical/${e.name}`);
+  // pin 进 `git fetch origin <refspec>`/`checkout`——非 hex 值可成 flag 注入载体
+  // （--upload-pack=<bin> 即任意命令执行面）；repo 以 - 开头同理挡 flag 位
+  if (!SHA_RE.test(e.pin)) { results.failed.push(`${e.name} (pin 非 40-hex SHA)`); continue; }
+  if (e.repo.startsWith('-')) { results.failed.push(`${e.name} (repo 非法形态)`); continue; }
+  const dir = entryDir(e);
+  if (!dir) { results.failed.push(`${e.name} (path 越出仓根)`); continue; }
 
   let repairOnly = false;
   if (fs.existsSync(dir)) {

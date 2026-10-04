@@ -37,6 +37,16 @@ export function listStaged(root) {
 }
 
 /**
+ * 暂存区是否存在任何变更（含 D）——纯删除提交没有可扫 blob，
+ * 但 needsAllFiles 命令门(impact-test)对其必须仍然执行；
+ * 若只按 ACMR 清单早退，`git rm tests/...` 类提交零门禁放行。
+ */
+export function hasStagedChanges(root) {
+  const git = makeGit(root);
+  return git(['diff', '--cached', '--name-only', '-z']).length > 0;
+}
+
+/**
  * 暂存区与工作区重叠文件（部分暂存感知）
  */
 export function listUnstagedOverlap(root, staged) {

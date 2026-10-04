@@ -264,7 +264,10 @@ export function createPlan({ stage = 'pre-commit', files = [] } = {}) {
 export function getStagedFiles(cwd = ROOT) {
   // fail-closed：git 探测失败不得静默当"零暂存"——零任务=verify 直接放行，
   // 吞错会把受影响的受影响门变白名单。抛出让门禁以非零码挡下。
-  const output = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'], {
+  // D 必须在列：计划器按路径分类不读内容——滤掉删除会让 `git rm tests/...`
+  // 的提交在 verify affected 下零任务放行（覆盖自毁成绿）。files.mjs 的
+  // 内容扫描枚举保持 ACMR 不变（删除物无 blob 可读，语义不同源）。
+  const output = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMRD', '-z'], {
     cwd,
     encoding: 'utf8',
     stdio: ['pipe', 'pipe', 'pipe']
