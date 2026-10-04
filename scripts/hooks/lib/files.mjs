@@ -62,7 +62,9 @@ export function listUnstagedOverlap(root, staged) {
 // 索引 sha 表：文件名→blob sha。
 // ":<path>" revspec 会解析 pathspec 魔法——(top)/(exclude)/! 前缀文件名
 // 注入可致读错 blob 或 fatal 逃逸；sha 寻址无歧义，ls-files 一次建表。
-const _shaMapCache = new Map(); // root→shaMap（引擎单次调用内索引稳定）
+// root→shaMap——包络=单进程单次 hook 调用（每 hook 独立 node 进程，索引稳定）；
+// 进程内跨 staging 变更重跑 runStage（如长驻宿主直 import）不在支持面
+const _shaMapCache = new Map();
 function stagedShaMap(root) {
   const hit = _shaMapCache.get(root);
   if (hit) return hit;

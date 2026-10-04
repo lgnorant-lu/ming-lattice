@@ -12,14 +12,24 @@ import { HOOK_STAGES, shimScript, shimEngineRef } from './shims.mjs';
 
 const STATE_FILE = 'hook-engine-state.json';
 
-// 信任基线覆盖域：决定执行语义的全部件——gates.local 不签=本地门可被静默
-// 降级；lib 不签=resolveLevel/分派逻辑可整体旁路（integrityLevel=error 成空门）；
-// engine.mjs 自身同理。升级后首跑报 changed → engine trust 重签即新基线。
-const INTEGRITY_PARTS = ['engine.mjs', 'gates', 'gates.local', 'lib'];
+// 信任基线覆盖域：决定执行语义的全部件——hooks 根全部 *.mjs（engine/check/
+// pre-push/validate 等入口与策略体在内，动态枚举防新增根执行件漏签）+
+// gates/ + gates.local/ + lib/ 三目录；根文档件（README.md）不参与签名——
+// 不决定执行语义。gates.local 不签=本地门可被静默降级；lib 不签=
+// resolveLevel/分派逻辑可整体旁路（integrityLevel=error 成空门）；根 .mjs
+// 不签=validate 策略体可被篡改成空门而不报 changed。升级后首跑报 changed
+// → engine trust 重签即新基线。
+const INTEGRITY_DIRS = ['gates', 'gates.local', 'lib'];
 
 export function hashHooksTree(hooksDir) {
   const h = createHash('sha1');
-  for (const name of INTEGRITY_PARTS) {
+  for (const name of fs.readdirSync(hooksDir, { withFileTypes: true })
+      .filter(e => e.isFile() && e.name.endsWith('.mjs'))
+      .map(e => e.name).sort()) {
+    h.update(name + '\0');
+    h.update(fs.readFileSync(path.join(hooksDir, name)));
+  }
+  for (const name of INTEGRITY_DIRS) {
     const abs = path.join(hooksDir, name);
     if (!fs.existsSync(abs)) continue;
     if (fs.statSync(abs).isFile()) { h.update(name + '\0'); h.update(fs.readFileSync(abs)); continue; }
@@ -138,23 +148,27 @@ export function checkKeyspace(root, gates) {
     const fp = path.join(root, rel);
     if (!fs.existsSync(fp)) continue;
     const seen = new Set();
-    for (const m of fs.readFileSync(fp, 'utf8').matchAll(KEY_MENTION_RE)) {
-      const [, ns, id, key] = m;
-      const sig = `${ns}.${id}.${key}`;
-      if (seen.has(sig)) continue;
-      seen.add(sig);
-      if (UNIVERSAL_KEYS.has(key)) continue;
-      if (ns === 'chore') {
-        if (!CHORE_KEYS.has(key)) {
-          findings.push({ file: rel, message: `chore.${id}.${key} 不在键空间（chore: watch/message/once + 通用键）` });
+    for (const line of fs.readFileSync(fp, 'utf8').split(/\r?\n/)) {
+      const t = line.trim();
+      if (!t || t.startsWith('#')) continue; // 注释行内键名非配置——防文档/示例文本 FP
+      for (const m of t.matchAll(KEY_MENTION_RE)) {
+        const [, ns, id, key] = m;
+        const sig = `${ns}.${id}.${key}`;
+        if (seen.has(sig)) continue;
+        seen.add(sig);
+        if (UNIVERSAL_KEYS.has(key)) continue;
+        if (ns === 'chore') {
+          if (!CHORE_KEYS.has(key)) {
+            findings.push({ file: rel, message: `chore.${id}.${key} 不在键空间（chore: watch/message/once + 通用键）` });
+          }
+          continue;
         }
-        continue;
-      }
-      const g = nativeById.get(id);
-      const allowed = g ? new Set(g.configKeys ?? []) : DECL_KEYS;
-      if (!allowed.has(key)) {
-        const src = g ? `门 ${id} configKeys` : '声明式键空间';
-        findings.push({ file: rel, message: `gate.${id}.${key} 不在键空间（${src}: ${[...allowed].join('/') || '仅通用键'}）` });
+        const g = nativeById.get(id);
+        const allowed = g ? new Set(g.configKeys ?? []) : DECL_KEYS;
+        if (!allowed.has(key)) {
+          const src = g ? `门 ${id} configKeys` : '声明式键空间';
+          findings.push({ file: rel, message: `gate.${id}.${key} 不在键空间（${src}: ${[...allowed].join('/') || '仅通用键'}）` });
+        }
       }
     }
   }

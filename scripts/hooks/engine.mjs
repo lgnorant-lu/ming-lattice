@@ -70,13 +70,16 @@ async function runStage(stage, opts = {}) {
   // gates/ 完整性检查（透明性特性：变化可见；integrityLevel=error 于阻断
   // 阶段升格拦截——fail-closed 防门禁被篡改静默降级，engine trust 重签为正路）
   const integrityLevel = cfg.flat.integrityLevel ?? 'warn';
-  const integrityBreach = integrityLevel !== 'off'
-    && checkIntegrity(root, HOOKS_DIR) === 'changed';
+  const integrity = integrityLevel !== 'off' ? checkIntegrity(root, HOOKS_DIR) : 'ok';
+  // bootstrap 首次存值亦须可见——透明性特性在"建档时刻"同样要出声
+  if (integrity === 'bootstrap')
+    console.log('[engine] 完整性基线首次建档——hooks 树已存值，后续改动将报 changed');
+  const integrityBreach = integrity === 'changed';
   const integrityBlocking = integrityBreach && integrityLevel === 'error'
     && BLOCKING_STAGES.has(stage);
   if (integrityLevel !== 'off') {
     if (integrityBreach) {
-      const imsg = 'hooks 树(engine/gates/gates.local/lib)内容与上次确认不一致（分支切换或手工改动）——确认无误请执行: node scripts/hooks/engine.mjs trust';
+      const imsg = 'hooks 树（根 .mjs/gates/gates.local/lib）内容与上次确认不一致（分支切换或手工改动）——确认无误请执行: node scripts/hooks/engine.mjs trust';
       if (integrityBlocking) console.error(`[engine] [ERROR] ${imsg}`);
       else console.warn(`[engine] [WARN] ${imsg}`);
     }
@@ -92,6 +95,11 @@ async function runStage(stage, opts = {}) {
   // + [glob] 分节诊断（畸形节告警 + 节内孤儿键——同族对账延伸至覆盖层）
   if (integrityLevel !== 'off') {
     const loadedIds = new Set([...nativeGates, ...declGates].map(g => g.id));
+    // 声明式门 id 与原生门撞名——无覆盖语义，两者均执行（消歧提醒）
+    const declIds = new Set(declGates.map(g => g.id));
+    for (const g of nativeGates)
+      if (declIds.has(g.id))
+        console.warn(`[engine] [WARN] 声明式门 ${g.id} 与原生门撞名——两门均执行，配置面请自查`);
     for (const id of orphanGateIds(cfg.gates, loadedIds)) {
       console.warn(`[engine] [WARN] .hooksrc 孤儿键: gate.${id}.* 指向未装载的门`);
     }
@@ -251,6 +259,7 @@ async function runStage(stage, opts = {}) {
           const [marked] = freshFindings([row], baselineSet);
           if (!marked.fresh) continue; // 冻结项不出声
           row.fresh = true;
+          row.id = marked.id;
         }
         if (fLevel === 'warn') warnings.push(row);
         else errors.push(row);

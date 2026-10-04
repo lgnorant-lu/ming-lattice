@@ -43,9 +43,16 @@ const GENERIC_ASSIGN = /\b(?:api[_-]?key|apikey|secret[_-]?key|access[_-]?key|au
 // 占位符白名单——文档示例/模板变量常见形态（误报抑制先于上报）
 const PLACEHOLDER = /your[-_ ]|example|sample|placeholder|dummy|changeme|insert|redact|removed|xxx|\.\.\.|\$\{|<[a-z-]+>|\*{3,}|REPLACE|TODO|fake|mock|none|null/i;
 
+// 签名集预编译 g 旗标共享件（逐文件复用——调用侧须 lastIndex=0 复位）
+for (const sec of SIGNATURE_PATTERNS) {
+  sec.gregex = new RegExp(sec.regex.source, sec.regex.flags.includes('g') ? sec.regex.flags : sec.regex.flags + 'g');
+}
+
 // ---- L0 文件名层：私钥文件名即违规（不读内容——防 id_rsa/test host key 类入仓事故）----
 const KEYFILE_NAME = /(^|\/)(id_rsa|id_dsa|id_ecdsa|id_ed25519|\.env\.production|\.env\.prod)|\.(pem|p12|pfx|key)$/i;
-const KEYFILE_ALLOW = /\.(example|sample|template|dist)\.|test|fixture|mock/i;
+// 白名单按"定界 token"匹配——裸子串 test 会把 contest.key/attest.pem 类
+// 真实私钥文件名误放（testimony/attested/latest 均含 'test' 子串）
+const KEYFILE_ALLOW = /(^|[\/._-])(test|tests|fixture|fixtures|mock|mocks|example|examples|sample|samples|template|templates|dist)([\/._-]|$)/i;
 
 // ---- L3 编码层 ----
 const SUSPICIOUS_NAME = /env|config|secret|cred|token|\.rc$|settings|\.local/i;
@@ -83,9 +90,9 @@ function tryUtf16(buf) {
 
 function scanL1(content, file, layer, findings, forcedLevel) {
   for (const sec of SIGNATURE_PATTERNS) {
-    sec.regex.lastIndex = 0;
+    const re = sec.gregex;
+    re.lastIndex = 0;
     let m;
-    const re = new RegExp(sec.regex.source, sec.regex.flags.includes('g') ? sec.regex.flags : sec.regex.flags + 'g');
     while ((m = re.exec(content)) !== null) {
       findings.push({
         gate: 'secrets', file,

@@ -237,6 +237,16 @@ export async function run() {
       r = spawnSync(process.execPath, [engine, 'trust'], { cwd: dir, encoding: 'utf8' });
       r = spawnSync(process.execPath, [engine, 'pre-commit'], { cwd: dir, encoding: 'utf8' });
       assert.equal(r.status, 0, 'trust 重签后应放行');
+
+      // 根级执行件同受签——validate.mjs 篡改亦报 changed（F-INT-1 回归：
+      // INTEGRITY 曾只签 engine.mjs+三目录，根 .mjs 策略体可静默降级）
+      const valFile = path.join(dir, 'scripts/hooks/validate.mjs');
+      const valOrig = fs.readFileSync(valFile, 'utf8');
+      fs.appendFileSync(valFile, '// tamper\n');
+      r = spawnSync(process.execPath, [engine, 'pre-commit'], { cwd: dir, encoding: 'utf8' });
+      fs.writeFileSync(valFile, valOrig);
+      assert.equal(r.status, 1, '篡改根级执行件(validate.mjs)亦应拦截');
+      assert.ok((r.stderr + r.stdout).includes('integrity'), '应点名 integrity 违规');
     } finally { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
   }
 
@@ -299,8 +309,11 @@ export async function run() {
       'conf/app.key': 'x',
       'conf/app.key.example': 'x',   // 白名单豁免
       'test/fixture.pem': 'x',       // fixture 白名单豁免
+      'deploy/contest.key': 'x',     // 'test' 裸子串误放回归——定界 token 后应命中
+      'deploy/attest.pem': 'x',      // 同上
+      'deploy/mytest.pem': 'x',      // 非定界 'test'——真实私钥名宁可误拦
     }));
-    assert.equal(l0.length, 3, `L0 文件名层命中数 ${l0.length}`);
+    assert.equal(l0.length, 6, `L0 文件名层命中数 ${l0.length}`);
     assert.ok(l0.every(f => f.matchText.startsWith('keyfile:')), 'L0 身份用文件名');
   }
 
