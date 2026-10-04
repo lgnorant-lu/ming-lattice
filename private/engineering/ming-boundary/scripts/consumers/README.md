@@ -51,7 +51,8 @@ consumers:
 | `scan_exts` | 否 | nslaw 扫描扩展名（缺省 `[".md"]`） |
 | `scan_exclude` | 否 | nslaw 追加豁免 globs（叠加契约 exemptions） |
 | `scan_exclude_from` | 否 | nslaw 豁免清单文件（行首 glob + `#` 注释） |
-| `prose_from` | 否 | nslaw 散文登记处文档——表内反引号前缀与 registry 双向互锁 |
+| `prose_from` | 否 | nslaw 散文登记处文档——表内反引号前缀与 registry 双向互锁（反向只查 role=id） |
+| `extra_namespaces_from` | 否 | nslaw 行首前缀清单（`PREFIX # 注释` 行，如 IV8 work_id_local_namespaces.txt）——合成 role=value 命名空间 `^<P>-?\d+[a-z]?$`，已在 registry 的裸前缀跳过 |
 | `contract_from` | 否 | nslaw 豁免来源契约（缺省 `boundaries.yaml`） |
 | `min_family` | 否 | nslaw 未登记族最少成员数（缺省 2） |
 | `timeout_ms` | 否 | 默认 120s |

@@ -39,7 +39,7 @@ const KNOWN_CKEY = new Set(
   ['entry', 'phases', 'level', 'outputs', 'mutates', 'timeout_ms', 'baseline',
    'spec', 'args', 'note', 'domains_from', 'out',
    'registry', 'defs', 'scan_exts', 'scan_exclude', 'scan_exclude_from',
-   'prose_from', 'min_family', 'contract_from']);
+   'prose_from', 'min_family', 'contract_from', 'extra_namespaces_from']);
 const KNOWN_PHASE = new Set(['staged', 'ci', 'manual']);
 const KNOWN_OUT = new Set(['findings', 'report', 'files']);
 const DEFAULT_TIMEOUT = 120_000;

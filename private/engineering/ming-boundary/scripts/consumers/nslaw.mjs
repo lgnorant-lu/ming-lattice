@@ -56,6 +56,26 @@ if (!cfg.registry) {
 }
 if (!nsList) process.exit(0); // config error finding 已发
 
+// extra_namespaces_from：行首前缀清单文件（# 后注释=note）——合成 role=value
+// 命名空间，pattern 统一 `^<P>-?\d+[a-z]?$`（融合/横杠双形通吃）；
+// 已在 registry 登记的裸前缀跳过（json 优先）
+if (cfg.extra_namespaces_from) {
+  const bareOf0 = (p) => (String(p).match(/^([A-Z][A-Z0-9]*)/) || [null, null])[1];
+  const known = new Set(nsList.map(n => bareOf0(n.prefix)).filter(Boolean));
+  const ep = path.resolve(root, cfg.extra_namespaces_from);
+  if (fs.existsSync(ep)) {
+    for (const line of fs.readFileSync(ep, 'utf8').split(/\r?\n/)) {
+      const m = line.match(/^([A-Z][A-Z0-9]*)\b/);
+      if (!m || known.has(m[1])) continue;
+      const note = (line.split('#', 2)[1] || '').trim();
+      nsList.push({ prefix: `${m[1]}-<n>`, pattern: `^${m[1]}-?\\d+[a-z]?$`,
+        role: 'value', ordering: 'enum', domain: 'extra',
+        note: note || 'extra_namespaces_from 合成' });
+    }
+  } else emit('nslaw:config', 'error', '(nslaw)', 0, 'extra_namespaces_from 存在',
+    cfg.extra_namespaces_from, '修配置');
+}
+
 // 模式编译：长模式优先（ADR-\d{4} 先于 AD-\d+ 免前缀吞并）；^$ 锚剥离后嵌 \b()\b
 const nsl = nsList.filter(n => n && typeof n.pattern === 'string');
 for (const n of nsl) {
@@ -242,6 +262,10 @@ for (const rel of scanFiles) {
     }
     for (const m of line.matchAll(GENERIC)) {
       const [tok, pre] = [m[0], m[1]];
+      // 复合 ID 内段（MR-CTX-001 的 CTX-001）不是独立 token——前一字符是
+      // '-' 或词字符即长 token 子串，跳过
+      const prev = line[m.index - 1];
+      if (prev === '-' || /\w/.test(prev || '')) continue;
       if (STOP.has(pre) || isRegistered(tok)) continue;
       if (!fam.has(pre)) fam.set(pre, { tokens: new Set(), files: new Set(), count: 0 });
       const f = fam.get(pre); f.tokens.add(tok); f.files.add(rel); f.count++;
@@ -284,16 +308,20 @@ if (cfg.prose_from) {
       }
     }
     prosePrefixes.delete(null);
-    const jsonBare = new Set(nsl.map(n =>
-      (String(n.prefix).match(/^([A-Z][A-Z0-9]*)/) || [null, null])[1]).filter(Boolean));
+    const bareOf = (n) =>
+      (String(n.prefix).match(/^([A-Z][A-Z0-9]*)/) || [null, null])[1];
+    const jsonBare = new Set(nsl.map(bareOf).filter(Boolean));
+    const jsonBareId = new Set(idNs.map(bareOf).filter(Boolean));
     for (const p of prosePrefixes)
       if (!jsonBare.has(p))
         emit('nslaw:registry-drift', 'warn', cfg.prose_from, 0,
           '散文登记前缀须在 registry', p, 'namespaces.json 补登记或删散文行');
-    for (const p of jsonBare)
+    // 反向互锁只管 role=id 命名空间——value 族（技术词表/局部标签镜像）
+    // 不要求散文登记
+    for (const p of jsonBareId)
       if (!prosePrefixes.has(p))
         emit('nslaw:registry-drift', 'warn', cfg.prose_from, 0,
-          'registry 前缀须在散文登记', p, `${cfg.prose_from} 补行或 registry 删项`);
+          'registry 的 id 命名空间须在散文登记', p, `${cfg.prose_from} 补行或 registry 删项`);
   }
 }
 

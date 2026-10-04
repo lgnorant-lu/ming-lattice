@@ -1244,13 +1244,15 @@ export async function run() {
       cf('docs/idx/reg.md', '# 登记表\n| ID | t |\n|---|---|\n| A1 | x |\n| A3 | y |\n| WS-1 | z |\n');
       cf('docs/idx/other.md', '# 第二定义位\n| A1 | dup |\n|---|---|\n'); // 撞名
       cf('docs/a.md', '# a\n引用 A1、WS-1、未登记 A9、WS-9z、XX-3 局部。\n');
-      cf('docs/b.md', '# b\nA3 引自别处；BUG-1 BUG-7 BUG-9 成族。\n```\nA99 围栏不算\n```\n');
+      cf('docs/b.md', '# b\nA3 引自别处；BUG-1 BUG-7 BUG-9 成族；TEC-9 走 extra。\n```\nA99 围栏不算\n```\n');
       cf('docs/c.md', '## 定义段\n定义 **A7** 在文中。\n');
       cf('docs/adr/ADR-0001-x.md', '# ADR-0001\n');
+      cf('extras.txt', '# 行首前缀清单\nTEC  # tech 合成 value 族\n');
       cf('boundaries.yaml', 'version: 1\n' +
         'domains:\n  - name: docs\n    match: "docs/**"\n' +
         'consumers:\n  nslaw:\n' +
         '    registry: ns.json\n' +
+        '    extra_namespaces_from: extras.txt\n' +
         '    defs:\n' +
         '      - path: docs/idx/reg.md\n' +
         '        mode: first_col\n' +
@@ -1273,6 +1275,8 @@ export async function run() {
         'A1 双文件定义须出 collision error');
       assert.ok(j.findings.some(f => f.rule === 'nslaw:unregistered-family' &&
         f.observed.includes('BUG')), 'BUG 族须出 unregistered-family');
+      assert.ok(!j.findings.some(f => f.observed?.includes('TEC')),
+        'extra_namespaces_from 合成族须抑制告警');
       assert.ok(!j.findings.some(f => f.observed?.includes('A99')),
         '围栏内 token 不得计入');
       assert.ok(!j.findings.some(f => f.observed?.includes('XX-3')),
@@ -1282,6 +1286,7 @@ export async function run() {
       assert.ok(rep && rep.text.includes('namespace'), 'nslaw report 段须在场');
       assert.ok(rep.text.includes('DEAD-<n>'), '零观测命名空间须列入报告');
       assert.ok(rep.text.includes('A<n>') && rep.text.includes('defs'), '统计表须含 per-ns 行');
+      assert.ok(rep.text.includes('TEC-<n>'), 'extra 合成族须入统计表');
       // outputs 列表 lint：files 组合拒
       cf('boundaries.yaml', 'version: 1\nconsumers:\n  nslaw:\n    registry: ns.json\n' +
         '    outputs: [files, report]\n');
