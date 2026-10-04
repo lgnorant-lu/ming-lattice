@@ -172,6 +172,24 @@ export async function run() {
       execFileSync('git', ['add', 'bad2.md'], { cwd: dir });
       r = spawnSync(process.execPath, [engine, 'pre-commit'], { cwd: dir, encoding: 'utf8' });
       assert.equal(r.status, 1, 'baseline 只冻旧账，新增仍拦');
+
+      // integrityLevel=error：篡改门件 + 零暂存 → 仍拦
+      // （fail-closed 不得被零暂存早退吞——--allow-empty 绕过路径）
+      execFileSync('git', ['reset'], { cwd: dir });
+      fs.writeFileSync(path.join(dir, '.hooksrc'), 'integrityLevel=error\n');
+      r = spawnSync(process.execPath, [engine, 'trust'], { cwd: dir, encoding: 'utf8' });
+      assert.equal(r.status, 0, r.stderr);
+      const gateFile = path.join(dir, 'scripts/hooks/gates/pii.mjs');
+      const gateOrig = fs.readFileSync(gateFile, 'utf8');
+      fs.appendFileSync(gateFile, '// tamper\n');
+      r = spawnSync(process.execPath, [engine, 'pre-commit'], { cwd: dir, encoding: 'utf8' });
+      fs.writeFileSync(gateFile, gateOrig);
+      assert.equal(r.status, 1, 'integrity breach + 零暂存亦应拦截');
+      assert.ok((r.stderr + r.stdout).includes('integrity'), '应点名 integrity 违规');
+      // engine trust 重签 → 放行
+      r = spawnSync(process.execPath, [engine, 'trust'], { cwd: dir, encoding: 'utf8' });
+      r = spawnSync(process.execPath, [engine, 'pre-commit'], { cwd: dir, encoding: 'utf8' });
+      assert.equal(r.status, 0, 'trust 重签后应放行');
     } finally { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
   }
 

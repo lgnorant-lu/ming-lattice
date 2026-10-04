@@ -145,7 +145,8 @@ async function runStage(stage, opts = {}) {
       if (stage === 'post-merge' || stage === 'post-checkout') return 0;
       throw e;
     }
-    if (ctx.files.length === 0 && stage === 'pre-commit') return 0;
+    // integrityBlocking 不得被零暂存早退吞掉——fail-closed 语义优先
+    if (ctx.files.length === 0 && stage === 'pre-commit' && !integrityBlocking) return 0;
     if (src.source === 'staged') {
       const metaMap = batchMeta(root, ctx.files);
       ctx.meta = p => metaMap.get(p);
