@@ -48,10 +48,14 @@ if (!opts['--skip-domains']) {
     dryRunNote: '[dry-run] 将实例化 docs/ 域骨架+ming.yaml+namespaces.json（下方命令即可重现逐文件预览）' });
 }
 if (!opts['--skip-hooks']) {
-  const cmd = ['pwsh', '-NoProfile', '-File', INSTALL_HOOKS, '-Target', target];
-  if (opts['--with-boundary']) cmd.push('-WithBoundary');
-  if (dryRun) cmd.push('-WhatIf');
-  steps.push({ name: '门禁 kit (install-hooks -Target)', cmd });
+  // pwsh 为钦定运行时；缺席自动回退 Node 实现（install-hooks.mjs 语义对齐 -Target）
+  const hasPwsh = !spawnSync('pwsh', ['-NoProfile', '-Command', 'exit 0'], { stdio: 'ignore' }).error;
+  const cmd = hasPwsh
+    ? ['pwsh', '-NoProfile', '-File', INSTALL_HOOKS, '-Target', target]
+    : [process.execPath, path.join(REPO_ROOT, 'scripts/install-hooks.mjs'), '--target', target];
+  if (opts['--with-boundary']) cmd.push(hasPwsh ? '-WithBoundary' : '--with-boundary');
+  if (dryRun) cmd.push(hasPwsh ? '-WhatIf' : '--dry-run');
+  steps.push({ name: `门禁 kit (install-hooks -Target${hasPwsh ? '' : '·node 回退'})`, cmd });
 }
 if (!steps.length) die('--skip-domains + --skip-hooks = 无事可做');
 

@@ -144,6 +144,23 @@ function checkGuides(reg) {
         add('W', `导引 stale 行 L${ln} "${slug}/"（${g.key}）: 不在 private 登记表且无否决标记`);
     }
   }
+
+  // fs→registry 反向：private/ 下含 SKILL.md 的叶子目录必须登记
+  // （走私目录=不部署不路由的漂移面；组目录无 SKILL.md 自动递归下探）
+  const PRIVATE_DIR = path.join(REPO_ROOT, 'private');
+  const regPathSet = new Set([...reg.paths.values()].map(p => p.replace(/\\/g, '/')));
+  if (fs.existsSync(PRIVATE_DIR)) {
+    const walk = (dir, rel) => {
+      for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (!ent.isDirectory() || ent.name.startsWith('.')) continue;
+        const sub = path.join(dir, ent.name), r = `${rel}/${ent.name}`;
+        if (fs.existsSync(path.join(sub, 'SKILL.md'))) {
+          if (!regPathSet.has(r)) add('W', `${r}: 含 SKILL.md 但未在 registry private 登记（走私目录嫌疑）`);
+        } else walk(sub, r);
+      }
+    };
+    walk(PRIVATE_DIR, 'private');
+  }
 }
 
 // ── 主校验 ──
