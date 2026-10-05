@@ -45,7 +45,7 @@ export const gate = {
   configKeys: ['allow', 'deny', 'check'],
   stages: ['pre-commit'],
   family: 'gate',
-  defaultLevel: 'error',
+  defaultLevel: 'warn',   // kit 中性纪律：政策门默认 warn 可见不阻断，error 须领养者显式选择
   globs: ['*'],
   exclude: [],
   async run(ctx) {
