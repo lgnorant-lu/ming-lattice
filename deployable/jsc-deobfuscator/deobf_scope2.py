@@ -68,7 +68,7 @@ def collect_lines_with_reg(func, reg, start_index, end_index):
     """
     linesIndx = []
     indx = start_index
-    pattern = reg 
+    pattern = reg
     while True:
         indx = next_visible_line(func, indx)
         if indx is None:
@@ -170,7 +170,7 @@ def find_definition_line(func, start_index, verbosity):
     return (None, (None, None))
 
 ###
-# Replace the values from dictionary with corresponding literals. 
+# Replace the values from dictionary with corresponding literals.
 # For example: `r12 = r5["jRhVT"]` -> `r12 = func_EqualsStrict_0x93e23cfb039`
 
 def replace_with_assigned(
@@ -399,7 +399,7 @@ def search_object_definition(reg, func, last_indx):
         indx = next_visible_line(func, indx, True)
         if indx is None:
             break
-        
+
         line = func.code[indx].decompiled.strip()
         if not reg in line:
             continue
@@ -415,10 +415,10 @@ def search_object_definition(reg, func, last_indx):
                 print(const_dict)
             break
         linesIndx.append(indx)
-    
+
     if not const_dict:
         return None
-    
+
     all_solved = 0
     all_found = len(const_dict.keys())
     pattVal1 =r'^(r\d+)\["([^"]+)"\]\s*=\s*([A-Za-z0-9_]+)$' # example: r3["mUOue"] = func_mUOue_0x1446826034c9
@@ -469,7 +469,7 @@ class ScopeResolver:
         match = re.match(pattern, line.strip())
         if not match:
             return None
-            
+
         scope_id = int(match.group(1))
         index = int(match.group(2))
         reg = match.group(3)
@@ -489,7 +489,7 @@ class ScopeResolver:
 
     def parse_scope_assignment_direct(self, func, line_indx):
         """
-        Parse direct scope assignments like: 
+        Parse direct scope assignments like:
         `Scope[4391][25] = new {"w": 78}`
         """
         line = func.code[line_indx].decompiled
@@ -503,7 +503,7 @@ class ScopeResolver:
         obj_str = match.group(3)
         if g_Verbosity > 3:
             print(f"Definition: {line.strip()}")
-        
+
         try:
             # Parse the JavaScript object
             const_dict = parse_js_object(obj_str)
@@ -584,26 +584,26 @@ class ScopeResolver:
         if g_Verbosity > 1:
             print(f"Redefinition: Scope[{scope_id}][{index}] = {curr_value} vs {value_dict}")
             print(f"    Updated Scope[{scope_id}][{index}] = {self.scope_data[scope_id][index]}")
-    
+
     def resolve_scope_reference(self, scope_ref):
         """Resolve scope references like -Scope[4390][2]["w"]"""
         # Match patterns like Scope[number][number]["key"]
         pattern = r'Scope\[(\d+)\]\[(\d+)\]\["([^"]+)"\]'
         match = re.search(pattern, scope_ref)
-        
+
         if not match:
             return None
-            
+
         scope_id = int(match.group(1))
         index = int(match.group(2))
         key = match.group(3)
-        
+
         # Check if we have this scope data
         if (scope_id in self.scope_data and
-            index in self.scope_data[scope_id] and 
+            index in self.scope_data[scope_id] and
             key in self.scope_data[scope_id][index]):
             return self.scope_data[scope_id][index][key]
-        
+
         return None
 
     def resolve_scope_reference_with_source(self, scope_ref):
@@ -627,34 +627,34 @@ class ScopeResolver:
             .get(key)
         )
         return value, source_obj
-    
+
     def inline_scope_references_in_line(self, line):
         """Replace all scope references in a line with their literal values"""
         if not line:
             return line, False, []
-            
+
         modified_line = line
         has_changes = False
         propagated = []
-        
+
         # Pattern to match Scope[number][number]["key"]
         pattern = r'Scope\[\d+\]\[\d+\]\["[^"]+"\]'
-        
+
         # Debug: Check if pattern matches anything in the line
         matches = re.findall(pattern, line)
         if matches and g_Verbosity > 2:
             print(f"    Found Scope references in line: {matches}")
-        
+
         def replace_match(match):
             nonlocal has_changes
             scope_ref = match.group(0)
             value, source_obj = self.resolve_scope_reference_with_source(
                 scope_ref
             )
-            
+
             if g_Verbosity > 2:
                 print(f"    Trying to resolve: {scope_ref} -> {value}")
-            
+
             if value is not None:
                 if isinstance(value, str):
                     has_changes = True
@@ -672,7 +672,7 @@ class ScopeResolver:
                 if g_Verbosity > 2:
                     print(f"    Could not resolve: {scope_ref}")
             return scope_ref
-        
+
         modified_line = re.sub(pattern, replace_match, modified_line)
         return modified_line, has_changes, propagated
 
@@ -703,17 +703,17 @@ def inline_constants_in_line(line, const_dicts, const_sources=None):
         return line, False, []
 
     const_sources = const_sources or {}
-    
+
     modified_line = line
     has_changes = False
     propagated = []
-    
+
     # Process all known variables
     for var_name, const_dict in const_dicts.items():
         # Pattern to match var_name["key"] or var_name['key']
         # But NOT when it's on the left side of an assignment
         pattern = re.compile(rf'(?<!=\s){re.escape(var_name)}\[[\'"]([^\'"]+)[\'"]\](?!\s*=)')
-        
+
         def replace_match(match):
             nonlocal has_changes
             key = match.group(1)
@@ -728,9 +728,9 @@ def inline_constants_in_line(line, const_dicts, const_sources=None):
                     propagated.append((source_obj, replacement))
                     return replacement
             return match.group(0)
-        
+
         modified_line = pattern.sub(replace_match, modified_line)
-    
+
     return modified_line, has_changes, propagated
 
 # ---------------------------------------------------------------------------
@@ -920,10 +920,10 @@ def find_and_process_func_variables(functions, name, func_arg_to_fill, verbosity
     func = functions[name]
     val_mappings = {}  # {var_name: value}
     changes_count = 0
-    
+
     if verbosity > 2:
         print(f"[*] Processing function variables in: {name}")
-    
+
     val_assign_pattern = re.compile(r'^\s*(r\d+)\s*=') # any assignment to a register
     func_pattern = re.compile(r'(func_[\w#$]+)\s*$')
     num_pattern = re.compile(r'(\d+)|(\(-\d+\))$')
@@ -965,7 +965,7 @@ def find_and_process_func_variables(functions, name, func_arg_to_fill, verbosity
             line, line_changed = inline_mapped_variables(name, line, val_mappings, func_arg_to_fill)
             if line_changed:
                 is_changed = True
-            
+
         if is_changed:
             changes_count += 1
             if verbosity:
@@ -981,18 +981,18 @@ def find_and_process_scope_assignments(functions, def_type:ScopeDef):
     The assignments are in form of dicts, and they are added to the global resolver.
     """
     global g_Verbosity, g_ScopeResolver
-    
+
     if g_Verbosity > 1:
         print("[*] First pass: Processing Scope assignments...")
-    
+
     assignments_found = 0
-    
+
     for func_name, func in functions.items():
         for i in range(len(func.code)):
             line = func.code[i].decompiled
             if not line:
                 continue
-                
+
             # Check if this line defines a Scope assignment
             result = g_ScopeResolver.parse_scope_assignment(func, i, def_type)
             if result:
@@ -1004,10 +1004,10 @@ def find_and_process_scope_assignments(functions, def_type:ScopeDef):
                     definition_by_key,
                 )
                 assignments_found += 1
-    
+
     if g_Verbosity > 0:
         print(f"[+] Found {assignments_found} Scope assignments")
-    
+
     return assignments_found > 0
 
 def find_and_process_func(functions, name, replace_local, verbosity):
@@ -1018,10 +1018,10 @@ def find_and_process_func(functions, name, replace_local, verbosity):
     const_sources = {}  # {var_name: {key: definition line, ...}}
     changes_count = 0
     line_prefix = 'S' if not replace_local else 'L'
-    
+
     if verbosity > 2:
         print(f"[*] Processing function: {name}")
-    
+
     for line_obj in func.code:
         line = line_obj.decompiled
         if not line:
@@ -1032,7 +1032,7 @@ def find_and_process_func(functions, name, replace_local, verbosity):
             if obj_match:
                 var_name = obj_match.group(1)
                 js_obj_str = obj_match.group(2)
-                
+
                 try:
                     const_dict = parse_js_object(js_obj_str)
                     const_dicts[var_name] = const_dict
@@ -1045,7 +1045,7 @@ def find_and_process_func(functions, name, replace_local, verbosity):
                         print(f"[!] Failed to parse constant object in line: {line}")
                         print(f"    Error: {e}")
                     continue
-            
+
         # Try to inline constants and scope references in this line
         new_line = line
         line_changed = False
@@ -1059,13 +1059,13 @@ def find_and_process_func(functions, name, replace_local, verbosity):
                     const_sources,
                 )
                 line_changed = line_changed or changed
-        else: 
+        else:
             # Replace Scope references
             new_line, changed, propagated = (
                 g_ScopeResolver.inline_scope_references_in_line(new_line)
             )
             line_changed = line_changed or changed
-        
+
         if line_changed:
             changes_count += 1
             if verbosity:
@@ -1246,7 +1246,7 @@ def propagate_variables_default(all_func, scope_level, verbosity):
             if find_and_process_func_variables(all_func, name, None, verbosity):
                 is_changed4 = True
         print(f"Propagating func variables: Done. Changed: {is_changed4}")
-    
+
     if is_changed1 or is_changed2 or is_changed3 or is_changed4:
         return True
     return False
@@ -1265,8 +1265,8 @@ def main():
     parser = argparse.ArgumentParser(description="JSCeal scope deobf - replace variables with literal values")
     parser.add_argument('--inp', '-i', help="The input file name. It must be a serialized View8 output.", default=None, required=True)
     parser.add_argument('--out', '-o', help="The output file name.", default=None)
-    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'], 
-                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.", 
+    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'],
+                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.",
                         default=['serialized', 'decompiled'])
     parser.add_argument('--func', help="A function to be analyzed (cleaned).", default=None, required=False)
     parser.add_argument('--verbosity', '-v', help="Verbosity level (0-3)", default=0, type=int, required=False)
@@ -1277,7 +1277,7 @@ def main():
     parser.add_argument('--scope', help="Propagate scope arguments.", default=0, type=int, required=False)
 
     args = parser.parse_args()
-    
+
     if not os.path.isfile(args.inp):
         raise FileNotFoundError(f"The input file {args.inp} does not exist.")
 
@@ -1297,7 +1297,7 @@ def main():
         if propagate_variables_default(all_func, scope_level, g_Verbosity):
             scope_replaced = True
 
-    # Process all Scope assignments if enabled 
+    # Process all Scope assignments if enabled
     # scope replacement must be done globally, before function filter is applied:
     scope_def = ScopeDef.ALL
     if args.replace_scope:
@@ -1323,7 +1323,7 @@ def main():
         for name in all_func:
             if find_and_process_func(all_func, name, True, g_Verbosity):
                 vars_replaced = True
-            
+
     # Process all functions for function variable replacement
     if args.replace_funcs:
         print(f"[+] Replace Funcs")
@@ -1337,7 +1337,7 @@ def main():
 
     if scope_replaced:
         print("[+] Scope arguments propagated")
-    
+
     if funcs_replaced:
         print("[+] Functions replaced")
 
@@ -1346,7 +1346,7 @@ def main():
 
     if args.func:
         print_funcs(all_func)
-    
+
     # The output may be saved into a file:
     if args.out:
         export_to_file(args.out, all_func, args.export_format)

@@ -54,7 +54,7 @@ def replace_operator(function_name, op):
     pattern = r'func_([a-zA-Z0-9_$]+)_(0x[0-9a-fx]+)'
     # Define the pattern to match the function name
     op_types = [
-        '>', '>>', '<', '>>>', '==', '+', '<<', '%', '^', '>=', '===', '/', '<=', '-', '*', 
+        '>', '>>', '<', '>>>', '==', '+', '<<', '%', '^', '>=', '===', '/', '<=', '-', '*',
         '&', '|'
         ]
     type_names = [
@@ -69,11 +69,11 @@ def replace_operator(function_name, op):
     return updated_function_name
 
 def resolve_op_functions(op_func, all_func, verbosity):
-    
+
     # Map new names
     func_dict = dict()
     pattern = re.compile(r'(a0\s([<=>!]+)\s+a1|\(a0\s([+\-*\/%<=>!^]+)\s+a1\))$')
-    
+
     for func_name, op_def in op_func.items():
         match = re.match(pattern, op_def)
         op = None
@@ -117,7 +117,7 @@ def _func_content_to_temp(function_content, template_str, args_count):
         s = f"a{i}"
         template = f"{template_str}{i}"
         function_content = function_content.replace(s, template)
-    return function_content 
+    return function_content
 
 def _replace_args(args, function_content, verbosity=0):
     """
@@ -138,7 +138,7 @@ def _replace_args(args, function_content, verbosity=0):
 
 def _find_calls_in_line(line, func_dict):
     """
-    Find all calls of the functions from the given list in the given line. 
+    Find all calls of the functions from the given list in the given line.
     Return the list of pairs: (func_name, arguments_str)
     """
     if not line:
@@ -158,8 +158,8 @@ def _find_calls_in_line(line, func_dict):
 
 def _find_funcs_in_line(line, func_dict):
     """
-    Find all calls of the functions from the given list in the given line. 
-    Return the list of func_name 
+    Find all calls of the functions from the given list in the given line.
+    Return the list of func_name
     """
     if not line:
         return set()
@@ -361,7 +361,7 @@ def deobf_replace_ops_rounds(all_func, verbosity):
 
 def deobf_replace_ops_default(all_func, verbosity):
     #preprocess: propagate local dictionaries within the functions:
-    
+
     propagate_local_dicts(all_func, verbosity)
     # preprocess: make sure that functions called via registers are propagated:
     replace_functions_via_registers(all_func, verbosity)
@@ -376,7 +376,7 @@ def deobf_replace_ops_default(all_func, verbosity):
     hide_unref_scopes(all_func, verbosity)
 
     shrink_proxy_functions(all_func, verbosity)
-    
+
     # replace ops in rounds, till saturated:
     (op_func, repl_total) = deobf_replace_ops_rounds(all_func, verbosity)
     if verbosity:
@@ -400,8 +400,8 @@ def main():
     parser = argparse.ArgumentParser(description="V8 deobf. - Replace ops")
     parser.add_argument('--inp', '-i', help="The input file name. It must be a serialized View8 output.", default=None, required=True)
     parser.add_argument('--out', '-o', help="The output file name.", default=None)
-    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'], 
-                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.", 
+    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'],
+                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.",
                         default=['serialized', 'decompiled'])
     parser.add_argument('--rename', help="Rename functions", action="store_true", default=None, required=False)
     parser.add_argument('--func', help="A function to be analyzed (cleaned).", default=None, required=False)
@@ -409,9 +409,9 @@ def main():
     parser.add_argument('--hide', help="Hide unreferenced functions", default=1, type=int, required=False)
     parser.add_argument('--verbosity', '-v', help="Verbosity level (0-3)", default=0, type=int, required=False)
     args = parser.parse_args()
-    
+
     g_Verbosity = args.verbosity
-    
+
     if not os.path.isfile(args.inp):
         raise FileNotFoundError(f"The input file {args.inp} does not exist.")
 

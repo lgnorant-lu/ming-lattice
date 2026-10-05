@@ -150,7 +150,7 @@ def gather_function_args(line, func_groups, func_name, is_index_first):
     # parse the found arguments:
     index = _normalize_call_index(match.group(index_pos))
     key = match.group(key_pos)
-    
+
     # store the arguments for further use:
     added = _append_to_group(func_groups, func_name, index, key)
 
@@ -189,8 +189,8 @@ def walk_str_refs(functions, deobf_funcs, unres_only = True, visible_only = True
                     if pattern.search(line):
                         continue
                 print(f"{name} : {indx} | {line}")
-                
-          
+
+
 def _walk_str_deobf_refs(functions, name, deobf_funcs, brutforce_diffs):
     global group_index_first
     global g_all_keys
@@ -204,7 +204,7 @@ def _walk_str_deobf_refs(functions, name, deobf_funcs, brutforce_diffs):
         print(f"Testing string deobfuscation inside the function: {name}")
     for line_obj in func.code:
         line = line_obj.decompiled
-            
+
         for func_name in deobf_funcs:
             if func_name not in line:
                 continue
@@ -316,7 +316,7 @@ def get_deobf_from_const_pool(func):
             return item
     return None
 
-### 
+###
 
 _ANSI_SEQ = re.compile(
     r'\x1b(?:'
@@ -325,10 +325,10 @@ _ANSI_SEQ = re.compile(
     r'|[@-Z\\-_]'                     # two-char Fe
     r')'
 )
- 
+
 def is_cleartext_relaxed(text):
     """Replacement-time validity check.
- 
+
     Same character policy as is_cleartext(), except that *well-formed* ANSI
     escape sequences are removed before validation. A lone ESC, a truncated
     sequence, or any other C0 byte still fails -- those are the real signature
@@ -445,7 +445,7 @@ def _find_and_replace_deobf_calls(functions, pattern1, pattern2, is_exact):
                     break
 
     return replacements
-  
+
 
 def find_and_replace_exact_deobf_calls(functions):
     return _find_and_replace_deobf_calls(
@@ -462,7 +462,7 @@ def find_and_replace_scope_deobf_calls(functions):
         _SCOPE_NUM_KEY_FIRST_RE,
         False,
     )
-  
+
 def find_and_replace_reg_deobf_calls(functions):
     return _find_and_replace_deobf_calls(
         functions,
@@ -954,7 +954,7 @@ import csv
 def load_resolved_funcs_from_csv(csv_file, all_func, accepted_names=None):
     """
     Load resolved_funcs configuration from CSV file.
-    
+
     Expected CSV format:
     ut,647,False
     func_c_0x315d8de770c9,1067,False
@@ -1184,7 +1184,7 @@ def resolve_all_needed(all_func, deobf_map, deobf_root, inner_root):
     if missing_funcs:
         print(f"Failed to resolve {len(missing_funcs)} required functions: {missing_funcs}")
     return missing_funcs
-       
+
 def hide_by_metadata(all_func):
     hidden = 0
     for func in all_func.values():
@@ -1199,7 +1199,7 @@ def hide_by_metadata(all_func):
                 hidden += 1
                 continue
     return hidden
-    
+
 def strings_deobfuscate_v2(all_func, verbosity, resolved_csv = "resolved_funcs.csv"):
     """
     Deobfuscate all strings in one run
@@ -1304,8 +1304,8 @@ def main():
 
     parser.add_argument('--inp', '-i', help="The input file name. It must be a serialized View8 output.", default=None, required=True)
     parser.add_argument('--out', '-o', help="The output file name.", default=None)
-    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'], 
-                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.", 
+    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'],
+                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.",
                         default=['serialized', 'decompiled'])
     parser.add_argument('--scope', help="Propagate scope arguments.", default=1, type=int, required=False)
     parser.add_argument('--strfunc', '-s', help="The function including definitions for string deobfuscation (chunks). If none is given, it will be autodetected.", default=None, required=False)
@@ -1320,14 +1320,14 @@ def main():
 
     if not os.path.isfile(args.inp):
         raise FileNotFoundError(f"The input file {args.inp} does not exist.")
-    
+
     print(f"Reading from serialized, already decompiled input: {args.inp}")
     all_func = load_functions_from_file(args.inp)
 
     if args.scope:
-        propagate_variables_default(all_func, 3, args.verbosity) 
+        propagate_variables_default(all_func, 3, args.verbosity)
 
-    if 'strlist' in args.mode: 
+    if 'strlist' in args.mode:
         save_string_list(args.inp, all_func)
         return
 
@@ -1371,7 +1371,7 @@ def main():
     # The function containing all the string chunks that will be further used:
     if args.strfunc:
         print(f"Func for string deobf: {args.strfunc}")
-        str_array = load_string_array(all_func, args.strfunc)     
+        str_array = load_string_array(all_func, args.strfunc)
     else:
         str_array = find_and_load_string_array(all_func, start_name)
 

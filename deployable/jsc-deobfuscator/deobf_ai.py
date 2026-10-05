@@ -84,7 +84,7 @@ def sanitize_filename_component(value: str) -> str:
 # This prevents hitting API rate limits and ensures manageable request sizes
 RATE_LIMIT = 30000
 
-### 
+###
 
 class APIError(Exception):
     pass
@@ -150,7 +150,7 @@ class LLMClient:
     def _ask_anthropic(self, prompt):
         if not self.api_key:
             raise ValueError("Missing ANTHROPIC_API_KEY")
-        
+
         url = "https://api.anthropic.com/v1/messages"
 
         headers = {
@@ -609,7 +609,7 @@ def resolve_funcs_by_ai(functions, min_ref_subset, call_tree, blacklisted: set[s
             try:
                 new_name = get_func_name_via_ai(func, verbosity)
                 return { func_name: new_name }
-            
+
             except APIError as e:
                 print(f"API error: {e}")
                 if "rate limit" in str(e).lower():
@@ -638,7 +638,7 @@ def resolve_funcs_by_ai(functions, min_ref_subset, call_tree, blacklisted: set[s
     while retry_count < max_retries:
         try:
             return get_funcs_names_dict_via_ai(func_bodies_str)
-        
+
         except APIError as e:
             print(f"API error: {e}")
 
@@ -714,7 +714,7 @@ def run_renaming_round(functions, call_tree, renamed_dict, blacklisted, csv_file
         new_name = build_new_full(name, new_mid)
         renamed_dict[name] = new_name
         _rename_function(functions, name, new_name)
-        
+
         propagate_name(functions, call_tree, name, new_name, verbosity)
         erase_from_call_tree(name, call_tree)
 
@@ -751,7 +751,7 @@ def read_from_csv(csv_file, renamed_dict, all_func):
                 if len(row) != 2:
                     print(f"Warning: Skipping malformed row: {row}")
                     continue
-                
+
                 old_name, new_name = row
                 old_name = old_name.strip().strip('`').strip()
                 new_name = new_name.strip().strip('`').strip()
@@ -767,7 +767,7 @@ def read_from_csv(csv_file, renamed_dict, all_func):
     except FileNotFoundError:
         print(f"Error: CSV file '{csv_file}' not found")
         return False
-        
+
     except Exception as e:
         print(f"Error loading from CSV: {e}")
         return False
@@ -782,7 +782,7 @@ def discard_resolved(call_tree, renamed_dict, verbosity=0):
                 print(f"Already renamed: {name} -> {renamed_dict[name]}")
             erase_from_call_tree(name, call_tree)
             continue
-             
+
 def rename_funcs_from_call_tree(functions, call_tree, renamed_dict, csv_file, batch_mode, verbosity):
     print(f"Call tree size: {len(call_tree)}")
     blacklisted = set()
@@ -862,7 +862,7 @@ def browse_functions_references(functions, calls_only=True):
     _browse_func_refs(start_name, init_func, called_set, calls_only)
     collect_call_set(functions, called_set, call_tree, calls_only)
     return call_tree
-   
+
 
 def initialize_llm_client(args, model_name):
     """Create the selected LLM client only when an API request is required."""
@@ -905,8 +905,8 @@ def main():
 
     parser.add_argument('--inp', '-i', help="The input file name. It must be a serialized View8 output.", default=None, required=True)
     parser.add_argument('--out', '-o', help="The output file name.", default=None)
-    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'], 
-                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.", 
+    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'],
+                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.",
                         default=['serialized', 'decompiled'])
     parser.add_argument(
         '--csv', '-c',
@@ -995,7 +995,7 @@ def main():
                         f"{resolve_model_name('anthropic', args.model)} does not accept an "
                         "explicit --temperature; omit it to use the model default"
                     )
-    
+
     g_Verbosity = args.verbosity
     model_name = resolve_model_name(args.llm_backend, args.model)
 
@@ -1011,7 +1011,7 @@ def main():
 
     if not os.path.isfile(args.inp):
         raise FileNotFoundError(f"The input file {args.inp} does not exist.")
-    
+
     print(f"Reading from serialized, already decompiled input: {args.inp}")
     all_func = load_functions_from_file(args.inp)
 
@@ -1100,9 +1100,9 @@ def main():
             return
 
         ai_start = time.perf_counter()
-        
+
         rename_funcs_from_call_tree(all_func, call_tree, renamed_dict, csv_file, batch_mode, args.verbosity)
-        
+
         elapsed_sec = time.perf_counter() - ai_start
         elapsed_min = elapsed_sec / 60.0
         print(f"Renaming finished. Total time: {elapsed_sec} s. = {elapsed_min} min")

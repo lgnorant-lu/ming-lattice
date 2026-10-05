@@ -66,7 +66,7 @@ status: descriptive
 ## 六、跨仓库问题清单
 
 1. **本地 .git HEAD 分支指向缺失 master**（已修复：symbolic-ref 批量指向 main/master）
-2. xbs 硬编码 `C:\Users\25198\` 路径（ast-deobfuscation/SKILL.md:56）——使用前清理
+2. xbs 硬编码 `C:\Users\<user>\` 路径（ast-deobfuscation/SKILL.md:56）——使用前清理
 3. re-skill-mcp / reveng-static 的 frontmatter name 与基座冲突（reverse-engineering）——部署需改名
 4. malware-re-skills 残留 LLM 生成伪影（turn0search 引注 + 不可见 Unicode）
 5. android/ios skill 依赖 `${CLAUDE_PLUGIN_ROOT}` 插件变量——独立部署需替换

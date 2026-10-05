@@ -28,10 +28,10 @@ AI 输出格式（必须以此结构复述并填空）：
      如果 cases/ 在当前 cwd 下不存在，说明你在用户项目目录——
      请通过 skill 上下文（本文档同级的 cases/ 目录）读取，
      或直接引用下方内嵌的速查表。
-  
+
   目标域名 = ______
   主要特征关键词 = ______ (如 "webmssdk / X-Bogus / a_bogus / RS 412 / sdenv / acw_sc__v2" 等)
-  
+
   速查表（内嵌，免去路径问题）:
     tiktok.com / X-Bogus / X-Gnarly / webmssdk / cacheOpts
       → case: jsvmp-dual-sign-xhr-intercept-cacheOpts-jsdom-firefox.md | 方案: jsdom 环境伪装
@@ -44,7 +44,7 @@ AI 输出格式（必须以此结构复述并填空）：
       → 同 nmpa 案例 | 方案: sdenv
     obfuscator.io 特征（_0x 大量前缀）
       → 无专案，走通用四板斧
-  
+
   命中结果:
     - 命中案例 = ______ (case 文件名 or "未命中")
     - 若命中 → 方案方向以速查表为准，按 SKILL.md 的路径 A/B 方法论执行；
@@ -57,7 +57,7 @@ AI 输出格式（必须以此结构复述并填空）：
   **明确否决**: 不使用 Playwright/Camoufox 作为最终方案的业务步骤（过挑战、取 cookie、采基准写死 等）
   验收条件: 按用户确认的输入样本、目标环境和运行预算验证。
     未运行长期稳定性测试时标记未验证，不从一次成功推断 24 小时或一周可用。
-  
+
 ═══ 三项全部通过，开始 Phase 0 ═══
 ```
 

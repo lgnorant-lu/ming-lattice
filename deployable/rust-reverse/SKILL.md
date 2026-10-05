@@ -346,7 +346,7 @@ Reject these shortcuts:
 - “This looks like a trait object because it has two pointers.”
 - “Demangled symbols prove the original source layout.”
 - “A crate name in strings means the feature is definitely used.”
-- “This large dispatcher is obviously business logic.”  
+- “This large dispatcher is obviously business logic.”
   It may just be compiler-generated async or panic/runtime machinery.
 
 ## Output standard

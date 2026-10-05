@@ -95,10 +95,10 @@ def _get_all_index(functions):
                 # Example: Scope[90][2] = Scope[0][2]
                 index1 = (match.group(1), match.group(2))
                 index2 = (match.group(3), match.group(4))
-            
+
                 if index2 in function_index:
                     function_index[index1] = function_index[index2]
-                    
+
             match = pattern2.search(line)
             if match:
                 # Example: Scope[277][4] = H
@@ -134,11 +134,11 @@ def replace_index_with_string(functions, verbosity):
                 index = (match.group(1), match.group(2))
                 if index not in function_index:
                     continue
-            
+
                 str_val = helper(match.group(3), function_index[index])
                 str_val = string_escape(str_val)
                 line = line.replace(match.group(0), f'"{str_val}"')
-            
+
             match = pattern2.search(line)
             if match:
                 # Examples: ACCU = r1[r0(17812)] , r5 = r1[r0(18914)]
@@ -225,16 +225,16 @@ def main():
     parser = argparse.ArgumentParser(description="JSCeal string deobfuscator, variant 1")
     parser.add_argument('--inp', '-i', help="The input file name. It must be a serialized View8 output.", default=None, required=True)
     parser.add_argument('--out', '-o', help="The output file name.", default=None)
-    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'], 
-                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.", 
+    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'],
+                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.",
                         default=['serialized', 'decompiled'])
     parser.add_argument('--scope', help="Propagate scope arguments.", default=1, type=int, required=False)
     parser.add_argument('--strfunc', '-s', help="Function including definitions for string deobfuscation.", default=None)
     parser.add_argument('--verbosity', '-v', help="Verbosity level (0-3)", default=0, type=int, required=False)
     args = parser.parse_args()
-    
+
     g_Verbosity = args.verbosity
-    
+
     if not os.path.isfile(args.inp):
         raise FileNotFoundError(f"The input file {args.inp} does not exist.")
 
@@ -242,7 +242,7 @@ def main():
     all_func = load_functions_from_file(args.inp)
 
     if args.scope:
-        propagate_variables_default(all_func, 3, args.verbosity) 
+        propagate_variables_default(all_func, 3, args.verbosity)
 
     strings_deobfuscate_v1(all_func, True, args.strfunc)
 

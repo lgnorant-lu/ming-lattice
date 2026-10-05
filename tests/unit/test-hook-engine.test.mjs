@@ -478,6 +478,14 @@ export async function run() {
       assert.equal(allFix.status, 0, allFix.stderr);
       assert.equal(fs.readFileSync(path.join(dir, 'committed.md'), 'utf8'), 'old\nno-eof\n', '--all 应修 committed 存量');
 
+      // all 源剔除符号链接条目——vendored 镜像字节不被内容门穿透扫描
+      const linkBlob = execFileSync('git', ['hash-object', '-w', '--stdin'], { cwd: dir, input: 'vendored-trail   \n', encoding: 'utf8' }).trim();
+      execFileSync('git', ['update-index', '--add', '--cacheinfo', `120000,${linkBlob},vendored-link.md`], { cwd: dir });
+      const ciScan = spawnSync(process.execPath, [engine, 'run', 'ci'], { cwd: dir, encoding: 'utf8' });
+      assert.ok(!ciScan.stdout.includes('vendored-link.md'), '符号链接条目不得进 ci 内容门作用域');
+      const fixAll = spawnSync(process.execPath, [engine, 'run', 'fix', '--all'], { cwd: dir, encoding: 'utf8' });
+      assert.ok(!fixAll.stdout.includes('vendored-link.md'), '符号链接条目不得进 fix --all 作用域');
+
       // baseline --dry-run：预告冻结计数但不写 .hooks-baseline.json
       const bDry = spawnSync(process.execPath, [engine, 'baseline', '--dry-run'], { cwd: dir, encoding: 'utf8' });
       assert.equal(bDry.status, 0, bDry.stderr);

@@ -86,7 +86,7 @@ def find_code_pattern(func, pattern1, start_indx=0):
 
 def find_code_line(func, line_patt, exact, start_indx=0):
     """
-    Check if the function has the code line as defined. 
+    Check if the function has the code line as defined.
     If `exact` is selected, the line must have identical padding/tabulation. Otherwise, the padding is stripped.
     Return `index` if found, `None` otherwise.
     """
@@ -106,7 +106,7 @@ def find_code_line(func, line_patt, exact, start_indx=0):
 
 def rfind_code_line(func, line_patt, exact, start_indx, stop_indx):
     """
-    Check if the function has the code line as defined - reverse search. 
+    Check if the function has the code line as defined - reverse search.
     If `exact` is selected, the line must have identical padding/tabulation. Otherwise, the padding is stripped.
     Return `index` if found, `None` otherwise.
     """
@@ -158,7 +158,7 @@ def find_all_chunks_endings(func, start_indx, end_indx):
             endings_list[indent] = i
         else:
             continue
-    
+
     for k in endings_list.keys():
         indx = endings_list[k]
         if g_Verbosity > 2:
@@ -170,7 +170,7 @@ def find_all_chunks_starts(func, start_indx, chunks):
     while (True):
         patternI = re.compile(r'if \(!r\d+ === \"(\d+)\"\)')
         (indx, match) = find_code_pattern(func, patternI, prev_indx + 1)
-        if indx is None: 
+        if indx is None:
             break
         prev_indx = indx
         line = func.code[indx].decompiled
@@ -321,7 +321,7 @@ class CffLoop:
         for i in range(self.start, self.end):
             if lIndx >= len(code_lines):
                 break
-            
+
             func.code[i] = code_lines[lIndx]
             lIndx += 1
 
@@ -857,7 +857,7 @@ def deobfuscate_flattened(func, verbosity):
     my_cff.prolog_lines.update(refs)
     if verbosity > 1:
         my_cff.print(func)
-    
+
     # Prefer the authoritative bytecode jump targets.  The old indentation-
     # based collector is retained as a fallback for legacy serialized inputs
     # that do not carry V8 instructions or bytecode offsets.
@@ -907,7 +907,7 @@ def deobfuscate_flattened(func, verbosity):
     if verbosity > 1:
         print("## Patched the loop")
         my_cff.print(func)
-    
+
 
 def find_flattened(functions, verbosity=0):
     """
@@ -950,15 +950,15 @@ def main():
     parser = argparse.ArgumentParser(description="JSCeal deobf. - CFF unflattener")
     parser.add_argument('--inp', '-i', help="The input file name. It must be a serialized View8 output.", default=None, required=True)
     parser.add_argument('--out', '-o', help="The output file name.", default=None)
-    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'], 
-                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.", 
+    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'],
+                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.",
                         default=['serialized', 'decompiled'])
     parser.add_argument('--func', help="A function to be displayed.", default=None, required=False)
     parser.add_argument('--verbosity', '-v', help="Verbosity level (0-3)", default=0, type=int, required=False)
     args = parser.parse_args()
-    
+
     g_Verbosity = args.verbosity
-    
+
     if not os.path.isfile(args.inp):
         raise FileNotFoundError(f"The input file {args.inp} does not exist.")
 

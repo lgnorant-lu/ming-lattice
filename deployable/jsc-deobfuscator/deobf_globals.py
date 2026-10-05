@@ -84,7 +84,7 @@ def join_proxy_func(functions, func_name, verbosity):
             func2_name = match.group(1)
             break
         return False
-    
+
     if not func2_name or not defs_count:
         return False
 
@@ -140,12 +140,12 @@ def tag_global_symbols(mapping: dict[str, str], tagged_map: dict[str, str]) -> d
             tag = "function"
             if "[" in sym and "]" in sym:
                 tag = "function_property"
-            
+
         if sym.startswith("global_"):
             tag = "redir"
             if "[" in sym and "]" in sym:
                 tag = "global_property"
-            
+
         if sym.startswith("func_") or sym.startswith("global_"):
             if "(" in sym and ")" in sym: # it is a call
                 tag = "function_call"
@@ -176,13 +176,13 @@ def tag_global_symbols(mapping: dict[str, str], tagged_map: dict[str, str]) -> d
     return tagged_map
 
 def print_tagged_symbols(tagged_map, globals_map, tag_filter = None, sym_filter = None):
-    
+
     def _is_sym_referenced(sym, sym_filter):
         for s in sym_filter:
             if s in sym:
                 return True
         return False
-        
+
     for name, tag in tagged_map.items():
         sym = globals_map[name]
         if tag_filter and tag not in tag_filter:
@@ -190,11 +190,11 @@ def print_tagged_symbols(tagged_map, globals_map, tag_filter = None, sym_filter 
         if sym_filter:
             if (name not in sym_filter and sym not in sym_filter) and not _is_sym_referenced(sym, sym_filter):
                 continue
-        
+
         print(f"`{name}`: {sym} -> {tag}")
 
 def replace_global_proxy_calls(functions, globals_map, tagged_map, verbosity):
-    
+
     proxy_sym_map = {}
 
     def _add_to_map(proxy_sym_map, meta_tag, name):
@@ -329,7 +329,7 @@ def get_globals_set_from_start(start_func, hide_line=True):
                 start_func.code[indx].visible = False
             break
     return globals_set
-    
+
 
 ASSIGN_GLOBAL_SYM = re.compile(r'^\s*(global_[A-Za-z_$][\w$]*)\s*=\s*([^;]+)\s*;?\s*$')
 
@@ -614,11 +614,11 @@ def propagate_globals(functions, verbosity):
             print(f"Collecting global assigments, round {collect_round} Items collected: {collected} Applied: {changed}")
         if collected == 0:
             break
-        # if nothing has changed, reduce the number of attempts    
+        # if nothing has changed, reduce the number of attempts
         if changed > 0:
             empty_rounds = 0
         else:
-            empty_rounds += 1 
+            empty_rounds += 1
 
     tag_global_symbols(globals_map, tagged_map)
     replace_global_proxy_calls(functions, globals_map, tagged_map, verbosity)
@@ -631,13 +631,13 @@ def main():
     parser = argparse.ArgumentParser(description="JSCeal scope deobf - replace variables with literal values")
     parser.add_argument('--inp', '-i', help="The input file name. It must be a serialized View8 output.", default=None, required=True)
     parser.add_argument('--out', '-o', help="The output file name.", default=None)
-    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'], 
-                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.", 
+    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'],
+                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.",
                         default=['serialized', 'decompiled'])
     parser.add_argument('--func', help="A function to be analyzed (cleaned).", default=None, required=False)
     parser.add_argument('--verbosity', '-v', help="Verbosity level (0-3)", default=0, type=int, required=False)
     args = parser.parse_args()
-    
+
     if not os.path.isfile(args.inp):
         raise FileNotFoundError(f"The input file {args.inp} does not exist.")
 
@@ -672,7 +672,7 @@ def main():
 
     if args.func:
         print_funcs(all_func)
-    
+
     # The output may be saved into a file:
     if args.out:
         export_to_file(args.out, all_func, args.export_format)

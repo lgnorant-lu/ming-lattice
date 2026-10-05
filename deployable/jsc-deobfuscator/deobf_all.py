@@ -93,14 +93,14 @@ def main():
 
     parser.add_argument('--inp', '-i', help="The input file name. It must be a serialized View8 output.", default=None, required=True)
     parser.add_argument('--out', '-o', help="The output file name.", default=None, required=True)
-    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'], 
-                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.", 
+    parser.add_argument('--export_format', '-e', nargs='+', choices=['v8_opcode', 'translated', 'decompiled', 'serialized'],
+                        help="Specify the export format(s). Options are 'v8_opcode', 'translated', and 'decompiled'. Multiple options can be combined.",
                         default=['serialized', 'decompiled'])
     parser.add_argument('--csv', '-c', help="A CSV with resolved string deobfuscation functions. If omitted, defaults to <input_name>.resolved_funcs.csv.", default=None, required=False)
     parser.add_argument('--verbosity', '-v', help="Verbosity level (0-3)", default=0, type=int, required=False)
     parser.add_argument('--str_deobf', help="Variant of the string deobfuscation function (1 or 2)", default=2, type=int, required=False)
     args = parser.parse_args()
-    
+
     if not os.path.isfile(args.inp):
         raise FileNotFoundError(f"The input file {args.inp} does not exist.")
 
@@ -113,21 +113,21 @@ def main():
     all_func = load_functions_from_file(args.inp)
     start = time.perf_counter()
 
-    propagate_variables_default(all_func, 3, args.verbosity) 
+    propagate_variables_default(all_func, 3, args.verbosity)
 
     str_start = time.perf_counter()
     is_ok = False
     if args.str_deobf == 1:
         is_ok = strings_deobfuscate_v1(all_func)
     else:
-        is_ok = strings_deobfuscate_v2(all_func, args.verbosity, resolved_csv) 
+        is_ok = strings_deobfuscate_v2(all_func, args.verbosity, resolved_csv)
     if not is_ok:
         print("Deobfuscating strings failed!")
         return
     elapsed_sec = time.perf_counter() - str_start
     elapsed_min = elapsed_sec / 60.0
     print(f"Deobfuscated strings in: {elapsed_sec} s. = {elapsed_min} min")
-    is_ok = deobf_scope_default(all_func, args.verbosity) 
+    is_ok = deobf_scope_default(all_func, args.verbosity)
     if not is_ok:
         print("Deobfuscating scopes failed!")
         return
@@ -149,10 +149,10 @@ def main():
     # functions whose visible code actually changed.
     post_unflatten_snapshot = _snapshot_visible_code(all_func)
     deobf_replace_ops_default(all_func, args.verbosity)
-    
+
     print("Propagating globals...")
     propagate_globals(all_func, args.verbosity)
-    
+
     print("Inlining temporary values...")
     inline_temporaries_default(all_func, args.verbosity)
 

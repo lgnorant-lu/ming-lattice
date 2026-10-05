@@ -24,98 +24,98 @@ def customB64(a0):
     Custom Base64 decoder
     """
     r0 = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/="
-    
+
     r1 = ""
     r2 = ""
     r5 = 0
     r6 = None
     r8 = 0
-    
+
     # First loop: Custom Base64 decoding
     while True:
         r11 = r8
         r8 = r8 + 1
-        
+
         if r11 >= len(a0):
             r7 = ""
         else:
             r7 = a0[r11]
-        
+
         if not r7:
             break
-        
+
         try:
             char_index = r0.index(r7)
         except ValueError:
             char_index = -1
-        
+
         r7 = char_index
-        
+
         if char_index != -1:
             if r5 % 4:
                 r9 = r6 * 64
                 r6 = r9 + r7
             else:
                 r6 = r7
-            
+
             r9 = r5
             r5 = r5 + 1
-            
+
             if r9 % 4:
                 shift_amount = (r5 * -2) & 6
                 r12 = (r6 >> shift_amount) & 255
                 r1 = r1 + chr(r12)
-    
+
     # Second loop: Convert to URL-encoded format
     r3 = 0
     r4 = len(r1)
-    
+
     while r3 < r4:
         r14 = ord(r1[r3])
         r12 = f"{r14:02x}"
         r2 = r2 + "%" + r12
         r3 = r3 + 1
-    
+
     return urllib.parse.unquote(r2)
 
-    
+
 def rc4_decrypt(base64_data, key):
     """
     Simplified RC4 decryption with custom Base64
-    
+
     Args:
         base64_data (str): Base64-encoded data (using custom alphabet)
         key (str): RC4 key
-        
+
     Returns:
         str: Decrypted plaintext
     """
-  
+
     encrypted_data = customB64(base64_data)
-    
+
     # RC4 decryption
     # Initialize state array
     S = list(range(256))
-    
+
     # Key scheduling
     j = 0
     for i in range(256):
         j = (j + S[i] + ord(key[i % len(key)])) % 256
         S[i], S[j] = S[j], S[i]
-    
+
     # Generate keystream and decrypt
     i = j = 0
     result = []
-    
+
     for char in encrypted_data:
         i = (i + 1) % 256
         j = (j + S[i]) % 256
         S[i], S[j] = S[j], S[i]
-        
+
         keystream_byte = S[(S[i] + S[j]) % 256]
         decrypted_byte = ord(char) ^ keystream_byte
         result.append(chr(decrypted_byte))
-    
+
     return ''.join(result)
 
 ###
@@ -445,7 +445,7 @@ def _simplify_chain_assignments(func):
 
             # Match next line as: VAR = (VAR + "str2")
             next_line = next_obj.decompiled
-           
+
             join_pattern = re.compile(rf'\({var1} \+ "([^"\\]*(\\.[^"\\]*)*)"\)')
             match2 = join_pattern.search(next_line)
             if match2:
@@ -470,7 +470,7 @@ def _simplify_chain_assignments(func):
 
 def simplify_chain_assignments(functions):
     for func in functions.values():
-        while(_simplify_chain_assignments(func)): 
+        while(_simplify_chain_assignments(func)):
             continue # try to simplify till possibilities are exhausted
 
 ###
@@ -601,7 +601,7 @@ def hide_unreferenced_variables_in_func(name, func, patterns_set, never_used_onl
             if reg not in used.keys():
                 print(f"!!! Unreferenced: {reg}")
             print(f"### reg: {reg}")
-            
+
             print("# Defined in:")
             if reg not in defs.keys():
                 print("No def lines?")
@@ -652,8 +652,8 @@ def hide_unreferenced_variables_in_func(name, func, patterns_set, never_used_onl
             continue
 
         if never_used_only:
-           continue 
-        
+           continue
+
         def_to_usages = map_defs_to_usages(used[reg], defs[reg])
         for p_indx in p_defs[reg]:
             if p_indx not in def_to_usages.keys():

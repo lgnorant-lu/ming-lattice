@@ -110,6 +110,16 @@ export function readStaged(root, relPath) {
   return git(['cat-file', 'blob', sha]);
 }
 
+// ls-files -s 全表一次建：符号链接/gitlink 路径集合（all/range 源剔除用）
+function loadLinkPaths(git) {
+  const out = git(['ls-files', '-s', '-z']);
+  const set = new Set();
+  for (const e of out.split('\0')) {
+    if (/^(120000|160000) /.test(e)) set.add(e.slice(e.indexOf('\t') + 1));
+  }
+  return set;
+}
+
 /**
  * 统一文件源：返回 {list(), read(path)} 形态
  *   staged —— git 索引（pre-commit 主源）
@@ -118,8 +128,12 @@ export function readStaged(root, relPath) {
  */
 export function fileSource(root, spec = { source: 'staged' }) {
   const git = makeGit(root);
+  // 符号链接(120000)/gitlink(160000)条目不是内容面——读工作区会穿透链接目标
+  // （vendored 镜像字节刻意不入仓、发现亦不可修）；all/range 源统一剔除
+  let linkPaths = null;
+  const contentOnly = list => list.filter(p => !(linkPaths ??= loadLinkPaths(git)).has(p));
   if (spec.source === 'all') {
-    const list = () => git(['ls-files']).split('\n').filter(Boolean);
+    const list = () => contentOnly(git(['ls-files']).split('\n').filter(Boolean));
     return {
       source: 'all',
       list,
@@ -132,7 +146,7 @@ export function fileSource(root, spec = { source: 'staged' }) {
   }
   if (spec.source === 'range') {
     const [a, b] = (spec.range ?? 'HEAD~1..HEAD').split('..');
-    const list = () => git(['diff', '--name-only', `${a}..${b}`]).split('\n').filter(Boolean);
+    const list = () => contentOnly(git(['diff', '--name-only', `${a}..${b}`]).split('\n').filter(Boolean));
     return {
       source: 'range',
       list,
