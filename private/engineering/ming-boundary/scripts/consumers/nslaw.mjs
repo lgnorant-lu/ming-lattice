@@ -15,7 +15,12 @@
 //   prose_from         散文登记处文档——表内反引号前缀与 registry 双向互锁
 //   contract_from      契约路径供 exemptions（缺省 boundaries.yaml）
 //   min_family         未登记族最少成员数（缺省 2）
-// findings: nslaw:dangling(warn) collision(error) format(warn)
+// registry 条目 role=forbidden（反面法，非 ID 命名空间）：
+//   line_pattern       行级正则（上下文敏感禁令——import iv8 而非 iv8.eval）
+//   pattern            token 级禁令（缺省锚定 \b(token)\b 全词匹配）
+//   allow[]            本规则豁免 globs（一等政策——上游 oracle 脚本合法持有）
+//   exts[]             本规则文件扩展名集（缺省=全局 scan_exts）
+// findings: nslaw:dangling(warn) collision(error) format(warn) forbidden(error)
 //           unregistered-family(warn) registry-drift(warn) config(error)
 import fs from 'node:fs';
 import path from 'node:path';
@@ -78,21 +83,47 @@ if (cfg.extra_namespaces_from) {
 }
 
 // 模式编译：长模式优先（ADR-\d{4} 先于 AD-\d+ 免前缀吞并）；^$ 锚剥离后嵌 \b()\b
-const nsl = nsList.filter(n => n && typeof n.pattern === 'string');
+// role=forbidden 条目无 pattern 亦可（line_pattern 承载）——先按 role 分流再校验
+const ROLE_OK = new Set(['id', 'value', 'forbidden']);
+const nsl = nsList.filter(n => n && typeof n === 'object');
 for (const n of nsl) {
-  try { n._re = new RegExp(n.pattern); n._body = n.pattern.replace(/^\^|\$$/g, ''); }
-  catch { emit('nslaw:config', 'error', '(nslaw)', 0, 'pattern 为合法正则',
-    `${n.prefix}: ${n.pattern}`, '修 pattern'); }
+  n._role = n.role || 'id';
+  if (!ROLE_OK.has(n._role)) {
+    emit('nslaw:config', 'error', '(nslaw)', 0, `role ∈ ${[...ROLE_OK].join('|')}`,
+      `${n.prefix}: ${n.role}`, '修 registry role');
+    n._role = 'id';
+  }
+  if (typeof n.pattern === 'string') {
+    try { n._re = new RegExp(n.pattern); n._body = n.pattern.replace(/^\^|\$$/g, ''); }
+    catch { emit('nslaw:config', 'error', '(nslaw)', 0, 'pattern 为合法正则',
+      `${n.prefix}: ${n.pattern}`, '修 pattern'); }
+  }
 }
-const idNs = nsl.filter(n => n.role !== 'value');
-const allBodies = nsl.map(n => n._body).filter(Boolean)
+// forbidden 规则编译：line_pattern 行级 / pattern token 级；allow=规则级豁免（一等政策）
+const forbNs = nsl.filter(n => n._role === 'forbidden');
+for (const n of forbNs) {
+  const src = n.line_pattern || (n._body ? `\\b(?:${n._body})\\b` : null);
+  if (!src) {
+    emit('nslaw:config', 'error', '(nslaw)', 0,
+      'forbidden 条目需 line_pattern 或 pattern', n.prefix, '补匹配器');
+    continue;
+  }
+  try { n._lre = new RegExp(src); }
+  catch { emit('nslaw:config', 'error', '(nslaw)', 0, 'line_pattern 为合法正则',
+    `${n.prefix}: ${src}`, '修正则'); }
+  n._allow = [].concat(n.allow || []).filter(Boolean);
+  n._exts = n.exts ? new Set([].concat(n.exts)) : null;
+}
+const memNs = nsl.filter(n => n._role !== 'forbidden' && n._re);
+const idNs = memNs.filter(n => n._role === 'id');
+const allBodies = memNs.map(n => n._body).filter(Boolean)
   .sort((a, b) => b.length - a.length);
 const LABEL_ANY = allBodies.length
   ? new RegExp(`\\b(${allBodies.join('|')})\\b`, 'g') : null;
 const LABEL_ID = idNs.length
   ? new RegExp(`\\b(${idNs.map(n => n._body).sort((a, b) => b.length - a.length).join('|')})\\b`, 'g')
   : null;
-const FORMATS = nsl.map(n => n._re);
+const FORMATS = memNs.map(n => n._re);
 const isRegistered = (tok) => FORMATS.some(r => r && r.test(tok));
 
 // ---------- 豁免面 ----------
@@ -237,10 +268,10 @@ for (const d of [].concat(cfg.defs || [])) {
 const refs = []; // role=id 引用 {id, rel, line}
 const refsCount = new Map(); // 全部已登记 token 的引用计数（value 亦入——dead 判定用）
 const nsStats = new Map(); // prefix -> {role, defs:Set, refs, files:Set, dangling}
-const nsOf = (tok) => nsl.find(n => n._re && n._re.test(tok));
+const nsOf = (tok) => memNs.find(n => n._re && n._re.test(tok));
 const bump = (ns, tok, rel) => {
   if (!nsStats.has(ns.prefix)) nsStats.set(ns.prefix,
-    { role: ns.role || 'id', defs: new Set(), refs: 0, files: new Set(), dangling: 0 });
+    { role: ns._role, defs: new Set(), refs: 0, files: new Set(), dangling: 0 });
   const r = nsStats.get(ns.prefix);
   r.refs++; r.files.add(rel);
   refsCount.set(tok, (refsCount.get(tok) || 0) + 1);
@@ -270,7 +301,7 @@ for (const rel of scanFiles) {
       const tok = m[1], ns = nsOf(tok);
       if (!ns) continue;
       bump(ns, tok, rel);
-      if (ns.role !== 'value') {
+      if (ns._role === 'id') {
         refs.push({ id: tok, rel, line: i + 1 });
         // 同行同 token 多次出现只报一次（dedupe 按 tok|rel|line）；
         // 局部定义位只消解同文件引用（文档局部编号语义）
@@ -292,6 +323,36 @@ for (const rel of scanFiles) {
       if (STOP.has(pre) || isRegistered(tok)) continue;
       if (!fam.has(pre)) fam.set(pre, { tokens: new Set(), files: new Set(), count: 0 });
       const f = fam.get(pre); f.tokens.add(tok); f.files.add(rel); f.count++;
+    }
+  }
+}
+
+// ---------- forbidden 禁现扫描（独立文件宇宙——exts 自定，不随 scan_exts） ----------
+const forbStats = new Map(); // prefix -> {hits, files:Set}
+if (forbNs.length) {
+  for (const f of facts) {
+    if (f.kind !== 'file' || isEx(f.unit)) continue;
+    const rel = f.unit, ext = path.extname(rel);
+    const rules = forbNs.filter(n => n._lre &&
+      (!n._exts || n._exts.has(ext)) &&
+      !(n._allow.length && n._allow.some(g => globMatch(rel, g))));
+    if (!rules.length) continue;
+    const text = readRel(rel);
+    if (text === null) continue;
+    let inFence = false;
+    const lines = text.split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (/^\s*(```|~~~)/.test(line)) { inFence = !inFence; continue; }
+      if (inFence) continue;
+      for (const n of rules) {
+        if (!n._lre.test(line)) continue;
+        emit('nslaw:forbidden', 'error', rel, i + 1,
+          `禁用标记 ${n.prefix}`, line.trim().slice(0, 100),
+          n.note || '移除命中或登记 allow 豁免');
+        if (!forbStats.has(n.prefix)) forbStats.set(n.prefix, { hits: 0, files: new Set() });
+        const s = forbStats.get(n.prefix); s.hits++; s.files.add(rel);
+      }
     }
   }
 }
@@ -340,7 +401,7 @@ if (cfg.prose_from) {
     prosePrefixes.delete(null);
     const bareOf = (n) =>
       (String(n.prefix).match(/^([A-Z][A-Z0-9]*)/) || [null, null])[1];
-    const jsonBare = new Set(nsl.map(bareOf).filter(Boolean));
+    const jsonBare = new Set(memNs.map(bareOf).filter(Boolean));
     const jsonBareId = new Set(idNs.map(bareOf).filter(Boolean));
     for (const p of prosePrefixes)
       if (!jsonBare.has(p))
@@ -360,7 +421,7 @@ for (const [id] of defined) {
   const ns = nsOf(id);
   if (!ns) continue;
   if (!nsStats.has(ns.prefix)) nsStats.set(ns.prefix,
-    { role: ns.role || 'id', defs: new Set(), refs: 0, files: new Set(), dangling: 0 });
+    { role: ns._role, defs: new Set(), refs: 0, files: new Set(), dangling: 0 });
   nsStats.get(ns.prefix).defs.add(id);
 }
 let dead = 0;
@@ -377,7 +438,8 @@ for (const [pre, n] of danglingCount)
 
 const totalRefs = [...nsStats.values()].reduce((s, r) => s + r.refs, 0);
 const localCount = [...localDefs.values()].reduce((s, set) => s + set.size, 0);
-report.push(`nslaw: registry=${cfg.registry} (${nsl.length} ns, id=${idNs.length})` +
+report.push(`nslaw: registry=${cfg.registry} (${memNs.length} ns` +
+  `${forbNs.length ? `+${forbNs.length} forbidden` : ''}, id=${idNs.length})` +
   ` defs=${defined.size} ids${localCount ? ` (+${localCount} local)` : ''}/${defSrc.length} sources` +
   `  scan=${scanFiles.length} files  refs=${totalRefs} (id-role ${refs.length})` +
   `  tokens=${facts.length} facts`);
@@ -391,7 +453,7 @@ for (const [pre, r] of [...nsStats.entries()].sort((a, b) => b[1].refs - a[1].re
     String(r.refs).padStart(7) + String(r.files.size).padStart(7) +
     String(r.dangling).padStart(10) + String(deadN).padStart(6));
 }
-const emptyNs = nsl.filter(n => !nsStats.has(n.prefix));
+const emptyNs = memNs.filter(n => !nsStats.has(n.prefix));
 if (emptyNs.length)
   report.push(`零观测命名空间（${emptyNs.length}）：` + emptyNs.map(n => n.prefix).join(', '));
 if (fam.size) {
@@ -401,5 +463,15 @@ if (fam.size) {
     report.push(`  ${pre}: ${f.tokens.size} tokens/${f.count} hits @ ${[...f.files].slice(0, 3).join(', ')}`);
 }
 report.push(`dead defs（已登记零引用）: ${dead}`);
+if (forbNs.length) {
+  report.push('');
+  report.push('forbidden rules（禁现法——命中即 error finding）:');
+  for (const n of forbNs) {
+    const s = forbStats.get(n.prefix) || { hits: 0, files: new Set() };
+    report.push(`  ${n.prefix}: ${s.hits} hits @ ${s.files.size} files` +
+      `${n._allow.length ? `（allow ${n._allow.length} globs）` : ''}` +
+      (n.note ? ` — ${n.note}` : ''));
+  }
+}
 for (const line of report) console.log(line);
 process.exit(0);

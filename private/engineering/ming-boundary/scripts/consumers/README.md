@@ -11,7 +11,7 @@ evaluator（check-boundaries.mjs）恒在，不在 `consumers:` 段列举。
 | `emit-skeleton` | files | manual | **是** | 从观察拓扑起草 `boundaries.suggested.yaml`（推断稿，一律 warn 级，须人工审） |
 | `diff` | report | ci/manual | 否 | 事实面差分（config.baseline 必填，仓根相对路径） |
 | `docclass` | findings | staged/ci/manual | 否 | docClass 头判定（config.spec=docclass.yaml 必填）——classify 纯路径先筛、命中类才读件；遍历域=facts file facts（gitignored 治理文档本机照判、CI 真空过） |
-| `nslaw` | findings+report | ci/manual | 否 | 标识命名空间法律（config.registry=ming.1 namespaces.json 必填）——defs×refs join 审计：悬空引用/撞名/格式/未登记族/散文-机读漂移 + per-ns 统计 |
+| `nslaw` | findings+report | ci/manual | 否 | 标识命名空间法律（config.registry=ming.1 namespaces.json 必填）——defs×refs join 审计：悬空引用/撞名/格式/未登记族/散文-机读漂移 + `role=forbidden` 禁现法（line_pattern/allow/exts）+ per-ns 统计 |
 
 ## 选用与配置
 
@@ -47,12 +47,13 @@ consumers:
 | `domains_from` | 否 | metrics 命名空间段的契约路径（仓根相对，缺省 `boundaries.yaml`；契约缺席则跳过该段） |
 | `out` | 否 | emit-skeleton 输出路径（仓根相对，缺省 `boundaries.suggested.yaml`；越界拒、已存在拒写） |
 | `registry` | nslaw 必填 | ming.1 namespaces.json 仓根相对路径（schema 归 ming-l-paradigm 立法） |
-| `defs` | 否 | nslaw 实例登记源 `[{path, mode, pattern?, field?}]`；mode ∈ first_col/heading/bold/tokens/filename（path=目录，pattern 整段 match 即 ID）/json_field/section_list |
+| `defs` | 否 | nslaw 实例登记源 `[{path, mode, pattern?, field?}]`；mode ∈ first_col/heading/bold/tokens/filename（path=目录，pattern 整段 match 即 ID）/json_field/section_list；`local: true` 文档局部定义位（只消解同文件引用）；`format` 检查仅对 first_col/json_field/section_list 权威位生效 |
 | `scan_exts` | 否 | nslaw 扫描扩展名（缺省 `[".md"]`） |
 | `scan_exclude` | 否 | nslaw 追加豁免 globs（叠加契约 exemptions） |
 | `scan_exclude_from` | 否 | nslaw 豁免清单文件（行首 glob + `#` 注释） |
 | `prose_from` | 否 | nslaw 散文登记处文档——表内反引号前缀与 registry 双向互锁（反向只查 role=id） |
 | `extra_namespaces_from` | 否 | nslaw 行首前缀清单（`PREFIX # 注释` 行，如 IV8 work_id_local_namespaces.txt）——合成 role=value 命名空间 `^<P>-?\d+[a-z]?$`，已在 registry 的裸前缀跳过 |
+| `role=forbidden` | — | nslaw registry 条目的反面法（非 ID 命名空间）：`line_pattern` 行级正则（上下文敏感，如 `\b(?:import\|from)\s+foo\b`）或 `pattern` token 级（`\b(tok)\b` 全词）；`allow[]` 本规则豁免 globs；`exts[]` 本规则扩展名集（缺省=scan_exts，forbidden 扫描独立于 token 宇宙）——命中出 `nslaw:forbidden` **error** |
 | `contract_from` | 否 | nslaw 豁免来源契约（缺省 `boundaries.yaml`） |
 | `min_family` | 否 | nslaw 未登记族最少成员数（缺省 2） |
 | `timeout_ms` | 否 | 默认 120s |

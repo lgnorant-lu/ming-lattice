@@ -89,6 +89,12 @@ rules:
 #     # prose_from: docs/conventions/naming.md  # 散文登记处与 registry 双向互锁（可选，反向只查 role=id）
 #     # extra_namespaces_from: .local-ns.txt    # 行首前缀清单合成 value 族（可选）
 #     # scan_exclude_from: .workid-exempt.txt   # 行首 glob 豁免清单（可选）
+#     # registry 可含 role=forbidden 禁现条目（反面法）：
+#     #   { "prefix": "BAN-FOO", "role": "forbidden",
+#     #     "line_pattern": "\\b(?:import|from)\\s+foo\\b",   # 行级正则
+#     #     "exts": [".py", ".rs"],                            # 规则专属文件面
+#     #     "allow": ["docs/**", "tools/oracle.py"],           # 一等豁免政策
+#     #     "note": "裸 import foo 命中上游包" }
 #   my-check:
 #     entry: boundary.consumers/my-check.mjs   # 须解析在仓根内，越界即拒
 #     phases: [ci]

@@ -1242,6 +1242,10 @@ export async function run() {
         { prefix: 'XX-<n>', pattern: '^XX-\\d+$', domain: 'x', ordering: 'alloc', role: 'value' },
         { prefix: 'F-<NNN>', pattern: '^F-\\d{3,}$', domain: 'x', ordering: 'alloc', role: 'id' },
         { prefix: 'F-<n>', pattern: '^F-\\d{1,2}$', domain: 'x', ordering: 'alloc', role: 'value' },
+        { prefix: 'BAN-FOO', role: 'forbidden',
+          line_pattern: '\\b(?:import|from)\\s+foo(?=[\\s.;,)]|$)',
+          exts: ['.py', '.md'], allow: ['docs/allowed.md'],
+          note: '裸 import foo 命中上游包——本仓一律 import foo_rs' },
         { prefix: 'DEAD-<n>', pattern: '^DEAD-\\d+$', domain: 'x', ordering: 'alloc', role: 'id' }] }));
       cf('docs/idx/reg.md', '# 登记表\n| ID | t |\n|---|---|\n| MR-ID | name |\n| A1 | x |\n| A3 | y |\n| WS-1 | z |\n| ADR-0002 | q |\n');
       cf('docs/idx/other.md', '# 第二定义位\n| A1 | dup |\n|---|---|\n| MR-ID | name |\n'); // 撞名 A1；MR-ID 为模板表头须跳过
@@ -1251,6 +1255,8 @@ export async function run() {
       cf('docs/loc.md', '# 局部 oracle 文档\nA01 A02 是本文档局部行号。\n');
       cf('docs/adr/ADR-0001-x.md', '# ADR-0001\n');
       cf('docs/adr/ADR-0002-y.md', '# ADR-0002 镜像\n');
+      cf('src/bad.py', 'import foo\nimport foo_rs\nfrom foo import x\n# from foo#Bar 不算\n');
+      cf('docs/allowed.md', '# 上游教学\nimport foo 示例合法（allow 豁免）。\n');
       cf('extras.txt', '# 行首前缀清单\nTEC  # tech 合成 value 族\n');
       cf('boundaries.yaml', 'version: 1\n' +
         'domains:\n  - name: docs\n    match: "docs/**"\n' +
@@ -1311,9 +1317,19 @@ export async function run() {
         'F-<1,2> 位宽须归 value 族');
       assert.ok(j.findings.some(f => f.rule === 'nslaw:dangling'
         && f.expect.includes('F-123')), 'F-<3+> 位宽须归 id 族并查悬空');
+      // role=forbidden：line_pattern 行级禁令 + exts 扩面 + allow 豁免
+      const fbHits = j.findings.filter(f => f.rule === 'nslaw:forbidden');
+      assert.strictEqual(fbHits.length, 2,
+        'forbidden 命中须恰 2 条（import foo + from foo import）');
+      assert.ok(fbHits.every(f => f.severity === 'error' && f.unit === 'src/bad.py'),
+        'forbidden 违例须 error 级且落在违规文件');
+      assert.ok(!j.findings.some(f => f.unit === 'docs/allowed.md'
+        && f.rule === 'nslaw:forbidden'), 'allow 豁免文件不得出 finding');
       // 双通道：findings 与 report 同到
       const rep = j.reports.find(x => x.id === 'nslaw');
       assert.ok(rep && rep.text.includes('namespace'), 'nslaw report 段须在场');
+      assert.ok(rep.text.includes('BAN-FOO'), 'forbidden 规则须入报告段');
+      assert.ok(rep.text.includes('2 hits'), 'forbidden 报告须计命中数');
       assert.ok(rep.text.includes('DEAD-<n>'), '零观测命名空间须列入报告');
       assert.ok(rep.text.includes('A<n>') && rep.text.includes('defs'), '统计表须含 per-ns 行');
       assert.ok(rep.text.includes('TEC-<n>'), 'extra 合成族须入统计表');
