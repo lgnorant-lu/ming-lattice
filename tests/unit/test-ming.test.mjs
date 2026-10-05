@@ -111,6 +111,32 @@ export function run() {
     assert.match(r.stdout, /未入 registry private/);
   }
 
+  // 6b. kit 领养仓——无 registry/零成员/未声明 sources → 零 E 零 W（IV8 试点同形）
+  {
+    const root = mkRoot();
+    fs.mkdirSync(path.join(root, '.ming', 'iv8'), { recursive: true });
+    fs.writeFileSync(path.join(root, '.ming', 'ming.yaml'),
+      'manifestVersion: "1"\nscope: ming\nkinds:\n  - lattice\n  - pack\n  - kit\nprojects:\n  - iv8\n');
+    fs.writeFileSync(path.join(root, '.ming', 'iv8', 'package.yaml'),
+      'manifestVersion: "1"\nname: ming-iv8\nversion: "0.1.0"\nkind: kit\npackages:\n  members:\n');
+    const r = issues(root);
+    assert.equal(r.status, 0, `kit 领养仓应零 E: ${r.stdout}`);
+    assert.doesNotMatch(r.stdout, /members 缺\/空|registry/, 'kit 应豁免 members/registry 提示');
+  }
+
+  // 6c. kit 声明 sources.registry 而文件缺席 → E（条件化不豁免已声明指针）
+  {
+    const root = mkRoot();
+    fs.mkdirSync(path.join(root, '.ming', 'iv8'), { recursive: true });
+    fs.writeFileSync(path.join(root, '.ming', 'ming.yaml'),
+      'manifestVersion: "1"\nscope: ming\nkinds:\n  - lattice\n  - pack\n  - kit\nprojects:\n  - iv8\n');
+    fs.writeFileSync(path.join(root, '.ming', 'iv8', 'package.yaml'),
+      'manifestVersion: "1"\nname: ming-iv8\nversion: "0.1.0"\nkind: kit\npackages:\n  members:\nsources:\n  registry: registry.yaml\n');
+    const r = issues(root);
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /sources\.registry 指向不存在/);
+  }
+
   // 7. weight 分层——heavy 默认面排除/--include-heavy 与 --only 可达
   {
     const root = mkRoot();

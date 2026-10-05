@@ -132,9 +132,9 @@ function checkPackage(root, proj, pkgPath, kinds, regPrivate, issues) {
   const prefix = m.naming?.prefix;
   if (prefix && m.name && !m.name.startsWith(prefix)) W(`name=${m.name} 不以 naming.prefix=${prefix} 起头`);
 
-  // members glob → 目录
+  // members glob → 目录（kind=kit 合法零成员——领养仓无 ming-* 子包约定）
   const globs = m.packages?.members;
-  if (!Array.isArray(globs) || !globs.length) W('packages.members 缺/空——pack 类成员约定未立');
+  if ((!Array.isArray(globs) || !globs.length) && m.kind !== 'kit') W('packages.members 缺/空——pack 类成员约定未立');
   const memberDirs = [];
   for (const g of globs || []) {
     const r = expandGlob(root, g);
@@ -143,20 +143,26 @@ function checkPackage(root, proj, pkgPath, kinds, regPrivate, issues) {
     memberDirs.push(...r.dirs);
   }
 
+  // 成员↔registry 对账仅在该包声明 sources.registry 时启用——
+  // 领养仓（kind=kit/无单元账）不做私有条目对账；声明了则由 sources 存在性校验兜底缺席
+  const regDeclared = !!m.sources?.registry;
   const regByName = new Map(regPrivate.map(e => [e.name, e]));
   for (const dir of memberDirs.sort()) {
     const base = path.basename(dir);
     if (!fs.existsSync(path.join(dir, 'SKILL.md'))) E(`成员包缺 SKILL.md: ${path.relative(root, dir).replace(/\\/g, '/')}`);
+    if (!regDeclared) continue;
     const ent = regByName.get(base);
     if (!ent) { E(`成员目录未入 registry private: ${base}`); continue; }
     if (ent.metaSystem !== 'true') E(`ming-* 成员缺 metaSystem: true: ${base}`);
   }
   // 反向：registry 里 ming-* 私有条目必须落在任一项目 members 面内且目录存在
-  const memberSet = new Set(memberDirs.map(d => path.resolve(d)));
-  for (const e of regPrivate) {
-    if (!NAME_RE.test(e.name)) continue;
-    const dir = path.resolve(root, e.path || '');
-    if (!memberSet.has(dir)) E(`registry ming-* 条目不在 members 面内或目录缺席: ${e.name} (${e.path})`);
+  if (regDeclared) {
+    const memberSet = new Set(memberDirs.map(d => path.resolve(d)));
+    for (const e of regPrivate) {
+      if (!NAME_RE.test(e.name)) continue;
+      const dir = path.resolve(root, e.path || '');
+      if (!memberSet.has(dir)) E(`registry ming-* 条目不在 members 面内或目录缺席: ${e.name} (${e.path})`);
+    }
   }
 
   for (const [k, rel] of Object.entries(m.sources || {})) {
@@ -194,11 +200,10 @@ export function checkMing(root = ROOT) {
   for (const d of dirNames) if (!projSet.has(d)) W(`未登记项目目录: .ming/${d}/（知情登记可补，非项目则移走）`);
   for (const p of projects) if (!dirNames.includes(p)) E(`登记项目无目录: .ming/${p}/`);
 
-  // ── registry 私有条目（成员对账共用） ──
+  // ── registry 私有条目（成员对账共用；缺席合法——未声明 sources.registry 的项目不做对账） ──
   let regPrivate = [];
   const regPath = path.join(root, 'registry.yaml');
   if (fs.existsSync(regPath)) regPrivate = parsePrivate(fs.readFileSync(regPath, 'utf8'));
-  else E('registry.yaml 缺席——单元账 SoT 未立');
 
   // ── 项目包校验 ──
   for (const proj of projects) {

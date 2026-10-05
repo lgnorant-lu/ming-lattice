@@ -1,10 +1,11 @@
 # sync.ps1 — 按 registry.yaml 把启用的 skill 部署到各客户端目录
-# 链路: skills-collection/ →(symlink 或 copy fallback)→ 目标客户端 skills 目录（如 .cc-switch/skills → cc-switch 再分发到 ~/.claude/skills）
+# 链路: ming-lattice/ →(symlink 或 copy fallback)→ 目标客户端 skills 目录（如 .cc-switch/skills → cc-switch 再分发到 ~/.claude/skills）
 #
 # 用法:
 #   powershell -File scripts/sync.ps1                # 全量部署
 #   powershell -File scripts/sync.ps1 -WhatIf        # 演练（不实际改动，不创建目录）
 #   powershell -File scripts/sync.ps1 -Module ida-reverse   # 只部署某模块
+#   powershell -File scripts/sync.ps1 -NoLedger             # 跳过部署态账本快照
 #
 # 行为:
 #   - 目标已存在且来源不同 → 移入 .trash/<名称> 备份后重建
@@ -16,7 +17,8 @@ param(
     [string]$RegistryPath = (Join-Path (Split-Path $PSScriptRoot -Parent) 'registry.yaml'),
     [string]$RepoRoot = (Split-Path $PSScriptRoot -Parent),
     [Alias('DryRun')][switch]$WhatIf,
-    [string[]]$Module = @()
+    [string[]]$Module = @(),
+    [switch]$NoLedger
 )
 
 $ErrorActionPreference = 'Stop'
@@ -196,6 +198,15 @@ if (-not $WhatIf) {
         exit 1
     }
     Write-Host "[sync] 验证通过: $($units.Count) 个部署单元 SKILL.md 均可解析" -ForegroundColor Green
+
+    # 部署态账本: 快照落到 .ming/<project>/state/deploy-ledger.json（观察性对账; 失败不阻塞部署）
+    if (-not $NoLedger) {
+        try {
+            & node (Join-Path $PSScriptRoot 'deploy-ledger.mjs') --write 2>&1 | ForEach-Object { Write-Host "        $_" -ForegroundColor DarkGray }
+        } catch {
+            Write-Host "        [ledger] 快照失败（不阻塞部署）: $($_.Exception.Message)" -ForegroundColor Yellow
+        }
+    }
 }
 
 Write-Host ""

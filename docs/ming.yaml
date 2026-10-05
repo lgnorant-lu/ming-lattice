@@ -1,5 +1,5 @@
 ming_v: "1"
-project: skills-collection
+project: ming-lattice
 tier: minimal
 # 只声明有真实文档实例的域；新域须先在此登记再实例化（audit-domains 反向检查）
 domains: [meta, spec, gov, verify, ops, know]

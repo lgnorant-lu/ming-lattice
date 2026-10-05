@@ -1,4 +1,4 @@
-# ming-skills-router — Agent 技能集散与工程中枢
+# ming-lattice — Agent 技能集散与工程中枢
 
 本仓库是统一技能集散地与工程中枢：registry.yaml 是**单一事实源**，vertical/deployable/private 分层存放，scripts/ 负责增删改查部署。
 

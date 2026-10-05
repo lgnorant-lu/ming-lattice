@@ -209,7 +209,7 @@ export function mergeCycloneDxReports(reports, { generatedAt, partial = false, f
   ];
   const payload = { sourceFiles, components: componentList, dependencies: dependencyList, properties };
   const metadata = {
-    component: { type: 'application', name: 'ming-skills-collection' },
+    component: { type: 'application', name: 'ming-lattice' },
     properties: [
       ...properties,
       ...sourceFiles.map(source => property('ming.source_lockfile', source)),
