@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { createPlan, ALL_SUITE_NAMES, PLAN_ROOT } from '../../scripts/plan.mjs';
+import { createPlan, ALL_SUITE_NAMES, PLAN_ROOT, STAGED_DIFF_FILTER } from '../../scripts/plan.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 
@@ -154,6 +154,38 @@ refs/heads/feat 3333333333333333333333333333333333333333 refs/heads/feat 0000000
   assert.deepEqual(propTestPlan.jobs, ['prop-cli']);
   const checkSkillTestPlan = createPlan({ stage: 'pre-commit', files: ['tests/unit/test-check-skill.test.mjs'] });
   assert.ok(checkSkillTestPlan.jobs.includes('check-skill-unit'));
+
+  // 15. 非 test-* 被消费件归位消费套件（夹具/语料/门配置——默认三件套是失聪面）
+  assert.deepEqual(
+    createPlan({ stage: 'pre-commit', files: ['tests/coverage-exempt.txt'] }).jobs,
+    ['test-coverage']);
+  assert.deepEqual(
+    createPlan({ stage: 'pre-commit', files: ['tests/contract/route-decision-compatibility.json'] }).jobs,
+    ['route-decision-compatibility']);
+  assert.deepEqual(
+    createPlan({ stage: 'pre-commit', files: ['tests/evals/recall-corpus/a-tier.jsonl'] }).jobs,
+    ['recall-eval', 'skill-recall']);
+  assert.deepEqual(
+    createPlan({ stage: 'pre-commit', files: ['tests/evals/route-effects.json'] }).jobs,
+    ['route-effects']);
+  assert.deepEqual(
+    createPlan({ stage: 'pre-commit', files: ['tests/fixtures/mb-golden/facts.golden.jsonl'] }).jobs,
+    ['ming-boundary']);
+  assert.deepEqual(
+    createPlan({ stage: 'pre-commit', files: ['tests/fixtures/docclass-xlang/cases.json'] }).jobs,
+    ['docclass']);
+
+  // 16. --stage 词表 fail-closed（bogus stage 不得空计划放行）
+  const badStage = spawnSync(process.execPath, [
+    path.join(root, 'scripts/plan.mjs'), '--stage', 'bogus', '--files', 'x'
+  ], { encoding: 'utf8' });
+  assert.equal(badStage.status, 2, 'unknown --stage must exit 2');
+  assert.match(badStage.stderr, /unknown stage/);
+
+  // 17. STAGED_DIFF_FILTER 词表——typechange T 缺席会让 symlink 换脚本失明
+  for (const flag of ['A', 'C', 'M', 'R', 'D', 'T']) {
+    assert.ok(STAGED_DIFF_FILTER.includes(flag), `diff-filter missing ${flag}`);
+  }
 
   console.log('  -> plan schema, fail-closed, monotonicity, categories, pre-push parsing, CLI contract, suite-table drift and sub-path mapping passed');
 }

@@ -123,6 +123,14 @@ export const CATEGORY_RULES = [
       // 约定回退：test-<suite>(.test)?.mjs → 同名套件（须在全集内，防拼写臆造）
       const m = file.match(/^tests\/[^/]+\/test-([a-z0-9-]+)\.(?:test\.)?mjs$/);
       if (m && ALL_SUITE_NAMES.includes(m[1])) return [m[1]];
+      // 非 test-* 命名的被消费件（夹具/语料/门配置）——按目录归位到消费套件，
+      // 否则落默认三件套=改动语料却从不跑消费它的套件（失聪面）
+      if (file === 'tests/coverage-exempt.txt') return ['test-coverage'];
+      if (file === 'tests/contract/route-decision-compatibility.json') return ['route-decision-compatibility'];
+      if (/^tests\/fixtures\/docclass/.test(file)) return ['docclass'];
+      if (/^tests\/fixtures\/mb-golden/.test(file)) return ['ming-boundary'];
+      if (/^tests\/evals\//.test(file))
+        return /route-effects/.test(file) ? ['route-effects'] : ['recall-eval', 'skill-recall'];
       return ['hook-validation', 'manifest-unit', 'adapter-contract'];
     }
   }
@@ -261,6 +269,9 @@ export function createPlan({ stage = 'pre-commit', files = [] } = {}) {
   };
 }
 
+// 暂存区 diff-filter 词表——独立常量供契约测试断言（typechange T 不可缺席）
+export const STAGED_DIFF_FILTER = 'ACMRDT';
+
 /**
  * 获取当前 git 暂存区文件列表
  */
@@ -270,7 +281,9 @@ export function getStagedFiles(cwd = ROOT) {
   // D 必须在列：计划器按路径分类不读内容——滤掉删除会让 `git rm tests/...`
   // 的提交在 verify affected 下零任务放行（覆盖自毁成绿）。files.mjs 的
   // 内容扫描枚举保持 ACMR 不变（删除物无 blob 可读，语义不同源）。
-  const output = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMRD', '-z'], {
+  // T 同理：typechange（常规件↔symlink 互换）是真实变异——脚本被换成链接
+  // 而计划器失明的话，门禁形同虚设。
+  const output = execFileSync('git', ['diff', '--cached', '--name-only', `--diff-filter=${STAGED_DIFF_FILTER}`, '-z'], {
     cwd,
     encoding: 'utf8',
     stdio: ['pipe', 'pipe', 'pipe']
@@ -292,6 +305,10 @@ export function runCli() {
     const arg = args[i];
     if (arg === '--stage') {
       stage = args[++i];
+      if (!['pre-commit', 'pre-push'].includes(stage)) {
+        console.error(`unknown stage '${stage}'. Valid choices: pre-commit, pre-push`);
+        process.exit(2);
+      }
     } else if (arg === '--explain') {
       explain = true;
     } else if (arg === '--json') {
