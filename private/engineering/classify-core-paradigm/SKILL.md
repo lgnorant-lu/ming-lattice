@@ -40,6 +40,21 @@ PMEST 分面公式：枚举式鸽笼在维度交叉处必然爆炸，分面各�
 枚举值走注册表 fail-closed（未注册值即违规）；自由标签圈禁在
 extra/folksonomy 区不许进键位。词表外延即契约外延——新值先注册后使用。
 
+### 公理 3 补充：宿主表达力光谱
+
+封闭词表的强度下限由宿主语言兜底能力决定，词表纪律按光谱配重：
+
+| 宿主形态 | 穷尽性 | 固有风险 | 纪律配重 |
+|---|---|---|---|
+| Rust enum / ADT（sum type） | 编译器强制 `match` 穷尽，加值全仓飘红 | 几乎无 | 最轻——编译器即注册表 |
+| Java/Kotlin sealed class + when | 编译器可强制（`sealed` + exhaustive `when`） | 退化回普通 class 即失保护 | 轻——须声明 sealed 且禁 else 分支 |
+| TS union 字面量 / const enum | 类型层穷尽，运行时零保障 | numeric enum 反向映射双向污染、`is` 谓词手写 | 中——禁 numeric enum，封闭靠 lint |
+| Python Enum / Literal | 运行时校验，静态靠 mypy 提示 | 构造松散、`else` 吞掉新值 | 重——词表注册表 + 单测穷举例表 |
+| Go iota / string 常量 | 纯约定，无机制兜底 | 零值默认命中、switch 无穷尽检查 | 最重——显式 `_ = x(0)` 防零值 + 词表文件单一来源 |
+
+判据：宿主每降一档，"封闭词表治理"的实现成本就转移给流程层——
+语言不管穷尽，词表注册表 + 穷尽性测试就必须管。
+
 ### 公理 4：豁免排气阀
 
 MECE 是愿景不是现货——**declared-residue 桶必须一等存在**

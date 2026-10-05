@@ -1554,7 +1554,13 @@ private:
   - name: classify-core-paradigm
     path: private/engineering/classify-core-paradigm
     enabled: true
-    note: "分类轴设计元规则 (分面优于鸽笼 + 决策分化律 + 封闭词表 + 豁免排气阀 + 三平面分离 + 容忍分层)"
+    note: "分类轴设计元规则 (分面优于鸽笼 + 决策分化律 + 封闭词表 + 豁免排气阀 + 三平面分离 + 容忍分层 + 宿主表达力光谱)"
+    deploy:
+      claude: true
+  - name: compiler-pipeline-paradigm
+    path: private/engineering/compiler-pipeline-paradigm
+    enabled: true
+    note: "编译器流水线九段契约元规则 (lex→codegen 段间契约 + 质量vs编译延迟取舍 + 抽象机选型 + ABI边界)"
     deploy:
       claude: true
   - name: ming-l-paradigm
@@ -1729,3 +1735,11 @@ candidates:
       - "2026-09-18 PULSE 六门过审记录验证（17-blueprint/18-spec 两次全过）"
     graduation: "出现对非本流水线产物的设计稿评审需求时立项"
     openedAt: 2026-09-18
+  - name: abstraction-economics
+    domain: engineering
+    path: private/engineering/abstraction-economics
+    rationale: "过早抽象经济学元规则——Rule of Three/错误抽象撤回成本/LoB 行为局部性/投机抽象红旗（Premature Abstraction 频道立台思想的范式化）"
+    evidence:
+      - "2026-10-06 频道素材萃取：仓内已有同构制度化（candidates 候审=Rule of Three 变体，arch §4.5 抽象时机判据已先行落地其公理）"
+    graduation: "第二个跨仓场景（非 IV8/skills-collection）需要抽象时机独立裁决面时立项——当前判据已由 arch §4.5 承载"
+    openedAt: 2026-10-06

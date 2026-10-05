@@ -277,7 +277,7 @@ status: descriptive
 | **testing-scenario-cli** | 场景特化 | 命令行与脚本工具契约：参数退出码矩阵、可注入FS/Env、幂等性与防半成品 | cli-test, command-line-testing, exit-codes, golden-files |
 | **testing-scenario-scraper** | 场景特化 | 采集爬虫与清洗管道：离线 Fixture 优先、领域不变量、选择器健康度、活网仅作探针 | scraper-testing, crawler-test, selector-health, fixture-parsing |
 
-### 3. 工程元规范族（engineering/* 根级 18 包）
+### 3. 工程元规范族（engineering/* 根级 19 包）
 
 > 惯例：`metadata.layer` + `compose` 自声明装配；`*-paradigm` 带 references/sources.md 文献链 + Compose 节。导引见 `private/engineering/README.md`。
 
@@ -296,7 +296,8 @@ status: descriptive
 | explore-core-paradigm | 发散探索元规则：升降模型 + 五算子换轨（VS尾部采样/异策略/形态学/premortem/ToT）+ disagree续探agree承诺判据 | 已部署 |
 | depth-core-paradigm | 审计下潜深度裁决：动态序贯下潜（层级假设→区分度探针→后验收敛）+ 静态先验绊线 + 可行动性停止判据 | 已部署 |
 | mutation-safety-paradigm | 变更安全元规则：L0-L5 变更阶梯 + dry-run 三戒律（同路径/输出同构/零副作用）+ read_only/idempotent/non_idempotent 变更类声明 | 已部署 |
-| classify-core-paradigm | 分类轴设计元规则：分面优于鸽笼 + 决策分化律 + 封闭词表治理 + 豁免排气阀 + 三平面分离 + 容忍分层 | 已部署 |
+| classify-core-paradigm | 分类轴设计元规则：分面优于鸽笼 + 决策分化律 + 封闭词表治理 + 豁免排气阀 + 三平面分离 + 容忍分层 + 宿主表达力光谱 | 已部署 |
+| compiler-pipeline-paradigm | 编译器流水线九段契约元规则：lex→codegen 段间契约表 + 质量vs编译延迟取舍册 + 抽象机选型 + ABI 边界 | 已部署 |
 | ming-l-paradigm | 项目结构域分层元规则：Ming-L 九域全景 x 七动力学 + 规则属性系统 + 域准入判据 + 候审档机制 | 已部署 |
 | ming-skill-forge | 技能包创作元规则：渐进披露预算 + 触发面工艺 + 注册路由接线 + check-skill.mjs 硬门控 | 已部署 |
 | ming-experience-direction | 体验导演式设计流水线：文档阶梯 + 宪法约束源 + 叙事主干 + OQ 状态机 + 六门过审 + 媒介映射预算 | 已部署 |

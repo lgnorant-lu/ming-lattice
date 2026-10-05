@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-02T14:10:32.376Z",
+  "generatedAt": "2026-10-05T11:42:53.269Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -280,7 +280,8 @@
         "ming-skill-forge",
         "ming-experience-direction",
         "ming-distiller",
-        "ming-boundary"
+        "ming-boundary",
+        "compiler-pipeline-paradigm"
       ],
       "triggers": [
         "文档体系",
@@ -709,6 +710,25 @@
           "boundaries.yaml",
           "应然边",
           "接缝核验"
+        ],
+        "compiler-pipeline-paradigm": [
+          "编译器",
+          "compiler",
+          "lexer",
+          "parser",
+          "词法分析",
+          "语法分析",
+          "IR",
+          "中间表示",
+          "SSA",
+          "寄存器分配",
+          "JIT",
+          "AOT",
+          "codegen",
+          "指令选择",
+          "calling convention",
+          "linker",
+          "loader"
         ]
       }
     }
@@ -850,6 +870,7 @@
     "arch-core-paradigm": "ready",
     "binary-diff": "ready",
     "classify-core-paradigm": "ready",
+    "compiler-pipeline-paradigm": "ready",
     "config-core-paradigm": "ready",
     "contract-core-paradigm": "ready",
     "depth-core-paradigm": "ready",
@@ -946,6 +967,29 @@
         "状态机",
         "kind 字段",
         "词表"
+      ]
+    },
+    "compiler-pipeline-paradigm": {
+      "name": "compiler-pipeline-paradigm",
+      "description": "编译器流水线九段契约元规则——lex/parse/sem/IR/优化/后端/链接各段的输入输出契约、段间中间表示作为数据契约、质量vs编译延迟取舍模式（图着色vs线性扫描）、抽象机选型（RISC/CISC/栈机）。当设计编译器/转译器/代码生成器/IDL 流水线/DSL、评审 IR 设计与段间接口、做 JIT vs AOT 取舍时使用。触发词：编译器、compiler pipeline、词法分析、lexer、语法分析、parser、IR、中间表示、SSA、寄存器分配、register allocation、JIT、AOT、codegen、指令选择、calling convention、linker、loader、ELF。不适用：写业务代码用的正则/格式转换（那是普通解析非编译器）；SQL 查询优化器（同构但归数据库域）。",
+      "triggers": [
+        "编译器",
+        "compiler",
+        "lexer",
+        "parser",
+        "词法分析",
+        "语法分析",
+        "IR",
+        "中间表示",
+        "SSA",
+        "寄存器分配",
+        "JIT",
+        "AOT",
+        "codegen",
+        "指令选择",
+        "calling convention",
+        "linker",
+        "loader"
       ]
     },
     "config-core-paradigm": {

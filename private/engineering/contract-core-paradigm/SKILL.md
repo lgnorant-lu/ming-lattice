@@ -47,6 +47,27 @@ Postel「接收宽容」只适用于可预见扩展，不是把畸形当成功�
 
 `error_code` 与可观测事件、测试断言、文档 Reference 同一字典。
 
+## 3.5 ABI 是最硬契约
+
+ABI（Application Binary Interface）是数据契约的最底层形态——没有
+schema 文件、没有解析错误，违约直接表现为内存腐蚀与随机崩溃。
+其条款对应关系：
+
+| ABI 条款 | 契约语义 |
+|---|---|
+| caller-saved / callee-saved 寄存器分工 | 变更责任分配——谁破坏谁负责恢复，等价于"写者保证读者可恢复性" |
+| 参数寄存器序（SysV: RDI/RSI/RDX/RCX/R8/R9） | 字段顺序即契约，错位无类型检查兜底 |
+| 16B 栈对齐（CALL 前 RSP） | 布局约束违约不在调用点爆炸，在深处 SIMD 指令随机崩 |
+| Red Zone（叶函数 RSP-128 可用） | 显式声明的临时空间契约，信号处理是边界例外 |
+| GOT/PLT 延迟绑定 + PIC | 间接层换可重定位性——位置无关 = 地址不进入契约 |
+| struct layout / enum 底层类型 | C ABI 无字段号概念——字段增删即布局漂移，等价于删字段不升版本 |
+
+推论：**跨 FFI/共享库边界时，schema 纪律全部条款下移一层**——
+只加字段变成"只加尾部成员+版本化 layout"，宽容读取变成"显式
+size/version 字段协商"。ABI 无宽容读取：读错一字节即 UB，
+所以 binary 边界必须显式握手（version 字段/协商函数），
+不能像 JSON 一样靠忽略未知键兜底。
+
 ## 4. 生成物门禁（Artifact Gate）
 
 对 SBOM、SCA、manifest 或其它提交制品，生产者、schema、校验器、契约测试和文档必须作为一个变更单元维护：
