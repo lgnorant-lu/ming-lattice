@@ -41,9 +41,11 @@ if (!fs.existsSync(INSTALL_HOOKS)) die(`install-hooks 缺席: ${INSTALL_HOOKS}`)
 
 const steps = [];
 if (!opts['--skip-domains']) {
-  const cmd = ['node', SCAFFOLD_DOMAINS, '--target', path.join(target, 'docs'), '--project', path.basename(target)];
+  const cmd = [process.execPath, SCAFFOLD_DOMAINS, '--target', path.join(target, 'docs'), '--project', path.basename(target)];
   if (tier) cmd.push('--tier', tier);
-  steps.push({ name: '域骨架 (scaffold-domains)', cmd, dryRunNote: '[dry-run] 将实例化 docs/ 域骨架+ming.yaml+namespaces.json' });
+  if (dryRun) cmd.push('--dry-run');
+  steps.push({ name: '域骨架 (scaffold-domains)', cmd,
+    dryRunNote: '[dry-run] 将实例化 docs/ 域骨架+ming.yaml+namespaces.json（下方命令即可重现逐文件预览）' });
 }
 if (!opts['--skip-hooks']) {
   const cmd = ['pwsh', '-NoProfile', '-File', INSTALL_HOOKS, '-Target', target];
@@ -53,9 +55,14 @@ if (!opts['--skip-hooks']) {
 }
 if (!steps.length) die('--skip-domains + --skip-hooks = 无事可做');
 
+// dry-run 契约=零 spawn 静态计划（快且零副作用）；逐文件级预览由各步自身
+// 预览动词承担——打印的命令行含 --dry-run/-WhatIf，复制即得真实预览
 if (dryRun) {
   console.log(`scaffold-repo [dry-run]: ${target}`);
-  for (const s of steps) console.log(`  ${s.name}\n    ${s.dryRunNote || s.cmd.map(c => JSON.stringify(c)).join(' ')}`);
+  for (const s of steps) {
+    if (s.dryRunNote) console.log(`  ${s.name}\n    ${s.dryRunNote}`);
+    console.log(`  ${s.name} 命令行:\n    ${s.cmd.map(c => JSON.stringify(c)).join(' ')}`);
+  }
   process.exit(0);
 }
 

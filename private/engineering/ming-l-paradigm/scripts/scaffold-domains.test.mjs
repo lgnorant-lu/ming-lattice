@@ -175,5 +175,23 @@ function check(name, problems) {
   check('参数缺陷族 fail-closed', p);
 }
 
-console.log(`\n${pass} passed, ${fail} failed, 10 total`);
+// ── 11. --dry-run：列计划零落盘 + 不跑自证 + 已存在件标 overwrite ──
+{
+  const d = tmp(), t = path.join(d, 'docs');
+  const p = [];
+  const r1 = runScaffold(t, ['--tier', 'minimal', '--dry-run']);
+  if (r1.status !== 0) p.push(`dry-run exit=${r1.status}`);
+  if (!r1.stdout.includes('would-write')) p.push('dry-run 计划缺 would-write 标注');
+  if (!r1.stdout.includes('[dry-run]')) p.push('输出缺 [dry-run] 标记');
+  if (exists(t, 'META.md') || exists(t, 'ming.yaml')) p.push('dry-run 落了盘');
+  // 已有件 + --force --dry-run：预览应标 overwrite（覆写面可见是 preview 的核心价值）
+  fs.mkdirSync(t, { recursive: true });
+  fs.writeFileSync(path.join(t, 'META.md'), 'hand-written');
+  const r2 = runScaffold(t, ['--tier', 'minimal', '--force', '--dry-run']);
+  if (!r2.stdout.includes('overwrite')) p.push('--force --dry-run 缺 overwrite 标注');
+  if (read(t, 'META.md') !== 'hand-written') p.push('dry-run 改写了既有文件');
+  check('dry-run 预览零落盘+覆写可见', p);
+}
+
+console.log(`\n${pass} passed, ${fail} failed, 11 total`);
 process.exit(fail ? 1 : 0);

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // scaffold-domains.mjs — Ming-L 域脚手架（"立"动力学机械化）
-// 用法: node scaffold-domains.mjs --target <docs-dir> [--domains meta,spec,dev,findings,plan] [--tier minimal|standard|full] [--project NAME] [--force]
+// 用法: node scaffold-domains.mjs --target <docs-dir> [--domains meta,spec,dev,findings,plan] [--tier minimal|standard|full] [--project NAME] [--force] [--dry-run]
 // 行为: 按 assets/templates/ 实例化域骨架 + namespaces.json/ming.yaml 播种；
 //       默认不覆盖已存在文件（幂等可重放），--force 才覆写。
 // 自证: 生成后自动跑 audit-domains.mjs——E 级即 exit 1（骨架即合规形态的执行面）。
@@ -24,12 +24,13 @@ for (let i = 0; i < args.length; i++) {
     if (v === undefined || v.startsWith('--')) die(`旗标 ${a} 缺值（或把下一个旗标吞成了值）`);
     if (opts[a] !== undefined) die(`重复旗标: ${a}`);
     opts[a] = v; i++;
-  } else if (a === '--force') opts[a] = true;
+  } else if (a === '--force' || a === '--dry-run') opts[a] = true;
   else die(a.startsWith('--') ? `未知旗标: ${a}` : `不接受位置参数: ${a}（目录走 --target）`);
 }
 const target = path.resolve(opts['--target'] || 'docs');
 const project = opts['--project'] || path.basename(path.dirname(target));
 const force = !!opts['--force'];
+const dryRun = !!opts['--dry-run'];
 const tier = opts['--tier'] || null;
 const TIER_DOMAINS = {
   minimal:  ['meta', 'spec', 'findings'],
@@ -59,6 +60,10 @@ const results = [];
 function emit(rel, fromAbs) {
   const dest = path.join(target, rel);
   if (fs.existsSync(dest) && !force) { results.push({ rel, action: 'skip(exists)' }); return; }
+  if (dryRun) {
+    results.push({ rel, action: fs.existsSync(dest) ? 'overwrite' : 'would-write' });
+    return;
+  }
   const body = fs.readFileSync(fromAbs, 'utf8').replaceAll('{{project}}', project);
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.writeFileSync(dest, body);
@@ -75,9 +80,13 @@ for (const d of domains) {
 // 标号登记表——项目私有副本（可裁剪/扩展），audit-domains 优先消费
 const nsDest = path.join(target, 'namespaces.json');
 if (!fs.existsSync(nsDest) || force) {
-  fs.mkdirSync(target, { recursive: true });
-  fs.copyFileSync(path.join(SKILL_DIR, 'assets/namespaces.default.json'), nsDest);
-  results.push({ rel: 'namespaces.json', action: 'written' });
+  if (dryRun) {
+    results.push({ rel: 'namespaces.json', action: fs.existsSync(nsDest) ? 'overwrite' : 'would-write' });
+  } else {
+    fs.mkdirSync(target, { recursive: true });
+    fs.copyFileSync(path.join(SKILL_DIR, 'assets/namespaces.default.json'), nsDest);
+    results.push({ rel: 'namespaces.json', action: 'written' });
+  }
 } else {
   results.push({ rel: 'namespaces.json', action: 'skip(exists)' });
 }
@@ -90,22 +99,28 @@ const sameSet = (a, b) => a.length === b.length && a.every(x => b.includes(x));
 const effTier = Object.keys(TIER_DOMAINS).find(t => sameSet(TIER_DOMAINS[t], domains)) || 'custom';
 const cfgDest = path.join(target, 'ming.yaml');
 if (!fs.existsSync(cfgDest) || force) {
-  const body = fs.readFileSync(path.join(SKILL_DIR, 'assets/templates/ming.yaml.tmpl'), 'utf8')
-    .replaceAll('{{project}}', project)
-    .replaceAll('{{tier}}', effTier)
-    .replaceAll('{{domain_lines}}', emitted.filter(d => d !== 'findings').map(d => `  - ${d}`).join('\n') || '  - meta');
-  fs.writeFileSync(cfgDest, body);
-  results.push({ rel: 'ming.yaml', action: 'written' });
+  if (dryRun) {
+    results.push({ rel: 'ming.yaml', action: fs.existsSync(cfgDest) ? 'overwrite' : 'would-write' });
+  } else {
+    const body = fs.readFileSync(path.join(SKILL_DIR, 'assets/templates/ming.yaml.tmpl'), 'utf8')
+      .replaceAll('{{project}}', project)
+      .replaceAll('{{tier}}', effTier)
+      .replaceAll('{{domain_lines}}', emitted.filter(d => d !== 'findings').map(d => `  - ${d}`).join('\n') || '  - meta');
+    fs.writeFileSync(cfgDest, body);
+    results.push({ rel: 'ming.yaml', action: 'written' });
+  }
 } else {
   results.push({ rel: 'ming.yaml', action: 'skip(exists)' });
 }
 
-console.log(`scaffold-domains: ${target}  project=${project}  tier=${effTier}`);
+console.log(`scaffold-domains: ${target}  project=${project}  tier=${effTier}${dryRun ? '  [dry-run]' : ''}`);
 for (const r of results) console.log(`  ${r.action.padEnd(14)} ${r.rel}`);
+// dry-run 只列计划——不落盘不自证（无生成物可审）
+if (dryRun) process.exit(0);
 
 // 自证步（docstring 承诺"骨架即合规"的执行面）：生成物过 audit-domains，E 级即 exit 1。
 // 不回滚——target 常是棕场既有 docs/，删目录会误伤用户文件；失败信息由 audit 明细给出。
-const audit = spawnSync('node', [path.join(SKILL_DIR, 'scripts', 'audit-domains.mjs'), target], { encoding: 'utf8' });
+const audit = spawnSync(process.execPath, [path.join(SKILL_DIR, 'scripts', 'audit-domains.mjs'), target], { encoding: 'utf8' });
 process.stdout.write(audit.stdout || '');
 process.stderr.write(audit.stderr || '');
 process.exit(audit.status ?? 1);
