@@ -3,13 +3,16 @@
 #   1. frontmatter name 唯一化（避开基座模块/彼此冲突）
 #   2. description 精要化（触发词优先, 不绑定具体 MCP 名）
 #   3. 已知问题修复: ${CLAUDE_PLUGIN_ROOT} 替换 / 硬编码他人路径
-# 用法: pwsh scripts/patch-deployable.ps1 [-WhatIf]
+# 用法: pwsh scripts/patch-deployable.ps1 [-WhatIf] [-DeployableDir <dir>]
 
 [CmdletBinding(SupportsShouldProcess)]
-param()
+param(
+    [string]$DeployableDir = (Join-Path (Split-Path $PSScriptRoot -Parent) 'deployable')
+)
 
 $ErrorActionPreference = 'Continue'
-$dep = Join-Path (Split-Path $PSScriptRoot -Parent) 'deployable'
+$dep = $DeployableDir
+if (-not (Test-Path $dep)) { Write-Host "[ERROR] deployable 目录不存在: $dep" -ForegroundColor Red; exit 1 }
 
 function Set-NameDesc($dir, $newName, $newDesc) {
     $f = Join-Path $dep "$dir\SKILL.md"
@@ -30,8 +33,8 @@ function Set-NameDesc($dir, $newName, $newDesc) {
         }
         if ($PSCmdlet.ShouldProcess($f, "改写 frontmatter name=$newName")) {
             Set-Content -Path $f -Value ("---`n" + $fmNew + "`n---" + $body) -Encoding UTF8
+            Write-Host "[OK] $dir -> name: $newName"
         }
-        Write-Host "[OK] $dir -> name: $newName"
     } else {
         Write-Host "[WARN] 无 frontmatter: $dir" -ForegroundColor Yellow
     }

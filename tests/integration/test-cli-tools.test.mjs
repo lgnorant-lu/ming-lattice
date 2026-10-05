@@ -102,6 +102,22 @@ async function runScenario(scenario) {
       await spawnAsync('git', ['-C', remote, 'clone', '-q', '.', path.join(root, 'vertical', 'foo')]);
       body += `vertical:\n  - name: foo\n    path: vertical/foo\n    repo: ${remote}\n    pin: abc1234\n    enabled: true\n    deploy: {}\n    checkCache:\n      lastCheckedAt: 2020-01-01\n      lastRemoteHead: ${remoteHead}\n`;
     }
+    if (scenario === 'patch-whatif' || scenario === 'patch-run') {
+      // patch-deployable 按目录扫描不需 registry 登记——夹具独立于条目体
+      const dep = path.join(root, 'deployable');
+      fs.mkdirSync(path.join(dep, 'drift-name'), { recursive: true });
+      fs.writeFileSync(path.join(dep, 'drift-name', 'SKILL.md'), '---\nname: wrong-name\ndescription: fixture\n---\nbody\n');
+      fs.mkdirSync(path.join(dep, 'no-front'), { recursive: true });
+      fs.writeFileSync(path.join(dep, 'no-front', 'SKILL.md'), 'plain text\n');
+      fs.mkdirSync(path.join(dep, 'empty-dir'), { recursive: true });
+    }
+    if (scenario === 'verify-cache') {
+      body += 'base:\n  - name: ok-base\n    path: base/ok\n    modules: {}\n    checkCache:\n      lastCheckedAt: "2026-01-01"\n      lastRemoteHead: abc123\n  - name: no-cache\n    path: base/no\n    modules: {}\n'
+        + 'vertical:\n  - name: empty-head\n    path: vertical/eh\n    repo: https://example.invalid/x.git\n    pin: abc1234\n    checkCache:\n      lastCheckedAt: "2026-01-01"\n      lastRemoteHead: ""\n  - name: bad-head\n    path: vertical/bh\n    repo: https://example.invalid/x.git\n    pin: abc1234\n    checkCache:\n      lastCheckedAt: "2026-01-01"\n      lastRemoteHead:\n';
+    }
+    if (scenario === 'verify-cache-ok') {
+      body += 'base:\n  - name: ok-base\n    path: base/ok\n    modules: {}\n    checkCache:\n      lastCheckedAt: "2026-01-01"\n      lastRemoteHead: abc123\n';
+    }
     if (['preserve-wrapper', 'build-whatif', 'missing-wrapper-source'].includes(scenario)) {
       // deployable 边表已迁入 registry(source: 字段)——fixture 须登记条目
       // build-deployable 才认此模块；missing-wrapper-source 不给源目录即走缺源失败
@@ -207,6 +223,42 @@ async function runScenario(scenario) {
       assert.equal(fs.readFileSync(path.join(dstLink, 'SKILL.md'), 'utf8'),
         fs.readFileSync(path.join(source, 'SKILL.md'), 'utf8'),
         'void junction must be healed into a working deployment');
+    } else if (scenario === 'patch-whatif' || scenario === 'patch-run') {
+      const dep = path.join(root, 'deployable');
+      const result = await spawnAsync('pwsh', ['-NoProfile', '-File', path.join(project, 'scripts/patch-deployable.ps1'),
+        '-DeployableDir', dep, ...(scenario === 'patch-whatif' ? ['-WhatIf'] : [])], { timeout: 30000 });
+      assert.equal(result.status, 0, result.stderr);
+      if (scenario === 'patch-whatif') {
+        assert.deepEqual(tree(root), before, 'patch -WhatIf must not write');
+      } else {
+        const patched = fs.readFileSync(path.join(dep, 'drift-name', 'SKILL.md'), 'utf8');
+        assert.match(patched, /^name: drift-name$/m, 'name scan aligns to directory name');
+        assert.equal(fs.readFileSync(path.join(dep, 'no-front', 'SKILL.md'), 'utf8'), 'plain text\n',
+          'non-frontmatter file must stay byte-identical');
+        assert.match(result.stdout, /\[WARN\] 无 SKILL\.md/, 'missing-SKILL.md warn path fires for listed dirs');
+        assert.match(result.stdout, /\[FIX-NAME\] drift-name/);
+      }
+    } else if (scenario === 'patch-missing-dir') {
+      const result = await spawnAsync('pwsh', ['-NoProfile', '-File', path.join(project, 'scripts/patch-deployable.ps1'),
+        '-DeployableDir', path.join(root, 'nonexistent')], { timeout: 30000 });
+      assert.notEqual(result.status, 0, 'missing deployable dir must fail');
+      assert.match(result.stdout, /deployable 目录不存在/);
+    } else if (scenario === 'verify-cache' || scenario === 'verify-cache-ok') {
+      const run = (extra) => spawnAsync('pwsh', ['-NoProfile', '-File', path.join(project, 'scripts/verify-cache.ps1'),
+        '-RegistryPath', registry, ...extra], { timeout: 30000 });
+      if (scenario === 'verify-cache') {
+        const loose = await run([]);
+        assert.equal(loose.status, 0, loose.stderr);
+        assert.match(loose.stdout, /缺失.*no-cache/);
+        assert.match(loose.stdout, /异常.*empty-head/);
+        assert.match(loose.stdout, /异常.*bad-head/, 'bare `key:` parses as map — must flag as bad head, not slip through');
+        const strict = await run(['-Strict']);
+        assert.equal(strict.status, 1, 'strict mode must fail on anomalies');
+      } else {
+        const strict = await run(['-Strict']);
+        assert.equal(strict.status, 0, strict.stderr);
+        assert.match(strict.stdout, /全部完好/);
+      }
     } else if (scenario === 'install-hooks-whatif' || scenario === 'install-hooks-guard') {
       // 外仓脚手架：目标为独立 git 仓——隔离验证对外变异边界
       const foreign = path.join(root, 'foreign-repo');
@@ -271,7 +323,8 @@ export async function run() {
     'disabled', 'name-mismatch', 'empty-description',
     'update-dry-run', 'update-writeback', 'update-ttl-expiry', 'preserve-wrapper', 'unknown-wrapper',
     'missing-wrapper-source', 'missing-special-source', 'build-whatif',
-    'install-hooks-whatif', 'install-hooks-guard', 'sync-void-junction'
+    'install-hooks-whatif', 'install-hooks-guard', 'sync-void-junction',
+    'patch-whatif', 'patch-run', 'patch-missing-dir', 'verify-cache', 'verify-cache-ok'
   ];
 
   // 有界并发池 (并发上限 4)

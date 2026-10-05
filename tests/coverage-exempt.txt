@@ -4,7 +4,6 @@
 scripts/hooks/lib/files.mjs — hooks 内部 lib 模块；由 hook-engine 20 组断言经入口集成覆盖
 private/engineering/ming-boundary/scripts/consumers/diff.mjs — 组13 经消费者 id 'diff' 点名调度断言（stem 4 字符低于防误覆盖阈值，登记豁免）
 scripts/test.sh — POSIX 透传壳：仅转发 tests/run.mjs，语义与已测的 test.ps1/verify 入口同一
-scripts/patch-deployable.ps1 — 候审债务：deployable 改写器的 WhatIf/写面矩阵测试待补（登记为显性缺口）
-scripts/verify-cache.ps1 — 候审债务：checkCache 完整性校验测试待补（登记为显性缺口）
+
 private/engineering/ming-boundary/scripts/sync-langs.mjs — 网络取数生成器（curl 拉 pinned 上游 tags.scm/linguist）；单测离线约束不适用——确定性由 derived 产物消费断言间接覆盖
 private/engineering/ming-boundary/scripts/consumers/nslaw.mjs — 组13b 经消费者 id 'nslaw' 点名调度断言（消费方协议 id 引用不计入语料点名，登记豁免）
