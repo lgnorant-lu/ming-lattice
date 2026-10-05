@@ -39,7 +39,8 @@ status: normative
               -> engine.mjs -> 挂 post-checkout 的门/chore（old..new range 增量；clone/零 SHA 退化全量）
 
 [CLI / CI]   -> engine.mjs run check|ci   命名运行组——与 hooks 同一份 .hooksrc 配置
-             -> engine.mjs run fix        自愈组（whitespace 等 fixable 门重写工作区，re-stage 由用户确认）
+             -> engine.mjs run fix        自愈组（whitespace 等 fixable 门重写工作区，re-stage 由用户确认；
+                                          默认 staged 源，--all 覆盖 run ci 报出的存量 committed 违规）
              -> engine.mjs baseline       冻结既有违规（棕场接入钥匙）
              -> engine.mjs list / trust   诊断清单 / gates 完整性再确认
 
@@ -171,7 +172,7 @@ lintLevel=error         # error | warn | off（默认 error: lint 失败阻断�
 - `SKIP=<gate1>,<gate2> git commit ...`：临时豁免点名门（pre-commit/overcommit 生态惯例名）；`required` 级不吃 SKIP。
 - **hooks 树完整性**：`engine.mjs` 每次运行对 **hooks 根全部 `*.mjs`**（engine/check/pre-push/validate 等入口与策略体）+`gates/`+`gates.local/`+`lib/` 整树 hash 比对 `.git/hook-engine-state.json` 存值——`integrityLevel=warn` 打 warn（透明性特性）；`=error` 在阻断 stage 下拦截提交（本仓 .hooksrc 配置）；`=off` 可关。信任基线覆盖全部行为承载件（lib/ 的 resolveLevel、validate.mjs 的 commit-msg 策略体同样能改变门禁行为；根文档件 README.md 不签）。确认改动无误后 `node scripts/hooks/engine.mjs trust` 再确认。**防绕**：零暂存文件时引擎原本早退跳过完整性检查——已修（`--allow-empty` 空提交不再可绕）；首跑 `bootstrap` 建档亦出声（建档时刻可见）。
 - **CI 增量扫描**：`node scripts/hooks/engine.mjs run check --range=origin/main...HEAD`——PR 相对基线分支的变更扫描（gitleaks `--log-opts` 同语义），checkout 后无暂存区概念的 CI 环境用此入口。
-- **自愈**：`node scripts/hooks/engine.mjs run fix`——`fixable` 门（whitespace：行尾空白/EOF 换行；toc：目录节重写/插壳）重写工作区文件并报告清单；**不碰 index**，re-stage 由用户确认（刻意避开 lint-staged stash 路线的数据丢失前科）。`run fix --dry-run` 走同一遍历路径只报告不写盘。
+- **自愈**：`node scripts/hooks/engine.mjs run fix`——`fixable` 门（whitespace：行尾空白/EOF 换行；toc：目录节重写/插壳）重写工作区文件并报告清单；**不碰 index**，re-stage 由用户确认（刻意避开 lint-staged stash 路线的数据丢失前科）。`run fix --dry-run` 走同一遍历路径只报告不写盘。源分层：默认 **staged**（修复即将提交的文件）；`--all` 用全跟踪文件源——`run ci` 对存量违规打的"可 run fix 自愈"提示需 `--all` 兑现（staged 源够不着 committed 文件）。
 - **baseline 预览**：`node scripts/hooks/engine.mjs baseline --dry-run`——按门分组预告将冻结的违规数，不写 `.hooks-baseline.json`。
 - **采纳仓等级建议**：`integrityLevel` 缺省 `warn`（透明性基线）；当采纳仓门集稳定、维护者已建立 `trust` 重签习惯后，建议晋升 `integrityLevel=error`——透明性变 fail-closed，篡改不再只是提示。
 - **采纳层自检**（与 gates/ 完整性同级，随 `integrityLevel` 开关）：① `.githooks/` shim 与 `lib/shims.mjs` 规范模板对账——手改/模板更新即 warn（外来 hook 无 `engine.mjs` 引用者尊重不碰）；② shim 内引擎引用可达性——store 搬家/引擎缺失即 warn（相对式与绝对烘焙两种引用都验）；③ `.hooksrc` 的 `gate.<id>.*` 孤儿键——配置指向未装载的门（改名/删除残留）即 warn；④ `gates/`、`gates.local/` 下未导出 `gate` 对象的 `.mjs` 文件在加载时 warn（防"写了没生效"静默）。检查者即被检查者，住在引擎装载路径上而非独立门。
