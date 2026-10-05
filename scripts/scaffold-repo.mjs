@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // scaffold-repo.mjs — 仓库采纳薄编排（"立"动力学的仓级单入口）
-// 用法: node scripts/scaffold-repo.mjs --target <repo> [--tier minimal|standard|full] [--with-boundary] [--skip-domains] [--skip-hooks] [--dry-run]
-// 形态: 顺序编排三件套——scaffold-domains（docs 域骨架）→ install-hooks -Target（门禁 kit）→ 自检收尾。
+// 用法: node scripts/scaffold-repo.mjs --target <repo> [--tier minimal|standard|full] [--with-boundary] [--skip-domains] [--skip-hooks] [--skip-ming] [--dry-run]
+// 形态: 顺序编排四件套——scaffold-domains（docs 域骨架）→ install-hooks -Target（门禁 kit）→ scaffold-ming（命名域领养）→ 自检收尾。
 //       每步失败即停（fail-fast）；--dry-run 只打印计划不落盘。
 // 依据: 采纳序已由 huanyus（Ming-L full + hooks kit 全拓扑）与 blog-tui（hooks kit）双实例实证——
 //       本脚本只是把已验证的三步顺序机械固化，不新增语义。
@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCAFFOLD_DOMAINS = path.join(REPO_ROOT, 'private/engineering/ming-l-paradigm/scripts/scaffold-domains.mjs');
 const INSTALL_HOOKS = path.join(REPO_ROOT, 'scripts/install-hooks.ps1');
+const SCAFFOLD_MING = path.join(REPO_ROOT, 'scripts/scaffold-ming.mjs');
 
 const die = (msg) => { console.error(`[E] ${msg}`); process.exit(1); };
 const args = process.argv.slice(2);
@@ -27,7 +28,7 @@ for (let i = 0; i < args.length; i++) {
     if (v === undefined || v.startsWith('--')) die(`旗标 ${a} 缺值（或把下一个旗标吞成了值）`);
     if (opts[a] !== undefined) die(`重复旗标: ${a}`);
     opts[a] = v; i++;
-  } else if (['--with-boundary', '--skip-domains', '--skip-hooks', '--dry-run'].includes(a)) opts[a] = true;
+  } else if (['--with-boundary', '--skip-domains', '--skip-hooks', '--skip-ming', '--dry-run'].includes(a)) opts[a] = true;
   else die(a.startsWith('--') ? `未知旗标: ${a}` : `不接受位置参数: ${a}（仓径走 --target）`);
 }
 if (!opts['--target']) die('缺 --target <repo>');
@@ -38,6 +39,7 @@ const dryRun = !!opts['--dry-run'];
 if (!fs.existsSync(path.join(target, '.git'))) die(`目标不是 git 仓根: ${target}`);
 if (!fs.existsSync(SCAFFOLD_DOMAINS)) die(`scaffold-domains 缺席: ${SCAFFOLD_DOMAINS}`);
 if (!fs.existsSync(INSTALL_HOOKS)) die(`install-hooks 缺席: ${INSTALL_HOOKS}`);
+if (!fs.existsSync(SCAFFOLD_MING)) die(`scaffold-ming 缺席: ${SCAFFOLD_MING}`);
 
 const steps = [];
 if (!opts['--skip-domains']) {
@@ -57,7 +59,12 @@ if (!opts['--skip-hooks']) {
   if (dryRun) cmd.push(hasPwsh ? '-WhatIf' : '--dry-run');
   steps.push({ name: `门禁 kit (install-hooks -Target${hasPwsh ? '' : '·node 回退'})`, cmd });
 }
-if (!steps.length) die('--skip-domains + --skip-hooks = 无事可做');
+if (!opts['--skip-ming']) {
+  const cmd = [process.execPath, SCAFFOLD_MING, '--target', target];
+  if (dryRun) cmd.push('--dry-run');
+  steps.push({ name: '命名域领养 (scaffold-ming)', cmd });
+}
+if (!steps.length) die('--skip-domains + --skip-hooks + --skip-ming = 无事可做');
 
 // dry-run 契约=零 spawn 静态计划（快且零副作用）；逐文件级预览由各步自身
 // 预览动词承担——打印的命令行含 --dry-run/-WhatIf，复制即得真实预览

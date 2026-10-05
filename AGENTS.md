@@ -29,6 +29,7 @@ docs/                    STANDARDS(工程总纲)/GOVERNANCE-SPINE(工件本体�
 - **仓库采纳编排**: `node scripts/scaffold-repo.mjs --target <repo>`——域骨架(scaffold-domains)+门禁 kit(install-hooks -Target)+自检 单入口；`--with-boundary`/`--skip-*`/`--dry-run` 可选
 - **部署到客户端**: `pwsh scripts/sync.ps1`（支持 `-DryRun` 演练预览，链接到 .cc-switch/skills）
 - **部署态对账**: `node scripts/deploy-ledger.mjs --write`（快照落账）/ `--check`（漂移 missing/changed/foreign + 覆盖 uncovered 对账）
+- **命名域领养**: `node scripts/scaffold-ming.mjs --target <repo>`（`.ming/` 伞面+package.yaml+gitignore 模板化落盘；`--dry-run` 预览 / `--name/--kind/--force`；幂等+写后自证回滚。已并入 scaffold-repo 第四步，`--skip-ming` 可关）
 - **激活 Claude**: `.cc-switch/skills` → 符号链接补到 `~/.claude/skills`（Claude 启动时快照, 重启生效）
 - **更新检测**: `pwsh scripts/update.ps1`（支持 `-DryRun` 演练；缓存优先, TTL 7 天; `sourceGone: true` 条目零网络跳过）
 - **质量检查**: `pwsh scripts/lint.ps1`（部署模块必须有 SKILL.md, 硬编码路径检查）

@@ -199,5 +199,49 @@ export function run() {
     assert.match(drift.stdout, /foreign.*stray-x/, `stray-x 应抓 foreign: ${drift.stdout}`);
   }
 
+  // 10. scaffold-ming——领养模板化：新建/幂等/projects 并入/自证回滚/dry-run 零写
+  {
+    const SCM = path.resolve(import.meta.dirname, '../../scripts/scaffold-ming.mjs');
+    const t = mkRoot();
+    fs.mkdirSync(path.join(t, '.git'), { recursive: true });
+
+    const dry = sh(SCM, ['--target', t, '--name', 'blog', '--dry-run']);
+    assert.equal(dry.status, 0, dry.stderr);
+    assert.ok(!fs.existsSync(path.join(t, '.ming')), 'dry-run 应零落盘');
+
+    const mk = sh(SCM, ['--target', t, '--name', 'blog']);
+    assert.equal(mk.status, 0, mk.stderr);
+    for (const f of ['.ming/ming.yaml', '.ming/blog/package.yaml', '.gitignore'])
+      assert.ok(fs.existsSync(path.join(t, f)), `${f} 应落盘`);
+    const selfCheck = issues(t);
+    assert.equal(selfCheck.status, 0, `生成物应即过 check-ming: ${selfCheck.stdout}`);
+
+    const re = sh(SCM, ['--target', t, '--name', 'blog']);
+    assert.equal(re.status, 0);
+    assert.match(re.stdout, /skip.*package\.yaml 在场/s, '重放应幂等 skip');
+
+    const second = sh(SCM, ['--target', t, '--name', 'api']);
+    assert.equal(second.status, 0, second.stderr);
+    const umb = fs.readFileSync(path.join(t, '.ming', 'ming.yaml'), 'utf8');
+    assert.match(umb, /  - api\n/, '伞面 projects 应并入 api');
+    assert.match(umb, /  - blog\n/);
+
+    // 回滚：预置登记无目录的 ghost 项目 → 写后自证 E → 全部还原
+    const t2 = mkRoot();
+    fs.mkdirSync(path.join(t2, '.git'), { recursive: true });
+    fs.mkdirSync(path.join(t2, '.ming'), { recursive: true });
+    fs.writeFileSync(path.join(t2, '.ming', 'ming.yaml'),
+      'manifestVersion: "1"\nscope: ming\nkinds:\n  - kit\nprojects:\n  - ghost\n');
+    const rb = sh(SCM, ['--target', t2, '--name', 'newp']);
+    assert.equal(rb.status, 1, '自证 E 应 exit 1');
+    assert.match(rb.stderr, /回滚/);
+    assert.ok(!fs.existsSync(path.join(t2, '.ming', 'newp')), '回滚后新项目件应清除');
+    assert.match(fs.readFileSync(path.join(t2, '.ming', 'ming.yaml'), 'utf8'),
+      /projects:\n  - ghost\n$/, '伞面应还原');
+
+    fs.rmSync(t, { recursive: true, force: true });
+    fs.rmSync(t2, { recursive: true, force: true });
+  }
+
   console.log('  [PASS] ming 命名域契约全过');
 }

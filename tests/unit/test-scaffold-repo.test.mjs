@@ -37,8 +37,8 @@ export function run() {
       const r = cli(a);
       check(r.status !== 0 && /\[E\]/.test(r.stderr || ''), `${m}: ${a.join(' ')}`);
     }
-    const r = cli(['--target', fakeRepo(), '--skip-domains', '--skip-hooks']);
-    check(r.status !== 0 && /无事可做/.test(r.stderr || ''), '双 --skip 未拒');
+    const r = cli(['--target', fakeRepo(), '--skip-domains', '--skip-hooks', '--skip-ming']);
+    check(r.status !== 0 && /无事可做/.test(r.stderr || ''), '三 --skip 未拒');
   }
 
   // ── 非 git 仓 fail-closed ──
@@ -55,6 +55,7 @@ export function run() {
     check(r.status === 0, `dry-run exit=${r.status} err=${r.stderr}`);
     check(/scaffold-domains/.test(r.stdout), 'dry-run 缺域骨架步');
     check(/install-hooks/.test(r.stdout) && /-WhatIf/.test(r.stdout), 'dry-run 缺 hooks 步或 -WhatIf');
+    check(/scaffold-ming/.test(r.stdout), 'dry-run 缺命名域领养步');
     check(/-WithBoundary/.test(r.stdout), '--with-boundary 未透传');
     check(!fs.existsSync(path.join(d, 'docs')), 'dry-run 落了 docs/');
     check(!fs.existsSync(path.join(d, 'scripts')), 'dry-run 落了 scripts/');
@@ -67,6 +68,8 @@ export function run() {
     check(r.status === 0 && /scaffold-domains/.test(r.stdout) && !/install-hooks/.test(r.stdout), '--skip-hooks 后仍编排 hooks');
     const r2 = cli(['--target', d, '--skip-domains', '--dry-run']);
     check(r2.status === 0 && /install-hooks/.test(r2.stdout) && !/scaffold-domains/.test(r2.stdout), '--skip-domains 后仍编排 domains');
+    const r3 = cli(['--target', d, '--skip-ming', '--dry-run']);
+    check(r3.status === 0 && !/scaffold-ming/.test(r3.stdout), '--skip-ming 后仍编排 ming');
   }
 
   // ── dry-run 域骨架步语义可读（note 含 docs/ 域骨架意图）──
