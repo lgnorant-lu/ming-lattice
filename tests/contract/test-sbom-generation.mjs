@@ -48,6 +48,27 @@ export async function run() {
   });
   assert.deepEqual(fallback.components.map(item => item['bom-ref']), ['nested@1.1.0', 'runtime@2.0.0']);
   assert.deepEqual(fallback.dependencies.find(item => item.ref === 'runtime@2.0.0').dependsOn, ['nested@1.1.0']);
+
+  // 嵌套同 ref（node_modules/a/node_modules/dep@1 与根 dep@1）：
+  // bom-ref 须文档内唯一归并，integrity 取首个有哈希副本不得跨副本错挂
+  const dupRef = createCycloneDxFromLockfile({
+    lockfileVersion: 3,
+    packages: {
+      'node_modules/a': { version: '1.0.0' },
+      'node_modules/dep': { version: '1.0.0' },
+      'node_modules/a/node_modules/dep': { version: '1.0.0', integrity: 'sha512-nestedCopy==' }
+    }
+  });
+  const dupComponents = dupRef.components.filter(item => item['bom-ref'] === 'dep@1.0.0');
+  assert.equal(dupComponents.length, 1, 'duplicate name@version must merge into a single bom-ref');
+  assert.deepEqual(dupComponents[0].hashes, [{ alg: 'SHA512', content: 'nestedCopy==' }],
+    'integrity must come from the copy that actually has one');
+
+  // lockfileVersion 1（npm v6）无 packages 键——按 v2+ 解析会产"成功地空"SBOM，
+  // 须显式拒绝而非静默欠账
+  assert.throws(
+    () => createCycloneDxFromLockfile({ lockfileVersion: 1, dependencies: { a: {} } }),
+    /lockfile_v1_unsupported/);
   console.log('  -> deterministic dedupe, dependency union and source provenance passed');
 
   const artifactPath = path.resolve(import.meta.dirname, '../../artifacts/sbom.cdx.json');

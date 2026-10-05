@@ -5,8 +5,8 @@
   "network": "not_used",
   "status": "complete",
   "findings_status": "none",
-  "lockfiles_total": 38,
-  "lockfiles_scanned": 38,
+  "lockfiles_total": 39,
+  "lockfiles_scanned": 39,
   "lockfiles_failed": 0,
   "summary": {
     "info": 0,

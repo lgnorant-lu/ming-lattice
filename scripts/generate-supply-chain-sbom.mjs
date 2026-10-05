@@ -121,6 +121,11 @@ function lockfileHash(integrity) {
 }
 
 export function createCycloneDxFromLockfile(lockfile) {
+  // lockfileVersion 1（npm v6 时代）无 packages 键——按 v2+ 解析会产"成功地空"
+  // 的 SBOM（attestation 静默欠账）；显式拒绝优于欠计。
+  if (Number.isInteger(lockfile?.lockfileVersion) && lockfile.lockfileVersion < 2) {
+    throw new Error(`lockfile_v${lockfile.lockfileVersion}_unsupported`);
+  }
   const packageEntries = new Map(Object.entries(lockfile.packages || {}));
   const included = new Map();
   for (const [packagePath, entry] of packageEntries) {
@@ -130,16 +135,23 @@ export function createCycloneDxFromLockfile(lockfile) {
     const ref = packageRef(name, entry.version);
     included.set(packagePath, { name, version: entry.version, ref });
   }
-  const components = [...included.values()]
-    .sort((left, right) => left.ref.localeCompare(right.ref))
-    .map(({ name, version, ref }) => {
-      const packagePath = [...included.entries()].find(([, item]) => item.ref === ref)?.[0];
-      const entry = packageEntries.get(packagePath);
-      const component = { type: 'library', name, version, 'bom-ref': ref, purl: `pkg:npm/${name}@${version}` };
-      const hashes = lockfileHash(entry?.integrity);
+  // 同名同版本在嵌套树可重复出现（node_modules/a/node_modules/dep@1 与
+  // node_modules/dep@1）——bom-ref 须文档内唯一：按 ref 归并，integrity
+  // 取各路径自身 entry（首个有哈希者胜），不得跨副本错挂。
+  const componentByRef = new Map();
+  for (const [packagePath, { name, version, ref }] of included) {
+    let component = componentByRef.get(ref);
+    if (!component) {
+      component = { type: 'library', name, version, 'bom-ref': ref, purl: `pkg:npm/${name}@${version}` };
+      componentByRef.set(ref, component);
+    }
+    if (!component.hashes) {
+      const hashes = lockfileHash(packageEntries.get(packagePath)?.integrity);
       if (hashes) component.hashes = hashes;
-      return component;
-    });
+    }
+  }
+  const components = [...componentByRef.values()]
+    .sort((left, right) => left['bom-ref'].localeCompare(right['bom-ref']));
   const dependencies = [];
   for (const [packagePath, item] of included) {
     const entry = packageEntries.get(packagePath);

@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:5c9a4f6a-576d-b524-a328-9434e2f9afc7",
+  "serialNumber": "urn:uuid:a073c2ac-0c33-a466-f9e2-44f199575c4e",
   "version": 1,
   "metadata": {
     "component": {
@@ -19,7 +19,7 @@
       },
       {
         "name": "ming.lockfiles",
-        "value": "38"
+        "value": "39"
       },
       {
         "name": "ming.completeness",
@@ -40,6 +40,10 @@
       {
         "name": "ming.source_lockfile",
         "value": "vertical/ast-hook-for-js-RE/package-lock.json"
+      },
+      {
+        "name": "ming.source_lockfile",
+        "value": "vertical/birdview/package-lock.json"
       },
       {
         "name": "ming.source_lockfile",
@@ -49845,6 +49849,10 @@
       "dependsOn": [
         "file-uri-to-path@1.0.0"
       ]
+    },
+    {
+      "ref": "birdview@0.3.0",
+      "dependsOn": []
     },
     {
       "ref": "bl@4.1.0",

@@ -113,13 +113,16 @@ function writeCachedAudit(cachePath, key, lockfileDigest, context, report) {
 function readAudit(lockfile) {
   const command = auditCommand(lockfile);
   try {
-    return JSON.parse(execFileSync(command.executable, command.args, {
+    const report = JSON.parse(execFileSync(command.executable, command.args, {
       cwd: path.dirname(lockfile),
       encoding: 'utf8',
       timeout: 120000,
       maxBuffer: 32 * 1024 * 1024,
       stdio: ['ignore', 'pipe', 'pipe']
     }));
+    // exit 0 仍须形状校验——非审计 JSON（警告/骨架输出）不得按"扫描干净"记账
+    if (!report?.auditReportVersion) throw new Error('npm_audit_unavailable');
+    return report;
   } catch (error) {
     if (error.stdout) {
       try {
@@ -167,10 +170,11 @@ function readAuditAsync(lockfile) {
     });
     child.stderr.on('data', () => {});
     child.once('error', () => finish(new Error('npm_audit_unavailable')));
-    child.once('close', code => {
+    child.once('close', () => {
       try {
         const report = JSON.parse(stdout);
-        if (code === 0 || report.auditReportVersion) finish(null, report);
+        // 只认 auditReportVersion——exit 0 + 非审计 JSON 同样不得按干净记账
+        if (report?.auditReportVersion) finish(null, report);
         else finish(new Error('npm_audit_unavailable'));
       } catch {
         finish(new Error('npm_audit_unavailable'));
