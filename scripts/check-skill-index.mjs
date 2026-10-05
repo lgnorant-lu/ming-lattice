@@ -104,7 +104,8 @@ const GUIDE_DOCS = [
 function checkGuides(reg) {
   const docs = {};
   for (const g of GUIDE_DOCS) {
-    docs[g.key] = fs.existsSync(g.path) ? norm(fs.readFileSync(g.path, 'utf8')) : null;
+    const raw = fs.existsSync(g.path) ? fs.readFileSync(g.path, 'utf8') : null;
+    docs[g.key] = raw ? { norm: norm(raw), raw } : null;
     if (!docs[g.key]) add('W', `导引文档缺席: ${g.path}（对账降级为不可校验）`);
   }
   const seen = (text, n) =>
@@ -114,10 +115,34 @@ function checkGuides(reg) {
     const segs = p.split('/');
     const isEngDirect = segs.length === 3 && segs[0] === 'private' && segs[1] === 'engineering';
     const isPrivateTop = segs.length === 2 && segs[0] === 'private';
-    if (isEngDirect && docs['engineering-readme'] && !seen(docs['engineering-readme'], n))
+    if (isEngDirect && docs['engineering-readme'] && !seen(docs['engineering-readme'].norm, n))
       add('W', `${n}: engineering/README.md 资产树零踪迹（包登记未同步导引）`);
-    if ((isEngDirect || isPrivateTop) && docs['catalog'] && !seen(docs['catalog'], n))
+    if ((isEngDirect || isPrivateTop) && docs['catalog'] && !seen(docs['catalog'].norm, n))
       add('W', `${n}: private/CATALOG.md 目录树零踪迹（包登记未同步导引）`);
+  }
+
+  // 反向: 导引树列了非注册包（stale 行=已移除包残留或未登记走私）
+  // 口径: `── slug/` 树行；豁免=含 * 的通配组行 / 无连字符的组目录名（engineering、testing）
+  //       / 行内带否决标记（REJECT_RE）；判定集=private 登记路径叶子名 ∪ candidates
+  const regLeaf = new Set(reg.private.map(n => {
+    const segs = (reg.paths.get(n) || '').split('/');
+    return norm(segs[segs.length - 1] || n);
+  }));
+  for (const c of reg.candidates) regLeaf.add(norm(c));
+  for (const g of GUIDE_DOCS) {
+    const d = docs[g.key];
+    if (!d) continue;
+    let ln = 0;
+    for (const line of d.raw.split(/\r?\n/)) {
+      ln++;
+      const m = line.match(/[├└]──\s*([a-z0-9][a-z0-9_*-]*)\//);
+      if (!m) continue;
+      const slug = m[1];
+      if (slug.includes('*') || !slug.includes('-')) continue;
+      if (REJECT_RE.test(line)) continue;
+      if (!regLeaf.has(norm(slug)))
+        add('W', `导引 stale 行 L${ln} "${slug}/"（${g.key}）: 不在 private 登记表且无否决标记`);
+    }
   }
 }
 
