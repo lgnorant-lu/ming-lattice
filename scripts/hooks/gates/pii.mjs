@@ -3,12 +3,12 @@
 // （威胁模型：单作者公开仓的个人邮箱/家目录回流 + 日志/文档实数据误入库）
 //
 // 层：
-//   家目录路径  —— C:\Users\<name>\ 与 macOS /Users/<name>/ 报 error
-//                 （入仓工件无合法场景；fixture 名白名单除外）
-//                 /home/<name>/ 报 warn（CTF 题目/示例文档合法密度高）
+//   家目录路径  —— C:\Users\<name>\ / macOS /Users/<name>/ / Linux /home/<name>/
+//                 全报 error（69a7aca 全局升格后统一阻塞级；fixture 名白名单除外。
+//                 /home 原 warn 因 CTF 题目密度——升格后由 gate.pii.exclude 域调承担豁免）
 //   个人邮箱域  —— CN 个人域（qq/foxmail/163/126/139/sina/sohu/aliyun/yeah/189）报 error
 //                 gmail/outlook 等国际域不报（示例文档合法密度太高，属噪声面）
-//   手机号      —— 中国手机 1[3-9]xxxxxxxxx 报 warn（数字串有合法用例）
+//   手机号      —— 中国手机 1[3-9]xxxxxxxxx 报 error（升格后统一阻塞级；夹具走 exclude）
 //   私网 IP     —— 显式弃扫：RFC1918 在部署文档/夹具中合法密度极高，噪声>信号
 //
 // 配置：gate.pii.level（默认 error）；通用键 globs/exclude 可用

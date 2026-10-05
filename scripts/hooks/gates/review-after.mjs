@@ -1,6 +1,7 @@
 // scripts/hooks/gates/review-after.mjs
 // 候审档到期提醒门（周期维度首消费方——日期到期触发，与文件变更无关）
-// 配置：gate.review-after.level（默认 warn——post-merge/pre-commit 均非阻断语义）
+// 配置：gate.review-after.level（默认 error——69a7aca 升格后；域为空默认不扫，
+//      配置 globs 即表态接受阻塞提醒；要软提醒可显式配 level=warn）
 //   gate.review-after.globs=<globs CSV>   扫描域（默认空——off-until-configured，仓专域走配置）
 //   gate.review-after.cadence=<dur>       引擎级 TTL（如 7d）——state.json lastRun 节流
 // 契约：扫 globs 命中的工作区文件，提取 `reviewAfter: YYYY-MM-DD`，到期（<=今天）即 warn。

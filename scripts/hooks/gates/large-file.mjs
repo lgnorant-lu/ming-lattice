@@ -13,7 +13,12 @@ export const gate = {
   globs: ['*'],
   exclude: [],
   async run(ctx) {
-    const maxMB = Number(ctx.gateConfig?.maxMB ?? DEFAULT_MAX_MB);
+    // 非法 maxMB 不得静默关闸：size > NaN 恒 false = 配置错=门关闭（fail-open），
+    // 回落默认并出声（与 engine cadence 非法值告警同族处置）
+    const rawMB = Number(ctx.gateConfig?.maxMB ?? DEFAULT_MAX_MB);
+    const maxMB = Number.isFinite(rawMB) && rawMB > 0 ? rawMB : DEFAULT_MAX_MB;
+    if (maxMB !== rawMB)
+      console.warn(`[large-file] gate.large-file.maxMB 非法 "${ctx.gateConfig?.maxMB}"——按默认 ${DEFAULT_MAX_MB}MB 执行`);
     const findings = [];
     for (const p of ctx.files) {
       const meta = ctx.meta?.(p);

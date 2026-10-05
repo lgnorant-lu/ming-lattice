@@ -435,6 +435,16 @@ export async function run() {
       assert.ok(r0.changed);
       assert.ok(!fixContent('clean\n').changed);
       assert.ok(!fixContent('').changed, '空文件不应被 fix 改写');
+      // CRLF 回归：行尾空白在 \r 前——无 \r? 兜底时既检不出也修不掉
+      const crlf = fixContent('a \r\nb\t\r\nc\r\n');
+      assert.equal(crlf.content, 'a\r\nb\r\nc\r\n', 'CRLF 行尾空白应被剥离且保留 CR');
+      assert.ok(crlf.changed);
+      assert.ok(!fixContent('a\r\nb\r\n').changed, '纯 CRLF 无空白不应改写');
+      // gate.run 检测面同验（staged 语义下 CRLF 文件也不该漏报）
+      const { gate: wsGate } = wsMod;
+      const crlfCtx = { files: ['x.md'], read: () => 'ok \r\nfine\r\n' };
+      const wsF = await wsGate.run(crlfCtx);
+      assert.equal(wsF.length, 1, 'CRLF 行尾空白应检出');
 
       // 暂存脏文件 → run fix --dry-run → 报告但不写盘
       fs.writeFileSync(path.join(dir, 'dirty.md'), 'line1   \nline2\t\nno-eof');
@@ -461,6 +471,21 @@ export async function run() {
       assert.ok(bDry.stdout.includes('dry-run'), 'baseline --dry-run 应标 dry-run 前缀');
       assert.ok(!fs.existsSync(path.join(dir, '.hooks-baseline.json')), 'dry-run 不得写冻结档');
     } finally { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
+  }
+
+  // 9b. large-file：非法 maxMB 回落默认——fail-open 防御（size>NaN 恒 false=门静默关闭）
+  {
+    const { gate: lfGate } = await import('../../scripts/hooks/gates/large-file.mjs');
+    const mkCtx = gateConfig => ({
+      files: ['big.bin'], gateConfig,
+      meta: () => ({ type: 'blob', size: 51 * 1024 * 1024 }),
+    });
+    const fBad = await lfGate.run(mkCtx({ maxMB: 'abc' }));
+    assert.equal(fBad.length, 1, '非法 maxMB 必须回落默认拦截（不得静默关闸）');
+    const fOk = await lfGate.run(mkCtx({ maxMB: '100' }));
+    assert.equal(fOk.length, 0, '100MB 上限下 51MB 应放行');
+    const fZero = await lfGate.run(mkCtx({ maxMB: '0' }));
+    assert.equal(fZero.length, 1, 'maxMB=0 非正亦回落默认');
   }
 
   // 10. 采纳层自检（shim 模板对账 / 引用可达 / 孤儿配置键）

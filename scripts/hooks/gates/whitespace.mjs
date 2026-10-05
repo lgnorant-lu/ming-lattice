@@ -10,13 +10,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const TEXT_EXT = /\.(md|yaml|yml|json|ps1|js|mjs|ts|txt|toml|py|sh|bat|c|h|cpp|rs|go|java|xml|html|css|ini|cfg|conf)$/i;
-const TRAILING_WS = /[ \t]+$/;
+// \r? 兜底 CRLF：eol=crlf 仓的行尾是 "foo \r"——空格在 \r 前不归 $，
+// 无 \r? 的 /[ \t]+$/ 对 CRLF 文件既检不出也修不掉
+const TRAILING_WS = /[ \t]+\r?$/;
 
 export function fixContent(text) {
   if (!text) return { changed: false, content: text };
   const lines = text.split('\n');
   const hadEofNl = text.endsWith('\n');
-  const fixed = lines.map(l => l.replace(TRAILING_WS, ''));
+  const fixed = lines.map(l => l.replace(/[ \t]+(\r?)$/, '$1'));
   let out = fixed.join('\n');
   if (!out.endsWith('\n')) out += '\n';
   return { changed: out !== text || !hadEofNl, content: out };
