@@ -57,6 +57,18 @@ foreach ($sectionName in @('vertical', 'deployable', 'private')) {
 
 $issues = @()  # [ordered]@{ level; name; msg; file }
 
+# ---------- registry 语义对账：weight 封闭词表 ----------
+# deploy 客户名⊆targets 已由 registry.ps1 载入期 registry_unknown_client 兜底；
+# weight 错拼（如 hevy）会静默按 core 并入默认物化面——危险向 fail-open，lint 先拦
+foreach ($sectionName in @('vertical', 'deployable', 'private')) {
+    foreach ($item in @($reg.$sectionName)) {
+        if ($null -eq $item) { continue }
+        if ($item.weight -and @('core', 'heavy') -notcontains $item.weight) {
+            $issues += [ordered]@{ level = 'E'; name = $item.name; msg = "weight=$($item.weight) 出封闭词表 {core|heavy}（错拼会静默并入默认物化面）"; file = $RegistryPath }
+        }
+    }
+}
+
 foreach ($s in $sources) {
     $skillMd = Join-Path $s.src 'SKILL.md'
     if (-not (Test-Path $skillMd)) {
@@ -176,7 +188,11 @@ foreach ($s in $sources) {
 # ---------- SoT 配置面：registry.yaml/.hooksrc 等治理配置的硬编码用户路径 ----------
 # 背景: registry targets 曾烙 C:\Users\xxx 本机路径（已改 %USERPROFILE% 占位）——
 # SKILL.md/scripts 扫描面不覆盖 SoT 配置，此类缺陷漏网过，须独立断言防回归
-foreach ($sotFile in @($RegistryPath, (Join-Path $RepoRoot '.hooksrc'), (Join-Path $RepoRoot '.hooksrc.tmpl'))) {
+$sotFiles = @($RegistryPath, (Join-Path $RepoRoot '.hooksrc'), (Join-Path $RepoRoot '.hooksrc.tmpl'))
+# .ming/ 命名域配置同属 SoT 面（state/ 本机态除外——gitignored 不审）
+$sotFiles += @(Get-ChildItem (Join-Path $RepoRoot '.ming') -Recurse -Filter '*.yaml' -File -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -notmatch '[\\/]state[\\/]' } | ForEach-Object { $_.FullName })
+foreach ($sotFile in $sotFiles) {
     if (-not (Test-Path -LiteralPath $sotFile -PathType Leaf)) { continue }
     $sotContent = Get-Content -LiteralPath $sotFile -Raw -Encoding UTF8 -ErrorAction SilentlyContinue
     if ([string]::IsNullOrWhiteSpace($sotContent)) { continue }

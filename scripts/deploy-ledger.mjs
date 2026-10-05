@@ -106,7 +106,13 @@ export function buildLedger(root = ROOT) {
       entries: dir && fs.existsSync(dir) ? scanTarget(dir) : null,
     };
   }
-  return { schemaVersion: 1, generatedAt: new Date().toISOString(), repoHead: head, clients };
+  // deploy 客户名∉targets 的单元会被静默忽略（pwsh 载入层有 registry_unknown_client 兜底，
+  // 本 mjs 通道补可见性——未提交改动/fixture 走不到那道门）
+  const known = new Set(Object.keys(targets));
+  const warnings = units
+    .flatMap(u => Object.keys(u.deploy).filter(c => !known.has(c)).map(c => `${u.name}/${c}`))
+    .map(s => `deploy 客户名不在 targets: ${s}（该单元不会被任何客户端对账）`);
+  return { schemaVersion: 1, generatedAt: new Date().toISOString(), repoHead: head, clients, warnings };
 }
 
 export function checkDrift(ledger, now) {
@@ -133,6 +139,7 @@ export function checkDrift(ledger, now) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const now = buildLedger(ROOT);
   if (now.error) { console.error(`[E] ${now.error}`); process.exit(2); }
+  for (const w of now.warnings || []) console.error(`[W] ${w}`);
 
   // 账本落点：伞面 projects 首项（本仓=lattice）的 state/ 本机态域
   const ledgerDir = path.join(ROOT, '.ming', 'lattice', 'state');

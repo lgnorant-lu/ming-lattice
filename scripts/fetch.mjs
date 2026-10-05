@@ -75,6 +75,14 @@ const headOf = dir => {
 
 // ── 主流程 ──
 const entries = parseRegistry(fs.readFileSync(REGISTRY_PATH, 'utf8'));
+// weight 封闭词表 fail-closed：出表值（如 weight: hevy 错拼）若静默按 core 计，
+// 会把重仓并入默认物化面——恰是危险方向的 fail-open，故在使用点先拦。
+const WEIGHT_VOCAB = new Set(['core', 'heavy']);
+const badWeight = entries.filter(e => e.weight && !WEIGHT_VOCAB.has(e.weight));
+if (badWeight.length) {
+  console.error(`weight 出封闭词表 {core|heavy}: ${badWeight.map(e => `${e.name}=${e.weight}`).join(', ')}`);
+  process.exit(2);
+}
 // weight 分层：heavy 条目不进默认物化面（双模态——主箱默认轻量，重仓显式装载）。
 // --only 显式点名或 --include-heavy 均可达 heavy；无 weight 字段按 core 计（向后兼容）。
 const includeHeavy = flags.has('--include-heavy');

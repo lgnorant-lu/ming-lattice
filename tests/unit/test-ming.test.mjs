@@ -155,6 +155,12 @@ export function run() {
 
     const named = sh(FETCH, ['--dry-run', '--only', 'heavy-x'], { FETCH_ROOT: root });
     assert.doesNotMatch(named.stdout, /重仓跳过/, `--only 显式点名应可达 heavy: ${named.stdout}`);
+
+    // 错拼 fail-closed：weight: hevy 若静默按 core 会并入默认面——危险向 fail-open 先拦
+    fs.writeFileSync(path.join(root, 'registry.yaml'), reg.replace('weight: heavy', 'weight: hevy'));
+    const bad = sh(FETCH, ['--dry-run'], { FETCH_ROOT: root });
+    assert.equal(bad.status, 2, 'weight 出词表应 exit 2');
+    assert.match(bad.stderr, /出封闭词表.*hevy/);
   }
 
   // 8. scaffold --register——ming-* 名自动 metaSystem / 重名 fail-closed
@@ -178,10 +184,12 @@ export function run() {
     fs.mkdirSync(path.join(root, '.ming', 'lattice'), { recursive: true });
     fs.writeFileSync(path.join(root, 'registry.yaml'),
       `targets:\n  claude: "${targetDir.replace(/\\/g, '/')}"\n` +
-      `private:\n  - name: unit-a\n    deploy:\n      claude: true\n  - name: unit-b\n    deploy:\n      claude: true\n  - name: unit-c\n    deploy:\n      claude: true\n`);
+      `private:\n  - name: unit-a\n    deploy:\n      claude: true\n  - name: unit-b\n    deploy:\n      claude: true\n  - name: unit-c\n    deploy:\n      claude: true\n` +
+      `  - name: unit-d\n    deploy:\n      codx: true\n`);   // codx 错拼客户名——应 warn 不静默
 
     const w = sh(LEDGER, ['--write'], { LEDGER_ROOT: root });
     assert.equal(w.status, 0, w.stderr);
+    assert.match(w.stderr, /deploy 客户名不在 targets: unit-d\/codx/, '错拼客户名应告警');
     const ledgerPath = path.join(root, '.ming', 'lattice', 'state', 'deploy-ledger.json');
     assert.ok(fs.existsSync(ledgerPath), '账本应落 state/');
     const led = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
