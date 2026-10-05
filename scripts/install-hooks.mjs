@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // install-hooks.mjs — 门禁引擎 kit 跨平台 -Target 实现（POSIX 补位件）
-// 用法: node scripts/install-hooks.mjs --target <repo> [--force] [--with-boundary] [--dry-run]
+// 用法: node scripts/install-hooks.mjs --target <repo> [--force] [--with-boundary] [--dry-run] [--check]
+//   --check: 只读漂移报告——.hooksrc↔.hooksrc.tmpl 键集差 / .githooks 字节差 / kit 件缺席 /
+//            adoption sourceRev 落后。exit 0（drift 是知情面非失败面；采纳侧自定义不算错）
 // 语义与 install-hooks.ps1 -Target 对齐（11 步）：git 根检查 → 旧 hooksPath 防线 →
 //   scripts/hooks kit 拷贝（gates.local 排除）→ .githooks shim → .hooksrc 模板（不覆盖）→
 //   .gitignore/.gitattributes 追加 → boundary 采纳面（可选）→ hooksPath+commit.template → trust 存值 →
@@ -25,7 +27,7 @@ for (let i = 0; i < args.length; i++) {
     if (v === undefined || v.startsWith('--')) die('--target 缺值');
     if (opts.target) die('重复旗标: --target');
     opts.target = v;
-  } else if (['--force', '--with-boundary', '--dry-run'].includes(a)) opts[a.slice(2)] = true;
+  } else if (['--force', '--with-boundary', '--dry-run', '--check'].includes(a)) opts[a.slice(2)] = true;
   else die(a.startsWith('--') ? `未知旗标: ${a}` : `不接受位置参数: ${a}`);
 }
 if (!opts.target) die('缺 --target <repo>（本仓安装走 install-hooks.ps1/.sh）');
@@ -44,6 +46,48 @@ const cp = (src, dst, note) => {
 const act = (note, fn) => { if (dry) { info(`[dry-run] ${note}`); return; } fn(); };
 
 // 0. 既有 hooksPath 防线（与 ps1 同义：切换会停用旧体系）
+// --check: 只读漂移报告（不落盘不改配）——.hooksrc 键集/.githooks/shim/kit 件/adoption rev
+if (opts.check) {
+  const activeKeys = (file) => !fs.existsSync(file) ? null : new Set(
+    fs.readFileSync(file, 'utf8').split(/\r?\n/)
+      .filter(l => l.trim() && !l.trim().startsWith('#') && l.includes('='))
+      .map(l => l.split('=')[0].trim()));
+  const rcKeys = activeKeys(path.join(dest, '.hooksrc'));
+  const tmplKeys = activeKeys(path.join(REPO_ROOT, '.hooksrc.tmpl')) || new Set();
+  const report = [];
+  if (!rcKeys) report.push('[缺席] .hooksrc 未铺（未采纳或被删）');
+  else {
+    for (const k of [...tmplKeys].filter(k => !rcKeys.has(k)))
+      report.push(`[upstream 新键] ${k} ——tmpl 有 .hooksrc 无（kit 升级面，可评估并入）`);
+    for (const k of [...rcKeys].filter(k => !tmplKeys.has(k)))
+      report.push(`[采纳侧键] ${k} ——.hooksrc 有 tmpl 无（自定义或孤儿键，engine 键空间对账亦见）`);
+  }
+  const srcShims = path.join(REPO_ROOT, '.githooks'), dstShimsDir = path.join(dest, '.githooks');
+  for (const f of fs.readdirSync(srcShims)) {
+    const s = fs.readFileSync(path.join(srcShims, f), 'utf8').replace(/\r\n/g, '\n');
+    const d = path.join(dstShimsDir, f);
+    if (!fs.existsSync(d)) report.push(`[shim 缺席] .githooks/${f}`);
+    else if (fs.readFileSync(d, 'utf8').replace(/\r\n/g, '\n') !== s) report.push(`[shim 字节差] .githooks/${f}`);
+  }
+  const srcHookDir = path.join(REPO_ROOT, 'scripts/hooks');
+  const kitWalk = (dir, rel = '') => fs.readdirSync(dir, { withFileTypes: true })
+    .flatMap(e => e.name === 'gates.local' && !rel ? [] :
+      e.isDirectory() ? kitWalk(path.join(dir, e.name), `${rel}${e.name}/`) : [`${rel}${e.name}`]);
+  for (const rel of kitWalk(srcHookDir)) {
+    if (!fs.existsSync(path.join(dest, 'scripts/hooks', rel))) report.push(`[kit 件缺席] scripts/hooks/${rel}`);
+  }
+  try {
+    const stateFile = path.join(git(['rev-parse', '--absolute-git-dir']), 'hook-engine-state.json');
+    const srcRev = git(['rev-parse', 'HEAD'], REPO_ROOT);
+    const adRev = fs.existsSync(stateFile) ? (JSON.parse(fs.readFileSync(stateFile, 'utf8')).adoption?.sourceRev || '') : '';
+    if (adRev && srcRev && adRev !== srcRev) report.push(`[adoption 落后] 采纳于 ${adRev.slice(0, 8)}，源仓 HEAD ${srcRev.slice(0, 8)}（kit 可升级）`);
+    else if (!adRev) report.push('[adoption 未记] hook-engine-state.json 无 adoption 存值');
+  } catch { report.push('[adoption 未知] 状态读取失败'); }
+  console.log(`[check] ${dest}: ${report.length ? '' : '无漂移'}`);
+  for (const r of report) console.log(`  ${r}`);
+  process.exit(0);
+}
+
 const oldPath = (() => { try { return git(['config', 'core.hooksPath']); } catch { return ''; } })();
 if (oldPath && oldPath !== '.githooks' && !opts.force) {
   const oldDir = path.join(dest, oldPath);

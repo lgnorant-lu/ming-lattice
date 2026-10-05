@@ -266,7 +266,7 @@ export function findRegistryPackageLockfiles(registry, repoRoot = ROOT_DIR) {
   return [...new Set(registryRoots(registry, path.resolve(repoRoot)).flatMap(findPackageLockfiles))].sort();
 }
 
-function loadRegistry(repoRoot) {
+export function loadRegistry(repoRoot) {
   return JSON.parse(execFileSync('pwsh', [
     '-NoProfile',
     '-File',

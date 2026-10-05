@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { createCycloneDxFromLockfile, mergeCycloneDxReports, isCycloneDxFresh } from '../../scripts/generate-supply-chain-sbom.mjs';
+import { createCycloneDxFromLockfile, mergeCycloneDxReports, isCycloneDxFresh, generateSupplyChainSbom, loadRegistry } from '../../scripts/generate-supply-chain-sbom.mjs';
 
 export async function run() {
   console.log('[TEST CONTRACT] offline CycloneDX SBOM aggregation...');
@@ -88,6 +88,17 @@ export async function run() {
   timestampChanged.metadata.timestamp = '2099-01-01T00:00:00.000Z';
   assert.equal(isCycloneDxFresh(artifact, timestampChanged), true, 'timestamp update alone must not invalidate freshness');
   console.log('  -> sbom freshness deep equality and tampering detection verified');
+
+  // 提交件=再生件全比对（metadata.component.name 等全字段——生成器改动后不重跑会留旧名漂移）
+  const REPO = path.resolve(import.meta.dirname, '../..');
+  const fresh = generateSupplyChainSbom({
+    registry: loadRegistry(REPO), repoRoot: REPO,
+    generatedAt: artifact.metadata?.timestamp || '2026-01-01T00:00:00.000Z',
+    allowFailures: false
+  });
+  assert.equal(isCycloneDxFresh(artifact, fresh.report), true,
+    'committed sbom stale vs generator output —— 重跑: node scripts/generate-supply-chain-sbom.mjs --output artifacts/sbom.cdx.json');
+  console.log('  -> committed sbom = regenerated output (metadata 全字段 freshness 在闸)');
 }
 
 if (process.argv[1]?.endsWith('test-sbom-generation.mjs')) run();

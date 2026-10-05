@@ -99,6 +99,38 @@ function familyCheck() {
   return { bad, warn };
 }
 
+// frontmatter 投影契约（双写器分权的可测面）：
+//   patch-deployable 是 frontmatter 终态的唯一写器——部署件 description 必须
+//   等于 registry deployable.<name>.desc 声明（声明缺席→不查 desc）；name 恒等目录名。
+//   目录/SKILL.md 缺失交给 lint 面管（build 未跑过的克隆态不违例）。
+function descCheck() {
+  const text = fs.readFileSync(REGISTRY, 'utf8');
+  const m = text.match(/^deployable:\s*$/m);
+  if (!m) return { bad: [], checked: 0 };
+  const rest = text.slice(m.index + m[0].length);
+  const nextTop = rest.search(/^\S/m);
+  const block = nextTop < 0 ? rest : rest.slice(0, nextTop);
+  const bad = []; let checked = 0;
+  const unq = v => v == null ? null : v.trim().replace(/^["']|["']$/g, '');
+  for (const e of block.matchAll(/-\s*name:\s*(\S+)[\s\S]*?(?=\n\s*-\s*name:|$)/g)) {
+    const name = e[1];
+    const desc = unq((e[0].match(/^\s*desc:\s*(.+)$/m) || [])[1]);
+    const f = path.join(REPO, 'deployable', name, 'SKILL.md');
+    if (!fs.existsSync(f)) continue;
+    const t = fs.readFileSync(f, 'utf8');
+    const fm = (t.match(/(?<=^---\s*\n)[\s\S]*?(?=\n---)/) || [null])[0];
+    if (!fm) { bad.push(`${name}: 部署件无 frontmatter`); continue; }
+    const fmName = unq((fm.match(/^name:\s*(.+)$/m) || [])[1]);
+    if (fmName !== name) bad.push(`${name}: frontmatter name=${fmName} ≠ 目录名`);
+    if (desc != null) {
+      const fmDesc = unq((fm.match(/^description:\s*(.+)$/m) || [])[1]);
+      checked++;
+      if (fmDesc !== desc) bad.push(`${name}: description ≠ registry desc（投影未跑或 desc 被旁改）`);
+    }
+  }
+  return { bad, checked };
+}
+
 export function run() {
   console.log('[TEST CONTRACT] registry 双解析器 parity（pwsh 正典 ↔ mjs lite）...');
   let canon;
@@ -125,4 +157,9 @@ export function run() {
   assert.deepEqual(famBad, [], `family/source 声明漂移:\n${famBad.join('\n')}`);
   for (const w of famWarn) console.log(`  [i] ${w}`);
   console.log('  family 标记与 fs 实态一致（24 deployable）');
+
+  // frontmatter 投影终态：desc 声明件 description==registry desc + name==目录名
+  const { bad: descBad, checked } = descCheck();
+  assert.deepEqual(descBad, [], `frontmatter 投影漂移:\n${descBad.join('\n')}`);
+  console.log(`  frontmatter 投影对账通过（desc 声明件 ${checked} 在场对账）`);
 }

@@ -251,5 +251,46 @@ export function run() {
     fs.rmSync(t2, { recursive: true, force: true });
   }
 
+  // 11. registry-upsert——条目安全编辑：add 段尾插位/set 块内改写/remove 删块/校验 fail-closed
+  {
+    const UP = path.resolve(import.meta.dirname, '../../scripts/registry-upsert.mjs');
+    const t = mkRoot();
+    fs.copyFileSync(path.resolve(import.meta.dirname, '../../registry.yaml'), path.join(t, 'registry.yaml'));
+    const env = { REG_UPSERT_ROOT: t };
+    const pin = '0'.repeat(40);
+
+    let r = sh(UP, ['add', '--section', 'vertical', '--name', 'probe-repo', '--repo', 'https://x/y.git',
+      '--pin', pin, '--domain', 'misc', '--dry-run'], env);
+    assert.equal(r.status, 0, r.stderr);
+    assert.ok(!/probe-repo/.test(fs.readFileSync(path.join(t, 'registry.yaml'), 'utf8')), 'dry-run 零写');
+
+    r = sh(UP, ['add', '--section', 'vertical', '--name', 'probe-repo', '--repo', 'https://x/y.git',
+      '--pin', pin, '--domain', 'misc'], env);
+    assert.equal(r.status, 0, r.stderr);
+    r = sh(UP, ['set', '--name', 'probe-repo', '--weight', 'heavy', '--enabled', 'false'], env);
+    assert.equal(r.status, 0, r.stderr);
+    const reg = fs.readFileSync(path.join(t, 'registry.yaml'), 'utf8');
+    assert.match(reg, /name: probe-repo[\s\S]*?enabled: false[\s\S]*?weight: heavy/, 'set 应在块内改写');
+    r = sh(UP, ['remove', '--name', 'probe-repo'], env);
+    assert.equal(r.status, 0);
+    assert.ok(!/probe-repo/.test(fs.readFileSync(path.join(t, 'registry.yaml'), 'utf8')), 'remove 应删块');
+
+    // fail-closed 面：重名/坏 pin/出词表 weight/未知 deploy 客户/无 pin 远端
+    const bad = [
+      ['add', '--section', 'vertical', '--name', 'ming-skills-router', '--repo', 'r', '--pin', pin],
+      ['add', '--section', 'vertical', '--name', 'bad-pin', '--repo', 'r', '--pin', 'abc'],
+      ['add', '--section', 'vertical', '--name', 'bad-w', '--repo', 'r', '--pin', pin, '--weight', 'hevy'],
+      ['add', '--section', 'vertical', '--name', 'bad-d', '--repo', 'r', '--pin', pin, '--deploy', 'codx'],
+      ['add', '--section', 'vertical', '--name', 'no-pin', '--repo', 'r'],
+      ['set', '--name', 'probe-x', '--pin', pin],
+      ['frobnicate', '--name', 'x'],
+    ];
+    for (const a of bad) {
+      const rr = sh(UP, a, env);
+      assert.equal(rr.status, 2, `${a.join(' ')} 应 exit 2: ${rr.stdout}${rr.stderr}`);
+    }
+    fs.rmSync(t, { recursive: true, force: true });
+  }
+
   console.log('  [PASS] ming 命名域契约全过');
 }

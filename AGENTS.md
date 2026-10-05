@@ -29,11 +29,12 @@ docs/                    STANDARDS(工程总纲)/GOVERNANCE-SPINE(工件本体�
 - **仓库采纳编排**: `node scripts/scaffold-repo.mjs --target <repo>`——域骨架(scaffold-domains)+门禁 kit(install-hooks -Target)+自检 单入口；`--with-boundary`/`--skip-*`/`--dry-run` 可选
 - **部署到客户端**: `pwsh scripts/sync.ps1`（支持 `-DryRun` 演练预览，链接到 .cc-switch/skills）
 - **部署态对账**: `node scripts/deploy-ledger.mjs --write`（快照落账）/ `--check`（漂移 missing/changed/foreign + 覆盖 uncovered 对账）
-- **命名域领养**: `node scripts/scaffold-ming.mjs --target <repo>`（`.ming/` 伞面+package.yaml+gitignore 模板化落盘；`--dry-run` 预览 / `--name/--kind/--force`；幂等+写后自证回滚。已并入 scaffold-repo 第四步，`--skip-ming` 可关）
+- **命名域领养**: `node scripts/scaffold-ming.mjs --target <repo>`（`.ming/` 伞面+package.yaml+gitignore 模板化落盘；`--dry-run` 预览 / `--name/--kind/--force`；幂等+写后自证回滚。已并入 scaffold-repo 第四步，`scripts/scaffold-repo.mjs --skip-ming` 可关）
 - **激活 Claude**: `.cc-switch/skills` → 符号链接补到 `~/.claude/skills`（Claude 启动时快照, 重启生效）
 - **更新检测**: `pwsh scripts/update.ps1`（支持 `-DryRun` 演练；缓存优先, TTL 7 天; `sourceGone: true` 条目零网络跳过）
 - **质量检查**: `pwsh scripts/lint.ps1`（部署模块必须有 SKILL.md, 硬编码路径检查）
 - **物化参考层**: `node scripts/fetch.mjs`（`--dry-run` 预览 / `--only <名>` 单项 / `--reconcile` 对齐漂移 / `--include-heavy` 纳入 weight:heavy 重仓；默认面=core，含 base submodule 引导）
+- **registry 条目编辑**: `node scripts/registry-upsert.mjs add|set|remove --name <n>`（add 须 `--section`+`--pin` 40hex；`--dry-run` 预览零落盘；行级精准改写不动注释——替代 python 手编，防"整行变注释"事故类）
 - **新增采集**: registry 登记条目(repo+pin 全 40 位 SHA) → `node scripts/fetch.mjs --only <名>` 物化验证 → 提交 registry 行（**vertical/ 永不入库**——vendor-boundary 门会拦）
 
 ## 铁律（历史踩坑, 详见 docs/PLAYBOOK.md）
@@ -42,7 +43,7 @@ docs/                    STANDARDS(工程总纲)/GOVERNANCE-SPINE(工件本体�
 2. **cwd 陷阱**——在 vertical/ 里跑 `vertical/<name>` 会建出 vertical/vertical/ 孤儿目录
 3. **判定下架要三方一致**——codeload main+master + github 页面全 404 才算死; 瞬时 404 会复活(Restore-JS 案例)
 4. **脚本用 pwsh 7 跑**——powershell 5.1 解析 UTF-8 中文注释会错乱
-5. **registry 手工编辑用 python**——PowerShell 写中文会丢换行(hello-js-reverse 曾整行变注释成幽灵条目)
+5. **registry 手工编辑走 `scripts/registry-upsert.mjs`**——schema 校验+行级改写+dry-run，替代手编(hello-js-reverse 曾整行变注释成幽灵条目)；必须手编时用 python, PowerShell 写中文会丢换行
 6. **meta 语义**: pin=采集时 content version; HEAD 差异=更新信号(不是 pin 必须等于 HEAD)
 
 ## 路由基座（reverse-skill-router）

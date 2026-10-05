@@ -29,6 +29,11 @@ export const CATEGORY_RULES = [
     jobs: [] // 仅需暂存区静态防御扫描，0 个测试套件
   },
   {
+    name: 'agents-doc',
+    test: file => /^AGENTS\.md$/i.test(file),
+    jobs: ['agents-drift'] // 文档命令↔脚本旗标词表对账
+  },
+  {
     name: 'skills',
     test: file => /^(?:private|deployable|vertical|base)\//i.test(file),
     resolveJobs: file => {
@@ -73,7 +78,8 @@ export const CATEGORY_RULES = [
     jobs: [
       'cli-isolated',
       'yaml-contract',
-      'lint-contract'
+      'lint-contract',
+      'update-policy'
     ]
   },
   {
@@ -86,7 +92,7 @@ export const CATEGORY_RULES = [
   {
     // 具名映射：白名单 basename 才归类；其余 scripts/* 落 unknown→full（保守兜底）
     name: 'scripts',
-    test: file => /^scripts\/(?:bootstrap|check-ming|check-skill-index|check-test-coverage|check-supply-chain|clean-temp|deploy-ledger|emit-operational-event|fetch|install-hooks|scaffold-ming|scaffold-repo)\.mjs$/.test(file),
+    test: file => /^scripts\/(?:bootstrap|check-ming|check-skill-index|check-test-coverage|check-supply-chain|clean-temp|deploy-ledger|emit-operational-event|fetch|install-hooks|registry-upsert|scaffold-ming|scaffold-repo)\.mjs$/.test(file),
     resolveJobs: file => ({
       'bootstrap.mjs': ['bootstrap'],
       'check-ming.mjs': ['ming'],
@@ -95,6 +101,7 @@ export const CATEGORY_RULES = [
       'check-supply-chain.mjs': ['supply-chain-gate', 'sbom-generation', 'sca-generation'],
       'clean-temp.mjs': ['tmp-reaper'],
       'deploy-ledger.mjs': ['ming'],
+      'registry-upsert.mjs': ['ming'],
       'scaffold-ming.mjs': ['ming', 'scaffold-repo'],
       'emit-operational-event.mjs': ['observability-contract'],
       'fetch.mjs': ['fetch-cli', 'ming'],
@@ -115,10 +122,12 @@ export const CATEGORY_RULES = [
       if (/test-sbom-generation/.test(file)) return ['sbom-generation'];
       if (/test-sca-generation/.test(file)) return ['sca-generation'];
       if (/test-lint-contract/.test(file)) return ['lint-contract'];
+      if (/test-agents-drift/.test(file)) return ['agents-drift'];
       if (/test-route-effects/.test(file)) return ['route-effects'];
       if (/test-route-safety/.test(file)) return ['route-safety'];
       if (/test-hook-index/.test(file)) return ['hook-index'];
       if (/test-yaml-lite/.test(file)) return ['yaml-contract'];
+      if (/test-update-policy/.test(file)) return ['update-policy'];
       if (/test-cli-tools/.test(file)) return ['cli-isolated'];
       if (/test-scaffold-repo/.test(file)) return ['scaffold-repo'];
       if (/test-hook-planner/.test(file)) return ['hook-planner'];
@@ -146,6 +155,7 @@ export const CATEGORY_RULES = [
 // test-hook-planner 做源级对表断言（run.mjs 无 main 守护不可 import），漂移即红
 export const ALL_SUITE_NAMES = [
   'adapter-contract',
+  'agents-drift',
   'bootstrap',
   'boundary-live',
   'check-skill-unit',
@@ -190,7 +200,8 @@ export const ALL_SUITE_NAMES = [
   'test-coverage',
   'tmp-reaper',
   'verify-gates',
-  'yaml-contract'
+  'yaml-contract',
+  'update-policy'
 ];
 
 /**

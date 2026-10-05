@@ -1271,6 +1271,7 @@ deployable:
     enabled: true
     domain: js
     note: JSVMP 双路径实战(v3.4.1), 需 camoufox-reverse MCP
+    desc: "Web JS 逆向实战（JSVMP 双路径: 算法追踪/环境伪装, 反爬三分法, 红线纪律）。适用于前端签名、加密参数、动态 Cookie、WASM 逆向, 尤其是混淆/JSVMP 类目标。"
     deploy:
       claude: true
   - name: rust-reverse
@@ -1280,6 +1281,7 @@ deployable:
     enabled: true
     domain: bin
     note: Rust 二进制专项, 补基座短板
+    desc: "Rust 二进制逆向专项（指纹识别→rustfilt 去符号→crate 命名空间恢复→Ghidra 伪代码导出, Phase 0-5）。适用于 Rust 编写的 exe/so/ELF/Mach-O。"
     deploy:
       claude: true
   - name: android-reverse
@@ -1289,6 +1291,7 @@ deployable:
     enabled: true
     domain: apk
     note: 自适应 Frida 绕过/Fragment 注入/Firebase 矩阵
+    desc: "Android APK 全流程逆向（jadx 反编译/API 提取/自适应 Frida 绕过/Fragment 注入检测/Firebase 测试矩阵）。适用于 APK 接口提取、防护绕过、安全测试。"
     deploy:
       claude: true
   - name: ios-reverse
@@ -1298,6 +1301,7 @@ deployable:
     enabled: true
     domain: ios
     note: iOS 静态逆向(路径变量已修复)
+    desc: "iOS IPA/Mach-O 静态逆向（提取/API 提取/凭据扫描/r2-Ghidra 二进制/反篡改检测/漏洞审计）。适用于 iOS App 逆向分析。"
     deploy:
       claude: true
   - name: rs-js-reverse
@@ -1364,6 +1368,7 @@ deployable:
     enabled: true
     domain: js
     note: AST 流水线+站点混淆专档(硬编码路径已修)
+    desc: "AST 反混淆流水线（可运行脚本 + 站点混淆家族专档: reese84/顶象/极验4/网易易盾/同花顺/小红书等）。适用于混淆 JS 还原。"
     deploy:
       claude: true
   - name: xbs-verify-patcher
@@ -1373,12 +1378,14 @@ deployable:
     enabled: true
     domain: js
     note: 验证码求解编排(基座空白)
+    desc: "验证码识别与求解编排（极验/易盾/腾讯/hCaptcha 等厂商流程）。适用于验证码场景逆向。"
     deploy:
       claude: true
   - name: areclaw-analyze-apk
     family: authored
     path: deployable/areclaw-analyze-apk
     source: vertical/areclaw/.claude/skills/analyze-apk
+    desc: "Android APK 分析（5 阶段流程: 框架判定 Flutter/RN/IL2CPP/加壳 → 定向分析）。"
     enabled: true
     domain: apk
     deploy:
@@ -1387,6 +1394,7 @@ deployable:
     family: authored
     path: deployable/areclaw-compare-versions
     source: vertical/areclaw/.claude/skills/compare-versions
+    desc: "Android APK 版本对比（差异定位/更新链分析）。"
     enabled: true
     domain: apk
     deploy:
@@ -1395,6 +1403,7 @@ deployable:
     family: authored
     path: deployable/areclaw-find-api
     source: vertical/areclaw/.claude/skills/find-api
+    desc: "Android App API 定位（端点/接口提取）。"
     enabled: true
     domain: apk
     deploy:
@@ -1403,6 +1412,7 @@ deployable:
     family: authored
     path: deployable/areclaw-intercept
     source: vertical/areclaw/.claude/skills/intercept
+    desc: "Frida 拦截/抓包（Hook 注入/流量拦截, Windows 优先环境）。"
     enabled: true
     domain: apk
     deploy:
@@ -1411,6 +1421,7 @@ deployable:
     family: authored
     path: deployable/areclaw-register
     source: vertical/areclaw/.claude/skills/register
+    desc: "Android 注册/登录流程分析与绕过（安全测试）。"
     enabled: true
     domain: apk
     deploy:
@@ -1419,6 +1430,7 @@ deployable:
     family: authored
     path: deployable/malware-ioc-extraction
     source: vertical/malware-re-skills/.agents/skills/re-ioc-extraction
+    desc: "证据驱动 IOC 提取与规范化（严格 YAML schema/置信度词汇/verbatim 证据）。适用于恶意样本分析报告与 IOC 沉淀。"
     enabled: true
     domain: mw
     note: IOC YAML schema+证据规则

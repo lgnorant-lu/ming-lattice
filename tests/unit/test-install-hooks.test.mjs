@@ -164,6 +164,50 @@ export function run() {
     check((attr.match(/\.githooks\/\*/g) || []).length === 1, '.gitattributes 钉重复追加');
   }
 
+  // ── --check 只读漂移报告 ──
+  {
+    const d = track(realRepo());
+    cli(['--target', d]);
+    // clean: 刚铺完的采纳仓应报无漂移（adoption rev=源 HEAD 一致）
+    let r = cli(['--target', d, '--check']);
+    check(r.status === 0 && /无漂移/.test(r.stdout), `clean 应报无漂移: ${r.stdout}${r.stderr}`);
+
+    // 漂移族：删 .hooksrc / 删 shim / 删 kit 件——全部如实列出，仍 exit 0
+    fs.rmSync(path.join(d, '.hooksrc'));
+    fs.rmSync(path.join(d, '.githooks/post-checkout'), { force: true });
+    fs.rmSync(path.join(d, 'scripts/hooks/gates/secrets.mjs'));
+    r = cli(['--target', d, '--check']);
+    check(r.status === 0, `漂移应仍 exit 0（信息性）: ${r.status}`);
+    check(/缺席.*hooksrc/.test(r.stdout), `.hooksrc 缺席未报: ${r.stdout}`);
+    check(/shim 缺席.*post-checkout/.test(r.stdout), `shim 缺席未报: ${r.stdout}`);
+    check(/kit 件缺席.*secrets/.test(r.stdout), `kit 件缺席未报: ${r.stdout}`);
+
+    // 键集差：上游新键 + 采纳侧私键双向报告
+    fs.writeFileSync(path.join(d, '.hooksrc'), 'localOnlyKey=true\n');
+    r = cli(['--target', d, '--check']);
+    check(/upstream 新键/.test(r.stdout), `tmpl 键缺席未报: ${r.stdout}`);
+    check(/采纳侧键.*localOnlyKey/.test(r.stdout), `采纳侧私键未报: ${r.stdout}`);
+
+    // shim 字节差
+    fs.writeFileSync(path.join(d, '.githooks/pre-commit'), '# 改动\n');
+    r = cli(['--target', d, '--check']);
+    check(/shim 字节差.*pre-commit/.test(r.stdout), `shim 字节差未报: ${r.stdout}`);
+
+    // 只读：--check 不产生任何新文件（排除 .git 内既有状态件）
+    const snap = dir => {
+      const out = [];
+      const walk = (p, rel = '') => { for (const e of fs.readdirSync(p, { withFileTypes: true })) {
+        const f = path.join(p, e.name), r2 = path.join(rel, e.name);
+        if (r2.startsWith('.git')) continue;
+        e.isDirectory() ? walk(f, r2) : out.push(r2);
+      } };
+      walk(dir); return out.sort();
+    };
+    const before = snap(d);
+    cli(['--target', d, '--check']);
+    check(JSON.stringify(snap(d)) === JSON.stringify(before), '--check 落了新文件（只读承诺违例）');
+  }
+
   for (const d of dirs) fs.rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   if (problems.length) {
     for (const p of problems) console.error(`  [FAIL] ${p}`);

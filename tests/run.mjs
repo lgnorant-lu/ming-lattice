@@ -36,6 +36,7 @@ import { run as runDistillIndex } from './unit/test-distill-index.test.mjs';
 import { run as runPropCli } from './unit/test-prop-cli.test.mjs';
 import { run as runSpawnBound } from './unit/test-spawn-bound.test.mjs';
 import { run as runTmpReaper } from './unit/test-tmp-reaper.test.mjs';
+import { run as runAgentsDrift } from './contract/test-agents-drift.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const startedAt = process.hrtime.bigint();
@@ -104,6 +105,7 @@ export const allSuites = [
   { name: 'prop-cli', tier: 'unit', run: runPropCli },
   { name: 'spawn-bound', tier: 'unit', run: runSpawnBound },
   { name: 'tmp-reaper', tier: 'unit', run: runTmpReaper },
+  { name: 'agents-drift', tier: 'contract', run: runAgentsDrift },
   { name: 'test-coverage', tier: 'contract', run: () => node('scripts/check-test-coverage.mjs') },
   { name: 'boundary-live', tier: 'contract', run: () => {
     // 真仓事实提取 + 根级 boundaries.yaml 契约评估（ADR-0008 实例化闸门）
@@ -120,6 +122,7 @@ export const allSuites = [
   { name: 'route-safety', tier: 'contract', run: () => node('--test', 'tests/contract/test-route-safety.test.mjs') },
   { name: 'hook-index', tier: 'integration', git: true, run: () => node('--test', 'tests/integration/test-hook-index.test.mjs') },
   { name: 'yaml-contract', tier: 'contract', pwsh: true, run: () => execFileSync('pwsh', ['-NoProfile', '-File', 'tests/unit/test-yaml-lite.test.ps1'], { cwd: root, stdio: 'inherit', timeout: 30000 }) },
+  { name: 'update-policy', tier: 'unit', pwsh: true, run: () => execFileSync('pwsh', ['-NoProfile', '-File', 'tests/unit/test-update-policy.test.ps1'], { cwd: root, stdio: 'inherit', timeout: 60000 }) },
   { name: 'cli-isolated', tier: 'integration', pwsh: true, run: runCliIntegration },
   { name: 'manifest-freshness', tier: 'contract', run: () => node('scripts/build-router-manifest.mjs', '--check') },
   { name: 'distill-index', tier: 'contract', run: () => node('private/ming-distiller/scripts/check-index.mjs') },

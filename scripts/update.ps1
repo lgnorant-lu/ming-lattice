@@ -28,8 +28,15 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'lib/registry.ps1')
 
 $reg = Read-SkillRegistry -RegistryPath $RegistryPath
-$ttlDays = [int]$reg.updatePolicy.ttlDays
-if ($ttlDays -lt 1) { $ttlDays = 7 }
+# ttlDays 硬校验：负值/非数会静默改写 TTL 语义或抛隐晦转型错——先拦出明确消息
+$ttlDays = 7
+if ($null -ne $reg.updatePolicy.ttlDays) {
+    $parsed = 0
+    if (-not [int]::TryParse("$($reg.updatePolicy.ttlDays)", [ref]$parsed) -or $parsed -lt 1 -or $parsed -gt 365) {
+        throw "updatePolicy.ttlDays 非法值: $($reg.updatePolicy.ttlDays)（须 1-365 整数；缺省 7）"
+    }
+    $ttlDays = $parsed
+}
 $today = (Get-Date).ToString('yyyy-MM-dd')
 $report = @()
 $stats = @{ cache = 0; net = 0; updated = 0; skip = 0 }
