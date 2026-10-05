@@ -46,6 +46,8 @@ trailerLevel=error        # → gate.commit-msg.level（AI 尾巴等）
 # gate.commit-msg.subjectMaxLen=72               # 主题长度上限（warn 级，0=不限）
 # gate.commit-msg.bannedTrailers=^Generated with\b,^Co-Authored-By\s*:   # 禁尾表整体替换（CSV 正则，不可含逗号）
 # gate.commit-msg.extraTrailers=^Signed-off-by   # 追加禁尾正则（CSV）
+# gate.commit-msg.subjectCjk=true                # subject 须含中日韩字符（仓私有规范，默认关）
+# gate.commit-msg.bodySections=实施内容,本提交不授权,已执行审阅  # 正文必含标记集（CSV；sectionTypes 限定 type 集，缺省 feat,fix,refactor,docs）
 
 # ── 声明式正则门（单模式+单消息长尾，零代码）──
 # gate.<id>.level=<等级>

@@ -11,6 +11,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# 管道/spawn 调用面输出统一 UTF-8——中文 Windows 控制台默认 GBK，
+# Node spawnSync pipe 收到 GBK 字节即乱码（scaffold-repo 编排调用实证）
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $repoRoot = Split-Path $PSScriptRoot -Parent
 
 # ── 脚手架模式：kit 移植到目标仓 ──

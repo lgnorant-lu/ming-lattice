@@ -97,6 +97,19 @@ export function run() {
   assert.equal(validateTrailer('').ok, true);
   assert.equal(validateTrailer(null).ok, true);
 
+  // 7. 仓私有文档规范键（subjectCjk/bodySections/sectionTypes）——policy 透传断言：
+  //    本仓 .hooksrc 显式开 → repoPolicy 携带；裸 policy（无键）→ 未定义即 kit 默认关
+  assert.equal(repoPolicy.subjectCjk, true, 'repoPolicy 应含 subjectCjk（.hooksrc gate.commit-msg.subjectCjk）');
+  assert.deepEqual(repoPolicy.bodySections, ['实施内容', '本提交不授权', '已执行审阅'],
+    'repoPolicy.bodySections 应为本仓三段式标记集');
+  const bare = commitMsgPolicy({}, {});
+  assert.equal(bare.subjectCjk, undefined, 'kit 裸默认 subjectCjk 应未定义（默认关）');
+  assert.equal(bare.bodySections, undefined, 'kit 裸默认 bodySections 应未定义（默认关）');
+  const custom = commitMsgPolicy({}, { subjectCjk: 'true', bodySections: '甲,乙', sectionTypes: 'feat' });
+  assert.equal(custom.subjectCjk, true);
+  assert.deepEqual(custom.bodySections, ['甲', '乙']);
+  assert.deepEqual(custom.sectionTypes, ['feat']);
+
   console.log('  -> validate.mjs 全部断言通过！');
 }
 

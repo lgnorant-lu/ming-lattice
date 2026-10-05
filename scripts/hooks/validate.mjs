@@ -1,6 +1,6 @@
 // scripts/hooks/validate.mjs
 // ming-skills 提交信息规范与 Emoji/乱码校验器 (纯 Node.js 实现, 零外部依赖)
-// 
+//
 // 规则契约:
 //   <type>(<scope>): <subject>
 // type 白名单: Conventional 11 型（仓专型走 gate.commit-msg.types 覆盖）
@@ -103,6 +103,12 @@ export function commitMsgPolicy(legacy = {}, gcfg = {}) {
     .filter(Boolean);
   if (gcfg.bannedTrailers) policy.bannedTrailers = csvRegex(gcfg.bannedTrailers);
   if (gcfg.extraTrailers) policy.extraTrailers = csvRegex(gcfg.extraTrailers);
+  // 仓私有文档规范两键（kit 默认关——采纳仓经 .hooksrc 显式开，政策住配置不住码）：
+  //   subjectCjk=true  → subject 须含中日韩字符
+  //   bodySections=甲,乙,丙 → 指定 type 的提交正文须含全部标记（配 sectionTypes 限定 type 集）
+  if (String(gcfg.subjectCjk) === 'true') policy.subjectCjk = true;
+  if (gcfg.bodySections) policy.bodySections = String(gcfg.bodySections).split(',').map(s => s.trim()).filter(Boolean);
+  if (gcfg.sectionTypes) policy.sectionTypes = String(gcfg.sectionTypes).split(',').map(s => s.trim()).filter(Boolean);
   return policy;
 }
 

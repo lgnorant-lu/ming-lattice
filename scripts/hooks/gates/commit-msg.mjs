@@ -7,13 +7,17 @@
 //   gate.commit-msg.subjectMaxLen 主题长度上限（warn 级提示，0=不限制）
 //   gate.commit-msg.bannedTrailers 禁尾表整体替换（CSV 正则，regex 内不可含逗号）
 //   gate.commit-msg.extraTrailers  追加禁尾模式（CSV 正则，如 Signed-off-by|Change-Id）
+//   gate.commit-msg.subjectCjk     =true 时 subject 须含中日韩字符（仓私有文档规范，kit 默认关）
+//   gate.commit-msg.bodySections   正文必含标记集（CSV，如 实施内容,本提交不授权,已执行审阅）
+//   gate.commit-msg.sectionTypes   bodySections 生效的 type 集（缺省 feat,fix,refactor,docs）
 
 import fs from 'node:fs';
 import { extractSubject, validateSubject, validateTrailer, loadHookConfig, commitMsgPolicy } from '../validate.mjs';
 
 export const gate = {
   id: 'commit-msg',
-  configKeys: ['types', 'subjectMaxLen', 'bannedTrailers', 'extraTrailers', 'pattern', 'patternHint'],
+  configKeys: ['types', 'subjectMaxLen', 'bannedTrailers', 'extraTrailers', 'pattern', 'patternHint',
+               'subjectCjk', 'bodySections', 'sectionTypes'],
   stages: ['commit-msg'],
   family: 'gate',
   defaultLevel: 'error',
@@ -47,20 +51,22 @@ export const gate = {
     for (const w of trailerRes.warnings ?? []) {
       findings.push({ gate: 'commit-msg', file: '-', message: w });
     }
-    // STANDARDS §1.3/1.4 文档规范——阻断级（2026-10-04 warn→error 升格：
-    // 可忽略的 warn = 可忽略的规范）；merge/revert 豁免（外来形态），
-    // type 词表外（chore/sync 上游件）豁免
+    // 仓私有文档规范（sc STANDARDS §1.3/1.4 的制度化落点）——双键均默认关，
+    // 采纳仓经 .hooksrc 显式开；merge/revert 豁免（外来形态）
     if (!/^Merge |^Revert /i.test(subject)) {
-      if (!/[一-鿿]/.test(subject)) {
+      if (policy.subjectCjk && !/[一-鿿]/.test(subject)) {
         findings.push({ gate: 'commit-msg', file: '-',
-          message: 'subject 应以中文描述（STANDARDS §1.3 文档规范）' });
+          message: 'subject 应以中文描述（gate.commit-msg.subjectCjk）' });
       }
+      const secTypes = policy.sectionTypes ?? ['feat', 'fix', 'refactor', 'docs'];
       const type = (subject.match(/^(\w+)[:(]/) || [])[1];
       const body = rawMsg.slice(rawMsg.indexOf('\n') + 1).trim();
-      if (['feat', 'fix', 'refactor', 'docs'].includes(type)
-          && (!body || !/实施内容[:：]/.test(body) || !/本提交不授权[:：]/.test(body) || !/已执行审阅[:：]/.test(body))) {
-        findings.push({ gate: 'commit-msg', file: '-',
-          message: `${type} 类非琐碎提交正文应含三段式标记（实施内容:/本提交不授权:/已执行审阅:——STANDARDS §1.4 文档规范）` });
+      if (policy.bodySections?.length && secTypes.includes(type)) {
+        const missing = policy.bodySections.filter(s => !new RegExp(`${s}[:：]`).test(body));
+        if (missing.length) {
+          findings.push({ gate: 'commit-msg', file: '-',
+            message: `${type} 类非琐碎提交正文缺必含标记: ${missing.join('、')}（gate.commit-msg.bodySections）` });
+        }
       }
     }
     return findings;

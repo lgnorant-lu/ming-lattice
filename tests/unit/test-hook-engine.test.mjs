@@ -1174,7 +1174,9 @@ export async function run() {
     try {
       for (const [d, cfg] of [
         [e1, ['lintLevel=off', 'secretLevel=off', 'gate.commit-msg.types=feat,fix,collect',
-          'gate.commit-msg.bannedTrailers=^Co-Authored-By\\s*:'].join('\n')],
+          'gate.commit-msg.bannedTrailers=^Co-Authored-By\\s*:',
+          'gate.commit-msg.subjectCjk=true',
+          'gate.commit-msg.bodySections=实施内容,本提交不授权,已执行审阅'].join('\n')],
         [e2, 'lintLevel=off\nsecretLevel=off\n'],
       ]) {
         fs.cpSync(path.join(root, 'scripts/hooks'), path.join(d, 'scripts/hooks'), { recursive: true });
@@ -1192,21 +1194,25 @@ export async function run() {
       assert.equal(b1.status, 1, '配置仓署名禁令拦截');
       const b2 = cm(e2, 'fix: 修复' + okBody + '\n\nCo-Authored-By: a@b.c');
       assert.equal(b2.status, 0, '未配置仓标准 trailer 放行（政策不烧死）');
-      // —— 文档规范阻断级（STANDARDS §1.3/1.4——2026-10-04 warn→error 升格）——
+      // —— 仓私有文档规范（subjectCjk/bodySections 配置键——kit 默认关，e1 显式开）——
       const w1 = cm(e1, 'fix(verify): english subject only');
-      assert.equal(w1.status, 1, '英文 subject 升格后阻断提交');
+      assert.equal(w1.status, 1, '英文 subject 配置仓阻断提交');
       assert.ok((w1.stdout + w1.stderr).includes('subject 应以中文描述'), '英文 subject 应点名');
-      assert.ok((w1.stdout + w1.stderr).includes('三段式'), '缺三段式正文应点名');
+      assert.ok((w1.stdout + w1.stderr).includes('缺必含标记'), '缺正文标记应点名');
       const w2 = cm(e1, 'fix(verify): 中文主题\n\n实施内容:\n- a\n本提交不授权:\n- b\n已执行审阅: c');
       assert.equal(w2.status, 0, '合规提交应放行');
-      assert.ok(!(w2.stdout + w2.stderr).includes('三段式'), '合规三段式不应命中');
+      assert.ok(!(w2.stdout + w2.stderr).includes('缺必含标记'), '合规正文不应命中');
       assert.ok(!(w2.stdout + w2.stderr).includes('中文描述'), '中文 subject 不应命中');
       const w3 = cm(e1, 'Merge branch x');
       assert.equal(w3.status, 0, 'merge 提交豁免放行');
       assert.ok(!(w3.stdout + w3.stderr).includes('中文描述'), 'merge 提交豁免');
       const w4 = cm(e1, 'collect: 采集 vendored repo');
       assert.equal(w4.status, 0, 'collect 类型合法');
-      assert.ok(!(w4.stdout + w4.stderr).includes('三段式'), '词表外 type 豁免三段式');
+      assert.ok(!(w4.stdout + w4.stderr).includes('缺必含标记'), '词表外 type 豁免正文标记');
+      // 未配置仓（e2 裸 .hooksrc）对同一英文 subject 放行——私有政策不烧死进 kit
+      const w5 = cm(e2, 'fix(verify): english subject only');
+      assert.equal(w5.status, 0, '裸默认仓英文 subject 放行（kit 中性）');
+      assert.ok(!(w5.stdout + w5.stderr).includes('中文描述'), '裸默认仓英文 subject 不命中（kit 中性）');
     } finally {
       fs.rmSync(e1, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
       fs.rmSync(e2, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });

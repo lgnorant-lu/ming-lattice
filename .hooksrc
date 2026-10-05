@@ -6,6 +6,9 @@
 requireCommitMsg=true
 gate.commit-msg.types=feat,fix,chore,docs,style,refactor,test,perf,revert,collect,sync,merge
 gate.commit-msg.bannedTrailers=^Generated with\b,^Co-Authored-By\s*:
+# STANDARDS §1.3/1.4 文档规范（仓私有——kit 默认关，本仓显式开保持现行行为）
+gate.commit-msg.subjectCjk=true
+gate.commit-msg.bodySections=实施内容,本提交不授权,已执行审阅
 
 # 2. Emoji 绝对禁令（严禁在技能、文档与提交中使用 emoji，使用 [禁止]/[警告]/[性能] 等文本标签）
 #    自研文档/技能面作用域（精确文件名 README.md 只认根——deep README 由 docs/**/private/** 覆盖）
