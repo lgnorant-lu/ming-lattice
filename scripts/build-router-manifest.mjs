@@ -305,11 +305,42 @@ const RECIPES = {
   }
 };
 
+function parseSkillFrontmatter(text) {
+  const source = text.replace(/^\uFEFF/, '');
+  const frontmatter = source.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  const name = frontmatter?.[1].match(/^name:\s*["']?([^"'\r\n]+?)["']?\s*$/m)?.[1];
+  let description = frontmatter?.[1].match(/^description:[\t ]*([^\r\n]*)/m)?.[1].trim() || '';
+  if (/^[>|]/.test(description)) {
+    description = frontmatter[1].match(/^description:[^\r\n]*\r?\n((?:[\t ]+[^\r\n]*(?:\r?\n|$))+)/m)?.[1].trim() || '';
+  } else {
+    description = description.replace(/^(["'])(.*)\1$/, '$2').trim();
+  }
+  return { name, description };
+}
+
+// 作者期校验：DOMAIN_DEFS/RECIPES 是策展常量表——内部引用错名应在构建时失败，
+// 而非让消费侧路由时以 invalid_recipe_definition 全灭或静默生成死触发器。
+export function validateRouterDefs(defs = DOMAIN_DEFS, recipes = RECIPES) {
+  const routable = new Set(Object.values(defs).flatMap(info => info.skills));
+  for (const [domain, info] of Object.entries(defs)) {
+    for (const skill of Object.keys(info.skillTriggers || {})) {
+      if (!routable.has(skill)) throw new Error(`orphan_skill_trigger: ${domain}/${skill}`);
+    }
+  }
+  for (const [name, recipe] of Object.entries(recipes)) {
+    if (!defs[recipe.domain]) throw new Error(`unknown_recipe_domain: ${name}`);
+    for (const skill of recipe.skills) {
+      if (!routable.has(skill)) throw new Error(`orphan_recipe_skill: ${name}/${skill}`);
+    }
+  }
+}
+
 export function buildRouterManifest({ repoRoot = ROOT_DIR, registry, write = false, generatedAt = new Date().toISOString() } = {}) {
+  validateRouterDefs();
   registry ??= JSON.parse(execFileSync('pwsh', ['-NoProfile', '-File',
     path.join(ROOT_DIR, 'scripts/read-registry.ps1'), '-RegistryPath', path.join(repoRoot, 'registry.yaml')],
   // 30s→120s：pwsh 冷启动+大 registry YAML 解析在负载/AV 扫描下实测 ETIMEDOUT flake
-  { encoding: 'utf8', timeout: 120_000, maxBuffer: 4 * 1024 * 1024 }));
+  { encoding: 'utf8', timeout: 120_000, maxBuffer: 4 * 1024 * 1024 }).replace(/^\uFEFF/, ''));
   const units = new Map();
   for (const base of registry.base || []) {
     for (const [name, clients] of Object.entries(base.modules || {})) {
@@ -324,6 +355,7 @@ export function buildRouterManifest({ repoRoot = ROOT_DIR, registry, write = fal
     }
   }
   const availability = {};
+  const skillMeta = new Map();
   for (const name of [...new Set(Object.values(DOMAIN_DEFS).flatMap(info => info.skills))].sort()) {
     const unit = units.get(name);
     if (!unit) { availability[name] = 'unregistered'; continue; }
@@ -332,19 +364,12 @@ export function buildRouterManifest({ repoRoot = ROOT_DIR, registry, write = fal
     const relative = path.relative(path.resolve(repoRoot), source);
     if (relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) throw new Error(`invalid_skill_path: ${name}`);
     if (!fs.existsSync(source)) { availability[name] = 'missing'; continue; }
-    const text = fs.readFileSync(source, 'utf8').replace(/^\uFEFF/, '');
-    const frontmatter = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    const actualName = frontmatter?.[1].match(/^name:\s*["']?([^"'\r\n]+?)["']?\s*$/m)?.[1];
-    let description = frontmatter?.[1].match(/^description:[\t ]*([^\r\n]*)/m)?.[1].trim() || '';
-    if (/^[>|]/.test(description)) {
-      description = frontmatter[1].match(/^description:[^\r\n]*\r?\n((?:[\t ]+[^\r\n]*(?:\r?\n|$))+)/m)?.[1].trim() || '';
-    } else {
-      description = description.replace(/^(["'])(.*)\1$/, '$2').trim();
-    }
-    availability[name] = actualName === name && description ? 'ready' : 'invalid';
+    const meta = parseSkillFrontmatter(fs.readFileSync(source, 'utf8'));
+    skillMeta.set(name, meta);
+    availability[name] = meta.name === name && meta.description ? 'ready' : 'invalid';
   }
   // S3 词法层文档：name + description + skillTriggers 三合（ADR-0007）
-  // description 复用 availability 检查期的 frontmatter 提取结果——二次读取保一致性
+  // description 复用 availability 检查期的 frontmatter 提取结果——单读缓存保一致性
   const skillTriggerMap = {};
   for (const info of Object.values(DOMAIN_DEFS)) {
     for (const [skill, terms] of Object.entries(info.skillTriggers || {})) {
@@ -354,17 +379,7 @@ export function buildRouterManifest({ repoRoot = ROOT_DIR, registry, write = fal
   const skillDocs = {};
   for (const [name, state] of Object.entries(availability)) {
     if (state !== 'ready') continue;
-    const unit = units.get(name);
-    const source = path.resolve(repoRoot, unit.path, 'SKILL.md');
-    const text = fs.readFileSync(source, 'utf8').replace(/^﻿/, '');
-    const frontmatter = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    let description = frontmatter?.[1].match(/^description:[\t ]*([^\r\n]*)/m)?.[1].trim() || '';
-    if (/^[>|]/.test(description)) {
-      description = frontmatter[1].match(/^description:[^\r\n]*\r?\n((?:[\t ]+[^\r\n]*(?:\r?\n|$))+)/m)?.[1].trim() || '';
-    } else {
-      description = description.replace(/^(["'])(.*)\1$/, '$2').trim();
-    }
-    skillDocs[name] = { name, description, triggers: skillTriggerMap[name] || [] };
+    skillDocs[name] = { name, description: skillMeta.get(name).description, triggers: skillTriggerMap[name] || [] };
   }
   const manifest = {
     version: '2.0.0', generatedAt,

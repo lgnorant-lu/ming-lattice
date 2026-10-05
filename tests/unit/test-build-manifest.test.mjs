@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { buildRouterManifest } from '../../scripts/build-router-manifest.mjs';
+import { buildRouterManifest, validateRouterDefs } from '../../scripts/build-router-manifest.mjs';
 import { Decide } from '../../scripts/route-core.mjs';
 
 export function run() {
@@ -35,6 +35,17 @@ export function run() {
       assert.ok(manifest.domains[recipe.domain]);
       for (const skill of recipe.skills) assert.ok(Object.hasOwn(manifest.availability, skill), skill);
     }
+    // 作者期校验：defs/recipes 引用错名在构建时 fail-closed（消费侧只剩运行时降级）
+    assert.doesNotThrow(() => validateRouterDefs());
+    const badTriggerDefs = structuredClone(manifest.domains);
+    badTriggerDefs.engineering.skillTriggers['ghost-skill'] = ['x'];
+    assert.throws(() => validateRouterDefs(badTriggerDefs, manifest.recipes), /orphan_skill_trigger: engineering\/ghost-skill/);
+    const badDomainRecipes = structuredClone(manifest.recipes);
+    badDomainRecipes['bogus-recipe'] = { domain: 'nope', skills: [] };
+    assert.throws(() => validateRouterDefs(manifest.domains, badDomainRecipes), /unknown_recipe_domain: bogus-recipe/);
+    const badSkillRecipes = structuredClone(manifest.recipes);
+    badSkillRecipes['bogus-recipe'] = { domain: 'testing', skills: ['ghost-skill'] };
+    assert.throws(() => validateRouterDefs(manifest.domains, badSkillRecipes), /orphan_recipe_skill: bogus-recipe\/ghost-skill/);
     const js = registry.private.find(item => item.name === 'testing-js-idiom');
     js.enabled = false;
     assert.equal(build().availability[js.name], 'disabled');
