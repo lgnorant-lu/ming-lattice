@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-misc/ctfd-navigation.md
+../../vertical/ctf-skills/ctf-misc/ctfd-navigation.md

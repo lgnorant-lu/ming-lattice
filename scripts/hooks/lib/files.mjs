@@ -157,11 +157,12 @@ export function fileSource(root, spec = { source: 'staged' }) {
       },
     };
   }
-  // staged（默认）
+  // staged（默认）——同样剔除链接/gitlink 条目：staged 读的索引 blob 是链接
+  // 文本（路径字符串），被内容门当正文扫会误报"缺 EOF 换行"类噪音
   let cache = null;
   return {
     source: 'staged',
-    list: () => (cache ??= listStaged(root)),
+    list: () => (cache ??= contentOnly(listStaged(root))),
     read: p => readStaged(root, p),
     meta: null, // 批量元数据由引擎经 batchMeta 注入
   };

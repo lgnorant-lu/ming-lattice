@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-forensics/disk-recovery.md
+../../vertical/ctf-skills/ctf-forensics/disk-recovery.md

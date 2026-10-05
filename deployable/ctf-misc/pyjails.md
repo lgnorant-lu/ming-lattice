@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-misc/pyjails.md
+../../vertical/ctf-skills/ctf-misc/pyjails.md

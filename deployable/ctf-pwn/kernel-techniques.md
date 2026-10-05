@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-pwn/kernel-techniques.md
+../../vertical/ctf-skills/ctf-pwn/kernel-techniques.md

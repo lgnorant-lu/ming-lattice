@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-forensics/steganography.md
+../../vertical/ctf-skills/ctf-forensics/steganography.md

@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-forensics/stego-image.md
+../../vertical/ctf-skills/ctf-forensics/stego-image.md

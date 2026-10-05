@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-pwn/rop-and-shellcode.md
+../../vertical/ctf-skills/ctf-pwn/rop-and-shellcode.md

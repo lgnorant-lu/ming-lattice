@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-misc/linux-privesc.md
+../../vertical/ctf-skills/ctf-misc/linux-privesc.md

@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-crypto/prng.md
+../../vertical/ctf-skills/ctf-crypto/prng.md

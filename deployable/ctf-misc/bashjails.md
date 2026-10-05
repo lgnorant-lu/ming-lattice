@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-misc/bashjails.md
+../../vertical/ctf-skills/ctf-misc/bashjails.md

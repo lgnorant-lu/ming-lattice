@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-forensics/3d-printing.md
+../../vertical/ctf-skills/ctf-forensics/3d-printing.md

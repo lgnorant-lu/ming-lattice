@@ -85,8 +85,9 @@ export const CATEGORY_RULES = [
   {
     // 具名映射：白名单 basename 才归类；其余 scripts/* 落 unknown→full（保守兜底）
     name: 'scripts',
-    test: file => /^scripts\/(?:check-skill-index|check-test-coverage|check-supply-chain|clean-temp|emit-operational-event|fetch|install-hooks|scaffold-repo)\.mjs$/.test(file),
+    test: file => /^scripts\/(?:bootstrap|check-skill-index|check-test-coverage|check-supply-chain|clean-temp|emit-operational-event|fetch|install-hooks|scaffold-repo)\.mjs$/.test(file),
     resolveJobs: file => ({
+      'bootstrap.mjs': ['bootstrap'],
       'check-skill-index.mjs': ['skill-index'],
       'check-test-coverage.mjs': ['test-coverage'],
       'check-supply-chain.mjs': ['supply-chain-gate', 'sbom-generation', 'sca-generation'],
@@ -141,6 +142,7 @@ export const CATEGORY_RULES = [
 // test-hook-planner 做源级对表断言（run.mjs 无 main 守护不可 import），漂移即红
 export const ALL_SUITE_NAMES = [
   'adapter-contract',
+  'bootstrap',
   'boundary-live',
   'check-skill-unit',
   'cli-isolated',

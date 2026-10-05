@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-pwn/format-string.md
+../../vertical/ctf-skills/ctf-pwn/format-string.md

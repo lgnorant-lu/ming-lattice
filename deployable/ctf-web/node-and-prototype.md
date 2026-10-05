@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-web/node-and-prototype.md
+../../vertical/ctf-skills/ctf-web/node-and-prototype.md

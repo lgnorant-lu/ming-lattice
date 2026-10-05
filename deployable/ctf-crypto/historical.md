@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-crypto/historical.md
+../../vertical/ctf-skills/ctf-crypto/historical.md

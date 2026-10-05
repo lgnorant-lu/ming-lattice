@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/hello-js-reverse-skill/README.md
+../../vertical/hello-js-reverse-skill/README.md

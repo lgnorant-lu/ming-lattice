@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-forensics/linux-forensics.md
+../../vertical/ctf-skills/ctf-forensics/linux-forensics.md

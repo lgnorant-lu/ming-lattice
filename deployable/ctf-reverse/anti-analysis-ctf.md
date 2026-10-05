@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-reverse/anti-analysis-ctf.md
+../../vertical/ctf-skills/ctf-reverse/anti-analysis-ctf.md

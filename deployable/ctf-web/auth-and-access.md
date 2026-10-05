@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-web/auth-and-access.md
+../../vertical/ctf-skills/ctf-web/auth-and-access.md

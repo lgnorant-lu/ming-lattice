@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-reverse/patterns-ctf-2.md
+../../vertical/ctf-skills/ctf-reverse/patterns-ctf-2.md

@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-crypto/classic-ciphers.md
+../../vertical/ctf-skills/ctf-crypto/classic-ciphers.md

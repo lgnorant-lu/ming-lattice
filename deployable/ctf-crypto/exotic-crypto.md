@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-crypto/exotic-crypto.md
+../../vertical/ctf-skills/ctf-crypto/exotic-crypto.md

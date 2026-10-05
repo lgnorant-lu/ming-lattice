@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/base/reverse-skill/skills/MASTER-ROUTING.md
+../../base/reverse-skill/skills/MASTER-ROUTING.md

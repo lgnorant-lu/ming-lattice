@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-pwn/advanced.md
+../../vertical/ctf-skills/ctf-pwn/advanced.md

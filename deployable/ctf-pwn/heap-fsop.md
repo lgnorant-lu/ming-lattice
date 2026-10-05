@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-pwn/heap-fsop.md
+../../vertical/ctf-skills/ctf-pwn/heap-fsop.md

@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-pwn/kernel-bypass.md
+../../vertical/ctf-skills/ctf-pwn/kernel-bypass.md

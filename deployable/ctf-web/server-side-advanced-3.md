@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-web/server-side-advanced-3.md
+../../vertical/ctf-skills/ctf-web/server-side-advanced-3.md

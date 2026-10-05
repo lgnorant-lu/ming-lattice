@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-forensics/network-advanced.md
+../../vertical/ctf-skills/ctf-forensics/network-advanced.md

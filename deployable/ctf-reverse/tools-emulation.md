@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-reverse/tools-emulation.md
+../../vertical/ctf-skills/ctf-reverse/tools-emulation.md

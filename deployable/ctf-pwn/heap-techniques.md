@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-pwn/heap-techniques.md
+../../vertical/ctf-skills/ctf-pwn/heap-techniques.md

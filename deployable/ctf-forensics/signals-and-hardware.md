@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-forensics/signals-and-hardware.md
+../../vertical/ctf-skills/ctf-forensics/signals-and-hardware.md

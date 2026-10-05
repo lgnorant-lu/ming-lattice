@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-crypto/rsa-attacks.md
+../../vertical/ctf-skills/ctf-crypto/rsa-attacks.md

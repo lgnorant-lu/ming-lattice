@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/web-reverse-iv8/changelog.md
+../../vertical/web-reverse-iv8/changelog.md

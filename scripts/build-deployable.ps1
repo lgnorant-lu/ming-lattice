@@ -56,11 +56,23 @@ foreach ($name in $map.Keys) {
         $link = Join-Path $dst $ent.Name
         if (Get-Item -LiteralPath $link -Force -ErrorAction SilentlyContinue) { continue }
         if (-not $PSCmdlet.ShouldProcess($link, "符号链接 -> $($ent.FullName)")) { continue }
-        try {
-            New-Item -ItemType SymbolicLink -Path $link -Target $ent.FullName -ErrorAction Stop | Out-Null
-        } catch {
-            throw "deployable_link_failed: $name/$($ent.Name): $($_.Exception.Message)"
+        # 链接阶梯：symlink →(dir)junction →(file)hardlink → copy——Windows 无
+        # Developer Mode/提权时 SymbolicLink 直接失败，junction/hardlink 不需权限
+        # 目标写相对路径——绝对路径烙机器布局进链接 blob，换机/换路径克隆全断
+        $relTarget = [IO.Path]::GetRelativePath($dst, $ent.FullName)
+        $linked = $false
+        foreach ($kind in @('SymbolicLink', $(if ($ent.PSIsContainer) { 'Junction' } else { 'HardLink' }), 'CopyItem')) {
+            try {
+                if ($kind -eq 'CopyItem') {
+                    Copy-Item -LiteralPath $ent.FullName -Destination $link -Recurse -Force -ErrorAction Stop
+                } else {
+                    New-Item -ItemType $kind -Path $link -Target $relTarget -ErrorAction Stop | Out-Null
+                }
+                if ($kind -ne 'SymbolicLink') { Write-Host "        (回退) $kind -> $($ent.Name)" -ForegroundColor Yellow }
+                $linked = $true; break
+            } catch { continue }
         }
+        if (-not $linked) { throw "deployable_link_failed: $name/$($ent.Name): 三种链接形态全失败" }
     }
     Write-Host "[OK] $name -> $($map[$name])"
 }

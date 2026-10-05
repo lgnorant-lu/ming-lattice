@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-crypto/modern-ciphers-2.md
+../../vertical/ctf-skills/ctf-crypto/modern-ciphers-2.md

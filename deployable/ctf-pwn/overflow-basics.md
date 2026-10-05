@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-pwn/overflow-basics.md
+../../vertical/ctf-skills/ctf-pwn/overflow-basics.md

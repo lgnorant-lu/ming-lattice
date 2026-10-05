@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-forensics/peripheral-capture.md
+../../vertical/ctf-skills/ctf-forensics/peripheral-capture.md

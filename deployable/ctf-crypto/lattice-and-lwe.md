@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-crypto/lattice-and-lwe.md
+../../vertical/ctf-skills/ctf-crypto/lattice-and-lwe.md

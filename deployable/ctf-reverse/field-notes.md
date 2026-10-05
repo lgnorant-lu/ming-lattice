@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-reverse/field-notes.md
+../../vertical/ctf-skills/ctf-reverse/field-notes.md

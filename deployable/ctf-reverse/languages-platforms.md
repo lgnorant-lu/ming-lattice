@@ -1,1 +1,1 @@
-D:/dogepy/skills-collection/vertical/ctf-skills/ctf-reverse/languages-platforms.md
+../../vertical/ctf-skills/ctf-reverse/languages-platforms.md
