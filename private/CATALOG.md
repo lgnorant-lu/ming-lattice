@@ -23,9 +23,16 @@ private/
 │   ├── config-core-paradigm/          # A列: 跨场景配置归一化元规则 (十轴模型+旗标生命周期)
 │   ├── overlay-core-paradigm/         # B列: 质量属性横切不变量单包
 │   ├── arch-core-paradigm/            # A列: 架构边界元规则 (六边形/Ports-Adapters 最小形态)
+│   ├── review-core-paradigm/          # A列: 评审元规则 (消融摘除存活性+独立critic+证据收尾)
+│   ├── explore-core-paradigm/         # A列: 发散探索元规则 (升降模型+换轨算子)
+│   ├── depth-core-paradigm/           # A列: 下潜深度裁决元规则 (序贯下潜+停止判据)
+│   ├── mutation-safety-paradigm/      # A列: 变更安全元规则 (L0-L5阶梯+dry-run三戒律)
+│   ├── classify-core-paradigm/        # A列: 分类轴设计元规则 (分面优于鸽笼+封闭词表)
+│   ├── compiler-pipeline-paradigm/    # A列: 编译器九段契约元规则 (lex→link+取舍模式)
 │   ├── ming-l-paradigm/               # 项目结构域分层元规则 (九域 x 七动力学 + 候审档)
 │   ├── ming-skill-forge/              # 技能包创作元规则 + check-skill/scaffold 硬门控
-│   └── ming-experience-direction/     # 体验导演式设计流水线 (文档阶梯+宪法+叙事主干+六门+媒介预算)
+│   ├── ming-experience-direction/     # 体验导演式设计流水线 (文档阶梯+宪法+叙事主干+六门+媒介预算)
+│   └── ming-boundary/                 # 组件: 项目图事实提取(JSONL)+boundaries.yaml 契约断言
 │
 ├── antibot-fingerprint-paradigm/      # 反爬指纹对抗分层知识库 (JA3/JA4/h2/JS一致性/判定引擎)
 ├── ui-design-paradigms/               # 全局 UI/UX 设计范式与 Design Tokens
