@@ -93,6 +93,13 @@ if (!fs.existsSync(REGISTRY_PATH)) { add('E', 'registry.yaml 不存在'); }
 else if (!fs.existsSync(INDEX_PATH)) { add('E', 'docs/SKILL-INDEX.md 不存在'); }
 else {
   const reg = parseRegistry(fs.readFileSync(REGISTRY_PATH, 'utf8'));
+  // 解析退化底线：行级迷你解析器对缩进形态敏感——核心层零条目≈解析漂移而非真实为空
+  // （缺此项时格式变化会让 indexable 收缩，校验"成功地空跑"=静默失门）
+  for (const [k, arr] of [['base.modules', reg.baseModules], ['vertical', reg.vertical],
+                          ['private', reg.private], ['deployable', reg.deployable]]) {
+    if (arr.length === 0)
+      add('E', `registry 解析退化: ${k} 零条目（疑似行级解析与 registry 形态漂移）`);
+  }
   const docText = fs.readFileSync(INDEX_PATH, 'utf8');
   const docNorm = norm(docText);
   const { rows, heads } = parseIndexDoc(docText);

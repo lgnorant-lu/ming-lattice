@@ -58,18 +58,29 @@ function collectCorpus() {
   return parts.join('\n');
 }
 
-export function checkCoverage(root = ROOT) {
-  const corpus = collectCorpus();
-  const exemptRaw = fs.existsSync(EXEMPT_FILE)
-    ? fs.readFileSync(EXEMPT_FILE, 'utf8') : '';
+// 豁免台账解析：裸路径（无 "— 理由"）不得生效——豁免的意义是带理由的显性登记，
+// 缺理由的行视同畸形记账，既不免除覆盖义务又须显式报错。
+export function parseExempt(text) {
   const exempt = new Map();
-  for (const line of exemptRaw.split('\n')) {
+  const malformed = [];
+  for (const line of text.split('\n')) {
     const t = line.trim();
     if (!t || t.startsWith('#')) continue;
     const i = t.indexOf('—');
     const rel = (i >= 0 ? t.slice(0, i) : t).trim();
-    exempt.set(rel.replace(/\\/g, '/'), i >= 0 ? t.slice(i + 1).trim() : '');
+    const reason = i >= 0 ? t.slice(i + 1).trim() : '';
+    if (!rel) continue;
+    if (!reason) malformed.push(rel.replace(/\\/g, '/'));
+    else exempt.set(rel.replace(/\\/g, '/'), reason);
   }
+  return { exempt, malformed };
+}
+
+export function checkCoverage(root = ROOT) {
+  const corpus = collectCorpus();
+  const exemptRaw = fs.existsSync(EXEMPT_FILE)
+    ? fs.readFileSync(EXEMPT_FILE, 'utf8') : '';
+  const { exempt, malformed: malformedExempt } = parseExempt(exemptRaw);
 
   const scripts = [];
   for (const top of SCRIPT_DIRS) {
@@ -97,8 +108,8 @@ export function checkCoverage(root = ROOT) {
   for (const rel of exempt.keys()) {
     if (!scripts.includes(rel)) missingExempt.push(rel);
   }
-  return { ok: uncovered.length === 0 && missingExempt.length === 0,
-    uncovered, missingExempt, coveredCount: covered.length, total: scripts.length };
+  return { ok: uncovered.length === 0 && missingExempt.length === 0 && malformedExempt.length === 0,
+    uncovered, missingExempt, malformedExempt, coveredCount: covered.length, total: scripts.length };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -111,6 +122,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       console.error(`[uncovered] ${s} —— 未在任何测试语料点名，也未豁免`);
     for (const s of r.missingExempt)
       console.error(`[stale-exempt] ${s} —— 豁免表条目对应脚本不存在`);
+    for (const s of r.malformedExempt)
+      console.error(`[malformed-exempt] ${s} —— 豁免行缺 "— 理由" 段，不生效`);
     if (r.ok) console.log('[test-coverage] 全件已登记');
   }
   process.exit(r.ok ? 0 : 1);

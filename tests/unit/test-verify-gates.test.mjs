@@ -133,6 +133,14 @@ export async function run() {
     assert.equal(covJ.ok, true);
     assert.ok(covJ.total >= 60, '可执行件基线规模应≥60（防遍历静默退化）');
 
+    // ---------- parseExempt 台账纪律：裸路径豁免不生效且显式报错 ----------
+    const { parseExempt } = await import('../../scripts/check-test-coverage.mjs');
+    const parsed = parseExempt('# 注释\na/b.mjs — 正当理由\n\nbare/path.ps1\nx/y.sh —   \n');
+    assert.ok(parsed.exempt.has('a/b.mjs'), '带理由行应生效');
+    assert.deepEqual(parsed.malformed, ['bare/path.ps1', 'x/y.sh'],
+      '裸路径/空理由行必须计入 malformed（既不免除义务又须报错）');
+    assert.ok(!parsed.exempt.has('bare/path.ps1'));
+
     console.log('  -> verify-gates: profile 表/传播/事件契约/secrets/pii/link-rot/覆盖登记 全绿');
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
