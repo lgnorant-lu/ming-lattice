@@ -9,6 +9,7 @@
 !.hooksrc
 !.hooksrc.tmpl
 !.githooks/
+!.ming/
 !vertical/**
 # 豁免后重拦：vendored .git 元数据（本地保留供 fetch 增量，父仓不跟踪）
 vertical/*/.git/

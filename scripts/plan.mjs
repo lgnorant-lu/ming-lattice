@@ -13,6 +13,7 @@ export const GLOBAL_UPGRADE_PATTERNS = [
   /^registry\.yaml$/,
   /^\.hooksrc$/,
   /^\.githooks\//,
+  /^\.ming\//,                      // 箱身份 manifest——SoT 级，与 registry 同档全量
   /^scripts\/hooks\//,
   /^scripts\/lib\//,
   /^tests\/run\.mjs$/,
@@ -36,7 +37,7 @@ export const CATEGORY_RULES = [
       if (/^private\/ming-distiller\//i.test(file))
         jobs.push('prop-cli', 'distill-index-unit', 'distill-index');
       else if (/^private\/engineering\/ming-skill-forge\//i.test(file))
-        jobs.push('check-skill-unit', 'skill-conformance', 'skill-index');
+        jobs.push('check-skill-unit', 'skill-conformance', 'skill-index', 'ming');
       else if (/^private\/engineering\/ming-boundary\//i.test(file))
         jobs.push('ming-boundary', 'docclass', 'boundary-live');
       else if (/^private\/engineering\/ming-l-paradigm\//i.test(file))
@@ -85,15 +86,16 @@ export const CATEGORY_RULES = [
   {
     // 具名映射：白名单 basename 才归类；其余 scripts/* 落 unknown→full（保守兜底）
     name: 'scripts',
-    test: file => /^scripts\/(?:bootstrap|check-skill-index|check-test-coverage|check-supply-chain|clean-temp|emit-operational-event|fetch|install-hooks|scaffold-repo)\.mjs$/.test(file),
+    test: file => /^scripts\/(?:bootstrap|check-ming|check-skill-index|check-test-coverage|check-supply-chain|clean-temp|emit-operational-event|fetch|install-hooks|scaffold-repo)\.mjs$/.test(file),
     resolveJobs: file => ({
       'bootstrap.mjs': ['bootstrap'],
+      'check-ming.mjs': ['ming'],
       'check-skill-index.mjs': ['skill-index'],
       'check-test-coverage.mjs': ['test-coverage'],
       'check-supply-chain.mjs': ['supply-chain-gate', 'sbom-generation', 'sca-generation'],
       'clean-temp.mjs': ['tmp-reaper'],
       'emit-operational-event.mjs': ['observability-contract'],
-      'fetch.mjs': ['fetch-cli'],
+      'fetch.mjs': ['fetch-cli', 'ming'],
       'install-hooks.mjs': ['install-hooks'],
       'scaffold-repo.mjs': ['scaffold-repo'],
     })[file.split('/').pop()] ?? []
@@ -161,6 +163,7 @@ export const ALL_SUITE_NAMES = [
   'lint-contract',
   'manifest-freshness',
   'manifest-unit',
+  'ming',
   'ming-boundary',
   'ming-l-audit',
   'observability-contract',

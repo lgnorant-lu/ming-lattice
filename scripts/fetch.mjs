@@ -7,10 +7,11 @@
 //   sourceGone: true 的孤本条目跳过——它们由本仓直接承载字节，不参与物化。
 //
 // 用法：
-//   node scripts/fetch.mjs [--dry-run] [--only <name>[,<name>...]] [--reconcile]
-//     --dry-run    只打印物化计划，不触碰磁盘与网络
-//     --only       只物化指定条目（逗号分隔）
-//     --reconcile  已物化但 HEAD≠pin 的目录执行强制对齐（默认只报告不动手）
+//   node scripts/fetch.mjs [--dry-run] [--only <name>[,<name>...]] [--reconcile] [--include-heavy]
+//     --dry-run        只打印物化计划，不触碰磁盘与网络
+//     --only           只物化指定条目（逗号分隔；显式点名可达 heavy 条目）
+//     --reconcile      已物化但 HEAD≠pin 的目录执行强制对齐（默认只报告不动手）
+//     --include-heavy  把 weight: heavy 条目纳入默认物化面（默认面=core，主箱保持轻量）
 //
 // 退出码：0=全部就绪 / 1=存在失败或漂移条目 / 2=自身故障（fail-closed 可分辨）
 //
@@ -30,7 +31,7 @@ const REGISTRY_PATH = path.join(REPO_ROOT, 'registry.yaml');
 
 // ── 参数解析（fail-closed，与全仓 CLI 同构） ──
 const args = process.argv.slice(2);
-const BOOL_FLAGS = new Set(['--dry-run', '--reconcile']);
+const BOOL_FLAGS = new Set(['--dry-run', '--reconcile', '--include-heavy']);
 const VALUE_FLAGS = new Set(['--only']);
 const flags = new Set(); const values = new Map();
 for (let i = 0; i < args.length; i++) {
@@ -74,7 +75,14 @@ const headOf = dir => {
 
 // ── 主流程 ──
 const entries = parseRegistry(fs.readFileSync(REGISTRY_PATH, 'utf8'));
-const targets = entries.filter(e => !only || only.has(e.name));
+// weight 分层：heavy 条目不进默认物化面（双模态——主箱默认轻量，重仓显式装载）。
+// --only 显式点名或 --include-heavy 均可达 heavy；无 weight 字段按 core 计（向后兼容）。
+const includeHeavy = flags.has('--include-heavy');
+const skippedHeavy = (!only && !includeHeavy) ? entries.filter(e => e.weight === 'heavy') : [];
+const targets = entries.filter(e => {
+  if (only) return only.has(e.name);
+  return includeHeavy || e.weight !== 'heavy';
+});
 
 // --only 静默空集防御：名字打错不能无声退出 0
 if (only) {
@@ -214,6 +222,7 @@ console.log('\n── fetch 报告 ──');
 fmt('物化完成', results.fetched);
 fmt('已就绪(pin一致)', results.skippedPin);
 fmt('孤本跳过(sourceGone)', results.skippedGone);
+fmt('重仓跳过(weight=heavy)', skippedHeavy.map(e => e.name), '——--only/--include-heavy 可达');
 fmt('禁用跳过(enabled)', results.skippedDisabled);
 fmt('缺 repo/pin 跳过', results.skippedNoRepo);
 fmt('非仓库目录(需人工)', results.notRepo);

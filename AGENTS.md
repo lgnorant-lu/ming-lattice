@@ -6,6 +6,7 @@
 
 ```
 registry.yaml            唯一事实源: base(基座模块)/vertical(参考)/deployable(部署)/private(私有) + targets/layers(层别登记)/candidates(候审区)
+.ming/ming.yaml          箱身份 manifest: name=ming-lattice/version/kind/members glob(ming-* 子包约定)/SoT 指针——校验: node scripts/check-ming.mjs
 .hooksrc                 Git Hook 分级门禁配置 (Emoji/乱码/密钥/lint 等级)
 .githooks/               Git Hooks 拦截脚本 (commit-msg, pre-commit)
 base/reverse-skill/      路由基座 (上游 submodule; 带**有意本地补丁**——skills/SKILL.md PRE-CHECK 第0步 fail-closed 路由硬化 + field-journal 沉淀, 勿当脏态清理)
@@ -28,7 +29,7 @@ docs/                    STANDARDS(工程总纲)/GOVERNANCE-SPINE(工件本体�
 - **激活 Claude**: `.cc-switch/skills` → 符号链接补到 `~/.claude/skills`（Claude 启动时快照, 重启生效）
 - **更新检测**: `pwsh scripts/update.ps1`（支持 `-DryRun` 演练；缓存优先, TTL 7 天; `sourceGone: true` 条目零网络跳过）
 - **质量检查**: `pwsh scripts/lint.ps1`（部署模块必须有 SKILL.md, 硬编码路径检查）
-- **物化参考层**: `node scripts/fetch.mjs`（`--dry-run` 预览 / `--only <名>` 单项 / `--reconcile` 对齐漂移；含 base submodule 引导）
+- **物化参考层**: `node scripts/fetch.mjs`（`--dry-run` 预览 / `--only <名>` 单项 / `--reconcile` 对齐漂移 / `--include-heavy` 纳入 weight:heavy 重仓；默认面=core，含 base submodule 引导）
 - **新增采集**: registry 登记条目(repo+pin 全 40 位 SHA) → `node scripts/fetch.mjs --only <名>` 物化验证 → 提交 registry 行（**vertical/ 永不入库**——vendor-boundary 门会拦）
 
 ## 铁律（历史踩坑, 详见 docs/PLAYBOOK.md）

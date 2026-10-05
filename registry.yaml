@@ -15,6 +15,7 @@
 #   vertical    : 垂直参考（物化区, fetch.mjs 按需建 .git）; pin = upstream commit(全 40 位)
 #     domain    : 资产域（合法值域见下方 domains: 登记表——新值先入表再使用）
 #     deploy    : 部署映射 { 客户端: bool }（空 = 仅参考不部署）
+#     weight    : 物化权重——core=默认物化(缺省) / heavy=重仓不进默认面(仅 fetch --only/--include-heavy 可达)
 
 schemaVersion: "1.1"
 description: "ming-skills 单一事实源：源 → 本地路径 → 版本记录 → 部署目标"
@@ -326,6 +327,7 @@ vertical:
     pin: 8f650f3b345d34850303d06de04414bb4648bb50
     acquiredAt: 2026-08-18
     enabled: true
+    weight: heavy
     domain: misc
     note: sparse 采集 .claude/skills (10 个 SKILL.md); pin = upstream HEAD
     deploy: {}
@@ -338,6 +340,7 @@ vertical:
     pin: 14e5a1070020c5d101e8362756f3201fb677b467
     acquiredAt: 2026-08-18
     enabled: true
+    weight: heavy
     domain: misc
     note: ToB 官方安全审计 skill 市场(质量标杆, 基座作者对照清单)
     deploy: {}
@@ -1047,6 +1050,7 @@ vertical:
     pin: 7ea4e01e14d19e50d2b90bb29fa64718e66e5779
     acquiredAt: 2026-08-18
     enabled: true
+    weight: heavy
     domain: js
     note: Google 下一代 JS 分析工具(660★, MLIR 基高层 IR, CASCADE 论文, Hermes 字节码反编译) SSA/IR 标准答案
     deploy: {}
@@ -1159,6 +1163,7 @@ vertical:
     pin: e5191ee820a489e869d0fc4102ae129260b15cfc
     acquiredAt: 2026-08-18
     enabled: true
+    weight: heavy
     domain: js
     note: JS 逆向 MCP monorepo(1905★, js_analyze_vm/js_deobfuscate_jsvmp/js_symbolic_execute_jsvmp 字节码符号执行独有能力)
     deploy: {}

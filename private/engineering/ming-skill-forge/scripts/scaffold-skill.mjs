@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // scaffold-skill.mjs — 技能包脚手架（ming-skill-forge §1 解剖 + §5 接线）
-// 用法: node scaffold-skill.mjs <name> --desc "..." [--under <layer>] [--paradigm] [--dry-run]
+// 用法: node scaffold-skill.mjs <name> --desc "..." [--under <layer>] [--paradigm] [--register [--note "..."]] [--dry-run]
+// --register: 建包后自动向 registry.yaml private 区追加条目（ming-* 名自动带 metaSystem: true；
+//             默认 note 取 --desc，--note 可覆写）。无 --register 时仍按 §5 清单手工接线。
 // 层白名单: private | private/engineering ——纳层准入门（新层别先入 registry layers 表/走 ming-l 域准入；
 //         deployable 是包装层、vertical 是 vendored 源，均不接受新包）
 // 契约: fail-closed——name/layer/desc/重名全部写前校验；写后自证失败自动回滚不留残骸；--dry-run 不落盘。
@@ -42,13 +44,13 @@ const opts = {};
 const positional = [];
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
-  if (a === '--desc' || a === '--under') {
+  if (a === '--desc' || a === '--under' || a === '--note') {
     const v = args[i + 1];
     if (v === undefined || v.startsWith('--')) die(`旗标 ${a} 缺值（或把下一个旗标吞成了值）`);
     if (opts[a.slice(2)] !== undefined) die(`重复旗标: ${a}`);
     opts[a.slice(2)] = v;
     i++;
-  } else if (a === '--paradigm' || a === '--dry-run') {
+  } else if (a === '--paradigm' || a === '--dry-run' || a === '--register') {
     opts[a.slice(2)] = true;
   } else if (a.startsWith('--')) {
     die(`未知旗标: ${a}`);
@@ -63,6 +65,8 @@ const desc = opts.desc;
 const under = (opts.under || 'private').replace(/\\/g, '/').replace(/\/+$/, ''); // Windows 反斜杠/尾斜杠归一
 const dryRun = !!opts['dry-run'];
 const paradigm = !!opts.paradigm;
+const register = !!opts.register;
+const note = opts.note || desc;
 
 // ---------- 写前校验（fail-fast，不落残骸） ----------
 if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(name) || name.length < 3) {
@@ -83,6 +87,7 @@ if (/^[!&*?|>%@`"',#[\]{}]|^-\s|^:\s/.test(desc)) die('--desc 以 YAML 指示字
 if (/:\s|\s#/.test(desc)) die('--desc 含 ": " 或 " #"——会破坏 YAML plain scalar');
 if (desc.length < 20) die(`--desc 过短(${desc.length} 字符)——L0 触发面不足`);
 if (desc.length > 400) console.error(`[W] desc ${desc.length} 字符超 400 预算——check-skill 将告警`);
+if (register && /[\r\n"]/.test(note)) die('--note 必须单行且不含双引号（会破 YAML 双引号标量）');
 
 // ---------- 重名扫描：层目录 + registry 名（含 candidates 区分毕业/冲突） ----------
 for (const root of SCAN_ROOTS) {
@@ -111,8 +116,19 @@ if (paradigm) {
     '     明确不纳入的反例同样记录。-->\n';
 }
 
+// ---------- registry 条目文本（--register 与接线清单共用单源） ----------
+const regEntry =
+  `  - name: ${name}\n` +
+  (name.startsWith('ming-') ? `    metaSystem: true\n` : '') +
+  `    path: ${under}/${name}\n` +
+  `    enabled: true\n` +
+  `    note: "${note}"\n` +
+  `    deploy:\n` +
+  `      claude: true\n`;
+
 if (dryRun) {
   for (const rel of Object.keys(files)) console.log(`[dry-run] 将写 ${path.join(destDir, rel)} (${files[rel].length} 字符)`);
+  if (register) console.log(`[dry-run] 将向 registry.yaml private 区追加:\n${regEntry}`);
   process.exit(0);
 }
 
@@ -133,6 +149,19 @@ if (eCount) {
   die(`生成物未过检（E=${eCount}）——已回滚 ${path.relative(REPO_ROOT, destDir)}`);
 }
 
+// ---------- --register: 向 registry.yaml private 区追加条目 ----------
+// 插入位 = candidates: 区首行之前（private 是其前驱区）；无 candidates 则 EOF 即 private 尾。
+// note 已过双引号/换行校验；Node UTF-8 写中文安全（AGENTS python 铁律针对的是 PowerShell）。
+if (register) {
+  const regText = fs.readFileSync(REGISTRY, 'utf8');
+  const candIdx = regText.search(/^candidates:/m);
+  const head = candIdx >= 0 ? regText.slice(0, candIdx) : regText;
+  const tail = candIdx >= 0 ? regText.slice(candIdx) : '';
+  const headPad = head.endsWith('\n') ? head : head + '\n';
+  fs.writeFileSync(REGISTRY, headPad + regEntry + (tail ? '\n' + tail : ''), 'utf8');
+  console.log(`[registered] registry.yaml private 区 += ${name}${name.startsWith('ming-') ? ' (metaSystem)' : ''}`);
+}
+
 // ---------- 纳层评估（准入门控记录） ----------
 console.log(`\n纳层评估（准入记录）:`);
 console.log(`  name=${name}  kebab✓ 跨层与 registry 无碰撞✓${paradigm ? '  paradigm 惯例自声明✓' : ''}`);
@@ -143,7 +172,9 @@ if (name.startsWith('ming-')) {
 }
 
 console.log(`\n接线清单（forge §5 三处不可少）：`);
-console.log(`  1. registry.yaml private 区加条目: name=${name} path=${under}/${name} enabled/note/deploy.claude${name.startsWith('ming-') ? '/metaSystem' : ''}`);
+console.log(register
+  ? `  1. registry.yaml private 区条目已自动登记（--register）✓`
+  : `  1. registry.yaml private 区加条目: name=${name} path=${under}/${name} enabled/note/deploy.claude${name.startsWith('ming-') ? '/metaSystem' : ''}（或用 --register 自动登记）`);
 console.log(`  2. scripts/build-router-manifest.mjs DOMAIN_DEFS: 域 skills 列表 + skillTriggers 关键词 → node 重建 + --check`);
 console.log(`  3. ${under === 'private/engineering' ? 'private/engineering/README.md 资产图 + Compose 公式' : '对应目录 README 资产图'}`);
 console.log(`  4. node check-skill.mjs ${path.relative(REPO_ROOT, destDir)} ——接线后复检应为 E=0`);

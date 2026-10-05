@@ -1,0 +1,29 @@
+# .ming/ming.yaml — 箱身份 manifest（包名/版本/种类/成员约定的单一事实源）
+#
+# 分工铁律（三 SoT 各司其职，指针互委，不双写）：
+#   本文件        : "箱是什么"——包身份、命名空间、成员约定
+#   registry.yaml : 单元账——采集/pin/层别/部署映射/词表登记
+#   docs/ming.yaml: 文档域治理账——Ming-L 九域动力学
+#
+# 演进纪律（contract-core-paradigm）：只加字段不改义；manifestVersion 升位=破坏性变更。
+# 校验面：scripts/check-ming.mjs（verify affected/full 经 tests 套件调度）
+
+manifestVersion: "1"
+name: ming-lattice
+version: "0.1.0"
+kind: lattice              # 封闭词表: lattice=主箱 / pack=SKILL.md 子包 / kit=工具集(如 hooks engine)
+description: "Ming-Lattice — 技能集散与工程中枢主箱：私有包/参考层/部署投影/门禁 kit 的一体化治理格"
+
+naming:
+  prefix: "ming-"          # 一等公民命名空间：主箱 ming-lattice，子包 ming-<sub>（registry 条目须 metaSystem: true）
+
+packages:
+  # 约定即成员（workspace glob 先例）——匹配到的目录即子包，无花名册漂移。
+  # 新增 ming-* 包只需落在 glob 面内 + registry private 登记 metaSystem: true。
+  members:
+    - "private/ming-*"
+    - "private/engineering/ming-*"
+
+sources:
+  registry: "registry.yaml"      # 单元/层/部署/采集 SoT
+  docDomains: "docs/ming.yaml"   # 文档域治理 SoT
