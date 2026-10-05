@@ -10,6 +10,8 @@
 !.hooksrc.tmpl
 !.githooks/
 !.ming/
+# .ming/<project>/state/ = 本机运行态域（部署账本等）——不入仓
+.ming/*/state/
 !vertical/**
 # 豁免后重拦：vendored .git 元数据（本地保留供 fetch 增量，父仓不跟踪）
 vertical/*/.git/

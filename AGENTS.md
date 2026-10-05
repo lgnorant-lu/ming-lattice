@@ -6,7 +6,9 @@
 
 ```
 registry.yaml            唯一事实源: base(基座模块)/vertical(参考)/deployable(部署)/private(私有) + targets/layers(层别登记)/candidates(候审区)
-.ming/ming.yaml          箱身份 manifest: name=ming-lattice/version/kind/members glob(ming-* 子包约定)/SoT 指针——校验: node scripts/check-ming.mjs
+.ming/ming.yaml          ming 命名域伞面 SoT: scope/命名谱(lattice 族谱)/kinds 词表/projects 登记
+.ming/lattice/package.yaml 本箱身份 manifest: name=ming-lattice/kind/members glob/SoT 指针——校验: node scripts/check-ming.mjs
+.ming/lattice/state/     本机运行态域 (gitignored): deploy-ledger.json 部署态账本——sync 装了什么/哪版/漂没漂
 .hooksrc                 Git Hook 分级门禁配置 (Emoji/乱码/密钥/lint 等级)
 .githooks/               Git Hooks 拦截脚本 (commit-msg, pre-commit)
 base/reverse-skill/      路由基座 (上游 submodule; 带**有意本地补丁**——skills/SKILL.md PRE-CHECK 第0步 fail-closed 路由硬化 + field-journal 沉淀, 勿当脏态清理)
@@ -26,6 +28,7 @@ docs/                    STANDARDS(工程总纲)/GOVERNANCE-SPINE(工件本体�
 - **安装 Git 门禁**: `pwsh scripts/install-hooks.ps1`（配置 core.hooksPath 指向 .githooks）；`-Target <repo>` 铺门禁 kit 到外仓，`+ -WithBoundary` 连 ming-boundary 组件+门+boundaries.yaml 模板一起铺。跨平台等价实现：`node scripts/install-hooks.mjs --target <repo>` / `sh scripts/install-hooks.sh -t <repo>`（scaffold 在 pwsh 缺席时自动回退 Node）
 - **仓库采纳编排**: `node scripts/scaffold-repo.mjs --target <repo>`——域骨架(scaffold-domains)+门禁 kit(install-hooks -Target)+自检 单入口；`--with-boundary`/`--skip-*`/`--dry-run` 可选
 - **部署到客户端**: `pwsh scripts/sync.ps1`（支持 `-DryRun` 演练预览，链接到 .cc-switch/skills）
+- **部署态对账**: `node scripts/deploy-ledger.mjs --write`（快照落账）/ `--check`（漂移 missing/changed/foreign + 覆盖 uncovered 对账）
 - **激活 Claude**: `.cc-switch/skills` → 符号链接补到 `~/.claude/skills`（Claude 启动时快照, 重启生效）
 - **更新检测**: `pwsh scripts/update.ps1`（支持 `-DryRun` 演练；缓存优先, TTL 7 天; `sourceGone: true` 条目零网络跳过）
 - **质量检查**: `pwsh scripts/lint.ps1`（部署模块必须有 SKILL.md, 硬编码路径检查）

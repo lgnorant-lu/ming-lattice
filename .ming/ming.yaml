@@ -1,29 +1,39 @@
-# .ming/ming.yaml — 箱身份 manifest（包名/版本/种类/成员约定的单一事实源）
+# .ming/ming.yaml — ming 命名域伞面 SoT（scope 声明 + 约定登记 + 项目注册）
 #
-# 分工铁律（三 SoT 各司其职，指针互委，不双写）：
-#   本文件        : "箱是什么"——包身份、命名空间、成员约定
-#   registry.yaml : 单元账——采集/pin/层别/部署映射/词表登记
-#   docs/ming.yaml: 文档域治理账——Ming-L 九域动力学
+# 定位：ming 是跨仓的统一包名命名域（≈ npm @scope / XDG ~/.config/ 伞面）。
+#   本文件管"域级约定"：scope、命名谱、kind 词表、项目知情登记；
+#   单项目包身份在各 .ming/<project>/package.yaml（本仓= lattice/）。
+#   其他项目仓各自持有 .ming/<their>/ ——伞面约定跨仓复用，
+#   projects 表仅知情登记（drift 告警不硬绑，不跨仓断言远端状态）。
 #
-# 演进纪律（contract-core-paradigm）：只加字段不改义；manifestVersion 升位=破坏性变更。
-# 校验面：scripts/check-ming.mjs（verify affected/full 经 tests 套件调度）
+# ── 命名谱（lattice 族谱，序理论真实梯级，预留不涨占）─────────────────
+#   ↓ 更弱结构                         ↑ 更强结构
+#   ming-poset       偏序集（只有序无格运算——轻量子包档）
+#   ming-semilattice 半格（单向闭合——中间档）
+#   ming-lattice     格（并/交双闭合）          ← 本仓主箱
+#   ming-algebra     布尔代数（格+补元——未来"超限"档）
+#   同族可用词: ming-ideal(理想子集/下游汇) ming-filter(滤子/上游筛)
+#              ming-closure(闭包算子) ming-domain(Scott 域)
+#   主包居中位，上下皆有词可涨；新 ming-* 名先查本谱再占。
+# ──────────────────────────────────────────────────────────────
+#
+# 本机态约定：.ming/<project>/state/ 为本机运行态域（部署账本等），
+#   由 .gitignore 排除不入仓——state/ 不是项目目录，不入 projects 登记。
+#
+# 演进纪律：只加字段不改义；manifestVersion 升位=破坏性变更。
+# 校验面：scripts/check-ming.mjs（伞面+项目包双层校验）
 
 manifestVersion: "1"
-name: ming-lattice
-version: "0.1.0"
-kind: lattice              # 封闭词表: lattice=主箱 / pack=SKILL.md 子包 / kit=工具集(如 hooks engine)
-description: "Ming-Lattice — 技能集散与工程中枢主箱：私有包/参考层/部署投影/门禁 kit 的一体化治理格"
+scope: ming
+description: "ming 命名域伞面——跨仓统一包名空间、命名谱与约定登记"
 
 naming:
-  prefix: "ming-"          # 一等公民命名空间：主箱 ming-lattice，子包 ming-<sub>（registry 条目须 metaSystem: true）
+  prefix: "ming-"          # 域内包一律 ming-<kebab>
 
-packages:
-  # 约定即成员（workspace glob 先例）——匹配到的目录即子包，无花名册漂移。
-  # 新增 ming-* 包只需落在 glob 面内 + registry private 登记 metaSystem: true。
-  members:
-    - "private/ming-*"
-    - "private/engineering/ming-*"
+kinds:                     # 包种类封闭词表（check-ming 校验源——词表登记先于使用）
+  - lattice                # 主箱（技能集散与工程中枢）
+  - pack                   # SKILL.md 承载的子包（private/ming-* 成员）
+  - kit                    # 工具集（hooks engine 类可领养组件）
 
-sources:
-  registry: "registry.yaml"      # 单元/层/部署/采集 SoT
-  docDomains: "docs/ming.yaml"   # 文档域治理 SoT
+projects:                  # 知情登记表——.ming/<name>/ 项目包目录；仅登记，不跨仓硬绑
+  - lattice                # 本仓主箱（.ming/lattice/package.yaml）
