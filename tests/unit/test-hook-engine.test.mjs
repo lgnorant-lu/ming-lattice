@@ -465,6 +465,19 @@ export async function run() {
       const staged = execFileSync('git', ['show', ':dirty.md'], { cwd: dir, encoding: 'utf8' });
       assert.ok(staged.includes('line1   '), 'index 不被 fix 改动（re-stage 由用户确认）');
 
+      // run fix --all：committed 存量违规（unstaged）默认够不着——--all 才兑现 ci 告警的"可自愈"
+      fs.writeFileSync(path.join(dir, 'committed.md'), 'old   \nno-eof');
+      execFileSync('git', ['add', 'committed.md'], { cwd: dir });
+      execFileSync('git', ['-c', 'user.email=t@t.t', '-c', 'user.name=t', 'commit', '-qm', 'add committed'], { cwd: dir });
+      const miss = spawnSync(process.execPath, [engine, 'run', 'fix'], { cwd: dir, encoding: 'utf8' });
+      assert.equal(miss.status, 0, miss.stderr);
+      assert.ok(miss.stdout.includes('--all'), 'staged 源空结果应提示 --all');
+      const allDry = spawnSync(process.execPath, [engine, 'run', 'fix', '--all', '--dry-run'], { cwd: dir, encoding: 'utf8' });
+      assert.ok(allDry.stdout.includes('committed.md'), '--all 应报告 committed 存量文件');
+      const allFix = spawnSync(process.execPath, [engine, 'run', 'fix', '--all'], { cwd: dir, encoding: 'utf8' });
+      assert.equal(allFix.status, 0, allFix.stderr);
+      assert.equal(fs.readFileSync(path.join(dir, 'committed.md'), 'utf8'), 'old\nno-eof\n', '--all 应修 committed 存量');
+
       // baseline --dry-run：预告冻结计数但不写 .hooks-baseline.json
       const bDry = spawnSync(process.execPath, [engine, 'baseline', '--dry-run'], { cwd: dir, encoding: 'utf8' });
       assert.equal(bDry.status, 0, bDry.stderr);

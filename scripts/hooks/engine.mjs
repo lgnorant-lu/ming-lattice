@@ -4,7 +4,8 @@
 // 入口契约：
 //   node engine.mjs <stage> [args]   pre-commit | commit-msg <msgfile> | pre-push (stdin refs)
 //   node engine.mjs run check|ci     命名运行组：check=staged 源 / ci=全跟踪文件源（CI 同构）
-//   node engine.mjs run fix [--dry-run]   自愈组：fixable 门重写工作区文件（--dry-run 同路径预览不写盘）
+//   node engine.mjs run fix [--dry-run] [--all]   自愈组：fixable 门重写工作区文件
+//                              （--dry-run 预览不写盘；默认 staged 源，--all 覆盖 ci 报告的存量违规）
 //   node engine.mjs baseline [--dry-run]  冻结既有违规 → .hooks-baseline.json（--dry-run 只预告不写）
 //   node engine.mjs trust            再确认 gates/ 目录完整性存值
 //   node engine.mjs list             解析后的门清单（诊断用）
@@ -338,10 +339,11 @@ async function cmdBaseline(dryRun = false) {
 
 // run fix：可自愈门的工作区修复（不碰 index——re-stage 由用户确认）
 // --dry-run：同一遍历路径预览（gate.fix 收 ctx.dryRun，只报告不写盘）
-async function cmdFix(dryRun = false) {
+// --all：全跟踪文件源——run ci 报出的存量违规默认 staged 够不着，须 --all 兑现"可自愈"承诺
+async function cmdFix(dryRun = false, allSource = false) {
   const root = repoRoot();
   const cfg = loadHookEngineConfig(root);
-  const src = fileSource(root, { source: 'staged' });
+  const src = fileSource(root, allSource ? { source: 'all' } : { source: 'staged' });
   let files;
   try { files = src.list(); } catch { files = []; }
   const all = [...await loadNativeGates(), ...buildDeclarativeGates(cfg)];
@@ -366,7 +368,7 @@ async function cmdFix(dryRun = false) {
   }
   console.log(total
     ? `[fix] ${dryRun ? `(dry-run) 将修复 ${total} 个文件——确认后去掉 --dry-run 执行` : `共修复 ${total} 个文件`}`
-    : '[fix] 无需修复');
+    : `[fix] 无需修复${allSource ? '' : '（staged 源；存量违规请用 run fix --all）'}`);
   return 0;
 }
 
@@ -405,7 +407,7 @@ async function main() {
   try {
     if (cmd === 'run') {
       const group = rest.find(a => !a.startsWith('--')) ?? 'check';
-      if (group === 'fix') return await cmdFix(rest.includes('--dry-run'));
+      if (group === 'fix') return await cmdFix(rest.includes('--dry-run'), rest.includes('--all'));
       const rangeArg = rest.find(a => a.startsWith('--range='))?.slice(8);
       const source = rangeArg ? { source: 'range', range: rangeArg }
         : group === 'ci' ? { source: 'all' } : { source: 'staged' };
