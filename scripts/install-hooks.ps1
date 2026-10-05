@@ -45,11 +45,15 @@ if ($Target) {
             Copy-Item -Destination $dstHooks -Recurse -Force
     }
 
-    # 2. .githooks/ shims
+    # 2. .githooks/ shims——字节级 LF 归一化：源工作区在 autocrlf 机上可能是
+    #    CRLF，Copy-Item 原样拷贝即传染，采纳仓 POSIX 克隆 shebang 失效
     $dstShims = Join-Path $dest '.githooks'
     if ($PSCmdlet.ShouldProcess($dstShims, '复制 .githooks shim')) {
         New-Item -ItemType Directory -Path $dstShims -Force | Out-Null
-        Copy-Item (Join-Path $repoRoot '.githooks/*') $dstShims -Force
+        Get-ChildItem (Join-Path $repoRoot '.githooks') -File | ForEach-Object {
+            $bytes = [IO.File]::ReadAllText($_.FullName) -replace "`r`n", "`n"
+            [IO.File]::WriteAllText((Join-Path $dstShims $_.Name), $bytes, [Text.UTF8Encoding]::new($false))
+        }
     }
 
     # 3. .hooksrc：不存在才铺模板（不覆盖目标仓已有配置）
@@ -70,6 +74,17 @@ if ($Target) {
         if ($PSCmdlet.ShouldProcess($dstIgnore, '追加 .hooksrc.local 到 .gitignore')) {
             Add-Content $dstIgnore "`n# 门禁引擎个人覆盖层`n.hooksrc.local`n"
             Write-Host "[scaffold] .gitignore += .hooksrc.local" -ForegroundColor Gray
+        }
+    }
+
+    # 4.1 .gitattributes 钉 shim EOL——采纳仓 autocrlf=true 的 checkout/克隆
+    #     会把 shim 落成 CRLF，shebang 失效（与本仓 .gitattributes 同款钉）
+    $dstAttr = Join-Path $dest '.gitattributes'
+    $ga = (Test-Path $dstAttr) ? (Get-Content $dstAttr -Raw) : ''
+    if ($ga -notmatch '(?m)^\.githooks/\*\s+text\s+eol=lf\s*$') {
+        if ($PSCmdlet.ShouldProcess($dstAttr, '追加 .githooks/* eol=lf 到 .gitattributes')) {
+            Add-Content $dstAttr "`n# hook shim 必须 LF——CRLF 让 POSIX 端 shebang 失效`n.githooks/* text eol=lf`n"
+            Write-Host "[scaffold] .gitattributes += .githooks/* eol=lf" -ForegroundColor Gray
         }
     }
 

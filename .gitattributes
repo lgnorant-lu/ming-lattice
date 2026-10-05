@@ -1,6 +1,9 @@
 # Hook shim 必须 LF——CRLF 会让 POSIX 端 shebang 失效（#!/usr/bin/env sh\r）
 .githooks/* text eol=lf
 
+# POSIX 壳入口同钉——install-hooks.sh 在 autocrlf 机上 checkout 成 CRLF 会语法炸
+*.sh text eol=lf
+
 # ming-boundary golden 固件：字节契约跨端钉版——autocrlf=true 的机器上
 # checkout 成 CRLF 会让 facts.golden.jsonl 比对假死；固件输入件同钉（内容一致才产同字节事实）
 tests/fixtures/mb-golden/** text eol=lf

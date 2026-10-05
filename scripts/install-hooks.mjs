@@ -3,7 +3,7 @@
 // 用法: node scripts/install-hooks.mjs --target <repo> [--force] [--with-boundary] [--dry-run]
 // 语义与 install-hooks.ps1 -Target 对齐（11 步）：git 根检查 → 旧 hooksPath 防线 →
 //   scripts/hooks kit 拷贝（gates.local 排除）→ .githooks shim → .hooksrc 模板（不覆盖）→
-//   .gitignore 追加 → boundary 采纳面（可选）→ hooksPath+commit.template → trust 存值 →
+//   .gitignore/.gitattributes 追加 → boundary 采纳面（可选）→ hooksPath+commit.template → trust 存值 →
 //   采纳元数据 → 指引输出。pwsh 缺席的 POSIX 环境由 install-hooks.sh -t 转调本件；
 //   scaffold-repo 在 pwsh 探测失败时自动回退本件（双实现共用同一契约）。
 import fs from 'node:fs';
@@ -65,12 +65,15 @@ else {
 }
 
 // 2. .githooks shims（POSIX 位 chmod +x；Windows 上 git 经自带 sh 执行不需要位）
+//    字节级 LF 归一化：源工作区在 autocrlf 机上可能是 CRLF，拷贝即传染——
+//    采纳仓 POSIX 克隆拿到 `#!/usr/bin/env sh\r` 直接崩
 const dstShims = path.join(dest, '.githooks');
 act(`复制 .githooks shim -> ${dstShims}`, () => {
   fs.mkdirSync(dstShims, { recursive: true });
   for (const f of fs.readdirSync(path.join(REPO_ROOT, '.githooks'))) {
     const d = path.join(dstShims, f);
-    fs.copyFileSync(path.join(REPO_ROOT, '.githooks', f), d);
+    const bytes = fs.readFileSync(path.join(REPO_ROOT, '.githooks', f), 'utf8').replace(/\r\n/g, '\n');
+    fs.writeFileSync(d, bytes);
     try { fs.chmodSync(d, 0o755); } catch { /* Windows 无 POSIX 位语义 */ }
   }
 });
@@ -88,6 +91,15 @@ const gi = fs.existsSync(dstIgnore) ? fs.readFileSync(dstIgnore, 'utf8') : '';
 if (!/^\.hooksrc\.local\s*$/m.test(gi)) {
   act('.gitignore += .hooksrc.local', () =>
     fs.appendFileSync(dstIgnore, '\n# 门禁引擎个人覆盖层\n.hooksrc.local\n'));
+}
+
+// 4.1 .gitattributes 钉 shim EOL——采纳仓 autocrlf=true 的 checkout/克隆
+//     会把 shim 落成 CRLF，shebang 失效（与本仓 .gitattributes 同款钉）
+const dstAttr = path.join(dest, '.gitattributes');
+const ga = fs.existsSync(dstAttr) ? fs.readFileSync(dstAttr, 'utf8') : '';
+if (!/^\.githooks\/\*\s+text\s+eol=lf\s*$/m.test(ga)) {
+  act('.gitattributes += .githooks/* eol=lf', () =>
+    fs.appendFileSync(dstAttr, '\n# hook shim 必须 LF——CRLF 让 POSIX 端 shebang 失效\n.githooks/* text eol=lf\n'));
 }
 
 // 4.5 ming-boundary 采纳面（--with-boundary）

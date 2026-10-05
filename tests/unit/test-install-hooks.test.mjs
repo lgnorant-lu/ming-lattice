@@ -32,6 +32,12 @@ const problems = [];
 const check = (cond, msg) => { if (!cond) problems.push(msg); };
 const dirs = [];
 const track = d => (dirs.push(d), d);
+const cpDir = (s, t) => {
+  fs.mkdirSync(t, { recursive: true });
+  for (const e of fs.readdirSync(s, { withFileTypes: true }))
+    e.isDirectory() ? cpDir(path.join(s, e.name), path.join(t, e.name))
+                    : fs.copyFileSync(path.join(s, e.name), path.join(t, e.name));
+};
 
 export function run() {
   console.log('[TEST UNIT] install-hooks.mjs...');
@@ -131,6 +137,31 @@ export function run() {
     cli(['--target', d, '--with-boundary']);
     check(fs.readFileSync(path.join(d, 'boundaries.yaml'), 'utf8') === '# 采纳侧契约\n',
       'boundaries.yaml 被覆盖（契约应归采纳侧）');
+  }
+
+  // ── CRLF 传染防线：源工作区 shim 是 CRLF 时，目标仓须落 LF + .gitattributes 钉 ──
+  // （install-hooks.mjs 按脚本位置自推导 REPO_ROOT——造 fixture 源仓注入 CRLF 源）
+  {
+    const src = track(tmp());
+    fs.mkdirSync(path.join(src, 'scripts'), { recursive: true });
+    fs.mkdirSync(path.join(src, '.githooks'), { recursive: true });
+    fs.copyFileSync(SCRIPT, path.join(src, 'scripts/install-hooks.mjs'));
+    cpDir(path.join(REPO_ROOT, 'scripts/hooks'), path.join(src, 'scripts/hooks'));
+    fs.copyFileSync(path.join(REPO_ROOT, '.hooksrc.tmpl'), path.join(src, '.hooksrc.tmpl'));
+    // 污染源 shim：autocrlf 机上 checkout 出的 CRLF 字节
+    fs.writeFileSync(path.join(src, '.githooks/pre-commit'), '#!/usr/bin/env sh\r\nexec node x\r\n');
+
+    const d = track(realRepo());
+    const r = spawnSync('node', [path.join(src, 'scripts/install-hooks.mjs'), '--target', d], { encoding: 'utf8' });
+    check(r.status === 0, `CRLF 源安装失败: ${r.stderr}`);
+    const shim = fs.readFileSync(path.join(d, '.githooks/pre-commit'), 'utf8');
+    check(!shim.includes('\r'), 'CRLF shim 传染进目标仓（LF 归一化失效）');
+    check(/\.githooks\/\*\s+text\s+eol=lf/.test(fs.readFileSync(path.join(d, '.gitattributes'), 'utf8')),
+      '.gitattributes eol=lf 钉未铺');
+    // 幂等：钉行不重复追加
+    spawnSync('node', [path.join(src, 'scripts/install-hooks.mjs'), '--target', d], { encoding: 'utf8' });
+    const attr = fs.readFileSync(path.join(d, '.gitattributes'), 'utf8');
+    check((attr.match(/\.githooks\/\*/g) || []).length === 1, '.gitattributes 钉重复追加');
   }
 
   for (const d of dirs) fs.rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
