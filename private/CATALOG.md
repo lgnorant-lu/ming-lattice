@@ -29,6 +29,7 @@ private/
 │   ├── mutation-safety-paradigm/      # A列: 变更安全元规则 (L0-L5阶梯+dry-run三戒律)
 │   ├── classify-core-paradigm/        # A列: 分类轴设计元规则 (分面优于鸽笼+封闭词表)
 │   ├── compiler-pipeline-paradigm/    # A列: 编译器九段契约元规则 (lex→link+取舍模式)
+│   ├── vendor-paradigm/               # A列: 第三方内容入库元规则 (清单即锁/物化器契约/孤本例外)
 │   ├── ming-l-paradigm/               # 项目结构域分层元规则 (九域 x 七动力学 + 候审档)
 │   ├── ming-skill-forge/              # 技能包创作元规则 + check-skill/scaffold 硬门控
 │   ├── ming-experience-direction/     # 体验导演式设计流水线 (文档阶梯+宪法+叙事主干+六门+媒介预算)

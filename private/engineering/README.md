@@ -29,6 +29,7 @@ private/engineering/
 ├── mutation-safety-paradigm/          # [A列-变更安全] L0-L5 阶梯 + dry-run 三戒律（同路径/输出同构/零副作用）+ 变更类声明
 ├── classify-core-paradigm/            # [A列-分类] 六公理：分面优于鸽笼/决策分化律/封闭词表/豁免排气阀/三平面分离/容忍分层
 ├── compiler-pipeline-paradigm/        # [A列-方法论] 编译器九段契约（lex→link）+ 质量vs编译延迟取舍 + 抽象机选型
+├── vendor-paradigm/                   # [A列-入库] 第三方内容物化范式（清单即锁/孤本例外/物化器契约）
 ├── ming-l-paradigm/                   # [A列-方法论] Ming-L 九域分层（项目结构规范总图）、粒度分级、候审档
 ├── ming-skill-forge/                  # [A列-方法论] 技能包创作规程 + check-skill.mjs 硬门控
 ├── ming-experience-direction/         # [A列-方法论] 体验导演式设计流水线（文档阶梯/宪法/叙事主干/六门过审/媒介预算）

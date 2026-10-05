@@ -39,21 +39,24 @@ const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // ── registry.yaml 解析（行级层扫描，yaml-lite 子集） ──
 function parseRegistry(text) {
   const out = { baseModules: [], vertical: [], private: [], deployable: [], candidates: [] };
-  let section = null, inModules = false;
+  const paths = new Map(); // name -> path（导引对账用）
+  let section = null, inModules = false, lastName = null;
   for (const raw of text.split(/\r?\n/)) {
     const sec = raw.match(/^([a-z_]+):\s*$/);
-    if (sec) { section = sec[1]; inModules = false; continue; }
+    if (sec) { section = sec[1]; inModules = false; lastName = null; continue; }
     if (!section) continue;
     if (section === 'base' && /^ {4}modules:\s*$/.test(raw)) { inModules = true; continue; }
     const entry = raw.match(/^ {2}- name:\s*(.+?)\s*$/);
-    if (entry) { inModules = false; if (section in out && Array.isArray(out[section])) out[section].push(entry[1]); continue; }
+    if (entry) { inModules = false; lastName = entry[1]; if (section in out && Array.isArray(out[section])) out[section].push(entry[1]); continue; }
+    const p = raw.match(/^ {4}path:\s*(.+?)\s*$/);
+    if (p && lastName) { paths.set(lastName, p[1]); continue; }
     if (inModules) {
       const mod = raw.match(/^ {6}([a-zA-Z0-9_-]+):\s*\[/);
       if (mod) out.baseModules.push(mod[1]);
       else if (raw.trim() && !raw.startsWith('      ')) inModules = false;
     }
   }
-  return out;
+  return { ...out, paths };
 }
 
 // ── SKILL-INDEX.md 解析：表行 + 标题计数声明 ──
@@ -87,6 +90,36 @@ function parseIndexDoc(text) {
 
 // ── 否决/例外标记（非登记行的合法存在理由） ──
 const REJECT_RE = /不采|备选|排除|观望|查无此|gone|已下架|用户(项目|自有)|宣传页|教程/;
+
+// ── 导引文档对账（W 级）：包登记后导引树须同步，漂移是复发面 ──
+// 口径：registry private 条目按 path 分层——
+//   private/<name>            → 须现身 CATALOG.md 顶层 private/ 树
+//   private/engineering/<name> → 须现身 engineering/README.md 资产树 + CATALOG.md
+//   private/engineering/<group>/<name> → 嵌套组（testing/ 等）经组目录行
+//     间接索引，豁免对账
+const GUIDE_DOCS = [
+  { key: 'engineering-readme', path: path.join(REPO_ROOT, 'private', 'engineering', 'README.md') },
+  { key: 'catalog', path: path.join(REPO_ROOT, 'private', 'CATALOG.md') },
+];
+function checkGuides(reg) {
+  const docs = {};
+  for (const g of GUIDE_DOCS) {
+    docs[g.key] = fs.existsSync(g.path) ? norm(fs.readFileSync(g.path, 'utf8')) : null;
+    if (!docs[g.key]) add('W', `导引文档缺席: ${g.path}（对账降级为不可校验）`);
+  }
+  const seen = (text, n) =>
+    new RegExp(`(?<![a-z0-9-])${esc(norm(n))}(?![a-z0-9-])`).test(text);
+  for (const n of reg.private) {
+    const p = reg.paths.get(n) || '';
+    const segs = p.split('/');
+    const isEngDirect = segs.length === 3 && segs[0] === 'private' && segs[1] === 'engineering';
+    const isPrivateTop = segs.length === 2 && segs[0] === 'private';
+    if (isEngDirect && docs['engineering-readme'] && !seen(docs['engineering-readme'], n))
+      add('W', `${n}: engineering/README.md 资产树零踪迹（包登记未同步导引）`);
+    if ((isEngDirect || isPrivateTop) && docs['catalog'] && !seen(docs['catalog'], n))
+      add('W', `${n}: private/CATALOG.md 目录树零踪迹（包登记未同步导引）`);
+  }
+}
 
 // ── 主校验 ──
 if (!fs.existsSync(REGISTRY_PATH)) { add('E', 'registry.yaml 不存在'); }
@@ -138,6 +171,8 @@ else {
       if (c !== actual) add('W', `标题计数漂移 "${h.text}": 声明 ${c}, 实际 ${actual}（${h.level === 2 ? 'registry 层规模' : '节内表行'}）`);
     }
   }
+
+  checkGuides(reg);
 }
 
 // ── 输出 ──
