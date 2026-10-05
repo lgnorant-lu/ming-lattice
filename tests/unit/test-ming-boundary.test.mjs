@@ -1240,13 +1240,17 @@ export async function run() {
         { prefix: 'WS-<n>', pattern: '^WS-\\d+[a-z]?$', domain: 'w', ordering: 'alloc', role: 'id' },
         { prefix: 'ADR-<NNNN>', pattern: '^ADR-\\d{4}$', domain: 'gov', ordering: 'alloc', role: 'id' },
         { prefix: 'XX-<n>', pattern: '^XX-\\d+$', domain: 'x', ordering: 'alloc', role: 'value' },
+        { prefix: 'F-<NNN>', pattern: '^F-\\d{3,}$', domain: 'x', ordering: 'alloc', role: 'id' },
+        { prefix: 'F-<n>', pattern: '^F-\\d{1,2}$', domain: 'x', ordering: 'alloc', role: 'value' },
         { prefix: 'DEAD-<n>', pattern: '^DEAD-\\d+$', domain: 'x', ordering: 'alloc', role: 'id' }] }));
-      cf('docs/idx/reg.md', '# 登记表\n| ID | t |\n|---|---|\n| MR-ID | name |\n| A1 | x |\n| A3 | y |\n| WS-1 | z |\n');
+      cf('docs/idx/reg.md', '# 登记表\n| ID | t |\n|---|---|\n| MR-ID | name |\n| A1 | x |\n| A3 | y |\n| WS-1 | z |\n| ADR-0002 | q |\n');
       cf('docs/idx/other.md', '# 第二定义位\n| A1 | dup |\n|---|---|\n| MR-ID | name |\n'); // 撞名 A1；MR-ID 为模板表头须跳过
-      cf('docs/a.md', '# a\n引用 A1、WS-1、未登记 A9、WS-9z、XX-3 局部。\n');
+      cf('docs/a.md', '# a\n引用 A1、WS-1、未登记 A9、WS-9z、XX-3 局部。\n同行重复 A9 A9 A9 只报一次。\n引用 A01（本文件无 local def）。\nF-1 是 value 族、F-123 是 id 族。\n');
       cf('docs/b.md', '# b\nA3 引自别处；BUG-1 BUG-7 BUG-9 成族；TEC-9 走 extra。\n```\nA99 围栏不算\n```\n');
       cf('docs/c.md', '## 定义段\n定义 **A7** 在文中。\n');
+      cf('docs/loc.md', '# 局部 oracle 文档\nA01 A02 是本文档局部行号。\n');
       cf('docs/adr/ADR-0001-x.md', '# ADR-0001\n');
+      cf('docs/adr/ADR-0002-y.md', '# ADR-0002 镜像\n');
       cf('extras.txt', '# 行首前缀清单\nTEC  # tech 合成 value 族\n');
       cf('boundaries.yaml', 'version: 1\n' +
         'domains:\n  - name: docs\n    match: "docs/**"\n' +
@@ -1260,6 +1264,9 @@ export async function run() {
         '        mode: first_col\n' +
         '      - path: docs/c.md\n' +
         '        mode: bold\n' +
+        '      - path: docs/loc.md\n' +
+        '        mode: tokens\n' +
+        '        local: true\n' +
         '      - path: docs/adr\n' +
         '        mode: filename\n');
       const RB = path.join(PKG, 'scripts/run-boundary.mjs');
@@ -1283,6 +1290,27 @@ export async function run() {
         'value 角色族不做悬空检查');
       assert.ok(!j.findings.some(f => f.observed?.includes('MR-ID')),
         'X-ID 模板表头单元格不得成 def/collision');
+      // 同行同 token 去重：a.md 两处 A9 行各报一次，共 2 条
+      const a9d = j.findings.filter(f => f.rule === 'nslaw:dangling'
+        && f.expect.includes('A9'));
+      assert.strictEqual(a9d.length, 2, '同行重复 token 只报一次（两行各一）');
+      // local:true：loc.md 的 A01 局部定义消解同文件引用，但不进全局——
+      // a.md 的 A01 引用须悬空
+      assert.ok(!j.findings.some(f => f.rule === 'nslaw:dangling'
+        && f.unit === 'docs/loc.md' && f.expect.includes('A01')),
+        'local def 须消解同文件引用');
+      assert.ok(j.findings.some(f => f.rule === 'nslaw:dangling'
+        && f.unit === 'docs/a.md' && f.expect.includes('A01')),
+        'local def 不得消解跨文件引用');
+      // strict-vs-harvest：reg.md(strict) 的 ADR-0002 + 文件名镜像不撞名
+      assert.ok(!j.findings.some(f => f.rule === 'nslaw:collision'
+        && f.observed.includes('ADR-0002')),
+        'harvest 镜像同名 id 不得报 collision');
+      // 位宽分治：F-1 走 value 族不查悬空；F-123 走 id 族须悬空
+      assert.ok(!j.findings.some(f => f.expect?.includes('F-1 ')),
+        'F-<1,2> 位宽须归 value 族');
+      assert.ok(j.findings.some(f => f.rule === 'nslaw:dangling'
+        && f.expect.includes('F-123')), 'F-<3+> 位宽须归 id 族并查悬空');
       // 双通道：findings 与 report 同到
       const rep = j.reports.find(x => x.id === 'nslaw');
       assert.ok(rep && rep.text.includes('namespace'), 'nslaw report 段须在场');
