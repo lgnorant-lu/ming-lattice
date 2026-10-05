@@ -62,12 +62,23 @@ if (verb === 'new') {
     console.error('docclass.yaml states 子集缺 pending——new 无法生成合法初态，fail-closed'); process.exit(2);
   }
   const openedAt = opts['opened-at'] ?? TODAY;
-  if (!DATE_RE.test(openedAt)) { console.error(`--opened-at 非日期形态: ${openedAt}`); process.exit(2); }
+  // 日期语义校验用回环比对：本版 Node 连 T 形也滚动解析
+  // （2026-02-30T00:00:00Z→3-02）——解析成功不等于日期真实，须 iso 回写同源
+  const validDate = s => {
+    if (!DATE_RE.test(s)) return false;
+    const t = Date.parse(`${s}T00:00:00Z`);
+    return !Number.isNaN(t) && new Date(t).toISOString().slice(0, 10) === s;
+  };
+  if (!validDate(openedAt)) {
+    console.error(`--opened-at 非合法日期: ${openedAt}`); process.exit(2);
+  }
   let reviewAfter = opts['review-after'];
   if (!reviewAfter) reviewAfter = `P${propCfg.agingDays}D`;
   const durM = reviewAfter.match(/^P(\d+)D$/);
-  if (durM) reviewAfter = new Date(Date.parse(openedAt) + Number(durM[1]) * 86400000).toISOString().slice(0, 10);
-  if (!DATE_RE.test(reviewAfter)) { console.error(`--review-after 非 <YYYY-MM-DD|PnD>: ${opts['review-after']}`); process.exit(2); }
+  if (durM) reviewAfter = new Date(Date.parse(`${openedAt}T00:00:00Z`) + Number(durM[1]) * 86400000).toISOString().slice(0, 10);
+  if (!validDate(reviewAfter)) {
+    console.error(`--review-after 非 <合法YYYY-MM-DD|PnD>: ${opts['review-after']}`); process.exit(2);
+  }
 
   const id = `${openedAt}-${slug}`;   // 文件名即 id——日期段绑定开启日非生成日
   const file = path.join(PROP_DIR, `${id}.md`);
@@ -180,11 +191,15 @@ if (verb === 'register') {
     'generated: prop-register          # 生成投影——禁手编（手改将被覆写）',
     `queue:`,
   ];
+  // 标量安全阀：frontmatter 值是不可信输入——含 ':'/'#'/空白的裸写会静默腐蚀
+  // 投影（': ' 变键值嵌套、'#' 变注释截断）。安全形态裸写保字节兼容，
+  // 越界形态走 JSON.stringify（YAML 双引号标量是 JSON 超集）。
+  const yamlScalar = v => /^[A-Za-z0-9._-]+$/.test(v) ? v : JSON.stringify(v);
   for (const r of rows) {
-    lines.push(`  - id: ${r.id}`);
-    lines.push(`    status: ${r.status}`);
-    lines.push(`    openedAt: ${r.openedAt}`);
-    lines.push(`    reviewAfter: ${r.reviewAfter}`);
+    lines.push(`  - id: ${yamlScalar(r.id)}`);
+    lines.push(`    status: ${yamlScalar(r.status)}`);
+    lines.push(`    openedAt: ${yamlScalar(r.openedAt)}`);
+    lines.push(`    reviewAfter: ${yamlScalar(r.reviewAfter)}`);
   }
   lines.push(`pending: ${pending}`);
   lines.push(`total: ${rows.length}`);

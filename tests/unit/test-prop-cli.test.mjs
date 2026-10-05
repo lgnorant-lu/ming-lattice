@@ -63,7 +63,10 @@ export function run() {
       [['new', 'Bad_Slug', '--type', 'promotion', '--target', 'x/'], 'kebab'],
       [['new', 'ok-slug', '--type', 'wild-type', '--target', 'x/'], 'type 越出闭集'],
       [['new', 'ok-slug', '--type', 'promotion'], '缺 --target'],
-      [['new', 'ok-slug', '--type', 'promotion', '--target', 'x/', '--review-after', 'not-a-date'], '非 <YYYY-MM-DD|PnD>'],
+      [['new', 'ok-slug', '--type', 'promotion', '--target', 'x/', '--review-after', 'not-a-date'], '非 <合法YYYY-MM-DD|PnD>'],
+      // 形状合法语义非法：不可能日期曾致 Date.parse→NaN→toISOString 裸崩
+      [['new', 'ok-slug', '--type', 'promotion', '--target', 'x/', '--opened-at', '2026-02-30'], '非合法日期'],
+      [['new', 'ok-slug', '--type', 'promotion', '--target', 'x/', '--review-after', '2099-13-45'], '非 <合法YYYY-MM-DD|PnD>'],
     ]) {
       const rr = runProp(lib, argv);
       assert.equal(rr.status, 2, `${argv.join(' ')} 应 exit 2`);
@@ -120,6 +123,16 @@ export function run() {
     r = runProp(lib, ['register']);
     assert.ok(!r.stdout.includes('noop'), '条目变更应再写');
     assert.ok(fs.readFileSync(path.join(lib, '_proposals', 'QUEUE.yaml'), 'utf8').includes('total: 3'));
+
+    // 7b. register 标量安全阀：frontmatter 值含 ':'/'#'/空白 → JSON 引号包裹（防投影腐蚀）
+    lib = mkLib();
+    writeProp(lib, '2026-09-20-evil.md',
+      '---\nid: "x: y#z"\nstatus: pending\nopenedAt: 2026-09-20\nreviewAfter: 2099-01-01\n---\n正文。\n');
+    r = runProp(lib, ['register']);
+    assert.equal(r.status, 0);
+    const q2 = fs.readFileSync(path.join(lib, '_proposals', 'QUEUE.yaml'), 'utf8');
+    assert.ok(q2.includes('id: "x: y#z"'), `不安全标量须引号包裹: ${q2}`);
+    assert.ok(q2.includes('status: pending'), '安全标量裸写保字节兼容');
 
     // 8. 未知 flag / 未知动词 → exit 2（fail-closed 同全仓 CLI 契约）
     r = runProp(lib, ['check', '--bogus']);
