@@ -85,7 +85,7 @@ export const CATEGORY_RULES = [
   {
     // 具名映射：白名单 basename 才归类；其余 scripts/* 落 unknown→full（保守兜底）
     name: 'scripts',
-    test: file => /^scripts\/(?:check-skill-index|check-test-coverage|check-supply-chain|clean-temp|emit-operational-event|fetch|scaffold-repo)\.mjs$/.test(file),
+    test: file => /^scripts\/(?:check-skill-index|check-test-coverage|check-supply-chain|clean-temp|emit-operational-event|fetch|install-hooks|scaffold-repo)\.mjs$/.test(file),
     resolveJobs: file => ({
       'check-skill-index.mjs': ['skill-index'],
       'check-test-coverage.mjs': ['test-coverage'],
@@ -93,6 +93,7 @@ export const CATEGORY_RULES = [
       'clean-temp.mjs': ['tmp-reaper'],
       'emit-operational-event.mjs': ['observability-contract'],
       'fetch.mjs': ['fetch-cli'],
+      'install-hooks.mjs': ['install-hooks'],
       'scaffold-repo.mjs': ['scaffold-repo'],
     })[file.split('/').pop()] ?? []
   },
@@ -153,6 +154,7 @@ export const ALL_SUITE_NAMES = [
   'hook-planner',
   'hook-validation',
   'host-tools',
+  'install-hooks',
   'lexical-layer',
   'lint-contract',
   'manifest-freshness',

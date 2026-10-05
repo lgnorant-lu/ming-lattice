@@ -7,6 +7,7 @@ import { run as runBuildManifestUnit } from './unit/test-build-manifest.test.mjs
 import { run as runCheckSkillUnit } from './unit/test-check-skill.test.mjs';
 import { run as runScaffoldSkillUnit } from './unit/test-scaffold-skill.test.mjs';
 import { run as runScaffoldRepoUnit } from './unit/test-scaffold-repo.test.mjs';
+import { run as runInstallHooksUnit } from './unit/test-install-hooks.test.mjs';
 import { run as runAdapterContract } from './contract/test-adapter-contract.mjs';
 import { run as runObservabilityContract } from './contract/test-observability-contract.mjs';
 import { run as runRouteDecisionCompatibility } from './contract/test-route-decision-compatibility.mjs';
@@ -72,6 +73,7 @@ export const allSuites = [
   { name: 'scaffold-skill', tier: 'unit', run: runScaffoldSkillUnit },
   { name: 'scaffold-domains', tier: 'unit', run: () => node('private/engineering/ming-l-paradigm/scripts/scaffold-domains.test.mjs') },
   { name: 'scaffold-repo', tier: 'unit', run: runScaffoldRepoUnit },
+  { name: 'install-hooks', tier: 'unit', run: runInstallHooksUnit },
   { name: 'ming-l-audit', tier: 'contract', run: () => node('private/engineering/ming-l-paradigm/scripts/audit-domains.mjs', 'docs') },
   { name: 'route-golden', tier: 'contract', run: () => node('tests/test-route-decision.mjs') },
   { name: 'skill-conformance', tier: 'contract', run: () => node('private/engineering/ming-skill-forge/scripts/check-skill.mjs', '--all') },
