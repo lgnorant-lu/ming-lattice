@@ -70,6 +70,20 @@ export function run() {
       fs.readFileSync(path.join(root, 'private/ming-skills-router/config/router-manifest.json'))
     );
     assert.ok(!fs.readdirSync(path.join(root, 'config')).some(name => name.endsWith('.tmp')));
+
+    // schema 绑定：docs/schemas/router-manifest.schema.json 必须有消费者——
+    // 真实提交件按声明 required 字段对账（无依赖最小断言，同仓契约套件同款）
+    const repo = path.resolve(import.meta.dirname, '../..');
+    const schema = JSON.parse(fs.readFileSync(path.join(repo, 'docs/schemas/router-manifest.schema.json'), 'utf8'));
+    const real = JSON.parse(fs.readFileSync(path.join(repo, 'config/router-manifest.json'), 'utf8'));
+    for (const k of schema.required) assert.ok(Object.hasOwn(real, k), `manifest 缺 required: ${k}`);
+    const domReq = schema.properties.domains.additionalProperties.required;
+    for (const [name, d] of Object.entries(real.domains))
+      for (const k of domReq) assert.ok(Object.hasOwn(d, k), `domain ${name} 缺 ${k}`);
+    const recReq = schema.properties.recipes.additionalProperties.required;
+    for (const [name, r] of Object.entries(real.recipes))
+      for (const k of recReq) assert.ok(Object.hasOwn(r, k), `recipe ${name} 缺 ${k}`);
+
     console.log('[PASS] manifest availability, invalid inputs, read-only build and isolated output');
   } finally {
     fs.rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
