@@ -6,6 +6,11 @@
 
 ```
 registry.yaml            唯一事实源: base(基座模块)/vertical(参考)/deployable(部署)/private(私有) + targets/layers(层别登记)/candidates(候审区)
+config/                  路由产物投影: router-manifest.json + router-embeddings.json (生成物, build-router-manifest 产出)
+artifacts/               供应链产物: sbom.cdx.json + sca.npm.json (生成物, generate-supply-chain-* 产出, 新鲜感门对账)
+boundaries.yaml          ming-boundary 边界契约 (extract-facts 提取→check-boundaries 核验)
+boundaries.docclass.yaml docs 文档分类边界契约
+work/                    临时 worktree/作业区 (gitignored 运行区, 不入仓图对账)
 .ming/ming.yaml          ming 命名域伞面 SoT: scope/命名谱(lattice 族谱)/kinds 词表/projects 登记
 .ming/lattice/package.yaml 本箱身份 manifest: name=ming-lattice/kind/members glob/SoT 指针——校验: node scripts/check-ming.mjs
 .ming/lattice/state/     本机运行态域 (gitignored): deploy-ledger.json 部署态账本——sync 装了什么/哪版/漂没漂
