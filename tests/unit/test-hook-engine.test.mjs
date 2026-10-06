@@ -30,6 +30,14 @@ function tempRepo() {
   return dir;
 }
 
+// kit 搬运：scripts/hooks 全套 + scripts/lib（gates.local 仓专门依赖仓级共享件——
+// 实态两目录并存，沙箱须同形；lib 缺席时引擎应将坏门降级为 load finding 而非崩）
+function copyKit(src, dst) {
+  fs.cpSync(path.join(src, 'scripts/hooks'), path.join(dst, 'scripts/hooks'), { recursive: true });
+  const lib = path.join(src, 'scripts/lib');
+  if (fs.existsSync(lib)) fs.cpSync(lib, path.join(dst, 'scripts/lib'), { recursive: true });
+}
+
 export async function run() {
   // 1. INI 归组 + .hooksrc.local 覆盖合并
   {
@@ -145,7 +153,7 @@ export async function run() {
     const dir = tempRepo();
     try {
       // 引擎整套拷贝（index-scanning 同款搬运法）
-      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(dir, 'scripts/hooks'), { recursive: true });
+      copyKit(root, dir);
       fs.writeFileSync(path.join(dir, '.hooksrc'), [
         'lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off',
         'gate.demo.level=error', 'gate.demo.globs=*.md', 'gate.demo.pattern=BADWORD', 'gate.demo.message=演示拦截',
@@ -180,6 +188,14 @@ export async function run() {
       // 未知命令 → exit=2（引擎故障契约）
       r = spawnSync(process.execPath, [engine, 'nonsense'], { cwd: dir, encoding: 'utf8' });
       assert.equal(r.status, 2, '未知命令应 exit 2');
+
+      // 坏门件降级：gates.local 装坏件 → 单门 load finding（不拖垮整引擎），其余门照常
+      fs.writeFileSync(path.join(dir, 'scripts/hooks/gates.local/broken.mjs'),
+        "import { nope } from './no-such-lib.mjs';\nexport const gate = { id: 'broken' };\n");
+      r = spawnSync(process.execPath, [engine, 'pre-commit'], { cwd: dir, encoding: 'utf8' });
+      assert.equal(r.status, 1, '坏门应降级为 error finding');
+      assert.ok(r.stderr.includes('broken-load'), `应指名坏门: ${r.stderr}`);
+      fs.rmSync(path.join(dir, 'scripts/hooks/gates.local/broken.mjs'));
 
       // baseline 冻结后同违规放行
       r = spawnSync(process.execPath, [engine, 'baseline'], { cwd: dir, encoding: 'utf8' });
@@ -394,7 +410,7 @@ export async function run() {
       execFileSync('git', ['config', 'user.email', 't@t'], { cwd: dir });
       execFileSync('git', ['config', 'user.name', 't'], { cwd: dir });
       execFileSync('git', ['config', 'commit.gpgsign', 'false'], { cwd: dir });
-      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(dir, 'scripts/hooks'), { recursive: true });
+      copyKit(root, dir);
       fs.writeFileSync(path.join(dir, '.hooksrc'), [
         'chore.demo.watch=watched.txt',
         'chore.demo.message=演示提醒文案',
@@ -425,7 +441,7 @@ export async function run() {
     const { fixContent } = wsMod;
     const dir = tempRepo();
     try {
-      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(dir, 'scripts/hooks'), { recursive: true });
+      copyKit(root, dir);
       fs.writeFileSync(path.join(dir, '.hooksrc'), 'secretLevel=off\nmojibakeLevel=off\nemojiLevel=off\nlintLevel=off\n');
       const engine = path.join(dir, 'scripts/hooks/engine.mjs');
 
@@ -809,7 +825,7 @@ export async function run() {
     // e2e：cadence 节流——首跑告警盖戳→次跑跳过→改旧戳再跑复报
     const edir = tempRepo();
     try {
-      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(edir, 'scripts/hooks'), { recursive: true });
+      copyKit(root, edir);
       fs.writeFileSync(path.join(edir, '.hooksrc'), [
         'lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off',
         'gate.impact-test.level=off', 'gate.pre-push-verify.level=off',
@@ -908,7 +924,7 @@ export async function run() {
     // e2e：range 文件源 + flag 兜底 + 零 SHA 退化 'all'
     const cdir = tempRepo();
     try {
-      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(cdir, 'scripts/hooks'), { recursive: true });
+      copyKit(root, cdir);
       fs.writeFileSync(path.join(cdir, '.hooksrc'), [
         'lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off',
         'gate.impact-test.level=off', 'gate.pre-push-verify.level=off', 'gate.review-after.level=off',
@@ -944,7 +960,7 @@ export async function run() {
   {
     const adir = tempRepo();
     try {
-      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(adir, 'scripts/hooks'), { recursive: true });
+      copyKit(root, adir);
       fs.writeFileSync(path.join(adir, '.hooksrc'), 'lintLevel=off\nsecretLevel=off\nmojibakeLevel=off\nemojiLevel=off\ngate.impact-test.level=off\n');
       fs.writeFileSync(path.join(adir, 'x.txt'), 'x\n');
       execFileSync('git', ['add', '.'], { cwd: adir });
@@ -1001,7 +1017,7 @@ export async function run() {
     // e2e：chore cadence 真实生效 + chore.level=off 关闭 + SKIP 裸 id
     const edir = tempRepo();
     try {
-      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(edir, 'scripts/hooks'), { recursive: true });
+      copyKit(root, edir);
       fs.writeFileSync(path.join(edir, '.hooksrc'), [
         'lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off',
         'gate.impact-test.level=off', 'gate.review-after.level=off',
@@ -1116,7 +1132,7 @@ export async function run() {
       // —— e2e：engine post-merge + cadence 节流 ——
       const edir = tempRepo();
       try {
-        fs.cpSync(path.join(root, 'scripts/hooks'), path.join(edir, 'scripts/hooks'), { recursive: true });
+        copyKit(root, edir);
         fs.mkdirSync(path.join(edir, 'docs'), { recursive: true });
         fs.writeFileSync(path.join(edir, 'docs/x.md'), `${base}/dead\n`);
         fs.writeFileSync(path.join(edir, '.hooksrc'), [
@@ -1200,7 +1216,7 @@ export async function run() {
           'gate.commit-msg.bodySections=实施内容,本提交不授权,已执行审阅'].join('\n')],
         [e2, 'lintLevel=off\nsecretLevel=off\n'],
       ]) {
-        fs.cpSync(path.join(root, 'scripts/hooks'), path.join(d, 'scripts/hooks'), { recursive: true });
+        copyKit(root, d);
         fs.writeFileSync(path.join(d, '.hooksrc'), cfg);
       }
       const eng = d => path.join(d, 'scripts/hooks/engine.mjs');
@@ -1244,7 +1260,7 @@ export async function run() {
   {
     const dir = tempRepo();
     try {
-      fs.cpSync(path.join(root, 'scripts/hooks'), path.join(dir, 'scripts/hooks'), { recursive: true });
+      copyKit(root, dir);
       const base = ['lintLevel=off', 'secretLevel=off', 'mojibakeLevel=off', 'emojiLevel=off'];
       fs.writeFileSync(path.join(dir, '.hooksrc'),
         [...base, 'gate.author-identity.level=error'].join('\n'));

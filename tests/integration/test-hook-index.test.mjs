@@ -6,13 +6,19 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 
 const project = path.resolve(import.meta.dirname, '../..');
+// kit 搬运：scripts/hooks 全套 + scripts/lib（gates.local 依赖仓级共享件的实态）
+function copyKit(src, dst) {
+  fs.cpSync(path.join(src, 'scripts/hooks'), path.join(dst, 'scripts/hooks'), { recursive: true });
+  const lib = path.join(src, 'scripts/lib');
+  if (fs.existsSync(lib)) fs.cpSync(lib, path.join(dst, 'scripts/lib'), { recursive: true });
+}
 for (const scenario of ['staged-secret', 'unstaged-secret', 'deleted-working-file', 'unicode-path']) {
   test(`index scanning: ${scenario}`, () => {
     const temp = fs.mkdtempSync(path.join(process.env.SKILLS_TEST_TMPDIR || os.tmpdir(), 'ming-index-'));
     try {
       const root = path.join(temp, 'repo with spaces');
       // 引擎化后 check.mjs 是薄入口——整套 hooks 目录（engine/lib/gates）都需就位
-      fs.cpSync(path.join(project, 'scripts/hooks'), path.join(root, 'scripts/hooks'), { recursive: true });
+      copyKit(project, root);
       fs.writeFileSync(path.join(root, '.hooksrc'),
         'lintLevel=off\nsecretLevel=error\n'
         + 'gate.whitespace.level=off\ngate.toc.level=off\ngate.pii.level=off\n'

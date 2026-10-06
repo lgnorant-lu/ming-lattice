@@ -42,9 +42,20 @@ async function loadNativeGates() {
   for (const dir of [NATIVE_GATES_DIR, LOCAL_GATES_DIR]) {
     if (!fs.existsSync(dir)) continue;
     for (const name of fs.readdirSync(dir).filter(n => n.endsWith('.mjs')).sort()) {
-      const mod = await import(pathToFileURL(path.join(dir, name)).href);
-      if (mod.gate) gates.push(mod.gate);
-      else console.warn(`[engine] [WARN] ${dir === NATIVE_GATES_DIR ? 'gates' : 'gates.local'}/${name} 未导出 gate 对象——已跳过`);
+      try {
+        const mod = await import(pathToFileURL(path.join(dir, name)).href);
+        if (mod.gate) gates.push(mod.gate);
+        else console.warn(`[engine] [WARN] ${dir === NATIVE_GATES_DIR ? 'gates' : 'gates.local'}/${name} 未导出 gate 对象——已跳过`);
+      } catch (e) {
+        // 单门装载失败（语法/依赖错）不拖垮整引擎——降级为该门的 error finding，
+        // 全 stage 生效（阻塞面 fail-closed，诊断面指明是哪门坏了）
+        const id = name.replace(/\.mjs$/, '');
+        const loadFinding = { gate: `${id}-load`, file: `scripts/hooks/${dir === NATIVE_GATES_DIR ? 'gates' : 'gates.local'}/${name}`,
+          message: `门件装载失败: ${e.message}——该门本轮未执行，其防护面失效（fail-closed）` };
+        gates.push({ id: `${id}-load`, configKeys: [], stages: [...BLOCKING_STAGES, 'post-merge', 'post-checkout'],
+          family: 'gate', defaultLevel: 'error', globs: [], needsAllFiles: true,
+          run: async () => [loadFinding] });
+      }
     }
   }
   return gates;

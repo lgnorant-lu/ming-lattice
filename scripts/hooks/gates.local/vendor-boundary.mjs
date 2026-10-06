@@ -10,24 +10,14 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { parseRegistryLite, sectionEntries } from '../../lib/registry-lite.mjs';
 
-// registry.yaml 行级解析（yaml-lite 子集，与 check-skill-index 同源约定）
+// 孤本白名单：vertical 段 sourceGone:true 条目的 path 集（共享 lite 解析，非另抄正则）
 function orphanPaths(text) {
   const out = new Set();
-  let section = null, cur = null;
-  for (const raw of text.split(/\r?\n/)) {
-    const sec = raw.match(/^([a-z_]+):\s*$/);
-    if (sec) { section = sec[1]; cur = null; continue; }
-    if (section !== 'vertical') continue;
-    const entry = raw.match(/^ {2}- name:\s*(.+?)\s*$/);
-    if (entry) { cur = {}; continue; }
-    if (!cur) continue;
-    const kv = raw.match(/^ {4}(path|sourceGone):\s*(.*?)\s*$/);
-    if (kv) {
-      cur[kv[1]] = kv[2];
-      if (cur.path && cur.sourceGone === 'true') out.add(cur.path.replace(/\\/g, '/').replace(/\/+$/, ''));
-    }
-  }
+  for (const e of sectionEntries(parseRegistryLite(text), 'vertical'))
+    if (e.fields.sourceGone === 'true' && e.fields.path)
+      out.add(e.fields.path.replace(/\\/g, '/').replace(/\/+$/, ''));
   return out;
 }
 

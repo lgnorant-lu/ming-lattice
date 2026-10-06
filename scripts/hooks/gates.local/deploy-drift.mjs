@@ -11,28 +11,21 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { parseRegistryLite } from '../../lib/registry-lite.mjs';
 
-// registry.yaml 行级解析：deployable/private 段 deploy.claude:true + base 段 modules.<name>: [claude]
+// registry 声明集：deployable/private 段 deploy.claude:true + base 段 modules.<name>: [claude]
+// 走 lib/registry-lite.mjs 共享解析（原手写行级解析是第 7 份复制，漂移无保险）
 function declaredDeploys(text) {
+  const reg = parseRegistryLite(text);
   const names = new Set();
-  const lines = text.split('\n');
-  let sec = null, inModules = false, cur = null, curHasDeploy = false;
-  const flush = () => { if (cur && curHasDeploy) names.add(cur); cur = null; curHasDeploy = false; };
-  for (const ln of lines) {
-    const top = ln.match(/^(\w+):\s*$/);
-    if (top) { flush(); sec = top[1]; inModules = false; continue; }
-    if (/^\s+-\s+name:\s*/.test(ln)) { flush(); cur = ln.split('name:')[1].trim(); continue; }
-    if (sec === 'base') {
-      if (/^\s{4}modules:\s*$/.test(ln)) { inModules = true; continue; }
-      if (inModules) {
-        const mm = ln.match(/^\s{6}(\S+):\s*\[([^\]]*)\]/);
-        if (mm) { if (mm[2].includes('claude')) names.add(mm[1]); continue; }
-        if (/^\s{4}\w/.test(ln)) inModules = false;
-      }
+  for (const e of reg.entries) {
+    if ((e.section === 'deployable' || e.section === 'private')
+      && e.maps.deploy?.claude === 'true') names.add(e.name);
+    if (e.section === 'base' && e.maps.modules) {
+      for (const [sub, clients] of Object.entries(e.maps.modules))
+        if (/[[\s,]claude[\s,\]]/.test(clients)) names.add(sub);
     }
-    if (cur && /^\s{6}claude:\s*true/.test(ln)) curHasDeploy = true;
   }
-  flush();
   return names;
 }
 
