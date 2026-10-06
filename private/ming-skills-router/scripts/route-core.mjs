@@ -179,7 +179,8 @@ export function Decide(hint, manifest) {
     candidatesByDomain[name] = info.skills.filter(skill => availability[skill] === 'ready' && !excluded.has(skill));
   }
   // S3 词法层召回：消费与 S2 同源的 activeText（否定从句已过滤）；只提名 candidates
-  // 证据下限：至少 2 个 distinct 查询词命中文档——单词偶然命中不提名（min-max 归一化下 top 恒为 1.0 的结构性防线）
+  // 证据下限：norm≥LEX_MIN_NORM 且至少 1 词命中 name/triggers 加权字段（matchedBoost≥1）——
+  //   纯 description 命中不提名；norm 阈值是 min-max 归一化下 top 恒 1.0 的结构性防线
   const lexicalPicks = scoreLexical(activeText, manifest.skillDocs)
     .filter(p => p.norm >= LEX_MIN_NORM && p.matched >= 1 && p.matchedBoost >= 1
       && availability[p.skill] === 'ready' && !excluded.has(p.skill))
