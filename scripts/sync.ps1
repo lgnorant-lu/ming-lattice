@@ -35,7 +35,7 @@ function Emit-SyncFailed {
         errorCode = 'sync_failed'
         fields = [ordered]@{ error_type = $ErrorType }
     }
-    try { $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>$null | Out-Null } catch { }
+    try { $emitErr = $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>&1 | Out-String; if ($emitErr.Trim()) { Write-Host "[telemetry] $($emitErr.Trim())" -ForegroundColor DarkGray } } catch { }
 }
 
 try {
@@ -115,7 +115,7 @@ foreach ($u in $units) {
 if ($units.Count -eq 0) {
     Write-Host "[sync] 无部署单元（registry 为空或全部未启用）"
     $eventSpec = [ordered]@{ event = 'sync.completed'; duration = $startedAt.Elapsed.TotalMilliseconds; fields = [ordered]@{ linked_count = 0; copy_count = 0; skipped_count = 0; backup_count = 0; is_dry_run = [bool]$WhatIf; module_filter_count = $Module.Count } }
-    try { $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>$null | Out-Null } catch { }
+    try { $emitErr = $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>&1 | Out-String; if ($emitErr.Trim()) { Write-Host "[telemetry] $($emitErr.Trim())" -ForegroundColor DarkGray } } catch { }
     exit 0
 }
 
@@ -225,7 +225,7 @@ $eventSpec = [ordered]@{
     duration = $startedAt.Elapsed.TotalMilliseconds
     fields = [ordered]@{ linked_count = $modeStat.link; copy_count = $modeStat.copy; skipped_count = $modeStat.skip; backup_count = $modeStat.backup; is_dry_run = [bool]$WhatIf; module_filter_count = $Module.Count }
 }
-try { $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>$null | Out-Null } catch { }
+try { $emitErr = $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>&1 | Out-String; if ($emitErr.Trim()) { Write-Host "[telemetry] $($emitErr.Trim())" -ForegroundColor DarkGray } } catch { }
 exit 0
 } catch {
     Emit-SyncFailed -ErrorType $_.Exception.GetType().Name

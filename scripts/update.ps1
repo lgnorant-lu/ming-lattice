@@ -41,7 +41,7 @@ if ($null -ne $reg.updatePolicy.ttlDays) {
 }
 $today = (Get-Date).ToString('yyyy-MM-dd')
 $report = @()
-$stats = @{ cache = 0; net = 0; updated = 0; skip = 0 }
+$stats = @{ cache = 0; net = 0; updated = 0; skip = 0; gone = 0 }
 $namePattern = if ($Name.Count -gt 0) { ($Name | ForEach-Object { [regex]::Escape($_) }) -join '|' } else { $null }
 
 # ---------- 工具函数 ----------
@@ -75,7 +75,9 @@ foreach ($sectionName in @('base', 'vertical')) {
         if (-not $item.enabled) { continue }
         if ($namePattern -and $item.name -notmatch $namePattern) { continue }
         if ([string]::IsNullOrWhiteSpace($item.repo)) { continue }
-        if ($item.sourceGone) { $stats.skip++; continue }   # 上游已下架/私有化: 零网络跳过
+        # sourceGone 单独计数——"有意零网络跳过"≠"检测失败"，同桶会让真失联
+        # 淹没在孤本基数里看不见（报告面语义分层）
+        if ($item.sourceGone) { $stats.gone++; continue }
         $path = Join-Path $RepoRoot $item.path
         $hasGit = Test-Path (Join-Path $path '.git')
         if (-not $hasGit) {
@@ -116,6 +118,16 @@ foreach ($sectionName in @('base', 'vertical')) {
                     if ($remoteHead) { break }
                 }
             }
+            if (-not $remoteHead) {
+                # 兜底：非标准默认分支（develop/trunk 等）——symref 探一次真实
+                # 默认分支再定向 fetch（仅 main/master 双失时付这一程网络成本）
+                $symref = git -C $path -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=90 ls-remote --symref origin HEAD 2>$null |
+                    Select-Object -First 1
+                if ($symref -match 'refs/heads/(\S+)\s+HEAD') {
+                    git -C $path -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=90 fetch --depth 1 --filter=blob:none origin $Matches[1] 2>$null | Out-Null
+                    if ($LASTEXITCODE -eq 0) { $remoteHead = git -C $path rev-parse --short FETCH_HEAD 2>$null }
+                }
+            }
         } else {
             # registry 值进 git argv 前必须校验：ls-remote 支持
             # --upload-pack=<bin>（远端侧任意执行）——'-' 前缀即选项注入面
@@ -143,6 +155,10 @@ foreach ($sectionName in @('base', 'vertical')) {
                     $logs = git -C $path log --oneline "$localHead..FETCH_HEAD" 2>$null | Select-Object -First 10 |
                         ForEach-Object { $_ -replace '[\x00-\x1f\x7f-\x9f]', '' }
                     if ($logs) { $entry.summary = @($logs) }
+                    elseif ((git -C $path rev-parse --is-shallow-repository 2>$null) -eq 'true') {
+                        # depth-1 克隆：localHead 在浅边界外时 log 静默空——如实标记而非"无变更"假象
+                        $entry.summary = @('(shallow 克隆边界——提交列表不可得，仅 HEAD 差异可证有更新)')
+                    }
                 }
             }
         } else {
@@ -157,6 +173,7 @@ foreach ($sectionName in @('base', 'vertical')) {
 # 回写 registry: 用 [regex]::Match（Select-String 逐行, 不支持跨行块匹配）
 $opt = [System.Text.RegularExpressions.RegexOptions]::Singleline
 $regText = Get-Content $RegistryPath -Raw
+$regTextBaseline = $regText   # TOCTOU 锚：写前复检外部是否动过文件
 foreach ($item in @($reg.base) + @($reg.vertical)) {
     if ($null -eq $item.checkCache) { continue }
     # 块边界: 下一个 "- name:" 条目行 / 非缩进行(段结束) / 文本尾 —— 不能用 ^\S(段内都是缩进行会吞整段)
@@ -176,7 +193,13 @@ foreach ($item in @($reg.base) + @($reg.vertical)) {
     }
 }
 if (-not $WhatIf) {
-    [System.IO.File]::WriteAllText($RegistryPath, $regText, [System.Text.UTF8Encoding]::new($false))
+    # TOCTOU 守卫：检测期间文件被外部改动则放弃回写——checkCache 是易再生
+    # 缓存值，覆盖他人手编/其他写器的代价远高于"重跑一次 update"
+    if ((Get-Content $RegistryPath -Raw) -cne $regTextBaseline) {
+        Write-Host "[WARN] registry.yaml 检测期间被外部修改——checkCache 回写放弃（防覆盖他人写入），重跑即可" -ForegroundColor Yellow
+    } else {
+        [System.IO.File]::WriteAllText($RegistryPath, $regText, [System.Text.UTF8Encoding]::new($false))
+    }
 } else {
     Write-Host "[DryRun 演练模式] 已跳过 registry.yaml 缓存回写" -ForegroundColor DarkCyan
 }
@@ -209,7 +232,7 @@ if (-not $Quiet) {
     foreach ($e in $unverified) { Write-Host "  [UNVERIFIED] $($e.name): $($e.remote)" -ForegroundColor Yellow }
     Write-Host ""
     $networkLabel = if ($WhatIf) { '网络检测=0 (DryRun)' } else { "网络检测=$($stats.net)" }
-    Write-Host "[update] 缓存命中=$($stats.cache) $networkLabel 可更新=$($stats.updated) 未验证=$($stats.skip) (TTL=$ttlDays 天)"
+    Write-Host "[update] 缓存命中=$($stats.cache) $networkLabel 可更新=$($stats.updated) 未验证=$($stats.skip) 孤本零网络=$($stats.gone) (TTL=$ttlDays 天)"
 }
 
 # ---------- 上游金数据漂移（ming-boundary langs pin ↔ HEAD） ----------

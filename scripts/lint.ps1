@@ -30,7 +30,7 @@ try {
         errorCode = 'lint_failed'
         fields = [ordered]@{ sources_checked = 0; error_count = 1; warn_count = 0; info_count = 0 }
     }
-    try { $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>$null | Out-Null } catch { }
+    try { $emitErr = $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>&1 | Out-String; if ($emitErr.Trim()) { Write-Host "[telemetry] $($emitErr.Trim())" -ForegroundColor DarkGray } } catch { }
     if ($Json) {
         ConvertTo-Json -InputObject @([ordered]@{ level = 'E'; name = 'registry'; msg = $_.Exception.Message; file = $RegistryPath })
     } else {
@@ -310,5 +310,5 @@ $eventSpec = [ordered]@{
     errorCode = if ($e -gt 0) { 'lint_failed' } else { $null }
     fields = [ordered]@{ sources_checked = $sources.Count; error_count = $e; warn_count = $w; info_count = $i }
 }
-try { $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>$null | Out-Null } catch { }
+try { $emitErr = $eventSpec | ConvertTo-Json -Compress -Depth 5 | & node (Join-Path $PSScriptRoot 'emit-operational-event.mjs') 2>&1 | Out-String; if ($emitErr.Trim()) { Write-Host "[telemetry] $($emitErr.Trim())" -ForegroundColor DarkGray } } catch { }
 if ($e -gt 0) { exit 1 } else { exit 0 }

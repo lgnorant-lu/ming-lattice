@@ -158,10 +158,17 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - unsuffixed-name 的 layer 歧义——name 后缀=类型面与 layer=领域面分位后，无后缀名的 layer 取值靠人判断，等真实歧义例
 - registry 治理段拆分——layers/domains/candidates 与资产条目同文件，增长至对账成本显著时考虑分离
 - ~~lint 反向孤儿检测~~——**已清偿**（2026-09-23：lint.ps1 增 fs→registry 反向扫描，浅层枚举不递归物化仓；命名空间容器/已登记包内件/`.`/`_` 前缀目录豁免——实测零孤儿，`private/engineering/testing` 容器正确豁免；`build-deployable $map` 多余键面另案）
-- emit-operational-event 静默死——五调用点全吞 stderr（telemetry 不阻塞业务是取舍），等 observability 消费方要可诊断性
+- ~~emit-operational-event 静默死~~——**已清偿**（2026-10-07：脚本层早补 stderr
+  诊断后，五调用点（lint×2/sync×3）`2>$null` 仍吞——改 `2>&1|Out-String`
+  捕获+非空即 `[telemetry]` 灰字透出：telemetry 不阻塞业务的取舍保留，
+  失败从静默变可诊断。实跑验证成功路径零噪音）
 - ~~sync void-junction 负路径~~——**已清偿**（2026-09-27：test-cli-tools 增 `sync-void-junction` 场景——预置死 junction 先验虚空(Test-Path 穿透=False)→sync 检出"非本仓旧链"删建治愈→SKILL.md 可解析断言落地；verify-fail exit-1 分支系运中腐化兜底（校验全在部署前），黑盒不可达不伪造）
 - verify-cache strict 模式——纯诊断永 exit 0，等 CI 化/门化需求
-- update.ps1 余项——ls-remote `-` 前缀选项注入已修（`f074962`）；余项 TOCTOU 回写覆盖、main\|master 分支限定、DETECT-FAIL 与 sourceGone 同桶、shallow 边界 log 缺失，均等痛点实例
+- ~~update.ps1 余项~~——**已清偿**（`f074962` ls-remote `-` 前缀注入；本轮补清四案：
+  TOCTOU 回写覆盖→写前基线复检（外部改动即放弃，缓存易再生）；main\|master
+  限定→双失后 `ls-remote --symref` 探真实默认分支再定向 fetch；DETECT-FAIL 与
+  sourceGone 同桶→`gone` 独立计数（有意零网络跳过≠检测失联）；shallow 边界
+  log 空→`rev-parse --is-shallow-repository` 检出即标"边界外列表不可得"）
 
 **已清偿（2026-10-15 hooks 引擎/脚本审计轮，IV8 侧同款记于其 TODO-infrastructure 与 git-hooks-conventions）**：
 
@@ -202,7 +209,13 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
   --all 按 kind≠skill 豁免 SKILL.md 契约，kind 走封闭词表 {skill|tool|asset}
   出表即 E（防错拼静默豁免逃逸）；CATALOG/SKILL-INDEX 索引同步。勿给非技能目录
   伪造 SKILL.md 消 lint——kind 字段是正解）
-- vendored LICENSE 覆盖缺口——96 vendored 中 32 个无 LICENSE 文件；**物化制落地后再分发面已缩至 4 个 ruyi 孤本**（远端仅存链接不分发字节，灰区自然消解大半）；残留问题=孤本无上游许可 + 本仓自身 LICENSE 选型待定
+- vendored LICENSE 覆盖——**逐孤本对账已清偿**（2026-10-07：物化层 96 目录仅
+  ruyi-mcp 携 LICENSE 文件，但物化层 gitignored 不分发无合规义务；真正入库
+  再分发的 4 孤本逐一核查：`ruyi-mcp` 携 MIT 全文 ✓；`ruyipage-js`
+  package.json SPDX 声明 `BSD-3-Clause`（无 LICENSE 全文，SPDX 字段即声明）✓；
+  `ruyipage-go`/`ruyipage-dev` 全仓检索无任何许可声明——上游已下架无从补取。
+  **残余裁决**：go/dev 两孤本"持有但无上游许可"（现状=持有+标注未声明，
+  移出需用户裁）+ 本仓自身 LICENSE 选型待定——均用户决策面）
 - githook 族 skill 增补商讨设计组件——门规变更/新门设计的讨论通道设计件（用户口述方向，细节待成形）
 - ~~author-identity 门~~——**机制已落地**（2026-10-15：`gates/author-identity.mjs` 出厂门——`git var GIT_AUTHOR/COMMITTER_IDENT` 双查，哨兵占位+CN 个人邮箱域（pii 同族词表）+`allow` 白名单 glob+`check=both|author|committer`；组21 e2e 七态断言）。**余项=本仓激活**：当前身份仍是个人邮箱，`git config user.email` 属用户域——.hooksrc 暂置 warn 持续提醒，迁移后翻 error+`allow=*@users.noreply.github.com`。副产发现：fixture 仓不设身份会回退全局配置——tempRepo 已补中性身份（CI 无全局配置同类防护）
 - ~~PII/卫生扫描门~~——**已清偿**（2026-09-27：`gates/pii.mjs` 共享门落地——staged blob 索引保真扫描；家目录路径 `C:\Users\x`/`/Users/x`=error、`/home/x`=warn、CN 个人邮箱域(qq/foxmail/163 等)=error、手机号=warn、私网 IP 显式弃扫（文档合法密度太高）；fixture 名白名单内置；`.hooksrc` 接线 `gate.pii.level=error`+`exclude=vertical/**`；e2e 实测暂存含 qq 邮箱文件被拦 exit 1）
@@ -215,11 +228,27 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - 远端推送待授权——`ming-skills-router` 远端 URL 未给 + 推令未下；本地已全绿待推。配套：旧仓 `ming-skills` 删除缺 `delete_repo` scope（gh auth refresh 或 web UI）；备份 `skills-collection-pre-vendorindex.bundle`（179M，含改史前全量旧史）去留自定
 - 三方盘点评估已做、裁决"暂不动"（2026-09-23）——硬依赖 8 仓（ctf-skills 98 链等）+ 孤本 4 必留；建议删候选 8：jadx-mcp-server/jadx-mcp-plugin（jadx CLI 本体已装+garlic 上位）、ida-claude-plugins/d810-ng/hrtng（IDA 不在链）、ghidra-mcp-lauriewired（未就绪）、awesome-re-mcp（自标过时）、burp-mcp-portswigger（自标不用）；待裁 6：x64dbg-mcp/apktool-mcp-server/wire-mcp/har-mcp/harvest-mcp/mcp-for-security（工具未就绪但域可能有用）。用户裁"暂都留"——记录防重审，重启动时以此清单为基线
 - birdview 实仓试用——候选仓（项目级经验沉淀双模态入口）待真实蒸馏循环实证，首选 blog-tui 场景
-- TOOL-VERDICTS<->vertical 覆盖 diff——tool-index 就绪面（jadx/apktool/frida/r2 系/node/jshookmcp）与 96 vertical 的供需对账未跑成表
-- apk-reverse deployable 包装——基座 apk-reverse 的部署面补齐（脱壳/重建签名链已有 Frida-Apk-Unpack 等 vertical 支撑）
+- ~~TOOL-VERDICTS<->vertical 覆盖 diff~~——**已对账清偿**（2026-10-07：18 就绪/19 缺失
+  工具逐名扫 96 物化目录——缺失工具（nmap/binwalk/yara/playwright/apksigner/
+  analyzeHeadless/pwntools/seclists 等）在 vertical 引用面**零命中**：需求侧全在
+  base/reverse-skill 模块（pentest-tools/firmware-pentest/malware-analysis/
+  browser-automation/radare2/apk-reverse），vertical 参考层不消费缺失工具。
+  结论：缺装清单只影响 base 层技能就绪度，非 vendored 依赖事故——对账表无
+  需常设，重装优先级按 base 模块使用频度裁）
+- ~~apk-reverse deployable 包装~~——**已清偿**（2026-10-07：真因查明——registry
+  modules 20 条 [claude] 声明 vs .cc-switch 已全链（sync 无漂移），缺口在
+  .claude/skills 二级面：apk-reverse/firmware-pentest/ghidra-reverse/
+  macos-reverse 四模块链接缺席（cc-switch skills.enabled_claude=0 是其管理
+  面记录，但 areclaw-*/ios-reverse 等 off 项也有人工 junction——.claude
+  实为"cc-switch 管理链 + 人工链接"混合面）。按既有 SymbolicLink→.cc-switch
+  约定补齐 4 链，SKILL.md 穿透验证全过，系统侧技能面即时可见）
 - family tuple 数据模型——domain/name/layer 三元组的结构化，等第二真实消费方
 - 全局日志/性能模块——跨仓共性痛点未成形，不立抽象
-- base/reverse-skill 子模块本地补丁——git status 常驻 `m` **实证=2 个上游文件被本地删除**：`src-hunter/references/payloader/waf-bypass.md`(6501行)+`playbooks/path-traversal.md`(1297行) 共 -7798 行攻击性 payload 参考——疑似早期安全裁剪但意图无证；裁决选项：checkout 还原（对齐上游只读契约）或保留（有意裁减则该入 registry note 声明）
+- ~~base/reverse-skill 子模块本地补丁~~——**已裁决清偿**（2026-10-07：2 个上游文件
+  工作树删除（-7798 行 payload 参考）无证可依——子模块=上游只读契约，本地补丁仅限
+  AGENTS.md 声明面（SKILL.md PRE-CHECK+field-journal），未声明漂移一律归约：已
+  checkout 还原对齐 HEAD。若将来确有裁剪需求：删字节 + registry note 显式声明，
+  二者必须同时存在才算合法本地补丁）
 - hook 引擎 fail-open 结构观察——门抛异常→warn 放行（引擎既定策略，透明性>阻断）；vendor-boundary 已自带 fail-closed 硬化，引擎层策略本身留作观察项
 - 物化副作用观察——vendored 仓自带 `.claude/skills/` 会浮现为宿主可用技能面（game-security-skills 10 个实例：anti-cheat/dma-attack 等）；物化=技能面扩张是特性还是噪音待定
 - **AST 源码扫描器→skill 孵化候选**（2026-09-23 自 IV8 seam-ledger 萃取）——现状：IV8 `build_seam_ledger.py` 用行正则扫 Rust install 点，已暴露一整类文本启发缺陷（字面量误抓/括号计数遇字符串字面量破/封闭fn回扫漂）；决策迁 tree-sitter CST 前端（dev deps 两个 wheel，`scan_rs_ast` 产同构 hit + 双扫 diff 契约迁移）。skill 化潜力=「审计器自身用语法树而非文本匹配」是跨仓通用范式（门/审计器/结构断言都该这么写），但**需先跨生态调研**（rust/python/js/go 各语法生态的 tree-sitter 语法覆盖度、仓内既有扫描面盘点、多语言统一 hit schema 是否成立）再立包——不急，仅记录方向
