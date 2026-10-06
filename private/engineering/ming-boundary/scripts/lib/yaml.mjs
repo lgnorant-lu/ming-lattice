@@ -177,7 +177,7 @@ export function loadYaml(p) {
     return parseYamlLite(text);
   } catch (liteErr) {
     const r = spawnSync('pwsh', ['-NoProfile', '-File', YAML2JSON, '-Path', p],
-      { encoding: 'utf8' });
+      { encoding: 'utf8', timeout: 120_000 }); // 与 loadRegistryCanonical 同上界——pwsh 冷启动+AV 扫描 flake 面
     if (r.status === 0 && r.stdout) return JSON.parse(r.stdout);
     die(`yaml 解析失败（lite: ${liteErr.message}；pwsh 桥: ${(r.stderr || r.error?.message || '不可用').toString().slice(0, 120)}）: ${path.basename(p)}`);
   }

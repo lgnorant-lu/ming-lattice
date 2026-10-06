@@ -137,7 +137,7 @@ function runAstGrep(bin, filesAbs, rules) {
     try {
       r = spawnSync(bin, ['scan', '--inline-rules', rules,
         '-c', SGCONFIG, '--json=stream', ...batch],
-        { encoding: 'utf8', maxBuffer: 512 << 20 });
+        { encoding: 'utf8', maxBuffer: 512 << 20, timeout: 180_000 }); // 批级超时——单个病态文件不得永久阻塞
     } catch (e) {
       // spawnSync 本身也会抛（ERR_STRING_TOO_LONG：单文件输出超 512MB
       // 字符串上限——巨型混淆文件逐节点 dump 能到）——同归批降级链

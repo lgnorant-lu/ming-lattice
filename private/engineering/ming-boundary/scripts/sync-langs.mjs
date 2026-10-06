@@ -76,7 +76,10 @@ if (a.heads) {
   for (const l of targets) {
     const c = cfg.langs[l];
     const r = spawnSync('git', ['ls-remote', `https://github.com/${c.grammar}`,
-      'HEAD'], { encoding: 'utf8' });
+      'HEAD'], { encoding: 'utf8', timeout: 60_000,
+      // GIT_TERMINAL_PROMPT=0：私有/拼错仓要凭证时立即失败而非 stdin 提示挂死
+      // （与 scripts/fetch.mjs、hooks/lib/files.mjs 同防护面）；timeout 防网络挂起
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
     const head = r.status === 0 ? (r.stdout.match(/^([0-9a-f]{40})/) || [])[1] : null;
     if (!head) { console.error(`[sync-langs] heads ${l}: ls-remote 失败（网络?）`); continue; }
     const same = head === c.rev;

@@ -105,7 +105,7 @@ function m1ParseRate(bin, langName, files, errGlobs) {
     for (const b of batches(fs2)) {
       const r = spawnSync(bin, ['scan', '--inline-rules', rules,
         '-c', SGCONFIG, '--json', ...b],
-        { encoding: 'utf8', maxBuffer: 512 * 1024 * 1024 });
+        { encoding: 'utf8', maxBuffer: 512 * 1024 * 1024, timeout: 180_000 }); // 批级超时——病态文件不得永久阻塞
       if (r.status !== 0 && !r.stdout) die(`ast-grep batch spawn 失败: ${r.stderr?.slice(0, 200)}`);
       for (const m of JSON.parse(r.stdout || '[]')) {
         if (m.ruleId === 'probe-error') errFiles.add(m.file.replace(/\\/g, '/'));
@@ -121,7 +121,7 @@ function extractFacts(root) {
   const out = trackTmp(path.join(os.tmpdir(),
     `skc-mb-metrics-${process.pid}-${Math.random().toString(36).slice(2)}.jsonl`));
   const r = spawnSync(process.execPath, [EXTRACT, '--root', root, '--out', out],
-    { encoding: 'utf8' });
+    { encoding: 'utf8', timeout: 600_000 }); // 对齐 run-boundary 的提取预算（大仓全量扫）
   if (r.status !== 0) die(`extract-facts 失败(${root}): ${(r.stderr || r.stdout || '').slice(0, 300)}`);
   return out;
 }
