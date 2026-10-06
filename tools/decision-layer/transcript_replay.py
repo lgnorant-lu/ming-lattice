@@ -178,7 +178,7 @@ def cmd_decide():
     inp = HERE / "_hints_in.json"
     inp.write_text(json.dumps([h["hint"] for h in hints], ensure_ascii=False), encoding="utf-8")
     r = subprocess.run(["node", str(HERE / "transcript_decide.mjs"), str(inp)],
-                       capture_output=True, text=True, cwd=str(ROOT))
+                       capture_output=True, text=True, cwd=str(ROOT), timeout=300)
     if r.returncode != 0:
         print(r.stderr[:2000]); sys.exit(1)
     Path(DECISIONS).write_text(r.stdout, encoding="utf-8")

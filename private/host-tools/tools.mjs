@@ -39,7 +39,12 @@ function loadRegistry() {
 
 function onPath(cmd) {
   if (!cmd) return false;
-  const r = spawnSync('where', [cmd], { encoding: 'utf8', shell: false });
+  // where 是 Windows/msys2 原生；POSIX 走 sh -c 'command -v'（command -v 是 POSIX
+  // 内置，极简环境无 which 也能跑）。无平台探测时 linux/darwin 上 where ENOENT
+  // 静默报全 false——探测面板失真即诊断失明。
+  const r = (PLATFORM === 'win32' || PLATFORM === 'msys2')
+    ? spawnSync('where', [cmd], { encoding: 'utf8', shell: false, timeout: 5_000 })
+    : spawnSync('sh', ['-c', 'command -v "$1"', 'sh', cmd], { encoding: 'utf8', timeout: 5_000 });
   return r.status === 0;
 }
 

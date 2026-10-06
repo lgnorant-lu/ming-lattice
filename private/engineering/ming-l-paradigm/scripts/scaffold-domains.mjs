@@ -120,7 +120,7 @@ if (dryRun) process.exit(0);
 
 // 自证步（docstring 承诺"骨架即合规"的执行面）：生成物过 audit-domains，E 级即 exit 1。
 // 不回滚——target 常是棕场既有 docs/，删目录会误伤用户文件；失败信息由 audit 明细给出。
-const audit = spawnSync(process.execPath, [path.join(SKILL_DIR, 'scripts', 'audit-domains.mjs'), target], { encoding: 'utf8' });
+const audit = spawnSync(process.execPath, [path.join(SKILL_DIR, 'scripts', 'audit-domains.mjs'), target], { encoding: 'utf8', timeout: 60_000 }); // 生成后自检子进程预算——防挂起
 process.stdout.write(audit.stdout || '');
 process.stderr.write(audit.stderr || '');
 process.exit(audit.status ?? 1);

@@ -139,6 +139,10 @@ export async function run() {
   assert.equal(sp.status, 0);
   assert.match(sp.stdout, /find\s+block-form\s+fd\s+\S+\s+MISSING/,
     'POSIX 端无 mingw64 fallback——未铺 shim 应如实 MISSING');
+  // onPath 平台分叉钉死：linux 模式须走 sh -c 'command -v'（where 是 Windows 原生），
+  // 真 POSIX 上 where ENOENT 静默全 false = 探测面板失明。断至少有 installed/yes 命中。
+  assert.match(sp.stdout, /\b(installed|yes)\b/,
+    'POSIX onPath 分支应有真实探测命中（经 sh command -v）——全 NO/false 即 where 误用');
   // POSIX PATH 归一化：/ 分隔符判定（注入纯 POSIX 形 HOME——Windows 形
   // C:\ 盘符冒号与 POSIX PATH ':' 分隔符同形，跨平台语义注定不可混写）
   const dp = tools('/srv/ht-fake', ['doctor'], {
