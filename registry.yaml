@@ -16,6 +16,9 @@
 #     domain    : 资产域（合法值域见下方 domains: 登记表——新值先入表再使用）
 #     deploy    : 部署映射 { 客户端: bool }（空 = 仅参考不部署）
 #     weight    : 物化权重——core=默认物化(缺省) / heavy=重仓不进默认面(仅 fetch --only/--include-heavy 可达)
+#     kind      : 资产类别——缺省=skill（受 SKILL.md/frontmatter 契约约束）；
+#                 tool|asset=非技能运营资产（host-tools 先例：登记为目录归属/索引对账，
+#                 check-skill --all 豁免 SKILL.md 契约；新类别值先在此说明再使用）
 
 schemaVersion: "1.1"
 description: "ming-skills 单一事实源：源 → 本地路径 → 版本记录 → 部署目标"

@@ -34,12 +34,28 @@ export function run() {
     fs.writeFileSync(path.join(fixturePrivate, 'broken-skill', 'SKILL.md'),
       '---\nname: broken-skill\ndescription: Too short\n---\n[missing](references/missing.md)\n');
 
+    // sourceGone↔.gitignore 对账面：gone-skill 入库孤本（已放行=dangling 不误报），
+    // dangling 白名单悬空（无 sourceGone 条目→W），!vertical/** 通配属点文件
+    // 豁免轴不算孤本放行（字面叶子名才参与对账）
+    const fixtureVertical = path.join(fixtureDir, 'vertical', 'gone-skill');
+    fs.mkdirSync(path.join(fixtureVertical, 'references'), { recursive: true });
+    fs.writeFileSync(path.join(fixtureVertical, 'references', 'notes.md'), '# Notes\n');
+    fs.writeFileSync(path.join(fixtureVertical, 'SKILL.md'),
+      '---\nname: gone-skill\ndescription: A sourceGone orphan skill kept for byte hosting, over twenty chars.\n---\n[Notes](references/notes.md)\n');
+    fs.writeFileSync(path.join(fixtureDir, '.gitignore'),
+      'vertical/*/\n!vertical/**\n!vertical/gone-skill/\n!vertical/dangling/\n');
+
     const fixtureRegistry = path.join(fixtureDir, 'registry.yaml');
     fs.writeFileSync(fixtureRegistry, `version: 1
 targets:
   test_client: ${JSON.stringify(path.join(fixtureDir, 'targets'))}
 base: []
-vertical: []
+vertical:
+  - name: gone-skill
+    path: vertical/gone-skill
+    enabled: true
+    sourceGone: true
+    deploy: {}
 deployable: []
 private:
   - name: valid-skill
@@ -63,14 +79,17 @@ private:
     ], { cwd: root, encoding: 'utf8', timeout: 120_000 });
     assert.equal(fixtureJsonRun.status, 0, `fixture JSON run failed: ${fixtureJsonRun.stderr}`);
     const fixtureIssues = JSON.parse(fixtureJsonRun.stdout.trim());
-    assert.equal(fixtureIssues.length, 3, 'synthetic fixture must produce exactly 3 issues');
+    assert.equal(fixtureIssues.length, 4, 'synthetic fixture must produce exactly 4 issues');
     assert.equal(fixtureIssues.filter(i => i.level === 'E').length, 0, 'synthetic fixture must produce 0 errors');
-    assert.equal(fixtureIssues.filter(i => i.level === 'W').length, 2, 'synthetic fixture must produce exactly 2 warnings');
+    assert.equal(fixtureIssues.filter(i => i.level === 'W').length, 3, 'synthetic fixture must produce exactly 3 warnings');
     assert.equal(fixtureIssues.filter(i => i.level === 'I').length, 1, 'synthetic fixture must produce exactly 1 info');
     assert.ok(fixtureIssues.some(i => i.name === 'broken-skill' && i.msg.includes('description 过短')), 'must detect short description');
     assert.ok(fixtureIssues.some(i => i.name === 'broken-skill' && i.msg.includes('引用的文件不存在')), 'must detect missing reference');
     assert.ok(fixtureIssues.some(i => i.name === 'broken-skill' && i.msg.includes('单文件 skill')), 'must detect single-file skill info');
     assert.ok(!fixtureIssues.some(i => i.name === 'valid-skill'), 'valid skill must produce no issues at all');
+    // sourceGone↔.gitignore 对账断言
+    assert.ok(fixtureIssues.some(i => i.name === 'vertical/dangling' && i.msg.includes('sourceGone')), 'dangling unignore must warn');
+    assert.ok(!fixtureIssues.some(i => (i.name === 'vertical/**' || i.name === 'gone-skill')), 'wildcard exemption and covered orphan must not warn');
 
     const fixtureTextRun = spawnSync('pwsh', ['-NoProfile', '-File', path.join(root, 'scripts/lint.ps1'), '-RegistryPath', fixtureRegistry, '-RepoRoot', fixtureDir], {
       cwd: root,
@@ -93,7 +112,7 @@ private:
     assert.equal(event.event, 'lint.checked');
     assert.equal(event.ok, textErrors === 0);
     assert.equal(typeof event.duration_ms, 'number');
-    assert.equal(event.sources_checked, 2);
+    assert.equal(event.sources_checked, 3);
     assert.equal(event.error_count, textErrors);
     assert.equal(event.warn_count, textWarns);
     assert.equal(event.info_count, textInfos);

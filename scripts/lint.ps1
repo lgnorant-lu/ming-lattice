@@ -76,7 +76,9 @@ foreach ($sectionName in @('vertical', 'deployable', 'private')) {
 $gitignorePath = Join-Path $RepoRoot '.gitignore'
 if (Test-Path $gitignorePath) {
     $unignored = @((Get-Content $gitignorePath) | ForEach-Object {
-        if ($_ -match '^!vertical/([^/\s]+)/?\s*$') { $Matches[1] }
+        # 仅字面叶子目录名才算孤本放行——!vertical/** 类通配属点文件豁免轴，
+        # 与 sourceGone 白名单语义不同轴，不参与对账
+        if ($_ -match '^!vertical/([A-Za-z0-9._-]+)/?\s*$') { $Matches[1] }
     })
     $goneLeaves = @()
     foreach ($item in @($reg.vertical)) {
@@ -168,7 +170,9 @@ foreach ($s in $sources) {
     $linkLines = @(); $inFence = $false
     foreach ($l in ($content -split "`r?`n")) {
         if ($l -match '^\s*(```|~~~)') { $inFence = -not $inFence; continue }
-        if (-not $inFence) { $linkLines += $l }
+        # 行内 code-span 同样剥除——`[x](y)` 文档样例不是链接（ming-boundary
+        # 自文档化陷阱面；自身踩中即 dogfooding 证据）
+        if (-not $inFence) { $linkLines += ($l -replace '``[^`]*``|`[^`]*`', '') }
     }
     $linkContent = $linkLines -join "`n"
     foreach ($m in [regex]::Matches($linkContent, '\]\(([^)]+)\)')) {
@@ -225,8 +229,12 @@ foreach ($sotFile in $sotFiles) {
     if ($sotContent -match 'C:\\Users\\[^\\]+\\') {
         $issues += [ordered]@{ level = 'E'; name = $sotName; msg = "SoT 配置含硬编码用户路径(应改 %USERPROFILE% 等环境占位): $($Matches[0])"; file = $sotFile }
     }
-    elseif ($sotContent -match '/home/[^/]+/|/root/') {
-        $issues += [ordered]@{ level = 'W'; name = $sotName; msg = "SoT 配置含 Linux 绝对路径: $($Matches[0])"; file = $sotFile }
+    else {
+        # 注释行豁免——# 开头行是文档（如 pii 门规则自述提及 /home/），非真实配置值
+        $sotActive = @($sotContent -split "`r?`n" | Where-Object { $_ -notmatch '^\s*#' }) -join "`n"
+        if ($sotActive -match '/home/[^/]+/|/root/') {
+            $issues += [ordered]@{ level = 'W'; name = $sotName; msg = "SoT 配置含 Linux 绝对路径: $($Matches[0])"; file = $sotFile }
+        }
     }
 }
 

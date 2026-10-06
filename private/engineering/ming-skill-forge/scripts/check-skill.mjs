@@ -287,10 +287,20 @@ function privateEntries() {
 // ---------- 资产域词表全域扫描（--all 不迭代 vertical/deployable 条目，
 // 但 domain: 字段挂在那些条目上——词表治理须在 registry 层面扫全段） ----------
 function domainVocabSweep(registryPath = path.join(REPO_ROOT, 'registry.yaml')) {
-  const domainBlock = registrySection('domains', registryPath);
-  if (!domainBlock) return [];
-  const allowed = new Set([...domainBlock.matchAll(/^\s*-\s*([\w/-]+)/gm)].map(m => m[1]));
   const issues = [];
+  // kind 封闭词表（fail-closed：错拼 kind 若静默即"豁免 SKILL.md"成逃逸面；
+  // 独立于 domains 段存在性——fixture 无 domains 时本面仍须履职）
+  const KINDS = new Set(['skill', 'tool', 'asset']);
+  for (const sec of ['base', 'vertical', 'deployable', 'private']) {
+    const block = registrySection(sec, registryPath);
+    if (!block) continue;
+    for (const m of block.matchAll(/^\s+kind:\s*(\S+)/gm)) {
+      if (!KINDS.has(m[1])) issues.push({ level: 'E', msg: `${sec} 区 kind 值 "${m[1]}" 出封闭词表 {skill|tool|asset}` });
+    }
+  }
+  const domainBlock = registrySection('domains', registryPath);
+  if (!domainBlock) return issues;
+  const allowed = new Set([...domainBlock.matchAll(/^\s*-\s*([\w/-]+)/gm)].map(m => m[1]));
   for (const sec of ['base', 'vertical', 'deployable', 'private']) {
     const block = registrySection(sec, registryPath);
     if (!block) continue;
