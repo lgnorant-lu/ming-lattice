@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:a073c2ac-0c33-a466-f9e2-44f199575c4e",
+  "serialNumber": "urn:uuid:22affc29-96b6-cd05-d758-fb66ec5b4caf",
   "version": 1,
   "metadata": {
     "component": {
@@ -19,7 +19,7 @@
       },
       {
         "name": "ming.lockfiles",
-        "value": "39"
+        "value": "40"
       },
       {
         "name": "ming.completeness",
@@ -32,6 +32,10 @@
       {
         "name": "ming.fallback_lockfiles",
         "value": "3"
+      },
+      {
+        "name": "ming.source_lockfile",
+        "value": "tools/embeddings/package-lock.json"
       },
       {
         "name": "ming.source_lockfile",
@@ -2872,6 +2876,154 @@
       ]
     },
     {
+      "bom-ref": "@huggingface/jinja@0.5.10",
+      "type": "library",
+      "name": "@huggingface/jinja",
+      "version": "0.5.10",
+      "scope": "required",
+      "purl": "pkg:npm/%40huggingface/jinja@0.5.10",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@huggingface/jinja"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@huggingface/jinja/-/jinja-0.5.10.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4a04b50f56e0950f7871e0f86422fa79ac940f2f6e575c6eca4eb53a3812c54e46261eeea6a6422882342684d831ceb05ac83725481a3d15f41254335cf9370b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@huggingface/tokenizers@0.2.0",
+      "type": "library",
+      "name": "@huggingface/tokenizers",
+      "version": "0.2.0",
+      "scope": "required",
+      "purl": "pkg:npm/%40huggingface/tokenizers@0.2.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@huggingface/tokenizers"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@huggingface/tokenizers/-/tokenizers-0.2.0.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2e274c1ded45a5c4981f8bdc4a35e8a1d6b7e290b433c9b58260cebfb4908ba22ffa26f5cd7ec9dec1c1082f7fdc53c2927da4d5be79167795a8c471aebf7da6"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@huggingface/transformers@4.3.0",
+      "type": "library",
+      "name": "@huggingface/transformers",
+      "version": "4.3.0",
+      "scope": "required",
+      "purl": "pkg:npm/%40huggingface/transformers@4.3.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@huggingface/transformers"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@huggingface/transformers/-/transformers-4.3.0.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7cbd40fd6519c28b8face958c54e5dcc8c03d93e49efcd49881da30d1f1b15ee43c028f419fb9dabe3445c2327a38f644206a31c0ef1424ad12c996a1b5bde10"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@img/colour@1.1.0",
+      "type": "library",
+      "name": "@img/colour",
+      "version": "1.1.0",
+      "scope": "required",
+      "purl": "pkg:npm/%40img/colour@1.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@img/colour"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@img/colour/-/colour-1.1.0.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4ddefaabb8f9ee8fed2d57604bbe3a7180117d2cb193c8847d1c5ec0bf61e0e3336216d6e1301ca69974993e1ecaa5dd761e8bfe3c2833be66a3b8b16bfa4279"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "@img/sharp-wasm32@0.35.3",
       "type": "library",
       "name": "@img/sharp-wasm32",
@@ -3689,6 +3841,339 @@
       ]
     },
     {
+      "bom-ref": "@protobufjs/aspromise@1.1.2",
+      "type": "library",
+      "name": "@protobufjs/aspromise",
+      "version": "1.1.2",
+      "scope": "required",
+      "purl": "pkg:npm/%40protobufjs/aspromise@1.1.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/aspromise"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@protobufjs/aspromise/-/aspromise-1.1.2.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8fe80a13112e2e62b0bf3dce811397b6b276506db1f028766195316a187eb351761d9fb001c79434b92fcbacca08f551914fbe65642b771b147905e6720e2ea1"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@protobufjs/base64@1.1.2",
+      "type": "library",
+      "name": "@protobufjs/base64",
+      "version": "1.1.2",
+      "scope": "required",
+      "purl": "pkg:npm/%40protobufjs/base64@1.1.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/base64"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@protobufjs/base64/-/base64-1.1.2.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "01991c000e6f9cdfefe0f0ea2b2311e65c7b859b6d3c380296ff3713ffc530d851d9331c2d485f4540470a64a5d288bdccc8030ea4542644b13b7c26f39f972e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@protobufjs/codegen@2.0.5",
+      "type": "library",
+      "name": "@protobufjs/codegen",
+      "version": "2.0.5",
+      "scope": "required",
+      "purl": "pkg:npm/%40protobufjs/codegen@2.0.5",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/codegen"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@protobufjs/codegen/-/codegen-2.0.5.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ce05c52f35b7029df77ba7745a58f8306226e827bc3bcf67fdaa54686341fe3c7e870fabb96129ec4c0652c85d2ca5510b1656d767e9f6be34135990adfff7e2"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@protobufjs/eventemitter@1.1.1",
+      "type": "library",
+      "name": "@protobufjs/eventemitter",
+      "version": "1.1.1",
+      "scope": "required",
+      "purl": "pkg:npm/%40protobufjs/eventemitter@1.1.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/eventemitter"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@protobufjs/eventemitter/-/eventemitter-1.1.1.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "bd6d469b03193672fe80c45aa2f961f72657ef891cf934d4dc539b924baba4c691b417cb3f795d8d2f4a416970660ada444d3e76178412803177370943c79766"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@protobufjs/fetch@1.1.1",
+      "type": "library",
+      "name": "@protobufjs/fetch",
+      "version": "1.1.1",
+      "scope": "required",
+      "purl": "pkg:npm/%40protobufjs/fetch@1.1.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/fetch"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@protobufjs/fetch/-/fetch-1.1.1.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1a9a6d2ebb39eda74c4ae1e2dd5363d26005f1dc21dfa2cc69817a5f227a24c5a556c73eb78dad9b51d210398eb3703c7c2f72c9e8ac80b86c4d542890e674cf"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@protobufjs/float@1.0.2",
+      "type": "library",
+      "name": "@protobufjs/float",
+      "version": "1.0.2",
+      "scope": "required",
+      "purl": "pkg:npm/%40protobufjs/float@1.0.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/float"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@protobufjs/float/-/float-1.0.2.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "0dd6fe9155e55ecb7d77e47d3df4c8c61d4474d920a117b9b4e5fab74d5fd656163af26748f0c1946db8d502f37323dda0d4ec6e52d476e8c6484e11ceb4d919"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@protobufjs/path@1.1.2",
+      "type": "library",
+      "name": "@protobufjs/path",
+      "version": "1.1.2",
+      "scope": "required",
+      "purl": "pkg:npm/%40protobufjs/path@1.1.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/path"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@protobufjs/path/-/path-1.1.2.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e8939c2794e6d3c74e1c06dd4771abbcffb25147e48c6e5e3ec1d87333052eadd998c9000fdf1c0e0713da2035949f4d57015de2d1ff8924a87b8e185a496d10"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@protobufjs/pool@1.1.0",
+      "type": "library",
+      "name": "@protobufjs/pool",
+      "version": "1.1.0",
+      "scope": "required",
+      "purl": "pkg:npm/%40protobufjs/pool@1.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/pool"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@protobufjs/pool/-/pool-1.1.0.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d2410b6864880c12af7204b8ce48f3d4f79d75ab6b8d87263163a502e00fc0079c714acf1dd52aa3f27a2e2ca61c7122253e4dac5d54570c58d787fe7f2e1643"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@protobufjs/utf8@1.1.2",
+      "type": "library",
+      "name": "@protobufjs/utf8",
+      "version": "1.1.2",
+      "scope": "required",
+      "purl": "pkg:npm/%40protobufjs/utf8@1.1.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@protobufjs/utf8"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@protobufjs/utf8/-/utf8-1.1.2.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "6f5510c1c119e320a73020fc0c02f55656ef04913dfc85f8153229ec11b5c58a5fdbd48b6b32d2aea5248f8c3b639cbb70254fe84e6d72aa9c234c5e98f907ba"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "@puppeteer/browsers@2.13.2",
       "type": "library",
       "name": "@puppeteer/browsers",
@@ -4291,6 +4776,43 @@
         {
           "alg": "SHA-512",
           "content": "ea8601022e62920e0f97e906b2862d6b050c053db364c0af3cd17ba552e71d97ddd737f7f034625a7fe04f4d51602754aa4bfb161afe0bda2de3fb5bfb6b15bc"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@types/node@26.6.2",
+      "type": "library",
+      "name": "@types/node",
+      "version": "26.6.2",
+      "scope": "required",
+      "purl": "pkg:npm/%40types/node@26.6.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@types/node"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@types/node/-/node-26.6.2.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "5f53f6d6c70cbf8cc628b62a8dd1a368a6bb08e6b444a55861964dfcd7ef2d0d497a0c4585d869646fcbca7f005f1e820d46af280775d6fe81bdfa640c1c8af2"
         }
       ],
       "licenses": [
@@ -5083,6 +5605,43 @@
         {
           "alg": "SHA-512",
           "content": "4c6c39c958b8b1a6a3b12120cf6e60ace6c61c451a0eb9e2c2f036ab0482d3ad0a7ea18f760961bcf300da53c8a31b373d0208b63da26a0df97ce35c42a81469"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "adm-zip@0.6.1",
+      "type": "library",
+      "name": "adm-zip",
+      "version": "0.6.1",
+      "scope": "required",
+      "purl": "pkg:npm/adm-zip@0.6.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/adm-zip"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/adm-zip/-/adm-zip-0.6.1.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "5f0ae36bc9f1f5ee68d8dd66cb80ec28278aa5dae7002cabd70b5b3f1043806ccaccac84f6446d04503c99695d23e455943ec205935663fc10dbec9dc0e47a91"
         }
       ],
       "licenses": [
@@ -14249,6 +14808,80 @@
       ]
     },
     {
+      "bom-ref": "define-data-property@1.1.4",
+      "type": "library",
+      "name": "define-data-property",
+      "version": "1.1.4",
+      "scope": "required",
+      "purl": "pkg:npm/define-data-property@1.1.4",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/define-data-property"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/define-data-property/-/define-data-property-1.1.4.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ac132f23396903cbfa13e489668a3ef87018aac2eb920ecc49f2229cc3c5866928af0ed7f9d39754942cf904faf731a4cccc9f0e720c3765a2775f8d6cbdd3f8"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "define-properties@1.2.1",
+      "type": "library",
+      "name": "define-properties",
+      "version": "1.2.1",
+      "scope": "required",
+      "purl": "pkg:npm/define-properties@1.2.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/define-properties"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/define-properties/-/define-properties-1.2.1.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "f109902aa10048b7799f1d14d41d6890b1256d4baeb6d27f0276264576db6c60d687ab92db4f048c3e17aaafc8f702bbbb4bfa3b4f178535a7b795ed11b47a0e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "define-property@0.2.5",
       "type": "library",
       "name": "define-property",
@@ -14782,6 +15415,10 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/detect-libc"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
         },
         {
           "name": "ming.source_lockfile",
@@ -16432,6 +17069,10 @@
         },
         {
           "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        },
+        {
+          "name": "ming.source_lockfile",
           "value": "vertical/appium-mcp/package-lock.json"
         },
         {
@@ -16574,6 +17215,10 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/es-errors"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
         },
         {
           "name": "ming.source_lockfile",
@@ -17198,6 +17843,43 @@
         {
           "alg": "SHA-1",
           "content": "1b61c0562190a8dff6ae3bb2cf0200ca130b86d4"
+        }
+      ]
+    },
+    {
+      "bom-ref": "escape-string-regexp@4.0.0",
+      "type": "library",
+      "name": "escape-string-regexp",
+      "version": "4.0.0",
+      "scope": "required",
+      "purl": "pkg:npm/escape-string-regexp@4.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/escape-string-regexp"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-4.0.0.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4eda5c349dd7033c771aaf2c591cc96956a346cd2e57103660091d6f58e6d9890fcf81ba7a05050320379f9bed10865e7cf93959ae145db2ae4b97ca90959d80"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
         }
       ]
     },
@@ -19678,6 +20360,43 @@
       ]
     },
     {
+      "bom-ref": "flatbuffers@25.9.23",
+      "type": "library",
+      "name": "flatbuffers",
+      "version": "25.9.23",
+      "scope": "required",
+      "purl": "pkg:npm/flatbuffers@25.9.23",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/flatbuffers"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/flatbuffers/-/flatbuffers-25.9.23.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "308d6ab3b2e8e12cb0d043b3525d318ecda5b287aa164bb8e0aa6781f21db87058bf39bc876fbb2bc60c421d49b55555ad4be12e9370a958b80c445e8142613d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "fn.name@1.1.0",
       "type": "library",
       "name": "fn.name",
@@ -21862,6 +22581,43 @@
       ]
     },
     {
+      "bom-ref": "global-agent@4.1.3",
+      "type": "library",
+      "name": "global-agent",
+      "version": "4.1.3",
+      "scope": "required",
+      "purl": "pkg:npm/global-agent@4.1.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/global-agent"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/global-agent/-/global-agent-4.1.3.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2942445628ae153dc8f7bb7e19832290b3c94b62dfa3f4b617e0d0b815b3bb368c3e7bede72c9978fcc0af1dfa7c1ce9193c598c8a436d72dec922e087e93bea"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "globals@11.12.0",
       "type": "library",
       "name": "globals",
@@ -21896,6 +22652,43 @@
       ]
     },
     {
+      "bom-ref": "globalthis@1.0.4",
+      "type": "library",
+      "name": "globalthis",
+      "version": "1.0.4",
+      "scope": "required",
+      "purl": "pkg:npm/globalthis@1.0.4",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/globalthis"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/globalthis/-/globalthis-1.0.4.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "0e92ca6cd5385b2969c49ca442e8df09cc185a257f2619b9d06a28d30ad520b02fe633abf5df87f944773e14820f6ac2084220d2e73e1be9ae053c03e782610d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "gopd@1.2.0",
       "type": "library",
       "name": "gopd",
@@ -21910,6 +22703,10 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/gopd"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
         },
         {
           "name": "ming.source_lockfile",
@@ -22071,6 +22868,43 @@
       ]
     },
     {
+      "bom-ref": "guid-typescript@1.0.9",
+      "type": "library",
+      "name": "guid-typescript",
+      "version": "1.0.9",
+      "scope": "required",
+      "purl": "pkg:npm/guid-typescript@1.0.9",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/guid-typescript"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/guid-typescript/-/guid-typescript-1.0.9.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "63c4f8bd88447f024e4dba2e444bc6fb75c3b23afc137908afbb9ff8967405896816cb6d88753459fbc0355b11ed3c4d5096bf5a90a7c3f227a3fa7e0de06105"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "har-schema@2.0.0",
       "type": "library",
       "name": "har-schema",
@@ -22195,6 +23029,43 @@
         {
           "alg": "SHA-512",
           "content": "1329094ff4352a34d672da698080207d23b4b4a56e6548e180caf5ee4a93ba6325e807efdc421295e53ba99533a170c54c01d30c2e0d3a81bf67153712f94c3d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "has-property-descriptors@1.0.2",
+      "type": "library",
+      "name": "has-property-descriptors",
+      "version": "1.0.2",
+      "scope": "required",
+      "purl": "pkg:npm/has-property-descriptors@1.0.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/has-property-descriptors"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/has-property-descriptors/-/has-property-descriptors-1.0.2.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e7924d2ae216fafab829ed418ce4e333661cb5022f093ec61731f099f64f1a8e709eb82489dd1842d9c095e152aae9999b86b3de7d814be7ab6f2e62a49760ae"
         }
       ],
       "licenses": [
@@ -28221,6 +29092,43 @@
       ]
     },
     {
+      "bom-ref": "long@5.3.2",
+      "type": "library",
+      "name": "long",
+      "version": "5.3.2",
+      "scope": "required",
+      "purl": "pkg:npm/long@5.3.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/long"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/long/-/long-5.3.2.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "98d0206751a6c8d843ec0baa9d31b7fd5436ea8efad3e65804f2a33efba03bcfa72db61f5fa4d5a493ec781be8a5b758faaa59fe52949e611cd4b799612dd000"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "longest@1.0.1",
       "type": "library",
       "name": "longest",
@@ -28541,6 +29449,43 @@
         {
           "alg": "SHA-1",
           "content": "ecdca8f13144e660f1b5bd41f12f3479d98dfb8f"
+        }
+      ]
+    },
+    {
+      "bom-ref": "matcher@4.0.0",
+      "type": "library",
+      "name": "matcher",
+      "version": "4.0.0",
+      "scope": "required",
+      "purl": "pkg:npm/matcher@4.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/matcher"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/matcher/-/matcher-4.0.0.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4bac79c267039ac0d1454fdcd9d91c703c103d7a05733739f87a50da538df299ef1e59ef1c01e3e5694b56fc3a9fabcdc87b95ba062b168858c5b4bea6f16929"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
         }
       ]
     },
@@ -32242,6 +33187,43 @@
       ]
     },
     {
+      "bom-ref": "object-keys@1.1.1",
+      "type": "library",
+      "name": "object-keys",
+      "version": "1.1.1",
+      "scope": "required",
+      "purl": "pkg:npm/object-keys@1.1.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/object-keys"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/object-keys/-/object-keys-1.1.1.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "36e00449439432b9485ce7c72b30fa6e93eeded62ddf1be335d44843e15e4f494d6f82bc591ef409a0f186e360b92d971be1a39323303b3b0de5992d2267e12c"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "object-visit@1.0.1",
       "type": "library",
       "name": "object-visit",
@@ -32761,6 +33743,154 @@
         {
           "alg": "SHA-1",
           "content": "067428230fd67443b2794b22bba528b6867962d4"
+        }
+      ]
+    },
+    {
+      "bom-ref": "onnxruntime-common@1.30.0",
+      "type": "library",
+      "name": "onnxruntime-common",
+      "version": "1.30.0",
+      "scope": "required",
+      "purl": "pkg:npm/onnxruntime-common@1.30.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/onnxruntime-common"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/onnxruntime-common/-/onnxruntime-common-1.30.0.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "edf7555a30080f5755847fc6f2a2b700f011ba7578564045a024003fbaa9e1691a6f49aba2bbe673eb2a893fa62973b30ea7633798fefd9f676f883334f59cc8"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "onnxruntime-common@1.31.0-dev.20260911-2a43ec07e",
+      "type": "library",
+      "name": "onnxruntime-common",
+      "version": "1.31.0-dev.20260911-2a43ec07e",
+      "scope": "required",
+      "purl": "pkg:npm/onnxruntime-common@1.31.0-dev.20260911-2a43ec07e",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/onnxruntime-web/node_modules/onnxruntime-common"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/onnxruntime-common/-/onnxruntime-common-1.31.0-dev.20260911-2a43ec07e.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "801b85e94df6604aca200b7ec83ec37860698d1c61275b89c1a928eb2823a2449950b0d4e8f77e2960a8997f13ba69358585474718cf8fb99d3270f4af200f3b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "onnxruntime-node@1.30.0",
+      "type": "library",
+      "name": "onnxruntime-node",
+      "version": "1.30.0",
+      "scope": "required",
+      "purl": "pkg:npm/onnxruntime-node@1.30.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/onnxruntime-node"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/onnxruntime-node/-/onnxruntime-node-1.30.0.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "b7086cd42d82fc1164cf5c9ce4e634288536194aba0d444eee10f86f1e50d90cb79c0309c115d6f31537355733136f5503d96894b3987a9a03f1f8d318e7c8ab"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "onnxruntime-web@1.31.0-dev.20260914-8d85527a0",
+      "type": "library",
+      "name": "onnxruntime-web",
+      "version": "1.31.0-dev.20260914-8d85527a0",
+      "scope": "required",
+      "purl": "pkg:npm/onnxruntime-web@1.31.0-dev.20260914-8d85527a0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/onnxruntime-web"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/onnxruntime-web/-/onnxruntime-web-1.31.0-dev.20260914-8d85527a0.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "232eebb5a768060c52fcb2ef0ebdd05b7f030753cd5d19ebd0624c70bd1302dedcf6a8e055097cdd4946095c9e0272b6227a665bc51cdcf2fc5c8baab43785ea"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
         }
       ]
     },
@@ -34566,6 +35696,43 @@
       ]
     },
     {
+      "bom-ref": "platform@1.3.6",
+      "type": "library",
+      "name": "platform",
+      "version": "1.3.6",
+      "scope": "required",
+      "purl": "pkg:npm/platform@1.3.6",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/platform"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/platform/-/platform-1.3.6.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7e759596351c853ae8e9188216f09705b36125cd8d8a337ba084316f0b322f46ee5893c6f39bfcd5e8651c8f5f5eb26c30d813a1f12858841e0a52a983114bae"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "playwright-core@1.52.0",
       "type": "library",
       "name": "playwright-core",
@@ -34945,6 +36112,43 @@
         {
           "alg": "SHA-1",
           "content": "064b72602b18f90f29192b8b1bc418ffd1ebd3bf"
+        }
+      ]
+    },
+    {
+      "bom-ref": "protobufjs@7.6.6",
+      "type": "library",
+      "name": "protobufjs",
+      "version": "7.6.6",
+      "scope": "required",
+      "purl": "pkg:npm/protobufjs@7.6.6",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/protobufjs"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/protobufjs/-/protobufjs-7.6.6.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7580d67634a5e5135bed280fc4641c454f86b6f3fbb367e992b634af8df63dc388699d3fac17311199d037aee226116e422570ef9e090e83ebb8f08d746b1b8e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
         }
       ]
     },
@@ -38455,6 +39659,14 @@
           "value": "node_modules/@appium/support/node_modules/semver"
         },
         {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/semver"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        },
+        {
           "name": "ming.source_lockfile",
           "value": "vertical/appium-mcp/package-lock.json"
         }
@@ -38677,6 +39889,43 @@
         {
           "alg": "SHA-512",
           "content": "d609d97fb0c572821c6a34e34f08f0b838f3bb3e0f3dc6364ad28f96c180435f981f6d08455ac169749699d8e8c1327abbc45cd353e860e1875df3f599871935"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "serialize-error@8.1.0",
+      "type": "library",
+      "name": "serialize-error",
+      "version": "8.1.0",
+      "scope": "required",
+      "purl": "pkg:npm/serialize-error@8.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/serialize-error"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/serialize-error/-/serialize-error-8.1.0.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "dcd9ee59f33abc1628cb981916f1e262c55b69fbc8f6f66fffe8e52228059f8a0fe338cd3cadcb85c634c520a079bd5ae4bf233bbd4c8adf4b94da22d947c30d"
         }
       ],
       "licenses": [
@@ -39178,6 +40427,43 @@
         {
           "license": {
             "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "sharp@0.35.4",
+      "type": "library",
+      "name": "sharp",
+      "version": "0.35.4",
+      "scope": "required",
+      "purl": "pkg:npm/sharp@0.35.4",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/sharp"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/sharp/-/sharp-0.35.4.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "9fefbc5d6723fa308eaf620e97b87c2db2a71810d8e1a3db9a9acc38d04d15d9f42265eaa4656fe739620ecd15f476e66c240ba5bba8d9e8fdac0a0e413bcc0c"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
           }
         }
       ]
@@ -43710,6 +44996,41 @@
       ]
     },
     {
+      "bom-ref": "type-fest@0.20.2",
+      "type": "library",
+      "name": "type-fest",
+      "version": "0.20.2",
+      "scope": "required",
+      "purl": "pkg:npm/type-fest@0.20.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/type-fest"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/type-fest/-/type-fest-0.20.2.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "35ef9e138af4fe25a7a40c43f39db3dc0f8dd01b7944dfff36327045dd95147126af2c317f9bec66587847a962c65e81fb0cfff1dfa669348090dd452242372d"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "(MIT OR CC0-1.0)"
+        }
+      ]
+    },
+    {
       "bom-ref": "type-fest@4.26.0",
       "type": "library",
       "name": "type-fest",
@@ -44338,6 +45659,43 @@
         {
           "alg": "SHA-512",
           "content": "8b00d9aa0d10006ae0f516afe47e27d0ceb87379a4479f5c27ac10a7eec2e2723482c984c5a79d6982cd3b8e1e4f802d041c236d38863cc96dd8c7744fd1fd25"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "undici-types@8.9.0",
+      "type": "library",
+      "name": "undici-types",
+      "version": "8.9.0",
+      "scope": "required",
+      "purl": "pkg:npm/undici-types@8.9.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/undici-types"
+        },
+        {
+          "name": "ming.source_lockfile",
+          "value": "tools/embeddings/package-lock.json"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/undici-types/-/undici-types-8.9.0.tgz"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2930f2453617f2c5a629702290f1c74b273adc244f11331cb728ca16ea5c0ba3812d74f7c6c3747bd685ee6fa6217bad156a545ee79db68c06ee22cece9d2442"
         }
       ],
       "licenses": [
@@ -48737,6 +50095,28 @@
       ]
     },
     {
+      "ref": "@huggingface/jinja@0.5.10",
+      "dependsOn": []
+    },
+    {
+      "ref": "@huggingface/tokenizers@0.2.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "@huggingface/transformers@4.3.0",
+      "dependsOn": [
+        "@huggingface/jinja@0.5.10",
+        "@huggingface/tokenizers@0.2.0",
+        "onnxruntime-node@1.30.0",
+        "onnxruntime-web@1.31.0-dev.20260914-8d85527a0",
+        "sharp@0.35.4"
+      ]
+    },
+    {
+      "ref": "@img/colour@1.1.0",
+      "dependsOn": []
+    },
+    {
       "ref": "@img/sharp-wasm32@0.35.3",
       "dependsOn": [
         "@emnapi/runtime@1.11.3"
@@ -48982,6 +50362,44 @@
       ]
     },
     {
+      "ref": "@protobufjs/aspromise@1.1.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "@protobufjs/base64@1.1.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "@protobufjs/codegen@2.0.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "@protobufjs/eventemitter@1.1.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "@protobufjs/fetch@1.1.1",
+      "dependsOn": [
+        "@protobufjs/aspromise@1.1.2"
+      ]
+    },
+    {
+      "ref": "@protobufjs/float@1.0.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "@protobufjs/path@1.1.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "@protobufjs/pool@1.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "@protobufjs/utf8@1.1.2",
+      "dependsOn": []
+    },
+    {
       "ref": "@puppeteer/browsers@2.13.2",
       "dependsOn": [
         "extract-zip@2.0.1",
@@ -49077,6 +50495,12 @@
       "ref": "@types/node@20.19.43",
       "dependsOn": [
         "undici-types@6.21.0"
+      ]
+    },
+    {
+      "ref": "@types/node@26.6.2",
+      "dependsOn": [
+        "undici-types@8.9.0"
       ]
     },
     {
@@ -49196,6 +50620,10 @@
     },
     {
       "ref": "adm-zip@0.5.16",
+      "dependsOn": []
+    },
+    {
+      "ref": "adm-zip@0.6.1",
       "dependsOn": []
     },
     {
@@ -50732,6 +52160,22 @@
       ]
     },
     {
+      "ref": "define-data-property@1.1.4",
+      "dependsOn": [
+        "es-define-property@1.0.1",
+        "es-errors@1.3.0",
+        "gopd@1.2.0"
+      ]
+    },
+    {
+      "ref": "define-properties@1.2.1",
+      "dependsOn": [
+        "define-data-property@1.1.4",
+        "has-property-descriptors@1.0.2",
+        "object-keys@1.1.1"
+      ]
+    },
+    {
       "ref": "define-property@0.2.5",
       "dependsOn": [
         "is-descriptor@0.1.6"
@@ -51020,6 +52464,10 @@
     },
     {
       "ref": "escape-string-regexp@1.0.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "escape-string-regexp@4.0.0",
       "dependsOn": []
     },
     {
@@ -51446,6 +52894,10 @@
       ]
     },
     {
+      "ref": "flatbuffers@25.9.23",
+      "dependsOn": []
+    },
+    {
       "ref": "fn.name@1.1.0",
       "dependsOn": []
     },
@@ -51711,8 +53163,24 @@
       ]
     },
     {
+      "ref": "global-agent@4.1.3",
+      "dependsOn": [
+        "globalthis@1.0.4",
+        "matcher@4.0.0",
+        "semver@7.8.5",
+        "serialize-error@8.1.0"
+      ]
+    },
+    {
       "ref": "globals@11.12.0",
       "dependsOn": []
+    },
+    {
+      "ref": "globalthis@1.0.4",
+      "dependsOn": [
+        "define-properties@1.2.1",
+        "gopd@1.2.0"
+      ]
     },
     {
       "ref": "gopd@1.2.0",
@@ -51727,6 +53195,10 @@
     },
     {
       "ref": "growl@1.10.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "guid-typescript@1.0.9",
       "dependsOn": []
     },
     {
@@ -51747,6 +53219,12 @@
     {
       "ref": "has-flag@4.0.0",
       "dependsOn": []
+    },
+    {
+      "ref": "has-property-descriptors@1.0.2",
+      "dependsOn": [
+        "es-define-property@1.0.1"
+      ]
     },
     {
       "ref": "has-symbols@1.0.1",
@@ -52595,6 +54073,10 @@
       "dependsOn": []
     },
     {
+      "ref": "long@5.3.2",
+      "dependsOn": []
+    },
+    {
       "ref": "longest@1.0.1",
       "dependsOn": []
     },
@@ -52639,6 +54121,12 @@
       "dependsOn": [
         "@modelcontextprotocol/sdk@1.8.0",
         "zod@3.24.2"
+      ]
+    },
+    {
+      "ref": "matcher@4.0.0",
+      "dependsOn": [
+        "escape-string-regexp@4.0.0"
       ]
     },
     {
@@ -52756,6 +54244,12 @@
     {
       "ref": "mimic-response@3.1.0",
       "dependsOn": []
+    },
+    {
+      "ref": "ming-embeddings-tools@1.0.0",
+      "dependsOn": [
+        "@huggingface/transformers@4.3.0"
+      ]
     },
     {
       "ref": "minimatch@10.2.4",
@@ -53062,6 +54556,10 @@
       "dependsOn": []
     },
     {
+      "ref": "object-keys@1.1.1",
+      "dependsOn": []
+    },
+    {
       "ref": "object-visit@1.0.1",
       "dependsOn": [
         "isobject@3.0.1"
@@ -53107,6 +54605,33 @@
       "ref": "onetime@2.0.1",
       "dependsOn": [
         "mimic-fn@1.2.0"
+      ]
+    },
+    {
+      "ref": "onnxruntime-common@1.30.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "onnxruntime-common@1.31.0-dev.20260911-2a43ec07e",
+      "dependsOn": []
+    },
+    {
+      "ref": "onnxruntime-node@1.30.0",
+      "dependsOn": [
+        "adm-zip@0.6.1",
+        "global-agent@4.1.3",
+        "onnxruntime-common@1.30.0"
+      ]
+    },
+    {
+      "ref": "onnxruntime-web@1.31.0-dev.20260914-8d85527a0",
+      "dependsOn": [
+        "flatbuffers@25.9.23",
+        "guid-typescript@1.0.9",
+        "long@5.3.2",
+        "onnxruntime-common@1.31.0-dev.20260911-2a43ec07e",
+        "platform@1.3.6",
+        "protobufjs@7.6.6"
       ]
     },
     {
@@ -53340,6 +54865,10 @@
       "dependsOn": []
     },
     {
+      "ref": "platform@1.3.6",
+      "dependsOn": []
+    },
+    {
       "ref": "playwright-core@1.52.0",
       "dependsOn": []
     },
@@ -53398,6 +54927,22 @@
       "ref": "promise@7.3.1",
       "dependsOn": [
         "asap@2.0.6"
+      ]
+    },
+    {
+      "ref": "protobufjs@7.6.6",
+      "dependsOn": [
+        "@protobufjs/aspromise@1.1.2",
+        "@protobufjs/base64@1.1.2",
+        "@protobufjs/codegen@2.0.5",
+        "@protobufjs/eventemitter@1.1.1",
+        "@protobufjs/fetch@1.1.1",
+        "@protobufjs/float@1.0.2",
+        "@protobufjs/path@1.1.2",
+        "@protobufjs/pool@1.1.0",
+        "@protobufjs/utf8@1.1.2",
+        "@types/node@26.6.2",
+        "long@5.3.2"
       ]
     },
     {
@@ -53997,6 +55542,12 @@
       ]
     },
     {
+      "ref": "serialize-error@8.1.0",
+      "dependsOn": [
+        "type-fest@0.20.2"
+      ]
+    },
+    {
       "ref": "serve-favicon@2.5.1",
       "dependsOn": [
         "etag@1.8.1",
@@ -54056,6 +55607,14 @@
         "kind-of@2.0.1",
         "lazy-cache@0.2.7",
         "mixin-object@2.0.1"
+      ]
+    },
+    {
+      "ref": "sharp@0.35.4",
+      "dependsOn": [
+        "@img/colour@1.1.0",
+        "detect-libc@2.1.2",
+        "semver@7.8.5"
       ]
     },
     {
@@ -54677,6 +56236,10 @@
       "dependsOn": []
     },
     {
+      "ref": "type-fest@0.20.2",
+      "dependsOn": []
+    },
+    {
       "ref": "type-fest@4.26.0",
       "dependsOn": []
     },
@@ -54759,6 +56322,10 @@
     },
     {
       "ref": "undici-types@6.21.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "undici-types@8.9.0",
       "dependsOn": []
     },
     {

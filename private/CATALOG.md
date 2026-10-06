@@ -43,6 +43,10 @@ private/
 └── blog-content/                      # 博客与技术内容生成管道
 ```
 
+> 树外登记（registry private 段 kind:tool，非技能资产不入部署）：
+> `tools/decision-layer/`（路由决策层离线 replay/裁决实验面）、
+> `tools/embeddings/`（router-embeddings.json 构建/eval 工具链）。
+
 ---
 
 ## 2. 软约束规范 (Authoring Guidelines)

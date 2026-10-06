@@ -15,6 +15,7 @@ base/reverse-skill/      路由基座 (上游 submodule; 带**有意本地补丁
 vertical/                物化区: 远端仅存索引(gitignored), 本地经 scripts/fetch.mjs 按 pin 物化; sourceGone 孤本例外入库
 deployable/              部署包装 (SKILL.md 改写 + symlink 指向源; mirror 上游边经 source: 字段声明, build-deployable/parity 依此建链与核验)
 private/                 私有与自研内容 (路由、质量规范、UI/协议工具及个人资产)
+tools/                   实验/基建工具层 (kind:tool 登记, 不入部署): decision-layer(决策层 replay 语料+脚本)/embeddings(router-embeddings 构建链)
 distill/                 项目级经验沉淀库【本地内容区·gitignored 不入仓】INDEX.yaml 机读索引 + <project>/ 条目 + _proposals 晋升staging——机制在仓(ming-distiller+check-index), 内容本地
 scripts/                 sync/update/lint/test + route-core/build-router-manifest + hooks/(validate/check) + install-hooks
 tests/                   run.mjs 统一驱动 + unit/ + integration/ + test-route-decision.mjs

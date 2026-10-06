@@ -1724,6 +1724,20 @@ private:
     domain: engineering
     note: "本机命令守卫层（PATH shim tier 策略+工具注册表——非技能资产不部署）"
     deploy: {}
+  - name: decision-layer
+    kind: tool
+    path: tools/decision-layer
+    enabled: false
+    domain: routing
+    note: "路由决策层离线 replay/裁决实验面（嵌入+reranker 后端对照——非技能资产不入部署）"
+    deploy: {}
+  - name: embeddings-tools
+    kind: tool
+    path: tools/embeddings
+    enabled: false
+    domain: routing
+    note: "router-embeddings.json 构建/eval 工具链（transformers 嵌入管线——非技能资产不入部署）"
+    deploy: {}
 
 # ── 候审区 (candidates) ──────────────────────────────────────────────
 # 包提案登记处：非实体包（无 SKILL.md），一进证据开市、二进证据触发毕业。
