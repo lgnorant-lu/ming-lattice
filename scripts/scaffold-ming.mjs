@@ -33,6 +33,7 @@ const dryRun = !!opts['--dry-run'];
 if (!fs.existsSync(path.join(target, '.git'))) die(`目标不是 git 仓根: ${target}`);
 
 const proj = (opts['--name'] || path.basename(target)).toLowerCase();
+if (proj.startsWith('ming-')) die(`--name=${proj} 已含 ming- 前缀（包名自动派生 ming-<proj>，会出 ming-ming-* 双前缀）——传裸项目名`);
 if (!/^[a-z][a-z0-9-]*$/.test(proj)) die(`--name=${proj} 非 kebab 项目名（包名将派生 ming-${proj}）`);
 // Windows 保留设备名：kebab 过但在 win32 建不出目录，POSIX 建了 Windows 拉不动
 if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/.test(proj)) die(`--name=${proj} 是 Windows 保留设备名（跨平台毒名）`);
