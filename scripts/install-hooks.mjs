@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { LEGACY_ALIASES } from './hooks/lib/config.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const die = m => { console.error(`[E] ${m}`); process.exit(1); };
@@ -53,14 +54,32 @@ if (opts.check) {
       .filter(l => l.trim() && !l.trim().startsWith('#') && l.includes('='))
       .map(l => l.split('=')[0].trim()));
   const rcKeys = activeKeys(path.join(dest, '.hooksrc'));
-  const tmplKeys = activeKeys(path.join(REPO_ROOT, '.hooksrc.tmpl')) || new Set();
+  const tmplFile = path.join(REPO_ROOT, '.hooksrc.tmpl');
+  const tmplKeys = activeKeys(tmplFile) || new Set();
+  // tmpl 注释档键集——opt-in 文档化键（# gate.toc.level=... 形态）与活键分开报告：
+  // 采纳侧启用文档化 opt-in 键 ≠ 自定义/孤儿，报告要分得出
+  const tmplDocKeys = fs.existsSync(tmplFile) ? new Set(
+    fs.readFileSync(tmplFile, 'utf8').split(/\r?\n/)
+      .map(l => l.trim().replace(/^#+\s*/, ''))
+      .filter(l => l.includes('=') && !l.startsWith('['))
+      .map(l => l.split('=')[0].trim())) : new Set();
   const report = [];
   if (!rcKeys) report.push('[缺席] .hooksrc 未铺（未采纳或被删）');
   else {
-    for (const k of [...tmplKeys].filter(k => !rcKeys.has(k)))
-      report.push(`[upstream 新键] ${k} ——tmpl 有 .hooksrc 无（kit 升级面，可评估并入）`);
+    for (const k of [...tmplKeys].filter(k => !rcKeys.has(k))) {
+      // 旧键别名感知：tmpl 默认键是 legacy 形（lintLevel）而采纳侧已用 gate.<id>.level 现代形——非缺席
+      const modern = LEGACY_ALIASES[k] ? `gate.${LEGACY_ALIASES[k]}.level` : null;
+      report.push(modern && rcKeys.has(modern)
+        ? `[别名迁移] ${k} ——采纳侧已用现代形 ${modern}（等价，非缺席）`
+        : `[upstream 新键] ${k} ——tmpl 有 .hooksrc 无（kit 升级面，可评估并入）`);
+    }
+    // gate.<id>.* 通用名空间匹配——tmpl 注释档写占位键（gate.<id>.globs），实键 gate.emoji.globs 算文档化
+    const docHas = k => tmplDocKeys.has(k) ||
+      (k.startsWith('gate.') && tmplDocKeys.has(`gate.<id>.${k.split('.').slice(2).join('.')}`));
     for (const k of [...rcKeys].filter(k => !tmplKeys.has(k)))
-      report.push(`[采纳侧键] ${k} ——.hooksrc 有 tmpl 无（自定义或孤儿键，engine 键空间对账亦见）`);
+      report.push(docHas(k)
+        ? `[opt-in 启用] ${k} ——tmpl 注释档文档化键，采纳侧激活（非漂移）`
+        : `[采纳侧键] ${k} ——.hooksrc 有 tmpl 无（自定义或孤儿键，engine 键空间对账亦见）`);
   }
   const srcShims = path.join(REPO_ROOT, '.githooks'), dstShimsDir = path.join(dest, '.githooks');
   for (const f of fs.readdirSync(srcShims)) {

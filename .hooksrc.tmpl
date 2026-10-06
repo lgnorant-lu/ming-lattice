@@ -110,6 +110,19 @@ trailerLevel=error        # → gate.commit-msg.level（AI 尾巴等）
 # gate.link-rot.maxUrls=50           # 单次上限，超出截断提示
 # gate.link-rot.timeoutMs=5000       # 单 URL 超时
 
+# ── 引擎级通用门键（任意 gate id 可配，非单门专属）──
+# gate.<id>.level=off|warn|error      # 等级覆写
+# gate.<id>.globs=<globs CSV>         # 整体替换兴趣域
+# gate.<id>.exclude=<globs CSV>       # 在门默认排除上追加
+# gate.<id>.cadence=<n>d|h|m|s        # 周期节流（state.json 盖戳）
+
+# ── 声明式杂务（chore.<id>.* —— suggest-only 提醒门，永不执行命令/永不阻断）──
+# chore.<id>.watch=<globs CSV>   # 监看文件域（命中变更即提醒；缺 watch/message 静默略过）
+# chore.<id>.message=<文案>       # 提醒内容
+# chore.<id>.stages=<CSV>        # 挂载阶段（默认 post-merge）
+# chore.hooks.watch=scripts/hooks/**,.githooks/**
+# chore.hooks.message=门禁引擎文件变更——确认后执行 node scripts/hooks/engine.mjs trust
+
 # ── 命令门（impact-test 提交前 / pre-push-verify 推送前）──
 # gate.<id>.command=<完整命令行>   # 仓级命令覆盖默认（CI yaml run: 同级执行面——review diff 关注）
 # gate.impact-test.command=node tests/run.mjs --require-all       # 默认即此；未配且无 tests/run.mjs 自动缺席
