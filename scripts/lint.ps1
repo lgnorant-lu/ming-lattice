@@ -69,6 +69,31 @@ foreach ($sectionName in @('vertical', 'deployable', 'private')) {
     }
 }
 
+# ---------- .gitignore ↔ sourceGone 孤本白名单双向对账 ----------
+# vertical/ 默认全忽略——孤本入库靠 .gitignore `!vertical/<name>/` 放行。
+# 两处手工同步必漂：registry 标了 sourceGone 忘改 .gitignore → 字节被默认拦截
+# 永不可提交；.gitignore 放行了 registry 没标 → 白名单悬空语义不清。
+$gitignorePath = Join-Path $RepoRoot '.gitignore'
+if (Test-Path $gitignorePath) {
+    $unignored = @((Get-Content $gitignorePath) | ForEach-Object {
+        if ($_ -match '^!vertical/([^/\s]+)/?\s*$') { $Matches[1] }
+    })
+    $goneLeaves = @()
+    foreach ($item in @($reg.vertical)) {
+        if ($item.sourceGone -ne $true) { continue }
+        $leaf = (($item.path -replace '\\', '/') -replace '^vertical/', '') -replace '/$', ''
+        $goneLeaves += $leaf
+        if ($leaf -notin $unignored) {
+            $issues += [ordered]@{ level = 'E'; name = $item.name; msg = "sourceGone 孤本未在 .gitignore 放行（需 !vertical/$leaf/）——字节被默认拦截不可提交"; file = $gitignorePath }
+        }
+    }
+    foreach ($leaf in $unignored) {
+        if ($leaf -notin $goneLeaves) {
+            $issues += [ordered]@{ level = 'W'; name = "vertical/$leaf"; msg = '.gitignore 放行但 registry 无 sourceGone:true——白名单悬空（漏标或残留）'; file = $gitignorePath }
+        }
+    }
+}
+
 foreach ($s in $sources) {
     $skillMd = Join-Path $s.src 'SKILL.md'
     if (-not (Test-Path $skillMd)) {

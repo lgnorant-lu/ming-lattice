@@ -50,6 +50,14 @@ const entryAt = (name) => {
   return e ? { start: e.lineStart, end: e.lineEnd, section: e.section } : null;
 };
 const allNames = () => reg0.entries.map(e => e.name);
+// 段尾插位：回退过空行与顶格注释横幅——横幅属于下一段门面，插在其后=
+// 条目跨横幅悬进下一段视觉区（独立行级解析器按顶格行切段时会漏读）
+const insertAt = (sec) => {
+  const [s, e] = sectionRange(sec) ?? die(`registry 无 ${sec}: 段`);
+  let ins = e;
+  while (ins > s && (!lines[ins - 1].trim() || lines[ins - 1].startsWith('#'))) ins--;
+  return ins;
+};
 const targetsKeys = () => new Set(reg0.targets.keys());
 const domainVocab = () => {
   const l = reg0.lists.get('domains');
@@ -95,9 +103,7 @@ if (verb === 'add') {
   ent.push('    deploy:' + (deployClients.length ? '' : ' {}'));
   for (const c of deployClients) ent.push(`      ${c}: true`);
 
-  const [s, e] = sectionRange(sec) ?? die(`registry 无 ${sec}: 段`);
-  // 插位=段尾（下一个顶层键前）；段内保持既有顺序不动
-  let ins = e;
+  const ins = insertAt(sec);
   if (dry) { console.log(`[dry-run] 将于 registry.yaml:${ins + 1}(${sec}: 段尾) 插入:\n${ent.join('\n')}`); process.exit(0); }
   lines.splice(ins, 0, ...ent);
   fs.writeFileSync(REG, lines.join(regEol));
@@ -128,11 +134,11 @@ if (verb === 'add') {
     `    graduation: ${q(opts['--graduation'])}`,
     `    openedAt: ${openedAt}`,
   ];
-  const [s0, e0] = sectionRange('candidates') ?? die('registry 无 candidates: 段');
-  if (dry) { console.log(`[dry-run] 将于 registry.yaml:${e0 + 1}(candidates: 段尾) 插入:\n${ent.join('\n')}`); process.exit(0); }
-  lines.splice(e0, 0, ...ent);
+  const ins0 = insertAt('candidates');
+  if (dry) { console.log(`[dry-run] 将于 registry.yaml:${ins0 + 1}(candidates: 段尾) 插入:\n${ent.join('\n')}`); process.exit(0); }
+  lines.splice(ins0, 0, ...ent);
   fs.writeFileSync(REG, lines.join(regEol));
-  console.log(`[upsert] candidates/${opts['--name']} 候审登记（: ${e0 + 1} 行位，graduation 触发时再晋升）`);
+  console.log(`[upsert] candidates/${opts['--name']} 候审登记（: ${ins0 + 1} 行位，graduation 触发时再晋升）`);
 
 } else if (verb === 'set') {
   assertCommon();

@@ -39,6 +39,7 @@ private/
 ├── ui-design-paradigms/               # 全局 UI/UX 设计范式与 Design Tokens
 ├── ui-oracle-protocol/                # UI 控件自动化作为协议逆向 Oracle (timestamper)
 ├── xfqtrace-kit/                      # xfqtrace trace 工具包 skill 入口 (pip 公开; 本体本地外置)
+├── host-tools/                        # 本机命令守卫层 (PATH shim tier 策略+工具注册表, 非技能资产)
 └── blog-content/                      # 博客与技术内容生成管道
 ```
 

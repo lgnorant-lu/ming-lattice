@@ -87,6 +87,12 @@ foreach ($requested in $Module) {
     if ($requested -notin $units.name) { throw "sync_unavailable_module: $requested" }
 }
 foreach ($u in $units) {
+    # 纵深防御：单元名须为单段路径名——registry 值进 Join-Path 目的根，
+    # 含分隔符/../ 的名称会把部署写到目标目录之外（存量 vertical 名允许
+    # 大小写/下划线，只拦真实逃逸向量）
+    if ($u.name -match '[/\\]|\.\.' -or $u.name.StartsWith('-') -or [string]::IsNullOrWhiteSpace($u.name)) {
+        throw "sync_invalid_name: $($u.name)"
+    }
     if (-not (Test-Path -LiteralPath (Join-Path $u.src 'SKILL.md') -PathType Leaf)) {
         throw "sync_missing_skill: $($u.name)"
     }

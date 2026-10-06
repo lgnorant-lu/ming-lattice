@@ -271,10 +271,14 @@ function checkCandidates(pkgNames = new Set(), { skipRouter = false, registryPat
 //   private=自研件 → 本契约全量；deployable=生成投影 → lint-contract+孤儿扫描覆盖，
 //   字段契约豁免（漂移=生成器缺陷非文件缺陷）；vertical/base=上游钉版字节 →
 //   frontmatter 契约归上游（上游允许缺 name 由目录名推断），不外施本仓词表。
+//   kind: 非 skill 类（tool/asset 等运营资产）豁免 SKILL.md 契约——
+//   登记是为了目录归属与索引对账，不是技能件承诺（host-tools 先例）
 function privateEntries() {
   const block = registrySection('private') || '';
   const entries = [];
   for (const m of block.matchAll(/-\s*name:\s*(\S+)[\s\S]*?path:\s*(\S+)/g)) {
+    const kind = (m[0].match(/^\s*kind:\s*(\S+)/m) || [])[1];
+    if (kind && kind !== 'skill') continue;
     entries.push({ name: m[1], path: m[2] });
   }
   return entries;

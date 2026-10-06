@@ -108,8 +108,9 @@ foreach ($sectionName in @('base', 'vertical')) {
         $remoteHead = $null
         if ($hasGit) {
             # 依次试 main/master（避免 ls-remote 额外网络请求）; 用 $LASTEXITCODE 判断, 勿用 if(git)（stdout 为空会被判假）
+            # 网络停滞有界化：传输速率 <1KB/s 持续 90s 即 abort（凭证提示已由 GIT_TERMINAL_PROMPT 拒）
             foreach ($branch in @('main', 'master')) {
-                git -C $path fetch --depth 1 --filter=blob:none origin $branch 2>$null | Out-Null
+                git -C $path -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=90 fetch --depth 1 --filter=blob:none origin $branch 2>$null | Out-Null
                 if ($LASTEXITCODE -eq 0) {
                     $remoteHead = git -C $path rev-parse --short FETCH_HEAD 2>$null
                     if ($remoteHead) { break }
@@ -125,7 +126,7 @@ foreach ($sectionName in @('base', 'vertical')) {
                 $report += $entry
                 continue
             }
-            $ls = git ls-remote $item.repo HEAD 2>$null | Select-Object -First 1
+            $ls = git -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=90 ls-remote $item.repo HEAD 2>$null | Select-Object -First 1
             if ($ls) { $remoteHead = (($ls -split '\s+')[0]).Substring(0, 7) }
         }
 

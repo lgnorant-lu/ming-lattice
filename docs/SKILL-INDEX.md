@@ -258,6 +258,7 @@ status: descriptive
 | ui-oracle-protocol | 自研：安卓 UI 控件自动化作为协议逆向 oracle（见二点五） | 已部署 |
 | ui-design-paradigms | 全球数字产品主流 UI/UX 设计范式知识库 (Material 3 / shadcn / Apple HIG / Bento / Swiss / Neubrutalism) | 已部署 |
 | xfqtrace-kit | Android Native 层 trace 工具包 skill 入口 (pip 包公开; 工具本体本地外置不入仓) | 已部署 |
+| host-tools | 本机命令守卫层：find/grep 等 PATH shim tier 策略 + 工具注册表（非技能资产，不参与路由/部署） | 本机层·不部署 |
 
 ### 2. 测试规范体系族（testing-family，11 个包）
 

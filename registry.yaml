@@ -1714,6 +1714,14 @@ private:
     deploy:
       claude: true
 
+  - name: host-tools
+    kind: tool
+    path: private/host-tools
+    enabled: false
+    domain: engineering
+    note: "本机命令守卫层（PATH shim tier 策略+工具注册表——非技能资产不部署）"
+    deploy: {}
+
 # ── 候审区 (candidates) ──────────────────────────────────────────────
 # 包提案登记处：非实体包（无 SKILL.md），一进证据开市、二进证据触发毕业。
 # 协议见 private/engineering/ming-skill-forge/references/candidacy.md；
