@@ -193,5 +193,28 @@ function check(name, problems) {
   check('dry-run 预览零落盘+覆写可见', p);
 }
 
-console.log(`\n${pass} passed, ${fail} failed, 11 total`);
+// ── 12. --project 净化 + 资产缺席 fail-fast（预检先于首写，缺件零落盘） ──
+{
+  const p = [];
+  const d = tmp(), t = path.join(d, 'docs');
+  // --project 注 YAML 标量：换行/引号/首尾空白全拒
+  for (const proj of ['a\nb', 'q"q', ' pad ', 'x"']) {
+    const r = runScaffold(t, ['--project', proj]);
+    if (r.status !== 1 || !r.stderr.includes('--project')) p.push(`--project 未拒: ${JSON.stringify(proj)}`);
+  }
+  if (exists(t, 'META.md') || exists(t, 'ming.yaml')) p.push('--project 拒后仍落盘');
+
+  // 资产缺席：复制脚本到无 assets 的赝 SKILL_DIR——预检 die 且零落盘
+  const fake = tmp();
+  fs.mkdirSync(path.join(fake, 'scripts'), { recursive: true });
+  fs.copyFileSync(SCAFFOLD, path.join(fake, 'scripts', 'scaffold-domains.mjs'));
+  const t2 = path.join(tmp(), 'docs');
+  const r2 = spawnSync('node', [path.join(fake, 'scripts', 'scaffold-domains.mjs'),
+    '--target', t2, '--tier', 'full'], { encoding: 'utf8' });
+  if (r2.status !== 1 || !r2.stderr.includes('资产缺席')) p.push(`缺资产应 die: status=${r2.status} err=${r2.stderr.slice(0, 120)}`);
+  if (fs.existsSync(t2)) p.push('缺资产仍落了盘（应 fail-fast 于首写前）');
+  check('project 净化+资产缺席 fail-fast', p);
+}
+
+console.log(`\n${pass} passed, ${fail} failed, 12 total`);
 process.exit(fail ? 1 : 0);

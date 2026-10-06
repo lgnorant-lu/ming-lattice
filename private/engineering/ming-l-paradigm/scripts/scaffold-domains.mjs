@@ -42,6 +42,9 @@ const domains = opts['--domains'] !== undefined
   ? opts['--domains'].split(',').map(s => s.trim()).filter(Boolean)
   : (TIER_DOMAINS[tier] || ['meta', 'spec', 'dev', 'findings']);
 if (!domains.length) die('--domains 解析后为空');
+// --project 进 ming.yaml 标量——同 --desc/--note 同族校验（破 YAML 形拦在写前）
+if (/[\r\n"]/.test(project)) die('--project 必须单行且不含双引号');
+if (project !== project.trim()) die('--project 首尾空白');
 
 const EMITS = {
   meta:     ['META.md', 'assets/templates/meta.md.tmpl'],
@@ -55,6 +58,18 @@ const EMITS = {
   know:     ['know/KNOWLEDGE.md', 'assets/templates/know.md.tmpl'],
   findings: ['spec/OPEN-FINDINGS.md', 'assets/templates/open-findings.md.tmpl'],
 };
+
+// 写前全量预检——模板/资产缺席必须 fail-fast 于首写之前（缺件中段崩=半成品落盘）
+{
+  const needed = [];
+  for (const d of domains) {
+    if (!EMITS[d]) continue;
+    for (const [, tmpl] of Array.isArray(EMITS[d][0]) ? EMITS[d] : [EMITS[d]]) needed.push(tmpl);
+  }
+  needed.push('assets/namespaces.default.json', 'assets/templates/ming.yaml.tmpl');
+  const missing = needed.filter(p => !fs.existsSync(path.join(SKILL_DIR, p)));
+  if (missing.length) die(`脚手架资产缺席 ${missing.length} 件（kit 不完整，拒写）:\n  ${missing.join('\n  ')}`);
+}
 
 const results = [];
 function emit(rel, fromAbs) {
