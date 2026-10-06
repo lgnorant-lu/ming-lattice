@@ -96,10 +96,16 @@ export const gate = {
     return findings;
   },
   // 工作区修复（run fix 专用；ctx.read 走工作区源）——只归一化字节，
-  // 钉缺席类属配置面不在此修（提示文案指路）
+  // 钉缺席类属配置面不在此修（提示文案指路）。
+  // fix 收全域文件非仅发现集——eol=crlf/-text 声明域必须豁免，
+  // 否则 .bat/.cmd 的声明契约被自己剥掉。
   async fix(ctx) {
     const fixed = [];
+    let attrs;
+    try { attrs = batchAttrs(ctx.root, ctx.files); } catch { attrs = new Map(); }
     for (const p of ctx.files) {
+      const a = attrs.get(p) || {};
+      if (a.eol === 'crlf' || a.text === 'unset') continue;
       const abs = path.join(ctx.root, p);
       let buf;
       try { buf = fs.readFileSync(abs); } catch { continue; }

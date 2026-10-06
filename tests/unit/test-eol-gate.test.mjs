@@ -118,6 +118,22 @@ export async function run() {
     check(fs.readFileSync(f1, 'utf8') === 'l1\nl2\n', 'fix 未归一化工作区');
   }
 
+  // 6b. fix 声明域豁免：eol=crlf/-text 文件不被剥 CRLF（fix 收全域非仅发现集）
+  {
+    const d = repo('*.bat text eol=crlf\n*.bin -text\n');
+    const b1 = path.join(d, 'run.bat');
+    const b2 = path.join(d, 'raw.bin');
+    fs.writeFileSync(b1, '@echo off\r\ngoto :eof\r\n');
+    fs.writeFileSync(b2, 'data\r\nmore\r\n');  // -text 但内容无 NUL——嗅探放它走，靠声明豁免
+    const fx = { root: d, files: ['run.bat', 'raw.bin'], dryRun: false };
+    const fixed = await gate.fix(fx);
+    check(fixed.length === 0, `fix 剥了声明域: ${fixed}`);
+    check(fs.readFileSync(b1, 'utf8') === '@echo off\r\ngoto :eof\r\n',
+      'eol=crlf 声明文件被改写');
+    check(fs.readFileSync(b2, 'utf8') === 'data\r\nmore\r\n',
+      '-text 声明文件被改写');
+  }
+
   // 7. 源仓自检：skills-collection 自身的 .gitattributes 覆盖钉制域
   {
     const ga = fs.readFileSync(path.join(REPO_ROOT, '.gitattributes'), 'utf8');
