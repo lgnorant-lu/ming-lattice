@@ -197,6 +197,11 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 - deployable/areclaw-* POSIX 命令文档——包装文档内 grep/sort/comm//tmp 示例与本机 grep-guard 冲突（vendored 包装层内容，agent 执行时可自适应；如需消除再改）
 - ~~xfinjectd 第二拷贝~~——**已清偿**（2026-09-23 上游实证：`LunFengChen/frida-gadget-helper` 公开仓 pin ee38b11 自带 xfinjectd，blob SHA `4298aa0e`/`299f3149` 逐字节同源——vendored=镜像零新增暴露，保留；随后该仓随 vertical 物化化整体出史）
 - ~~vertical vendored 字节入库~~——**已清偿**（2026-09-23 `f5ba0f95`→`25ff03c`：vertical 转**物化区**——远端仅存索引(repo+pin 全 40 位回填)，`scripts/fetch.mjs` 一键物化，`vendor-boundary` 门把守 staged∩vertical ⊆ sourceGone 白名单；4 孤本(ruyi 下架族)保留入库；`.git` 188M→9M；史中另清出 35 个 gitlink 误入库残留——铁律#1 事故的历史实体）
+- ~~非技能资产登记面~~——**已清偿**（`private/host-tools` 先例落地：`kind: tool` +
+  `enabled: false` + `deploy: {}`——登记为目录归属/索引对账非技能承诺；check-skill
+  --all 按 kind≠skill 豁免 SKILL.md 契约，kind 走封闭词表 {skill|tool|asset}
+  出表即 E（防错拼静默豁免逃逸）；CATALOG/SKILL-INDEX 索引同步。勿给非技能目录
+  伪造 SKILL.md 消 lint——kind 字段是正解）
 - vendored LICENSE 覆盖缺口——96 vendored 中 32 个无 LICENSE 文件；**物化制落地后再分发面已缩至 4 个 ruyi 孤本**（远端仅存链接不分发字节，灰区自然消解大半）；残留问题=孤本无上游许可 + 本仓自身 LICENSE 选型待定
 - githook 族 skill 增补商讨设计组件——门规变更/新门设计的讨论通道设计件（用户口述方向，细节待成形）
 - ~~author-identity 门~~——**机制已落地**（2026-10-15：`gates/author-identity.mjs` 出厂门——`git var GIT_AUTHOR/COMMITTER_IDENT` 双查，哨兵占位+CN 个人邮箱域（pii 同族词表）+`allow` 白名单 glob+`check=both|author|committer`；组21 e2e 七态断言）。**余项=本仓激活**：当前身份仍是个人邮箱，`git config user.email` 属用户域——.hooksrc 暂置 warn 持续提醒，迁移后翻 error+`allow=*@users.noreply.github.com`。副产发现：fixture 仓不设身份会回退全局配置——tempRepo 已补中性身份（CI 无全局配置同类防护）
