@@ -18,6 +18,9 @@ trailerLevel=error        # → gate.commit-msg.level（AI 尾巴等）
 # gate.pre-push-verify.level=error
 # gate.impact-test.level=error
 # gate.whitespace.level=warn       # 行尾空白/EOF 换行（run fix 自愈；--dry-run 预览；exclude 已带 vertical/**）
+# gate.eol.level=error             # EOL 契约对账：eol=lf 域 staged CRLF=error；钉制域钉缺席=error；
+                                  # 无钉制裸 CRLF=warn（run fix 归一化工作区字节）
+# gate.eol.pinGlobs=.githooks/**,*.sh   # 强制 LF 钉制域（shebang 字节敏感面；CSV glob）
 
 # ── 项目私有门 ──
 # scripts/hooks/gates.local/*.mjs  # 入仓的项目特有门（与 gates/ 同接口，如 go-verify）

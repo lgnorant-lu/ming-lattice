@@ -53,6 +53,9 @@ trailerLevel=error
 # 7. 可自愈门仓专排除（门默认值仓中性——本仓 vendored/上游目录走配置排除）
 gate.whitespace.exclude=vertical/**
 gate.toc.exclude=vertical/**,base/**
+# 7b. EOL 契约对账（默认 error 即生效）：eol=lf 域 staged CRLF=error；
+#     .githooks/** 与 *.sh 钉制域钉缺席=error；无钉制裸 CRLF=warn
+#     vendored 区行尾归上游——eol 判定尊重其 -text/unspecified 态，无需显式排除
 
 # 8. 候审档到期门（周期维度：reviewAfter 到期 error——晋升/延期/废弃三选一；
 #    cadence 节流 7 天；2026-10-04 由提醒 warn 升格阻断）

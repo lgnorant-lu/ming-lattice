@@ -52,7 +52,7 @@ status: normative
 
 `scripts/hooks/engine.mjs` 是统一调度器；门禁规则分两源：
 
-- **原生码门** `scripts/hooks/gates/*.mjs`：导出 `gate` 对象 `{id, stages, defaultLevel, expensive?, needsAllFiles?, globs?, exclude?, available?(ctx), run(ctx)→findings[]}`。secrets/mojibake/emoji/large-file/commit-msg/impact-test/pre-push-verify/whitespace/toc/review-after/link-rot/pii/author-identity 十三门为出厂目录。
+- **原生码门** `scripts/hooks/gates/*.mjs`：导出 `gate` 对象 `{id, stages, defaultLevel, expensive?, needsAllFiles?, globs?, exclude?, available?(ctx), run(ctx)→findings[]}`。secrets/mojibake/emoji/large-file/commit-msg/impact-test/pre-push-verify/whitespace/eol/toc/review-after/link-rot/pii/author-identity 十四门为出厂目录。
 - **声明式正则门** `.hooksrc` 内 `gate.<id>.<key>` 平铺键——覆盖"单模式+单消息"长尾检查，零代码：
   ```ini
   gate.no-debugger.level=error
@@ -105,6 +105,7 @@ status: normative
    - 本仓实例：`.hooksrc` 配 `command=node scripts/verify.mjs --profile affected`——由 `scripts/plan.mjs` 分析暂存快照做影响面计划：纯文档变动免测放行；特定域变动仅执行受影响套件；关键全局配置或未知路径 fail-closed 升级全量。
 5. **可自愈门（fixable，`run fix` 工作区重写）**：
    - **whitespace**：行尾空白/EOF 换行（`warn` 默认）。
+   - **eol**：EOL 契约对账（`git check-attr` 批量解析 `.gitattributes` 声明面 vs staged blob 实测面）——`eol=lf` 域 staged blob 含 CRLF=error（porcelain 不可达，钉后未 renormalize/旁路才现）；钉制域（默认 `.githooks/**,*.sh`，`gate.eol.pinGlobs` 可配）eol 未钉 lf=error（POSIX shebang 字节敏感）；无钉制似文本裸 CRLF=warn。`run fix` 归一化工作区字节 CRLF→LF（钉缺席属配置面不代修）。`eol=crlf`/`-text` 声明域不辖。
    - **toc**：`## 目录`/`## Table of Contents` 生成节对账——标题收集（跳过 frontmatter/围栏/自身）→ GitHub 锚 slug → 编号列表比对。节体混入散文视为手写内容 warn 跳过不覆盖；`mode=insert` 可为 ≥`minHeadings` 个标题的无壳文档补插目录。配置键：`depth`（默认 3）、`titles`、`mode`（section|insert）、`minHeadings`、`slug`（github|compat），全部支持 `[glob]` 分节逐文件覆盖（见 §3.3）。
 6. **候审档到期提醒（review-after，周期维度门）**：
    - 与文件变更无关的时间驱动检查：`gate.review-after.globs` 命中文件内 `reviewAfter: YYYY-MM-DD` 到期（≤今天）即 warn；默认 globs 空 = off-until-configured。挂 `pre-commit`/`post-merge`/`post-checkout` 三 stage 非阻断。
@@ -176,7 +177,7 @@ lintLevel=error         # error | warn | off（默认 error: lint 失败阻断�
 - **baseline 预览**：`node scripts/hooks/engine.mjs baseline --dry-run`——按门分组预告将冻结的违规数，不写 `.hooks-baseline.json`。
 - **采纳仓等级建议**：`integrityLevel` 缺省 `warn`（透明性基线）；当采纳仓门集稳定、维护者已建立 `trust` 重签习惯后，建议晋升 `integrityLevel=error`——透明性变 fail-closed，篡改不再只是提示。
 - **采纳层自检**（与 gates/ 完整性同级，随 `integrityLevel` 开关）：① `.githooks/` shim 与 `lib/shims.mjs` 规范模板对账——手改/模板更新即 warn（外来 hook 无 `engine.mjs` 引用者尊重不碰）；② shim 内引擎引用可达性——store 搬家/引擎缺失即 warn（相对式与绝对烘焙两种引用都验）；③ `.hooksrc` 的 `gate.<id>.*` 孤儿键——配置指向未装载的门（改名/删除残留）即 warn；④ `gates/`、`gates.local/` 下未导出 `gate` 对象的 `.mjs` 文件在加载时 warn（防"写了没生效"静默）。检查者即被检查者，住在引擎装载路径上而非独立门。
-- **移植到其他仓**：三通道同契约——`pwsh scripts/install-hooks.ps1 -Target <repo>`（主）、`node scripts/install-hooks.mjs --target <repo>`（无 pwsh 环境的等价实现，`-WhatIf`=`--dry-run`、`-Force`=`--force`、`-WithBoundary`=`--with-boundary`）、`sh scripts/install-hooks.sh -t <repo>`（POSIX 壳转调 Node 实现）。铺入 `scripts/hooks/`（engine+gates+lib+依赖件）+ `.githooks/` shim + `.hooksrc`（模板，不覆盖已有）+ `.gitignore` 补 `.hooksrc.local` + hooksPath + integrity 存值。支持预演；检测到目标已有 `core.hooksPath` 时**拒绝静默切换**（需先平移旧检查到 `gates.local/` 再加 `-Force`/`--force`——blog-tui 事故的制度化防线）。项目私有门入 `scripts/hooks/gates.local/`；`impact-test`/`pre-push-verify` 在无对应件的仓自动缺席（`available()` 守卫），`gate.<id>.command` 可配仓级命令接管。采纳者实证：blog-tui + 两个 GH 外部仓克隆（棕场 baseline 冻结存量违规、增量门禁仅拦新增）。`scaffold-repo.mjs` 编排时按 pwsh 在位性自动选 ps1/mjs。
+- **移植到其他仓**：三通道同契约——`pwsh scripts/install-hooks.ps1 -Target <repo>`（主）、`node scripts/install-hooks.mjs --target <repo>`（无 pwsh 环境的等价实现，`-WhatIf`=`--dry-run`、`-Force`=`--force`、`-WithBoundary`=`--with-boundary`）、`sh scripts/install-hooks.sh -t <repo>`（POSIX 壳转调 Node 实现）。铺入 `scripts/hooks/`（engine+gates+lib+依赖件）+ `.githooks/` shim + `.hooksrc`（模板，不覆盖已有）+ `.gitignore` 补 `.hooksrc.local` + EOL/编辑器基线（`.gitattributes`/`.editorconfig` 缺席铺 `scripts/hooks/templates/` 基线、在场只补 `.githooks/*` 与 `*.sh` 的 `eol=lf` 钉——wildcard 不注入存量契约）+ hooksPath + integrity 存值。支持预演；检测到目标已有 `core.hooksPath` 时**拒绝静默切换**（需先平移旧检查到 `gates.local/` 再加 `-Force`/`--force`——blog-tui 事故的制度化防线）。项目私有门入 `scripts/hooks/gates.local/`；`impact-test`/`pre-push-verify` 在无对应件的仓自动缺席（`available()` 守卫），`gate.<id>.command` 可配仓级命令接管。采纳者实证：blog-tui + 两个 GH 外部仓克隆（棕场 baseline 冻结存量违规、增量门禁仅拦新增）。`scaffold-repo.mjs` 编排时按 pwsh 在位性自动选 ps1/mjs。
 - **采纳元数据**：install 时往目标仓 `hook-engine-state.json` 写入 `adoption`（`sourceRepo`/`sourceRev`/`adoptedAt`）——拷贝模型下目标仓知道自己铺的是哪版引擎；`engine list` 读它并对账源仓 HEAD 报 `已最新`/`落后 N 提交`（源仓不可达时只报记录值）。
 
 ### 3.3 `[glob]` 分节覆盖（域内调参）

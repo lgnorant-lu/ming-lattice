@@ -164,6 +164,7 @@ export const ALL_SUITE_NAMES = [
   'distill-index',
   'distill-index-unit',
   'docclass',
+  'eol-gate',
   'fetch-cli',
   'hook-engine',
   'hook-index',

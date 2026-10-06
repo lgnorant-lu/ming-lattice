@@ -88,6 +88,12 @@ export function run() {
     check(fs.existsSync(path.join(d, '.githooks/pre-commit')), 'shim 未铺');
     check(fs.existsSync(path.join(d, '.hooksrc')), '.hooksrc 未铺');
     check(/\.hooksrc\.local/.test(fs.readFileSync(path.join(d, '.gitignore'), 'utf8')), '.gitignore 未追加');
+    // EOL/编辑器基线：缺席仓铺全量模板（含归一化 wildcard + shim 钉）
+    const attr0 = fs.readFileSync(path.join(d, '.gitattributes'), 'utf8');
+    check(/\*\s+text=auto\s+eol=lf/.test(attr0), '.gitattributes 基线未铺');
+    check(/\.githooks\/\*\s+text\s+eol=lf/.test(attr0), '基线缺 .githooks 钉');
+    check(!attr0.includes('\r'), '基线模板含 CRLF（LF 化失效）');
+    check(fs.existsSync(path.join(d, '.editorconfig')), '.editorconfig 基线未铺');
     check(git(d, ['config', 'core.hooksPath']) === '.githooks', 'hooksPath 未设');
     const stateFile = path.join(git(d, ['rev-parse', '--absolute-git-dir']), 'hook-engine-state.json');
     check(fs.existsSync(stateFile) && JSON.parse(fs.readFileSync(stateFile, 'utf8')).adoption?.sourceRepo,
@@ -120,6 +126,32 @@ export function run() {
     const r2 = cli(['--target', d, '--force']);
     check(r2.status === 0 && git(d, ['config', 'core.hooksPath']) === '.githooks',
       '--force 未放行切换');
+  }
+
+  // ── 存量 .gitattributes：只补钉不注入 wildcard（契约归采纳侧）──
+  {
+    const d = track(realRepo());
+    fs.writeFileSync(path.join(d, '.gitattributes'), '# 自有契约\n*.bin -text\n');
+    const r = cli(['--target', d]);
+    check(r.status === 0, `存量 attrs 安装失败: ${r.stderr}`);
+    const attr = fs.readFileSync(path.join(d, '.gitattributes'), 'utf8');
+    check(!/^\*\s+text=auto/m.test(attr), '存量 .gitattributes 被注入 wildcard 基线');
+    check(/\.githooks\/\*\s+text\s+eol=lf/.test(attr), '存量 attrs 未补 shim 钉');
+    check(/\*\.sh\s+text\s+eol=lf/.test(attr), '存量 attrs 未补 *.sh 钉');
+    check(attr.startsWith('# 自有契约'), '存量 .gitattributes 内容被改写');
+  }
+
+  // ── **/.* 全拦截仓：基线铺入须补 .gitignore 白名单（否则静默不可跟踪）──
+  {
+    const d = track(realRepo());
+    fs.writeFileSync(path.join(d, '.gitignore'), '**/.*\n!.gitignore\n');
+    const r = cli(['--target', d]);
+    check(r.status === 0, `全拦截仓安装失败: ${r.stderr}`);
+    const gi = fs.readFileSync(path.join(d, '.gitignore'), 'utf8');
+    check(/^!\.gitattributes$/m.test(gi), '!.gitattributes 白名单未补');
+    check(/^!\.editorconfig$/m.test(gi), '!.editorconfig 白名单未补');
+    check(git(d, ['check-ignore', '.gitattributes']) === '', '.gitattributes 仍被 ignore 吞');
+    check(git(d, ['check-ignore', '.editorconfig']) === '', '.editorconfig 仍被 ignore 吞');
   }
 
   // ── --with-boundary 采纳面 ──
@@ -192,6 +224,13 @@ export function run() {
     fs.writeFileSync(path.join(d, '.githooks/pre-commit'), '# 改动\n');
     r = cli(['--target', d, '--check']);
     check(/shim 字节差.*pre-commit/.test(r.stdout), `shim 字节差未报: ${r.stdout}`);
+
+    // EOL 基线面：删 .gitattributes/.editorconfig → 知情报告（不拦）
+    fs.rmSync(path.join(d, '.gitattributes'));
+    fs.rmSync(path.join(d, '.editorconfig'));
+    r = cli(['--target', d, '--check']);
+    check(/eol 基线缺席.*gitattributes/.test(r.stdout), `eol 基线缺席未报: ${r.stdout}`);
+    check(/基线缺席.*editorconfig/.test(r.stdout), `.editorconfig 缺席未报: ${r.stdout}`);
 
     // 只读：--check 不产生任何新文件（排除 .git 内既有状态件）
     const snap = dir => {

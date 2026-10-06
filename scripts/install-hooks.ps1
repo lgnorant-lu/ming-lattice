@@ -77,14 +77,50 @@ if ($Target) {
         }
     }
 
-    # 4.1 .gitattributes 钉 shim EOL——采纳仓 autocrlf=true 的 checkout/克隆
-    #     会把 shim 落成 CRLF，shebang 失效（与本仓 .gitattributes 同款钉）
+    # 4.1 EOL/编辑器基线——.gitattributes/.editorconfig 缺席才铺基线模板；
+    #     已存在只补 shebang 钉（wildcard 不注入存量文件——契约归采纳侧）。
+    #     基线件同 shim 字节纪律：源工作区 CRLF 拷贝须 LF 化（-replace 去 \r\n）。
+    $tplDir = Join-Path $repoRoot 'scripts/hooks/templates'
+    $utf8NoBom = [Text.UTF8Encoding]::new($false)
     $dstAttr = Join-Path $dest '.gitattributes'
-    $ga = (Test-Path $dstAttr) ? (Get-Content $dstAttr -Raw) : ''
-    if ($ga -notmatch '(?m)^\.githooks/\*\s+text\s+eol=lf\s*$') {
-        if ($PSCmdlet.ShouldProcess($dstAttr, '追加 .githooks/* eol=lf 到 .gitattributes')) {
-            Add-Content $dstAttr "`n# hook shim 必须 LF——CRLF 让 POSIX 端 shebang 失效`n.githooks/* text eol=lf`n"
-            Write-Host "[scaffold] .gitattributes += .githooks/* eol=lf" -ForegroundColor Gray
+    if (-not (Test-Path $dstAttr)) {
+        if ($PSCmdlet.ShouldProcess($dstAttr, '铺入 .gitattributes 基线模板')) {
+            $tpl = (Get-Content (Join-Path $tplDir 'gitattributes.baseline') -Raw) -replace "`r`n", "`n"
+            [IO.File]::WriteAllText($dstAttr, $tpl, $utf8NoBom)
+            Write-Host "[scaffold] .gitattributes <- 基线模板" -ForegroundColor Gray
+        }
+    } else {
+        $ga = Get-Content $dstAttr -Raw
+        foreach ($pin in '.githooks/* text eol=lf', '*.sh text eol=lf') {
+            $pat = [regex]::Escape(($pin -split ' ')[0])
+            if ($ga -notmatch "(?m)^$pat\s+text\s+eol=lf\s*$") {
+                if ($PSCmdlet.ShouldProcess($dstAttr, "追加 $pin 到 .gitattributes")) {
+                    Add-Content $dstAttr "`n# hook shim/POSIX 入口必须 LF——CRLF 让 shebang 失效`n$pin`n"
+                    Write-Host "[scaffold] .gitattributes += $pin" -ForegroundColor Gray
+                }
+            }
+        }
+    }
+    $dstEc = Join-Path $dest '.editorconfig'
+    if (-not (Test-Path $dstEc)) {
+        if ($PSCmdlet.ShouldProcess($dstEc, '铺入 .editorconfig 基线模板')) {
+            $tpl = (Get-Content (Join-Path $tplDir 'editorconfig.baseline') -Raw) -replace "`r`n", "`n"
+            [IO.File]::WriteAllText($dstEc, $tpl, $utf8NoBom)
+            Write-Host "[scaffold] .editorconfig <- 基线模板" -ForegroundColor Gray
+        }
+    }
+
+    # 4.2 .gitignore 白名单补偿：采纳侧用 `**/.*`/`.*` 全拦截时，基线两件会被静默吞
+    $giNow = (Test-Path $dstIgnore) ? (Get-Content $dstIgnore -Raw) : ''
+    if ($giNow -match '(?m)^\s*\*\*/\.\*|^\s*\.\*\s*$') {
+        foreach ($wl in '!.gitattributes', '!.editorconfig') {
+            $wlRe = '^!' + [regex]::Escape($wl.Substring(1)) + '\s*$'
+            if ($giNow -notmatch "(?m)$wlRe") {
+                if ($PSCmdlet.ShouldProcess($dstIgnore, "追加 $wl 白名单")) {
+                    Add-Content $dstIgnore "$wl`n"
+                    Write-Host "[scaffold] .gitignore += $wl" -ForegroundColor Gray
+                }
+            }
         }
     }
 

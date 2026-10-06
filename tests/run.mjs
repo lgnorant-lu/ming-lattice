@@ -23,6 +23,7 @@ import { run as runRouteEffects } from './evals/test-route-effects.mjs';
 import { run as runSkillRecall } from './evals/test-skill-recall.mjs';
 import { run as runLexicalLayer } from './unit/test-lexical-layer.test.mjs';
 import { run as runHookEngine } from './unit/test-hook-engine.test.mjs';
+import { run as runEolGate } from './unit/test-eol-gate.test.mjs';
 import { run as runLintContract } from './contract/test-lint-contract.mjs';
 import { run as runHookPlannerContract } from './contract/test-hook-planner.mjs';
 import { run as runRouteObserver } from './contract/test-route-observer.mjs';
@@ -95,6 +96,7 @@ export const allSuites = [
   { name: 'route-effects', tier: 'eval', run: runRouteEffects },
   { name: 'lexical-layer', tier: 'unit', run: runLexicalLayer },
   { name: 'hook-engine', tier: 'unit', git: true, run: runHookEngine },
+  { name: 'eol-gate', tier: 'unit', git: true, run: runEolGate },
   { name: 'fetch-cli', tier: 'unit', git: true, run: runFetchCli },
   { name: 'ming-boundary', tier: 'unit', run: runMingBoundary },
   { name: 'docclass', tier: 'unit', run: runDocclass },

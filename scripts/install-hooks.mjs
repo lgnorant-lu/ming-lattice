@@ -5,7 +5,8 @@
 //            adoption sourceRev 落后。exit 0（drift 是知情面非失败面；采纳侧自定义不算错）
 // 语义与 install-hooks.ps1 -Target 对齐（11 步）：git 根检查 → 旧 hooksPath 防线 →
 //   scripts/hooks kit 拷贝（gates.local 排除）→ .githooks shim → .hooksrc 模板（不覆盖）→
-//   .gitignore/.gitattributes 追加 → boundary 采纳面（可选）→ hooksPath+commit.template → trust 存值 →
+//   .gitignore 追加 + EOL/编辑器基线（.gitattributes/.editorconfig 缺席铺模板、
+//   在场只补 shebang 钉）→ boundary 采纳面（可选）→ hooksPath+commit.template → trust 存值 →
 //   采纳元数据 → 指引输出。pwsh 缺席的 POSIX 环境由 install-hooks.sh -t 转调本件；
 //   scaffold-repo 在 pwsh 探测失败时自动回退本件（双实现共用同一契约）。
 import fs from 'node:fs';
@@ -93,6 +94,15 @@ if (opts.check) {
     if (!fs.existsSync(d)) report.push(`[shim 缺席] .githooks/${f}`);
     else if (fs.readFileSync(d, 'utf8').replace(/\r\n/g, '\n') !== s) report.push(`[shim 字节差] .githooks/${f}`);
   }
+  // EOL 基线面（知情报告）：通配钉归采纳侧自定，缺席只提示不强推
+  const dstAttrCk = path.join(dest, '.gitattributes');
+  if (!fs.existsSync(dstAttrCk)) report.push('[eol 基线缺席] .gitattributes 未铺（CRLF 归一化无契约）');
+  else {
+    const gaCk = fs.readFileSync(dstAttrCk, 'utf8');
+    if (!/\*\s+text=auto/.test(gaCk)) report.push('[eol 基线缺席] .gitattributes 无 "* text=auto" 归一化基线');
+    if (!/^\.githooks\/\*\s+text\s+eol=lf\s*$/m.test(gaCk)) report.push('[shim 钉缺席] .gitattributes 无 .githooks/* eol=lf');
+  }
+  if (!fs.existsSync(path.join(dest, '.editorconfig'))) report.push('[基线缺席] .editorconfig 未铺');
   const srcHookDir = path.join(REPO_ROOT, 'scripts/hooks');
   const kitWalk = (dir, rel = '') => fs.readdirSync(dir, { withFileTypes: true })
     .flatMap(e => e.name === 'gates.local' && !rel ? [] :
@@ -170,13 +180,42 @@ if (!/^\.hooksrc\.local\s*$/m.test(gi)) {
     fs.appendFileSync(dstIgnore, '\n# 门禁引擎个人覆盖层\n.hooksrc.local\n'));
 }
 
-// 4.1 .gitattributes 钉 shim EOL——采纳仓 autocrlf=true 的 checkout/克隆
-//     会把 shim 落成 CRLF，shebang 失效（与本仓 .gitattributes 同款钉）
+// 4.1 EOL/编辑器基线——.gitattributes/.editorconfig 缺席才铺基线模板；
+//     已存在只补 shebang 钉（`text=auto` 类 wildcard 不注入存量文件——
+//     仓库 EOL 契约是采纳侧资产，kit 只保证自身 shim 不被 CRLF 传染）。
+//     基线件同 shim 字节纪律：源工作区在 autocrlf 机上可能 CRLF，拷贝须 LF 化。
+const TPL_DIR = path.join(REPO_ROOT, 'scripts/hooks/templates');
+const readLf = f => fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n');
 const dstAttr = path.join(dest, '.gitattributes');
-const ga = fs.existsSync(dstAttr) ? fs.readFileSync(dstAttr, 'utf8') : '';
-if (!/^\.githooks\/\*\s+text\s+eol=lf\s*$/m.test(ga)) {
-  act('.gitattributes += .githooks/* eol=lf', () =>
-    fs.appendFileSync(dstAttr, '\n# hook shim 必须 LF——CRLF 让 POSIX 端 shebang 失效\n.githooks/* text eol=lf\n'));
+if (!fs.existsSync(dstAttr)) {
+  act('.gitattributes <- templates/gitattributes.baseline', () =>
+    fs.writeFileSync(dstAttr, readLf(path.join(TPL_DIR, 'gitattributes.baseline'))));
+} else {
+  const ga = fs.readFileSync(dstAttr, 'utf8');
+  for (const pin of ['.githooks/* text eol=lf', '*.sh text eol=lf']) {
+    const pat = pin.split(' ')[0].replace(/[.*]/g, '\\$&');
+    if (!new RegExp(`^${pat}\\s+text\\s+eol=lf\\s*$`, 'm').test(ga)) {
+      act(`.gitattributes += "${pin}"`, () =>
+        fs.appendFileSync(dstAttr, `\n# hook shim/POSIX 入口必须 LF——CRLF 让 shebang 失效\n${pin}\n`));
+    }
+  }
+}
+const dstEc = path.join(dest, '.editorconfig');
+if (!fs.existsSync(dstEc)) {
+  act('.editorconfig <- templates/editorconfig.baseline', () =>
+    fs.writeFileSync(dstEc, readLf(path.join(TPL_DIR, 'editorconfig.baseline'))));
+}
+
+// 4.2 .gitignore 白名单补偿：采纳侧用 `**/.*`/`.*` 全拦截时，基线两件会被静默吞
+const giNow = fs.existsSync(dstIgnore) ? fs.readFileSync(dstIgnore, 'utf8') : '';
+if (/(^|\n)\s*\*\*\/\.\*|(^|\n)\s*\.\*\s*(\n|$)/.test(giNow)) {
+  for (const wl of ['!.gitattributes', '!.editorconfig']) {
+    const wlRe = new RegExp(`^!${wl.slice(1).replace(/\./g, '\\.')}\\s*$`, 'm');
+    if (!wlRe.test(giNow)) {
+      act(`.gitignore += ${wl}`, () =>
+        fs.appendFileSync(dstIgnore, `${wl}\n`));
+    }
+  }
 }
 
 // 4.5 ming-boundary 采纳面（--with-boundary）

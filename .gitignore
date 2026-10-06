@@ -4,6 +4,7 @@
 **/.*
 !.gitignore
 !.gitattributes
+!.editorconfig
 !.gitmessage
 !.gitmodules
 !.hooksrc
