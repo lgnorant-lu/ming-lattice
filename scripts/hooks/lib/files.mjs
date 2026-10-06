@@ -11,10 +11,17 @@ import path from 'node:path';
 const GIT_TIMEOUT_MS = 60_000;
 
 export function makeGit(root) {
-  return (args, opts = {}) => execFileSync('git', args, {
-    cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
-    timeout: GIT_TIMEOUT_MS, ...opts,
-  });
+  return (args, opts = {}) => {
+    // GIT_TERMINAL_PROMPT=0：万一子命令触网（submodule/LSL 指针解析）要凭证时
+    // 立即失败而非挂死 hook——与 scripts/fetch.mjs 同防护；调用方 env 仍可逐键覆盖
+    const { env: optEnv, ...rest } = opts;
+    return execFileSync('git', args, {
+      cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+      timeout: GIT_TIMEOUT_MS,
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0', ...optEnv },
+      ...rest,
+    });
+  };
 }
 
 export function repoRoot(cwd = process.cwd()) {

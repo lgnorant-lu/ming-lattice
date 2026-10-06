@@ -25,6 +25,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# 远端要凭证时 git 立即失败而非在 stdin 提示上永久挂起（与 fetch.mjs 同防护）
+$env:GIT_TERMINAL_PROMPT = '0'
 . (Join-Path $PSScriptRoot 'lib/registry.ps1')
 
 $reg = Read-SkillRegistry -RegistryPath $RegistryPath

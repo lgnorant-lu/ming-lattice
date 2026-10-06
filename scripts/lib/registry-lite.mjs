@@ -7,6 +7,12 @@
 //   fields = 4 缩进 `key: scalar`（含 `key: {}` 空图记为 '{}'）；maps = `key:` 起 6 缩进子键
 //   值均为未转型原始串（'true' 是字符串）——布尔/词表判断归消费方 fail-closed。
 
+import { execFileSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const REPO_ROOT_OF_LIB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+
 const ENTRY = /^ {2}- name:\s*(.+?)\s*$/;
 const LIST_ITEM = /^ {2}- (?!\s)\s*(.+?)\s*$/;     // `- item` 非条目行（domains: 等）
 const KV4 = /^ {4}([a-zA-Z][a-zA-Z0-9_]*):\s*(.*?)\s*$/;
@@ -103,3 +109,21 @@ export function parseRegistryLite(text) {
 
 /** 段内条目: parseRegistryLite(text).entries 的 section 过滤糖 */
 export const sectionEntries = (reg, sec) => reg.entries.filter(e => e.section === sec);
+
+/**
+ * 正典桥: 经 scripts/read-registry.ps1 走 pwsh 全校验 parser 取 registry 全量。
+ * 供需要"校验型解析"的件（sbom/sca/build-manifest）统一调用——错误面收敛：
+ * ENOENT → pwsh 不在 PATH 的可读诊断；timeout 统一 120s（冷启动+AV 扫描实测 flake 上界）。
+ */
+export function loadRegistryCanonical(registryPath, { timeout = 120_000 } = {}) {
+  const bridge = path.join(REPO_ROOT_OF_LIB, 'scripts', 'read-registry.ps1');
+  try {
+    return JSON.parse(execFileSync('pwsh', ['-NoProfile', '-File', bridge, '-RegistryPath', registryPath],
+      { encoding: 'utf8', timeout, maxBuffer: 4 * 1024 * 1024 }).replace(/^\uFEFF/, ''));
+  } catch (e) {
+    if (e.code === 'ENOENT') {
+      throw new Error(`pwsh 不在 PATH——registry 正典桥不可用（POSIX 侧装 powershell 7+，或用 parseRegistryLite 轻解析）: ${registryPath}`);
+    }
+    throw e;
+  }
+}

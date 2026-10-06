@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { generateSupplyChainSbom, generateSupplyChainSbomAsync, isCycloneDxFresh } from './generate-supply-chain-sbom.mjs';
+import { loadRegistryCanonical } from './lib/registry-lite.mjs';
 import { generateSupplyChainSca, generateSupplyChainScaAsync, isScaReportFresh } from './generate-supply-chain-sca.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
@@ -442,12 +442,7 @@ export async function checkSupplyChainAsync({
 }
 
 function loadRegistry(registryPath) {
-  return JSON.parse(execFileSync('pwsh', ['-NoProfile', '-File', path.join(ROOT_DIR, 'scripts/read-registry.ps1'), '-RegistryPath', registryPath], {
-    cwd: ROOT_DIR,
-    encoding: 'utf8',
-    timeout: 30000,
-    maxBuffer: 4 * 1024 * 1024
-  }));
+  return loadRegistryCanonical(registryPath);
 }
 
 function printText(report) {

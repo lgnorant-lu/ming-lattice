@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawn } from 'node:child_process';
+import { loadRegistryCanonical } from './lib/registry-lite.mjs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
@@ -267,13 +268,7 @@ export function findRegistryPackageLockfiles(registry, repoRoot = ROOT_DIR) {
 }
 
 export function loadRegistry(repoRoot) {
-  return JSON.parse(execFileSync('pwsh', [
-    '-NoProfile',
-    '-File',
-    path.join(repoRoot, 'scripts/read-registry.ps1'),
-    '-RegistryPath',
-    path.join(repoRoot, 'registry.yaml')
-  ], { cwd: repoRoot, encoding: 'utf8', timeout: 30000, maxBuffer: 4 * 1024 * 1024 }));
+  return loadRegistryCanonical(path.join(repoRoot, 'registry.yaml'));
 }
 
 function readNpmSbom(lockfile) {

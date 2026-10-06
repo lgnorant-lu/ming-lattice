@@ -4,8 +4,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { loadRegistryCanonical } from './lib/registry-lite.mjs';
 import { createOperationalEvent, emitEvent } from '../private/ming-skills-router/scripts/observability.mjs';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '..');
@@ -339,10 +339,8 @@ export function validateRouterDefs(defs = DOMAIN_DEFS, recipes = RECIPES) {
 
 export function buildRouterManifest({ repoRoot = ROOT_DIR, registry, write = false, generatedAt = new Date().toISOString() } = {}) {
   validateRouterDefs();
-  registry ??= JSON.parse(execFileSync('pwsh', ['-NoProfile', '-File',
-    path.join(ROOT_DIR, 'scripts/read-registry.ps1'), '-RegistryPath', path.join(repoRoot, 'registry.yaml')],
-  // 30s→120s：pwsh 冷启动+大 registry YAML 解析在负载/AV 扫描下实测 ETIMEDOUT flake
-  { encoding: 'utf8', timeout: 120_000, maxBuffer: 4 * 1024 * 1024 }).replace(/^\uFEFF/, ''));
+  // 正典桥收敛至 lib/registry-lite.mjs::loadRegistryCanonical（timeout 120s 统一 + ENOENT 可读诊断）
+  registry ??= loadRegistryCanonical(path.join(repoRoot, 'registry.yaml'));
   const units = new Map();
   for (const base of registry.base || []) {
     for (const [name, clients] of Object.entries(base.modules || {})) {
