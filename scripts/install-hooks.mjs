@@ -73,9 +73,13 @@ if (opts.check) {
         ? `[别名迁移] ${k} ——采纳侧已用现代形 ${modern}（等价，非缺席）`
         : `[upstream 新键] ${k} ——tmpl 有 .hooksrc 无（kit 升级面，可评估并入）`);
     }
-    // gate.<id>.* 通用名空间匹配——tmpl 注释档写占位键（gate.<id>.globs），实键 gate.emoji.globs 算文档化
-    const docHas = k => tmplDocKeys.has(k) ||
-      (k.startsWith('gate.') && tmplDocKeys.has(`gate.<id>.${k.split('.').slice(2).join('.')}`));
+    // <id> 占位通用名空间匹配——tmpl 注释档写占位键（gate.<id>.globs /
+    // chore.<id>.watch），实键 gate.emoji.globs / chore.registry.watch 均算文档化
+    const docHas = k => {
+      if (tmplDocKeys.has(k)) return true;
+      const p = k.split('.');
+      return p.length >= 3 && tmplDocKeys.has(`${p[0]}.<id>.${p.slice(2).join('.')}`);
+    };
     for (const k of [...rcKeys].filter(k => !tmplKeys.has(k)))
       report.push(docHas(k)
         ? `[opt-in 启用] ${k} ——tmpl 注释档文档化键，采纳侧激活（非漂移）`
@@ -107,6 +111,8 @@ if (opts.check) {
         ? `[adoption 落后] 采纳于 ${adRev.slice(0, 8)}——kit 路径已有 ${kitDelta} 个提交（可升级）`
         : `[adoption 无新] 采纳于 ${adRev.slice(0, 8)}——源仓 HEAD 已前进但 kit 路径零提交（无需升级）`);
     }
+    else if (path.resolve(dest) === path.resolve(REPO_ROOT))
+      report.push('[source 仓] 本仓即 kit 源——无 adoption 概念（零漂移面）');
     else if (!adRev) report.push('[adoption 未记] hook-engine-state.json 无 adoption 存值');
   } catch { report.push('[adoption 未知] 状态读取失败'); }
   console.log(`[check] ${dest}: ${report.length ? '' : '无漂移'}`);
