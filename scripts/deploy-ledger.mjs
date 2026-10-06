@@ -17,6 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { parseRegistryLite } from './lib/registry-lite.mjs';
 
 const ROOT = process.env.LEDGER_ROOT
   ? path.resolve(process.env.LEDGER_ROOT)
@@ -35,35 +36,13 @@ for (const a of args) {
 const writeMode = flags.has('--write');
 const jsonOut = flags.has('--json');
 
-// ── registry 行级解析：targets + 全段条目 deploy map ──
-const strip = (v) => v.trim().replace(/^"(.*)"$/, '$1').replace(/\s+#.*$/, '').trim();
+// ── registry 行级解析 → 共享件 scripts/lib/registry-lite.mjs（targets + 条目 deploy map） ──
 function parseRegistryFull(text) {
-  const targets = {};
-  const units = [];                        // {name, section, deploy:{client:true}}
-  let section = null, cur = null, inDeploy = false;
-  for (const raw of text.split(/\r?\n/)) {
-    if (!raw.trim() || raw.trimStart().startsWith('#')) continue;
-    const sec = raw.match(/^([a-z_]+):\s*$/);
-    if (sec) { section = sec[1]; cur = null; inDeploy = false; continue; }
-    if (section === 'targets') {
-      const kv = raw.match(/^ {2}([a-zA-Z0-9_-]+):\s*(.+)$/);
-      if (kv) targets[kv[1]] = strip(kv[2]);
-      continue;
-    }
-    if (!['vertical', 'base', 'deployable', 'private'].includes(section)) continue;
-    const entry = raw.match(/^ {2}- name:\s*(.+?)\s*$/);
-    if (entry) { cur = { name: entry[1], section, deploy: {} }; units.push(cur); inDeploy = false; continue; }
-    if (!cur) continue;
-    const depStart = raw.match(/^ {4}deploy:\s*(.*)$/);
-    if (depStart) { inDeploy = true; if (depStart[1].trim() === '{}') inDeploy = false; continue; }
-    if (inDeploy) {
-      const sub = raw.match(/^ {6}([a-zA-Z0-9_-]+):\s*(.+)$/);
-      if (sub) { cur.deploy[sub[1]] = strip(sub[2]); continue; }
-      const kv = raw.match(/^ {4}([a-zA-Z]+):/);
-      if (kv) inDeploy = false;             // 缩进退回 4 格 = deploy 块结束
-    }
-  }
-  return { targets, units };
+  const reg = parseRegistryLite(text);
+  const units = reg.entries
+    .filter(e => ['vertical', 'base', 'deployable', 'private'].includes(e.section))
+    .map(e => ({ name: e.name, section: e.section, deploy: e.maps.deploy ?? {} }));
+  return { targets: Object.fromEntries(reg.targets), units };
 }
 
 const expandEnv = (p) => p

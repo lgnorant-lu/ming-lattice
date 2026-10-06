@@ -22,6 +22,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseRegistryLite, sectionEntries } from './lib/registry-lite.mjs';
 
 // FETCH_ROOT 覆盖仅服务于测试隔离（fixtures 仓根）；常规使用恒为本仓根
 const REPO_ROOT = process.env.FETCH_ROOT
@@ -46,22 +47,9 @@ for (let i = 0; i < args.length; i++) {
 }
 const only = values.has('--only') ? new Set(values.get('--only').split(',').map(s => s.trim()).filter(Boolean)) : null;
 
-// ── registry.yaml 行级解析（yaml-lite 子集，与 check-skill-index 同源约定） ──
-function parseRegistry(text) {
-  const out = [];
-  let section = null, cur = null;
-  for (const raw of text.split(/\r?\n/)) {
-    const sec = raw.match(/^([a-z_]+):\s*$/);
-    if (sec) { section = sec[1]; cur = null; continue; }
-    if (section !== 'vertical') continue;
-    const entry = raw.match(/^ {2}- name:\s*(.+?)\s*$/);
-    if (entry) { cur = { name: entry[1] }; out.push(cur); continue; }
-    if (!cur) continue;
-    const kv = raw.match(/^ {4}([a-zA-Z]+):\s*(.*?)\s*$/);
-    if (kv) cur[kv[1]] = kv[2];
-  }
-  return out;
-}
+// ── registry.yaml 行级解析 → 共享件 scripts/lib/registry-lite.mjs（字段平铺消费） ──
+const parseRegistry = (text) =>
+  sectionEntries(parseRegistryLite(text), 'vertical').map(e => ({ name: e.name, ...e.fields }));
 
 const git = (cwd, gargs, opts = {}) => execFileSync('git', gargs, {
   cwd, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'],

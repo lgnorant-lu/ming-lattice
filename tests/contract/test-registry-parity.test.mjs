@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { parseRegistryLite } from '../../scripts/lib/registry-lite.mjs';
 
 const REPO = path.resolve(import.meta.dirname, '../..');
 const REGISTRY = path.join(REPO, 'registry.yaml');
@@ -151,6 +152,24 @@ export function run() {
     assert.deepEqual(onlyLite, [], `${sec} 区：lite 视图有而正典无——lite 解析误读`);
   }
   console.log(`  parity 一致：${SECTIONS.map(s => `${s}=${canon[s].size}`).join(' ')}`);
+
+  // 三视对账：lib/registry-lite.mjs（负载 upsert 改写的共享解析层）↔ 正典
+  // lite 是生产依赖——它不是独立互证件，须被正典钳制：字段面差异即生产事故前兆
+  {
+    const reg = parseRegistryLite(fs.readFileSync(REGISTRY, 'utf8'));
+    const libView = {};
+    for (const sec of SECTIONS) {
+      libView[sec] = new Set(reg.entries.filter(e => e.section === sec)
+        .map(e => [e.name, e.fields.path ?? null, e.fields.domain ?? null,
+          e.fields.family ?? null, e.fields.source ?? null].join('|')));
+    }
+    for (const sec of SECTIONS) {
+      const diff = [...libView[sec]].filter(x => !canon[sec].has(x))
+        .concat([...canon[sec]].filter(x => !libView[sec].has(x)));
+      assert.deepEqual(diff, [], `${sec} 区：lib-lite ↔ 正典字段面漂移:\n${diff.join('\n')}`);
+    }
+    console.log('  lib-lite ↔ 正典三视对账通过（条目集+四字段全等）');
+  }
 
   // deployable family/source 声明 vs fs 实态（mirror=有链接且链回 source/authored=零链接）
   const { bad: famBad, warn: famWarn } = familyCheck();

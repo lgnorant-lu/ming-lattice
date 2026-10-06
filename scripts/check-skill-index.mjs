@@ -14,6 +14,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseRegistryLite, sectionEntries } from './lib/registry-lite.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REGISTRY_PATH = path.join(REPO_ROOT, 'registry.yaml');
@@ -36,27 +37,14 @@ for (const a of args) {
 const norm = s => s.toLowerCase().replace(/_/g, '-').replace(/\s+/g, ' ');
 const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// ── registry.yaml 解析（行级层扫描，yaml-lite 子集） ──
+// ── registry.yaml 解析 → 共享件 scripts/lib/registry-lite.mjs ──
 function parseRegistry(text) {
-  const out = { baseModules: [], vertical: [], private: [], deployable: [], candidates: [] };
-  const paths = new Map(); // name -> path（导引对账用）
-  let section = null, inModules = false, lastName = null;
-  for (const raw of text.split(/\r?\n/)) {
-    const sec = raw.match(/^([a-z_]+):\s*$/);
-    if (sec) { section = sec[1]; inModules = false; lastName = null; continue; }
-    if (!section) continue;
-    if (section === 'base' && /^ {4}modules:\s*$/.test(raw)) { inModules = true; continue; }
-    const entry = raw.match(/^ {2}- name:\s*(.+?)\s*$/);
-    if (entry) { inModules = false; lastName = entry[1]; if (section in out && Array.isArray(out[section])) out[section].push(entry[1]); continue; }
-    const p = raw.match(/^ {4}path:\s*(.+?)\s*$/);
-    if (p && lastName) { paths.set(lastName, p[1]); continue; }
-    if (inModules) {
-      const mod = raw.match(/^ {6}([a-zA-Z0-9_-]+):\s*\[/);
-      if (mod) out.baseModules.push(mod[1]);
-      else if (raw.trim() && !raw.startsWith('      ')) inModules = false;
-    }
-  }
-  return { ...out, paths };
+  const reg = parseRegistryLite(text);
+  const names = s => sectionEntries(reg, s).map(e => e.name);
+  const paths = new Map(reg.entries.filter(e => e.fields.path).map(e => [e.name, e.fields.path]));
+  const baseModules = sectionEntries(reg, 'base').flatMap(e => Object.keys(e.maps.modules ?? {}));
+  return { baseModules, vertical: names('vertical'), private: names('private'),
+    deployable: names('deployable'), candidates: names('candidates'), paths };
 }
 
 // ── SKILL-INDEX.md 解析：表行 + 标题计数声明 ──

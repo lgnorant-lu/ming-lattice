@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // registry-upsert.mjs — registry.yaml 条目安全编辑（替代 python 手编——防"整行变注释"类事故）
 // 用法:
-//   add:    node scripts/registry-upsert.mjs add --section vertical --name <n> [--repo <url>]
+//   add:    node scripts/registry-upsert.mjs add --section vertical|deployable|private --name <n> [--repo <url>]
 //           [--pin <40hex>] [--path <p>] [--weight core|heavy] [--domain <d>] [--note "s"]
 //           [--deploy c1,c2] [--metaSystem] [--sourceGone]
 //   set:    node scripts/registry-upsert.mjs set --name <n> [--pin <h>] [--enabled true|false]
@@ -12,6 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseRegistryLite } from './lib/registry-lite.mjs';
 
 const REPO_ROOT = process.env.REG_UPSERT_ROOT
   ? path.resolve(process.env.REG_UPSERT_ROOT)
@@ -35,46 +36,21 @@ for (let i = 1; i < args.length; i++) {
 }
 const dry = !!opts['--dry-run'];
 
-const lines = fs.readFileSync(REG, 'utf8').split('\n');
-const topKey = l => /^[a-zA-Z]/.test(l);
-// 段范围: [start, end) —— topKey 行起到下一个 topKey 行
-const sectionRange = (sec) => {
-  const s = lines.findIndex(l => l === `${sec}:`);
-  if (s < 0) return null;
-  let e = lines.length;
-  for (let i = s + 1; i < lines.length; i++) if (topKey(lines[i])) { e = i; break; }
-  return [s, e];
-};
+const regText = fs.readFileSync(REG, 'utf8');
+const regEol = regText.includes('\r\n') ? '\r\n' : '\n';     // 行尾保真——lite 已剥 \r\n，回写按原位
+const reg0 = parseRegistryLite(regText);
+const lines = reg0.lines;                                    // 改写面直接操行数组
+// 段范围/条目定位/词表 → 共享 lite 解析层
+const sectionRange = (sec) => reg0.sections.get(sec) ?? null;
 const entryAt = (name) => {
-  for (const [s, e] of [sectionRange('vertical'), sectionRange('deployable'), sectionRange('private'), sectionRange('candidates')].filter(Boolean)) {
-    for (let i = s + 1; i < e; i++) {
-      const m = lines[i].match(/^ {2}- name:\s*(.+?)\s*$/);
-      if (!m) continue;
-      if (m[1] === name) {
-        let b = i + 1;
-        for (; b < e; b++) if (/^ {2}- name:/.test(lines[b]) || topKey(lines[b])) break;
-        return { start: i, end: b, section: lines[s].slice(0, -1) };
-      }
-    }
-  }
-  return null;
+  const e = reg0.entries.find(x => x.name === name);
+  return e ? { start: e.lineStart, end: e.lineEnd, section: e.section } : null;
 };
-const allNames = () => {
-  const out = [];
-  for (const l of lines) { const m = l.match(/^ {2}- name:\s*(.+?)\s*$/); if (m) out.push(m[1]); }
-  return out;
-};
-const targetsKeys = () => {
-  const r = sectionRange('targets'); if (!r) return new Set();
-  const out = new Set();
-  for (let i = r[0] + 1; i < r[1]; i++) { const m = lines[i].match(/^ {2}(\w+):/); if (m) out.add(m[1]); }
-  return out;
-};
+const allNames = () => reg0.entries.map(e => e.name);
+const targetsKeys = () => new Set(reg0.targets.keys());
 const domainVocab = () => {
-  const r = sectionRange('domains'); if (!r) return null;
-  const out = new Set();
-  for (let i = r[0] + 1; i < r[1]; i++) { const m = lines[i].match(/^ {2}- (\S+)/); if (m) out.add(m[1]); }
-  return out.size ? out : null;
+  const l = reg0.lists.get('domains');
+  return l?.length ? new Set(l) : null;
 };
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -87,7 +63,9 @@ const assertCommon = () => {
 if (verb === 'add') {
   assertCommon();
   const sec = opts['--section'];
-  if (!['vertical', 'deployable', 'private', 'candidates'].includes(sec)) die('--section 须 vertical|deployable|private|candidates');
+  // candidates 候审区条目有专属 schema（rationale/evidence/graduation/openedAt）——
+  // 通用模板会产畸形件，暂不放行；候审登记用 fixture 级手工或未来专用动词
+  if (!['vertical', 'deployable', 'private'].includes(sec)) die('--section 须 vertical|deployable|private（candidates 候审区 schema 不同，暂不放行）');
   if (allNames().includes(opts['--name'])) die(`重名: ${opts['--name']}（registry 全段唯一）`);
   if (opts['--pin'] && !HEX40.test(opts['--pin'])) die(`pin 非 40-hex: ${opts['--pin']}`);
   if (sec === 'vertical' && opts['--repo'] && !opts['--pin'] && !opts['--sourceGone']) die('vertical 远端条目须 --pin 40hex（或 --sourceGone 孤本）');
@@ -119,7 +97,7 @@ if (verb === 'add') {
   let ins = e;
   if (dry) { console.log(`[dry-run] 将于 registry.yaml:${ins + 1}(${sec}: 段尾) 插入:\n${ent.join('\n')}`); process.exit(0); }
   lines.splice(ins, 0, ...ent);
-  fs.writeFileSync(REG, lines.join('\n'));
+  fs.writeFileSync(REG, lines.join(regEol));
   console.log(`[upsert] ${sec}/${opts['--name']} 已登记（: ${ins + 1} 行位）`);
 
 } else if (verb === 'set') {
@@ -143,7 +121,7 @@ if (verb === 'add') {
   for (const p of [...plan].sort((a, b) => b.idx - a.idx)) {
     if (p.mode === 'replace') lines[p.idx] = p.line; else lines.splice(p.idx, 0, p.line);
   }
-  fs.writeFileSync(REG, lines.join('\n'));
+  fs.writeFileSync(REG, lines.join(regEol));
   console.log(`[upsert] ${opts['--name']} 字段已写: ${sets.map(([k]) => k).join(', ')}`);
 
 } else { // remove
@@ -152,6 +130,6 @@ if (verb === 'add') {
   if (!blk) die(`无此条目: ${opts['--name']}`);
   if (dry) { console.log(`[dry-run] 将删除 ${blk.section}/${opts['--name']} 行块 ${blk.start + 1}-${blk.end}`); process.exit(0); }
   lines.splice(blk.start, blk.end - blk.start);
-  fs.writeFileSync(REG, lines.join('\n'));
+  fs.writeFileSync(REG, lines.join(regEol));
   console.log(`[upsert] ${blk.section}/${opts['--name']} 已移除（git 可回溯）`);
 }

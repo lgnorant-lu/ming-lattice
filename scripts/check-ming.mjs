@@ -13,6 +13,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseRegistryLite, sectionEntries } from './lib/registry-lite.mjs';
 
 const ROOT = process.env.MING_CHECK_ROOT
   ? path.resolve(process.env.MING_CHECK_ROOT)
@@ -72,22 +73,9 @@ export function parseManifest(text) {
   return out;
 }
 
-// registry.yaml private 区行级解析（与 fetch.mjs 同源约定）
-function parsePrivate(text) {
-  const out = [];
-  let section = null, cur = null;
-  for (const raw of text.split(/\r?\n/)) {
-    const sec = raw.match(/^([a-z_]+):\s*$/);
-    if (sec) { section = sec[1]; cur = null; continue; }
-    if (section !== 'private') continue;
-    const entry = raw.match(/^ {2}- name:\s*(.+?)\s*$/);
-    if (entry) { cur = { name: entry[1] }; out.push(cur); continue; }
-    if (!cur) continue;
-    const kv = raw.match(/^ {4}([a-zA-Z]+):\s*(.*?)\s*$/);
-    if (kv) cur[kv[1]] = kv[2];
-  }
-  return out;
-}
+// registry.yaml private 区解析 → 共享件 scripts/lib/registry-lite.mjs（字段平铺消费）
+const parsePrivate = (text) =>
+  sectionEntries(parseRegistryLite(text), 'private').map(e => ({ name: e.name, ...e.fields }));
 
 // glob 展开：契约仅支持单层 * 段（private/ming-*）；递归/**/含 .. 一律拒（fail-closed）
 function expandGlob(root, pattern) {
