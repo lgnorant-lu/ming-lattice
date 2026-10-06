@@ -181,9 +181,11 @@ export function run() {
     const targetDir = path.join(root, 'fake-target');
     fs.mkdirSync(path.join(targetDir, 'unit-a'), { recursive: true });
     fs.mkdirSync(path.join(targetDir, 'unit-b'), { recursive: true });
+    fs.mkdirSync(path.join(targetDir, 'base-mod-x'), { recursive: true });   // base modules 映射声明件
     fs.mkdirSync(path.join(root, '.ming', 'lattice'), { recursive: true });
     fs.writeFileSync(path.join(root, 'registry.yaml'),
       `targets:\n  claude: "${targetDir.replace(/\\/g, '/')}"\n` +
+      `base:\n  - name: base-repo\n    modules:\n      base-mod-x: [claude]\n      base-mod-y: [claude]\n` +
       `private:\n  - name: unit-a\n    deploy:\n      claude: true\n  - name: unit-b\n    deploy:\n      claude: true\n  - name: unit-c\n    deploy:\n      claude: true\n` +
       `  - name: unit-d\n    deploy:\n      codx: true\n`);   // codx 错拼客户名——应 warn 不静默
 
@@ -193,11 +195,16 @@ export function run() {
     const ledgerPath = path.join(root, '.ming', 'lattice', 'state', 'deploy-ledger.json');
     assert.ok(fs.existsSync(ledgerPath), '账本应落 state/');
     const led = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
-    assert.equal(led.clients.claude.entries.length, 2);
+    assert.equal(led.clients.claude.entries.length, 3);
+    assert.ok(led.clients.claude.expected.includes('base-mod-x'),
+      'base modules 映射应并入 expected');
 
     const clean = sh(LEDGER, ['--check'], { LEDGER_ROOT: root });
     assert.equal(clean.status, 1, 'uncovered unit-c 应使 exit=1');
     assert.match(clean.stdout, /uncovered.*unit-c/);
+    assert.match(clean.stdout, /uncovered.*base-mod-y/, 'modules 声明未装应抓 uncovered');
+    assert.ok(!clean.stdout.includes('foreign.*base-mod-x'),
+      'modules 声明已装件不应误报 foreign');
 
     // 漂移：删 unit-b → missing；加外来件 → foreign
     fs.rmSync(path.join(targetDir, 'unit-b'), { recursive: true });

@@ -8,7 +8,8 @@
 //
 // 语义约定：
 //   目标目录条目名 = 单元名（sync 部署约定）；条目形态 = junction|symlink|dir|file。
-//   expected 集 = registry 全段(deployable/private) deploy.<client>: true 的单元。
+//   expected 集 = registry 全段 deploy.<client>: true 的单元
+//               + base 条目 modules.<名>: [<client>] 映射声明的模块。
 //   targets 路径支持 %VAR% / $VAR / ${VAR} 环境占位（与 sync.ps1 同源）。
 //
 // 退出码: 0=无漂移且覆盖全 / 1=有漂移或覆盖缺 / 2=参数或源缺失（fail-closed）
@@ -42,7 +43,15 @@ function parseRegistryFull(text) {
   const units = reg.entries
     .filter(e => ['vertical', 'base', 'deployable', 'private'].includes(e.section))
     .map(e => ({ name: e.name, section: e.section, deploy: e.maps.deploy ?? {} }));
-  return { targets: Object.fromEntries(reg.targets), units };
+  // base 条目的 modules 映射——<模块名>: [<client>, ...]（基座内部件的部署意图声明）
+  const moduleDeploy = {};
+  for (const e of reg.entries) {
+    for (const [mod, clients] of Object.entries(e.maps.modules ?? {})) {
+      for (const c of clients.replace(/[[\]]/g, '').split(',').map(s => s.trim()).filter(Boolean))
+        (moduleDeploy[c] ??= []).push(mod);
+    }
+  }
+  return { targets: Object.fromEntries(reg.targets), units, moduleDeploy };
 }
 
 const expandEnv = (p) => p
@@ -73,7 +82,7 @@ function scanTarget(dir) {
 export function buildLedger(root = ROOT) {
   const regText = fs.existsSync(REGISTRY) ? fs.readFileSync(REGISTRY, 'utf8') : null;
   if (!regText) return { error: 'registry.yaml 缺席' };
-  const { targets, units } = parseRegistryFull(regText);
+  const { targets, units, moduleDeploy } = parseRegistryFull(regText);
   let head = null;
   try { head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', timeout: 60_000, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } }).trim(); } catch {}
   const clients = {};
@@ -81,7 +90,10 @@ export function buildLedger(root = ROOT) {
     const dir = expandEnv(rawPath);
     clients[client] = {
       path: dir,
-      expected: units.filter(u => u.deploy[client] === 'true').map(u => u.name).sort(),
+      expected: [...new Set([
+        ...units.filter(u => u.deploy[client] === 'true').map(u => u.name),
+        ...(moduleDeploy[client] || []),
+      ])].sort(),
       entries: dir && fs.existsSync(dir) ? scanTarget(dir) : null,
     };
   }
@@ -90,6 +102,7 @@ export function buildLedger(root = ROOT) {
   const known = new Set(Object.keys(targets));
   const warnings = units
     .flatMap(u => Object.keys(u.deploy).filter(c => !known.has(c)).map(c => `${u.name}/${c}`))
+    .concat(Object.keys(moduleDeploy).filter(c => !known.has(c)).map(c => `modules→${c}`))
     .map(s => `deploy 客户名不在 targets: ${s}（该单元不会被任何客户端对账）`);
   return { schemaVersion: 1, generatedAt: new Date().toISOString(), repoHead: head, clients, warnings };
 }
