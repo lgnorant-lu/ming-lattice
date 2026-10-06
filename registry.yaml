@@ -62,6 +62,7 @@ domains:
   - mp          # 小程序
   - android     # Android 工具链（非 APK 逆向；与 apk 近义——归并候审）
   - routing     # 路由基础设施
+  - engineering # 工程范式族（meta-rules/paradigm 件——private/engineering/ 命名词表）
 
 base:
   - name: reverse-skill

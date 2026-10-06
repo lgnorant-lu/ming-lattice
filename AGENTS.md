@@ -35,6 +35,7 @@ docs/                    STANDARDS(工程总纲)/GOVERNANCE-SPINE(工件本体�
 - **质量检查**: `pwsh scripts/lint.ps1`（部署模块必须有 SKILL.md, 硬编码路径检查）
 - **物化参考层**: `node scripts/fetch.mjs`（`--dry-run` 预览 / `--only <名>` 单项 / `--reconcile` 对齐漂移 / `--include-heavy` 纳入 weight:heavy 重仓；默认面=core，含 base submodule 引导）
 - **registry 条目编辑**: `node scripts/registry-upsert.mjs add|set|remove --name <n>`（add 须 `--section`+`--pin` 40hex；`--dry-run` 预览零落盘；行级精准改写不动注释——替代 python 手编，防"整行变注释"事故类）
+- **候审区登记**: `node scripts/registry-upsert.mjs candidate --name <n> --domain <d> --rationale "s" --evidence "s" --graduation "s"`（专属动词——rationale/evidence/graduation/openedAt 四字段必填 fail-closed；add 动词不放行 candidates 段）
 - **新增采集**: registry 登记条目(repo+pin 全 40 位 SHA) → `node scripts/fetch.mjs --only <名>` 物化验证 → 提交 registry 行（**vertical/ 永不入库**——vendor-boundary 门会拦）
 
 ## 铁律（历史踩坑, 详见 docs/PLAYBOOK.md）

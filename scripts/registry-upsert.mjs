@@ -7,8 +7,11 @@
 //   set:    node scripts/registry-upsert.mjs set --name <n> [--pin <h>] [--enabled true|false]
 //           [--weight core|heavy] [--acquiredAt <date>]
 //   remove: node scripts/registry-upsert.mjs remove --name <n>
+//   candidate: node scripts/registry-upsert.mjs candidate --name <n> --domain <d> --rationale "s"
+//              --evidence "s" [--evidence "s2"] --graduation "s" [--openedAt YYYY-MM-DD] [--path <p>]
 // 契约: --dry-run 预览零落盘；名唯一(全段)/pin 40hex/weight 词表/domain 入登记/deploy 客户名⊆targets
 //       全 fail-closed；行级精准改写，不动注释与其他条目。
+//       candidates 候审区走专属 candidate 动词——rationale/evidence/graduation/openedAt 四字段必填。
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,15 +25,15 @@ const REG = path.join(REPO_ROOT, 'registry.yaml');
 const die = m => { console.error(`[E] ${m}`); process.exit(2); };
 const args = process.argv.slice(2);
 const verb = args[0];
-if (!['add', 'set', 'remove'].includes(verb)) die('用法: add|set|remove（--help 见头注）');
+if (!['add', 'set', 'remove', 'candidate'].includes(verb)) die('用法: add|set|remove|candidate（--help 见头注）');
 const opts = { _: [] };
-const VALUE = new Set(['--section', '--name', '--repo', '--pin', '--path', '--weight', '--domain', '--note', '--deploy', '--enabled', '--acquiredAt']);
+const VALUE = new Set(['--section', '--name', '--repo', '--pin', '--path', '--weight', '--domain', '--note', '--deploy', '--enabled', '--acquiredAt', '--rationale', '--graduation', '--evidence', '--openedAt']);
 for (let i = 1; i < args.length; i++) {
   const a = args[i];
   if (VALUE.has(a)) {
     const v = args[i + 1];
     if (v === undefined || v.startsWith('--')) die(`旗标 ${a} 缺值`);
-    opts[a] = v; i++;
+    if (a === '--evidence') (opts[a] ??= []).push(v); else opts[a] = v; i++;
   } else if (['--dry-run', '--metaSystem', '--sourceGone'].includes(a)) opts[a] = true;
   else die(a.startsWith('--') ? `未知旗标: ${a}` : `不接受位置参数: ${a}`);
 }
@@ -99,6 +102,37 @@ if (verb === 'add') {
   lines.splice(ins, 0, ...ent);
   fs.writeFileSync(REG, lines.join(regEol));
   console.log(`[upsert] ${sec}/${opts['--name']} 已登记（: ${ins + 1} 行位）`);
+
+} else if (verb === 'candidate') {
+  // 候审区专属 schema——rationale/evidence/graduation/openedAt 全必填 fail-closed
+  assertCommon();
+  if (allNames().includes(opts['--name'])) die(`重名: ${opts['--name']}（registry 全段唯一）`);
+  for (const f of ['--rationale', '--graduation']) if (!opts[f]) die(`候审条目缺必填 ${f}`);
+  const evidence = opts['--evidence'] ?? [];
+  if (!evidence.length) die('候审条目缺必填 --evidence（至少一条，可重复旗标）');
+  const dv = domainVocab();
+  if (!opts['--domain']) die('候审条目缺必填 --domain');
+  if (dv && !dv.has(opts['--domain'])) die(`domain=${opts['--domain']} 不在 domains: 词表`);
+  const openedAt = opts['--openedAt'] || new Date().toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(openedAt)) die(`openedAt 非 YYYY-MM-DD: ${openedAt}`);
+  const candPath = opts['--path'] || `private/${opts['--domain']}/${opts['--name']}`;
+  if (/^(?:[a-zA-Z]:[\\/]|[\\/])|\.\./.test(candPath)) die(`path 非法（禁绝对路径/盘符/.. 穿越）: ${candPath}`);
+  const q = s => `"${String(s).replace(/"/g, '\\"')}"`;
+  const ent = [
+    `  - name: ${opts['--name']}`,
+    `    domain: ${opts['--domain']}`,
+    `    path: ${candPath}`,
+    `    rationale: ${q(opts['--rationale'])}`,
+    `    evidence:`,
+    ...evidence.map(ev => `      - ${q(ev)}`),
+    `    graduation: ${q(opts['--graduation'])}`,
+    `    openedAt: ${openedAt}`,
+  ];
+  const [s0, e0] = sectionRange('candidates') ?? die('registry 无 candidates: 段');
+  if (dry) { console.log(`[dry-run] 将于 registry.yaml:${e0 + 1}(candidates: 段尾) 插入:\n${ent.join('\n')}`); process.exit(0); }
+  lines.splice(e0, 0, ...ent);
+  fs.writeFileSync(REG, lines.join(regEol));
+  console.log(`[upsert] candidates/${opts['--name']} 候审登记（: ${e0 + 1} 行位，graduation 触发时再晋升）`);
 
 } else if (verb === 'set') {
   assertCommon();

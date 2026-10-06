@@ -284,11 +284,33 @@ export function run() {
       ['add', '--section', 'vertical', '--name', 'no-pin', '--repo', 'r'],
       ['set', '--name', 'probe-x', '--pin', pin],
       ['frobnicate', '--name', 'x'],
+      // candidate 候审动词负例：缺 rationale/evidence/graduation、出词表 domain、坏 openedAt、坏 path
+      ['candidate', '--name', 'c1', '--domain', 'engineering', '--graduation', 'g', '--evidence', 'e'],
+      ['candidate', '--name', 'c2', '--domain', 'engineering', '--rationale', 'r', '--graduation', 'g'],
+      ['candidate', '--name', 'c3', '--domain', 'nosuch', '--rationale', 'r', '--evidence', 'e', '--graduation', 'g'],
+      ['candidate', '--name', 'c4', '--domain', 'engineering', '--rationale', 'r', '--evidence', 'e', '--graduation', 'g', '--openedAt', '10-06'],
+      ['candidate', '--name', 'c5', '--domain', 'engineering', '--rationale', 'r', '--evidence', 'e', '--graduation', 'g', '--path', '../x'],
+      // add 仍拒 candidates（专属动词护schema）
+      ['add', '--section', 'candidates', '--name', 'c6'],
     ];
     for (const a of bad) {
       const rr = sh(UP, a, env);
       assert.equal(rr.status, 2, `${a.join(' ')} 应 exit 2: ${rr.stdout}${rr.stderr}`);
     }
+
+    // candidate 正例：dry-run 零写 → 真写 → schema 回读 → remove
+    r = sh(UP, ['candidate', '--name', 'probe-cand', '--domain', 'engineering', '--rationale', 'rt',
+      '--evidence', 'e1', '--evidence', 'e2', '--graduation', 'gr', '--openedAt', '2026-10-06', '--dry-run'], env);
+    assert.equal(r.status, 0, r.stderr);
+    assert.ok(!/probe-cand/.test(fs.readFileSync(path.join(t, 'registry.yaml'), 'utf8')), 'candidate dry-run 零写');
+    r = sh(UP, ['candidate', '--name', 'probe-cand', '--domain', 'engineering', '--rationale', 'rt',
+      '--evidence', 'e1', '--evidence', 'e2', '--graduation', 'gr', '--openedAt', '2026-10-06'], env);
+    assert.equal(r.status, 0, r.stderr);
+    const cblk = fs.readFileSync(path.join(t, 'registry.yaml'), 'utf8');
+    assert.match(cblk, /- name: probe-cand\n {4}domain: engineering\n {4}path: private\/engineering\/probe-cand\n {4}rationale: "rt"\n {4}evidence:\n {6}- "e1"\n {6}- "e2"\n {4}graduation: "gr"\n {4}openedAt: 2026-10-06/, 'candidate schema 序位不对');
+    r = sh(UP, ['remove', '--name', 'probe-cand'], env);
+    assert.equal(r.status, 0);
+    assert.ok(!/probe-cand/.test(fs.readFileSync(path.join(t, 'registry.yaml'), 'utf8')));
     fs.rmSync(t, { recursive: true, force: true });
   }
 

@@ -99,7 +99,14 @@ if (opts.check) {
     const stateFile = path.join(git(['rev-parse', '--absolute-git-dir']), 'hook-engine-state.json');
     const srcRev = git(['rev-parse', 'HEAD'], REPO_ROOT);
     const adRev = fs.existsSync(stateFile) ? (JSON.parse(fs.readFileSync(stateFile, 'utf8')).adoption?.sourceRev || '') : '';
-    if (adRev && srcRev && adRev !== srcRev) report.push(`[adoption 落后] 采纳于 ${adRev.slice(0, 8)}，源仓 HEAD ${srcRev.slice(0, 8)}（kit 可升级）`);
+    if (adRev && srcRev && adRev !== srcRev) {
+      // 精度化：HEAD 前进 ≠ kit 变化——只数采纳 rev 以来触及 kit 路径的提交
+      const kitPaths = ['scripts/hooks', '.githooks', '.hooksrc.tmpl'];
+      const kitDelta = git(['rev-list', '--count', `${adRev}..${srcRev}`, '--', ...kitPaths], REPO_ROOT);
+      report.push(+kitDelta > 0
+        ? `[adoption 落后] 采纳于 ${adRev.slice(0, 8)}——kit 路径已有 ${kitDelta} 个提交（可升级）`
+        : `[adoption 无新] 采纳于 ${adRev.slice(0, 8)}——源仓 HEAD 已前进但 kit 路径零提交（无需升级）`);
+    }
     else if (!adRev) report.push('[adoption 未记] hook-engine-state.json 无 adoption 存值');
   } catch { report.push('[adoption 未知] 状态读取失败'); }
   console.log(`[check] ${dest}: ${report.length ? '' : '无漂移'}`);
