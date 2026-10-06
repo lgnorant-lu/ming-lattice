@@ -234,6 +234,12 @@ export function run() {
     assert.match(umb, /  - api\n/, '伞面 projects 应并入 api');
     assert.match(umb, /  - blog\n/);
 
+    // Windows 保留设备名拒止（kebab 过但跨平台毒名）+ 非法 kebab
+    for (const bad of ['con', 'aux', 'com1', 'My Proj', 'x_y']) {
+      const rr = sh(SCM, ['--target', t, '--name', bad]);
+      assert.equal(rr.status, 1, `--name ${bad} 应拒: ${rr.stdout}${rr.stderr}`);
+    }
+
     // 回滚：预置登记无目录的 ghost 项目 → 写后自证 E → 全部还原
     const t2 = mkRoot();
     fs.mkdirSync(path.join(t2, '.git'), { recursive: true });

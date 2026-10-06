@@ -72,6 +72,11 @@ const note = opts.note || desc;
 if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(name) || name.length < 3) {
   die(`name 非规范 kebab-case（小写段+单连字符，≥3 字符）: ${name}`);
 }
+// Windows 保留设备名（CON/PRN/AUX/NUL/COM1-9/LPT1-9）：kebab 过但 win32
+// 建不出目录、POSIX 建出后 Windows 端 checkout 即废——跨平台毒名先拦
+if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/.test(name)) {
+  die(`name=${name} 是 Windows 保留设备名（跨平台毒名，拒）`);
+}
 if (!LAYERS.has(under)) {
   die(`--under 不在层白名单（${[...LAYERS].sort().join(' | ')}）；新层别先在 registry 条目或 candidates path 登记该路径（纳层准入），再 scaffold`);
 }

@@ -34,6 +34,8 @@ if (!fs.existsSync(path.join(target, '.git'))) die(`目标不是 git 仓根: ${t
 
 const proj = (opts['--name'] || path.basename(target)).toLowerCase();
 if (!/^[a-z][a-z0-9-]*$/.test(proj)) die(`--name=${proj} 非 kebab 项目名（包名将派生 ming-${proj}）`);
+// Windows 保留设备名：kebab 过但在 win32 建不出目录，POSIX 建了 Windows 拉不动
+if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/.test(proj)) die(`--name=${proj} 是 Windows 保留设备名（跨平台毒名）`);
 
 // ── 模板 ──
 const umbrellaTemplate = () => `# .ming/ming.yaml — ming 命名域伞面 SoT（跨仓约定复用）

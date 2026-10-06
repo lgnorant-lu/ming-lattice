@@ -98,6 +98,13 @@ export function run() {
       assert.equal(r.status, 1, `name ${bad} 应拒`);
       assert.ok(r.stderr.includes('kebab-case'), `${bad} 应报 kebab: ${r.stderr}`);
     }
+    // 缺陷8回归：Windows 保留设备名——kebab 过但跨平台毒名（win32 建不出/
+    // POSIX 建出 Windows 拉不动）
+    for (const dev of ['con', 'aux', 'nul', 'com1', 'lpt9']) {
+      const r = scaffold([dev, '--desc', DESC, '--dry-run']);
+      assert.equal(r.status, 1, `设备名 ${dev} 应拒`);
+      assert.ok(r.stderr.includes('保留设备名'), `${dev} 应报保留名: ${r.stderr}`);
+    }
 
     // ── dry-run 契约：校验通过也不落盘 ──
     {
