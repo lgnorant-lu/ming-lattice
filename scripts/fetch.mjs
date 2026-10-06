@@ -53,6 +53,7 @@ const parseRegistry = (text) =>
 
 const git = (cwd, gargs, opts = {}) => execFileSync('git', gargs, {
   cwd, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'],
+  timeout: opts.timeout ?? 300_000,   // clone/fetch 触网操作 5min 上界；本地调用方可传小值
   maxBuffer: 64 * 1024 * 1024,   // ls-tree -l 大仓(4w+文件)输出数 MB，默认 1MB 会 ENOBUFS
   env: { ...process.env, GIT_LFS_SKIP_SMUDGE: '1', GIT_TERMINAL_PROMPT: '0', ...opts.env },
   // GIT_TERMINAL_PROMPT=0：远端要凭证时 git 立即失败而非在 stdin 提示上永久挂起

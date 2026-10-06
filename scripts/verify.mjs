@@ -15,6 +15,8 @@ export function runStep(cmd, args, options = {}, json = false) {
   const log = json ? console.error : console.log;
   log(`\n>>> [VERIFY] ${display}`);
   const stdio = json ? ['inherit', 'pipe', 'inherit'] : 'inherit';
+  // 豁免注释：门禁步骤刻意无超时——套件/构建耗时长尾合法（全量可超分钟级），
+  // 统一上限会误杀长跑套件；单件超时归各件内部预算管
   const result = spawnSync(cmd, args, { cwd: ROOT, stdio, ...options });
   if (result.status !== 0) {
     console.error(`\n[FAIL] 门禁步骤执行失败 (exit ${result.status}): ${display}`);

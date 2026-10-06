@@ -51,7 +51,7 @@ if (!opts['--skip-domains']) {
 }
 if (!opts['--skip-hooks']) {
   // pwsh 为钦定运行时；缺席自动回退 Node 实现（install-hooks.mjs 语义对齐 -Target）
-  const hasPwsh = !spawnSync('pwsh', ['-NoProfile', '-Command', 'exit 0'], { stdio: 'ignore' }).error;
+  const hasPwsh = !spawnSync('pwsh', ['-NoProfile', '-Command', 'exit 0'], { stdio: 'ignore', timeout: 10_000 }).error;
   const cmd = hasPwsh
     ? ['pwsh', '-NoProfile', '-File', INSTALL_HOOKS, '-Target', target]
     : [process.execPath, path.join(REPO_ROOT, 'scripts/install-hooks.mjs'), '--target', target];
@@ -79,7 +79,8 @@ if (dryRun) {
 
 for (const s of steps) {
   console.log(`\n== ${s.name} ==`);
-  const r = spawnSync(s.cmd[0], s.cmd.slice(1), { stdio: 'inherit' });
+  // 步骤子进程 10min 上界（install/scaffold 秒级正常，触网步骤自身有更细超时）
+  const r = spawnSync(s.cmd[0], s.cmd.slice(1), { stdio: 'inherit', timeout: 600_000 });
   if (r.status !== 0) die(`${s.name} 失败 (exit=${r.status})——已停，已完成的步骤不回滚（幂等可重跑）`);
 }
 
@@ -88,7 +89,8 @@ for (const s of steps) {
 if (!opts['--skip-hooks']) {
   const p = [];
   if (!fs.existsSync(path.join(target, 'scripts/hooks/engine.mjs'))) p.push('scripts/hooks/engine.mjs 缺席');
-  const hp = spawnSync('git', ['-C', target, 'config', 'core.hooksPath'], { encoding: 'utf8' });
+  const hp = spawnSync('git', ['-C', target, 'config', 'core.hooksPath'],
+    { encoding: 'utf8', timeout: 30_000, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
   if ((hp.stdout || '').trim() !== '.githooks') p.push(`core.hooksPath=${(hp.stdout || '').trim() || '(unset)'}（期望 .githooks）`);
   if (!fs.existsSync(path.join(target, '.git/hook-engine-state.json'))) p.push('hook-engine-state.json 缺席（adoption 未记）');
   for (const m of p) console.log(`  [W] ${m}`);

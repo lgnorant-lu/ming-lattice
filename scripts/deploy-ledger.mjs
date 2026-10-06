@@ -75,7 +75,7 @@ export function buildLedger(root = ROOT) {
   if (!regText) return { error: 'registry.yaml 缺席' };
   const { targets, units } = parseRegistryFull(regText);
   let head = null;
-  try { head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(); } catch {}
+  try { head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', timeout: 60_000, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } }).trim(); } catch {}
   const clients = {};
   for (const [client, rawPath] of Object.entries(targets)) {
     const dir = expandEnv(rawPath);

@@ -306,6 +306,8 @@ export function getStagedFiles(cwd = ROOT) {
   const output = execFileSync('git', ['diff', '--cached', '--name-only', `--diff-filter=${STAGED_DIFF_FILTER}`, '-z'], {
     cwd,
     encoding: 'utf8',
+    timeout: 60_000,
+    env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
     stdio: ['pipe', 'pipe', 'pipe']
   });
   return output.split('\0').filter(Boolean);

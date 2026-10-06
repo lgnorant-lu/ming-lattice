@@ -38,7 +38,8 @@ const dry = !!opts['dry-run'];
 if (!fs.existsSync(path.join(dest, '.git'))) die(`目标不是 git 仓根: ${dest}`);
 
 const git = (gargs, cwd) =>
-  execFileSync('git', gargs, { cwd: cwd ?? dest, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  execFileSync('git', gargs, { cwd: cwd ?? dest, encoding: 'utf8', timeout: 60_000,
+    env: { ...process.env, GIT_TERMINAL_PROMPT: '0' }, stdio: ['ignore', 'pipe', 'ignore'] }).trim();
 const cp = (src, dst, note) => {
   if (dry) { info(`[dry-run] ${note}: ${src} -> ${dst}`); return; }
   fs.mkdirSync(path.dirname(dst), { recursive: true });
@@ -219,7 +220,7 @@ act('git config core.hooksPath=.githooks', () => {
   git(['config', 'core.hooksPath', '.githooks']);
   if (fs.existsSync(path.join(dest, '.gitmessage'))) git(['config', 'commit.template', '.gitmessage']);
   const r = spawnSync(process.execPath, [path.join(dstHooks, 'engine.mjs'), 'trust'],
-    { cwd: dest, stdio: 'ignore' });
+    { cwd: dest, stdio: 'ignore', timeout: 60_000 });
   if (r.error) warn(`engine trust 执行失败（不阻断）: ${r.error.message}`);
 });
 

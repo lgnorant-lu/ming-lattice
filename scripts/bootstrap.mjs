@@ -22,7 +22,9 @@ const dryRun = args.includes('--dry-run');
 const skipFetch = args.includes('--skip-fetch');
 const isWin = process.platform === 'win32';
 
-const git = g => execFileSync('git', g, { cwd: REPO_ROOT, encoding: 'utf8' });
+// git 调用有界化：status 本地操作 60s；submodule update 触网 300s + 防凭证提示挂死
+const git = (g, { timeout = 60_000 } = {}) => execFileSync('git', g,
+  { cwd: REPO_ROOT, encoding: 'utf8', timeout, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
 const report = [];
 const step = (name, ok, note = '') => { report.push({ name, ok, note }); console.log(`[bootstrap] ${ok === 'warn' ? '[WARN]' : ok ? '[OK]' : '[SKIP]'} ${name}${note ? ' — ' + note : ''}`); };
 
@@ -35,7 +37,7 @@ const step = (name, ok, note = '') => { report.push({ name, ok, note }); console
     if (!pending) step('submodule', true, '已全部引导');
     else if (dryRun) step('submodule', 'warn', `${pending} 个待 init（dry-run）`);
     else {
-      try { git(['submodule', 'update', '--init']); step('submodule', true, `init ${pending} 个`); }
+      try { git(['submodule', 'update', '--init'], { timeout: 300_000 }); step('submodule', true, `init ${pending} 个`); }
       catch (e) { step('submodule', 'warn', `init 失败: ${e.message.split('\n')[0]}`); }
     }
   }

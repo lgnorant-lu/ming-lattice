@@ -13,8 +13,11 @@ status: descriptive
 ### 1.1 新仓库入库标准流程（物化制——vertical/ 永不入库）
 
 ```bash
-# 1) registry.yaml 登记条目（python 改, 不用 PowerShell 写中文）：
-#      name + repo(HTTPS) + path=vertical/<name> + pin(全40位SHA) + acquiredAt + domain + note
+# 1) registry.yaml 登记条目——走 scripts/registry-upsert.mjs（schema 校验+行级改写，
+#    --dry-run 先预览零落盘）：
+#      node scripts/registry-upsert.mjs add --section vertical --name <name> \
+#        --repo <https> --pin <40hex> --domain <d> --note "..."
+#    （必须手编时用 python——勿用 PowerShell 写中文会丢换行）
 # 2) 物化验证: node scripts/fetch.mjs --only <name>
 # 3) commit——只有 registry.yaml 一行进仓；vertical/ 字节永不入库
 #    （vendor-boundary 门会拦非孤本路径，git add -f 也过不去）
