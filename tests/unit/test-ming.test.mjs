@@ -295,6 +295,11 @@ export function run() {
       ['add', '--section', 'vertical', '--name', 'bad-w', '--repo', 'r', '--pin', pin, '--weight', 'hevy'],
       ['add', '--section', 'vertical', '--name', 'bad-d', '--repo', 'r', '--pin', pin, '--deploy', 'codx'],
       ['add', '--section', 'vertical', '--name', 'no-pin', '--repo', 'r'],
+      // add 补齐三面：path 穿越 / Windows 保留名 / kind 出词表
+      ['add', '--section', 'private', '--name', 'bad-path', '--path', '../x'],
+      ['add', '--section', 'private', '--name', 'bad-path2', '--path', 'C:/temp/x'],
+      ['add', '--section', 'private', '--name', 'con'],
+      ['add', '--section', 'private', '--name', 'bad-kind', '--kind', 'skillz'],
       ['set', '--name', 'probe-x', '--pin', pin],
       ['frobnicate', '--name', 'x'],
       // candidate 候审动词负例：缺 rationale/evidence/graduation、出词表 domain、坏 openedAt、坏 path
@@ -324,6 +329,19 @@ export function run() {
     r = sh(UP, ['remove', '--name', 'probe-cand'], env);
     assert.equal(r.status, 0);
     assert.ok(!/probe-cand/.test(fs.readFileSync(path.join(t, 'registry.yaml'), 'utf8')));
+
+    // --kind 正例：add 直写 + set 回改（kind:tool 登记件的可复现路径）
+    r = sh(UP, ['add', '--section', 'private', '--name', 'probe-tool', '--kind', 'tool',
+      '--enabled', 'false', '--note', 't'], env);
+    assert.equal(r.status, 0, r.stderr);
+    let reg2 = fs.readFileSync(path.join(t, 'registry.yaml'), 'utf8');
+    assert.match(reg2, /- name: probe-tool\n {4}kind: tool\n/, 'kind 应紧随 name');
+    r = sh(UP, ['set', '--name', 'probe-tool', '--kind', 'asset'], env);
+    assert.equal(r.status, 0, r.stderr);
+    reg2 = fs.readFileSync(path.join(t, 'registry.yaml'), 'utf8');
+    assert.match(reg2, /- name: probe-tool\n {4}kind: asset\n/, 'set --kind 应块内改写');
+    r = sh(UP, ['remove', '--name', 'probe-tool'], env);
+    assert.equal(r.status, 0);
     fs.rmSync(t, { recursive: true, force: true });
   }
 

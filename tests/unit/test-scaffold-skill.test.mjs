@@ -2,20 +2,25 @@
 // 单元测试: private/engineering/ming-skill-forge/scripts/scaffold-skill.mjs
 // 覆盖七缺陷回归：选项值误食 name / --under 逃逸与白名单 / 旗标吞值 /
 //   desc YAML 注入写前拦截 / 失败不留残骸 / 跨层与 registry 重名 / kebab 严式+长度
-// 副流程：dry-run 不落盘、真写+自证、candidates 毕业提示、ming- 命名空间警示
+// 副流程：dry-run 不落盘、真写+自证、candidates 毕业提示、ming- 命名空间警示、
+//   --register 沙箱闭环（SCAFFOLD_ROOT 注入 + 委托 upsert 正典插位）
 // 约定：校验类用例一律 --dry-run 或断言非变更；真写用例用 zz-* 名并在 finally 清理。
 
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 const SCRIPT = path.resolve(import.meta.dirname, '../../private/engineering/ming-skill-forge/scripts/scaffold-skill.mjs');
 const REPO_ROOT = path.resolve(import.meta.dirname, '../..');
 const DESC = '这是一个用于脚手架测试的技能描述，触发词 alpha、beta、gamma 场景使用。';
 
-function scaffold(args) {
-  const r = spawnSync('node', [SCRIPT, ...args], { encoding: 'utf8' });
+function scaffold(args, env) {
+  const r = spawnSync('node', [SCRIPT, ...args], {
+    encoding: 'utf8',
+    env: env ? { ...process.env, ...env } : process.env,
+  });
   return { status: r.status, stdout: r.stdout || '', stderr: r.stderr || '' };
 }
 const absent = (rel) => !fs.existsSync(path.join(REPO_ROOT, rel));
@@ -144,6 +149,25 @@ export function run() {
       const r = scaffold(['ming-zz-fx', '--desc', DESC]);
       assert.equal(r.status, 0, `ming- 写应过: ${r.stderr}`);
       assert.ok(r.stdout.includes('metaSystem'), '应警示 metaSystem 声明');
+    }
+
+    // ── --register 沙箱闭环：委托 upsert 正典——条目须落在 candidates 横幅之前的 private 段内 ──
+    {
+      const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'scaffold-reg-'));
+      cleanups.push(sandbox);
+      fs.copyFileSync(path.join(REPO_ROOT, 'registry.yaml'), path.join(sandbox, 'registry.yaml'));
+      const r = scaffold(['zz-reg-fx', '--desc', DESC, '--register'], { SCAFFOLD_ROOT: sandbox });
+      assert.equal(r.status, 0, `register 应过: ${r.stderr}`);
+      assert.ok(fs.existsSync(path.join(sandbox, 'private', 'zz-reg-fx', 'SKILL.md')),
+        '包应落在沙箱 private/');
+      const reg = fs.readFileSync(path.join(sandbox, 'registry.yaml'), 'utf8');
+      const entIdx = reg.indexOf('- name: zz-reg-fx');
+      assert.ok(entIdx > 0, '条目应已登记');
+      const bannerIdx = reg.indexOf('候审区');
+      assert.ok(bannerIdx > 0 && entIdx < bannerIdx,
+        '条目须插在 candidates 横幅之前（private 段内）——复刻插位曾咬过 lite 解析');
+      assert.match(reg, /- name: zz-reg-fx\n {4}path: private\/zz-reg-fx\n {4}enabled: true\n {4}note: "[^"]+"\n {4}deploy:\n {6}claude: true/,
+        '条目 schema 序位应与 upsert 正典一致');
     }
   } finally {
     for (const d of cleanups) fs.rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });

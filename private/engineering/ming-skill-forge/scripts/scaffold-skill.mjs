@@ -1,20 +1,27 @@
 #!/usr/bin/env node
 // scaffold-skill.mjs — 技能包脚手架（ming-skill-forge §1 解剖 + §5 接线）
 // 用法: node scaffold-skill.mjs <name> --desc "..." [--under <layer>] [--paradigm] [--register [--note "..."]] [--dry-run]
-// --register: 建包后自动向 registry.yaml private 区追加条目（ming-* 名自动带 metaSystem: true；
-//             默认 note 取 --desc，--note 可覆写）。无 --register 时仍按 §5 清单手工接线。
+// --register: 建包后经 scripts/registry-upsert.mjs 正典写器登记 private 区
+//             （ming-* 名自动带 metaSystem: true；默认 note 取 --desc，--note 可覆写）。
+//             无 --register 时仍按 §5 清单手工接线。
+// SCAFFOLD_ROOT: 覆盖写入目标仓根（测试沙箱用；默认=本仓根）。工具面（upsert）恒用本仓 scripts/。
 // 层白名单: private | private/engineering ——纳层准入门（新层别先入 registry layers 表/走 ming-l 域准入；
 //         deployable 是包装层、vertical 是 vendored 源，均不接受新包）
 // 契约: fail-closed——name/layer/desc/重名全部写前校验；写后自证失败自动回滚不留残骸；--dry-run 不落盘。
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { checkDir } from './check-skill.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const FORGE_DIR = path.resolve(SCRIPT_DIR, '..');
-const REPO_ROOT = path.resolve(FORGE_DIR, '..', '..', '..');
+const TOOLS_ROOT = path.resolve(FORGE_DIR, '..', '..', '..');            // 本仓工具根（upsert 住所）
+const REPO_ROOT = process.env.SCAFFOLD_ROOT
+  ? path.resolve(process.env.SCAFFOLD_ROOT)                             // 写入目标仓根（沙箱注入面）
+  : TOOLS_ROOT;
+const UPSERT = path.join(TOOLS_ROOT, 'scripts', 'registry-upsert.mjs');
 const TEMPLATE = path.join(FORGE_DIR, 'assets', 'skill.md.tmpl');
 const REGISTRY = path.join(REPO_ROOT, 'registry.yaml');
 
@@ -121,7 +128,7 @@ if (paradigm) {
     '     明确不纳入的反例同样记录。-->\n';
 }
 
-// ---------- registry 条目文本（--register 与接线清单共用单源） ----------
+// ---------- registry 条目文本（dry-run 预览与接线清单展示用；真写走 upsert 正典） ----------
 const regEntry =
   `  - name: ${name}\n` +
   (name.startsWith('ming-') ? `    metaSystem: true\n` : '') +
@@ -154,17 +161,22 @@ if (eCount) {
   die(`生成物未过检（E=${eCount}）——已回滚 ${path.relative(REPO_ROOT, destDir)}`);
 }
 
-// ---------- --register: 向 registry.yaml private 区追加条目 ----------
-// 插入位 = candidates: 区首行之前（private 是其前驱区）；无 candidates 则 EOF 即 private 尾。
-// note 已过双引号/换行校验；Node UTF-8 写中文安全（AGENTS python 铁律针对的是 PowerShell）。
+// ---------- --register: 委托 registry-upsert 正典写器登记 ----------
+// 不自写插位——正典带段尾横幅回退/重名/词表校验；第二写器复刻插位逻辑必漂移
+// （曾咬过：插在 candidates 横幅注释后→lite 解析器漏读）。
 if (register) {
-  const regText = fs.readFileSync(REGISTRY, 'utf8');
-  const candIdx = regText.search(/^candidates:/m);
-  const head = candIdx >= 0 ? regText.slice(0, candIdx) : regText;
-  const tail = candIdx >= 0 ? regText.slice(candIdx) : '';
-  const headPad = head.endsWith('\n') ? head : head + '\n';
-  fs.writeFileSync(REGISTRY, headPad + regEntry + (tail ? '\n' + tail : ''), 'utf8');
-  console.log(`[registered] registry.yaml private 区 += ${name}${name.startsWith('ming-') ? ' (metaSystem)' : ''}`);
+  const uargs = [UPSERT, 'add', '--section', 'private', '--name', name,
+    '--path', `${under}/${name}`, '--note', note, '--deploy', 'claude'];
+  if (name.startsWith('ming-')) uargs.push('--metaSystem');
+  const r = spawnSync(process.execPath, uargs, {
+    encoding: 'utf8', timeout: 60_000,
+    env: { ...process.env, REG_UPSERT_ROOT: REPO_ROOT },
+  });
+  if (r.error) die(`registry 登记失败（upsert 启动错）: ${r.error.message}`);
+  if (r.status !== 0) {
+    die(`registry 登记失败（包已生成但未登记——按接线清单手工补登）:\n${(r.stderr || r.stdout || '').trim()}`);
+  }
+  process.stdout.write(r.stdout);
 }
 
 // ---------- 纳层评估（准入门控记录） ----------

@@ -3,9 +3,9 @@
 // 用法:
 //   add:    node scripts/registry-upsert.mjs add --section vertical|deployable|private --name <n> [--repo <url>]
 //           [--pin <40hex>] [--path <p>] [--weight core|heavy] [--domain <d>] [--note "s"]
-//           [--deploy c1,c2] [--metaSystem] [--sourceGone]
+//           [--deploy c1,c2] [--metaSystem] [--sourceGone] [--kind skill|tool|asset]
 //   set:    node scripts/registry-upsert.mjs set --name <n> [--pin <h>] [--enabled true|false]
-//           [--weight core|heavy] [--acquiredAt <date>]
+//           [--weight core|heavy] [--acquiredAt <date>] [--kind skill|tool|asset]
 //   remove: node scripts/registry-upsert.mjs remove --name <n>
 //   candidate: node scripts/registry-upsert.mjs candidate --name <n> --domain <d> --rationale "s"
 //              --evidence "s" [--evidence "s2"] --graduation "s" [--openedAt YYYY-MM-DD] [--path <p>]
@@ -27,7 +27,7 @@ const args = process.argv.slice(2);
 const verb = args[0];
 if (!['add', 'set', 'remove', 'candidate'].includes(verb)) die('用法: add|set|remove|candidate（--help 见头注）');
 const opts = { _: [] };
-const VALUE = new Set(['--section', '--name', '--repo', '--pin', '--path', '--weight', '--domain', '--note', '--deploy', '--enabled', '--acquiredAt', '--rationale', '--graduation', '--evidence', '--openedAt']);
+const VALUE = new Set(['--section', '--name', '--repo', '--pin', '--path', '--weight', '--domain', '--note', '--deploy', '--enabled', '--acquiredAt', '--rationale', '--graduation', '--evidence', '--openedAt', '--kind']);
 for (let i = 1; i < args.length; i++) {
   const a = args[i];
   if (VALUE.has(a)) {
@@ -66,9 +66,15 @@ const domainVocab = () => {
 
 const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HEX40 = /^[0-9a-f]{40}$/i;
+// Windows 保留设备名——过 kebab 但 win32 建不出目录、POSIX 建出 Windows 拉不动
+const WIN_RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
+const KIND_VOCAB = new Set(['skill', 'tool', 'asset']);
+const PATH_TRAVERSAL = /^(?:[a-zA-Z]:[\\/]|[\\/])|\.\./;
 const assertCommon = () => {
   if (!opts['--name']) die('缺 --name');
   if (!KEBAB.test(opts['--name'])) die(`name=${opts['--name']} 非 kebab`);
+  if (WIN_RESERVED.test(opts['--name'])) die(`name=${opts['--name']} 是 Windows 保留设备名——跨平台毒名拒入册`);
+  if (opts['--kind'] && !KIND_VOCAB.has(opts['--kind'])) die(`kind 出封闭词表 {skill|tool|asset}: ${opts['--kind']}`);
 };
 
 if (verb === 'add') {
@@ -88,8 +94,10 @@ if (verb === 'add') {
   const tkeys = targetsKeys();
   const deployClients = opts['--deploy'] ? opts['--deploy'].split(',').map(s => s.trim()).filter(Boolean) : [];
   for (const c of deployClients) if (!tkeys.has(c)) die(`deploy 客户名 ${c} 不在 targets: 词表`);
+  if (opts['--path'] && PATH_TRAVERSAL.test(opts['--path'])) die(`path 非法（禁绝对路径/盘符/.. 穿越）: ${opts['--path']}`);
 
   const ent = [`  - name: ${opts['--name']}`];
+  if (opts['--kind']) ent.push(`    kind: ${opts['--kind']}`);
   if (opts['--metaSystem']) ent.push('    metaSystem: true');
   if (opts['--sourceGone']) ent.push('    sourceGone: true');
   if (opts['--repo']) ent.push(`    repo: ${opts['--repo']}`);
@@ -142,9 +150,9 @@ if (verb === 'add') {
 
 } else if (verb === 'set') {
   assertCommon();
-  const FIELDS = { '--pin': 'pin', '--enabled': 'enabled', '--weight': 'weight', '--acquiredAt': 'acquiredAt' };
+  const FIELDS = { '--pin': 'pin', '--enabled': 'enabled', '--weight': 'weight', '--acquiredAt': 'acquiredAt', '--kind': 'kind' };
   const sets = Object.entries(FIELDS).filter(([f]) => opts[f] !== undefined).map(([f, k]) => [k, opts[f]]);
-  if (!sets.length) die('set 无可写字段（--pin/--enabled/--weight/--acquiredAt）');
+  if (!sets.length) die('set 无可写字段（--pin/--enabled/--weight/--acquiredAt/--kind）');
   if (opts['--pin'] && !HEX40.test(opts['--pin'])) die(`pin 非 40-hex: ${opts['--pin']}`);
   if (opts['--enabled'] && !['true', 'false'].includes(opts['--enabled'])) die('--enabled 须 true|false');
   if (opts['--weight'] && !['core', 'heavy'].includes(opts['--weight'])) die(`weight 出词表 {core|heavy}: ${opts['--weight']}`);
