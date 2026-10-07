@@ -72,3 +72,4 @@
 {"id": "a-072", "query": "发布准备——版本通道上 alpha 泡够两周没，能不能升 beta/rc", "expect": {"domain": "engineering", "skills": ["repo-presentation"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "16.0"}
 {"id": "a-073", "query": "README 美化选型——徽章放不放、shields 托管件的隐私代价值不值", "expect": {"domain": "engineering", "skills": ["repo-presentation"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "16.0"}
 {"id": "a-074", "query": "when should a cli banner show — bare-invoke only or every call", "expect": {"domain": "engineering", "skills": ["repo-presentation"]}, "tier": "A", "provenance": "scenario", "lang": "en", "of": "16.0"}
+{"id": "a-075", "query": "审计 ffi边界 契约怎么写——应然边声明的判定规则", "expect": {"domain": "engineering", "skills": ["arch-core-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "16.0"}
