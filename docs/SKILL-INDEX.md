@@ -7,7 +7,7 @@ status: descriptive
 # SKILL-INDEX — 全部 skill 精要索引（路由参考）
 
 > 用途：第一层路由参考——AI/用户在任务开始时按此表选 skill。description 才是外层触发依据（Claude Code 按 frontmatter description 惰性加载）；本表是人工可读的精要版。
-> 生成：2026-08-18 · 覆盖：基座 20 部署模块 + 垂直 96 参考 + 私有 32
+> 生成：2026-08-18 · 覆盖：基座 20 部署模块 + 垂直 96 参考 + 私有 33
 > 后续增补：2026-09-16 指纹专项（vertical fingerprintjs/ja4/creepjs + private antibot-fingerprint-paradigm/arch-core-paradigm）；2026-09-21 社区 Agent Skill 轮（vertical apk-reverse-community/birdview）
 > 后续增补：2026-09-18 工程元规范族小节补全（engineering/* 10 包）+ ming-skills-router + config-core-paradigm 登记
 > 后续增补：2026-09-21 MCP 工具链与 Frida 生态小节补登（18 个 2026-08-18 采集项漏登记）· 契约门禁 scripts/check-skill-index.mjs 落地
@@ -280,7 +280,7 @@ status: descriptive
 | **testing-scenario-cli** | 场景特化 | 命令行与脚本工具契约：参数退出码矩阵、可注入FS/Env、幂等性与防半成品 | cli-test, command-line-testing, exit-codes, golden-files |
 | **testing-scenario-scraper** | 场景特化 | 采集爬虫与清洗管道：离线 Fixture 优先、领域不变量、选择器健康度、活网仅作探针 | scraper-testing, crawler-test, selector-health, fixture-parsing |
 
-### 3. 工程元规范族（engineering/* 根级 20 包）
+### 3. 工程元规范族（engineering/* 根级 21 包）
 
 > 惯例：`metadata.layer` + `compose` 自声明装配；`*-paradigm` 带 references/sources.md 文献链 + Compose 节。导引见 `private/engineering/README.md`。
 
@@ -297,6 +297,7 @@ status: descriptive
 | vendor-paradigm | 第三方内容入库范式：清单即锁/内容即产物/孤本例外 + vendored-vs-物化判据 + 物化器契约坑表 | 已部署 |
 | review-core-paradigm | 跨场景评审元规则：消融摘除存活性 + 独立上下文 critic + 人筛回喂 + 证据收尾 | 已部署 |
 | review-signal-audit | 静态信号面位错审计：信任梯五病型 taxonomy + sweep→harvest 收割晋升门禁提案（与 review-core-paradigm 互补：审存量非增量） | 已部署 |
+| repo-presentation | 仓库呈现与版本通道规范：alpha/beta/rc 冻结面+浸泡升档、Semver/PEP440 双轨映射、README 件隐私分层（Tier A/B/C）、GFM 高级件、CLI banner/wordmark 触发与抑制契约 | 已部署 |
 | explore-core-paradigm | 发散探索元规则：升降模型 + 五算子换轨（VS尾部采样/异策略/形态学/premortem/ToT）+ disagree续探agree承诺判据 | 已部署 |
 | depth-core-paradigm | 审计下潜深度裁决：动态序贯下潜（层级假设→区分度探针→后验收敛）+ 静态先验绊线 + 可行动性停止判据 | 已部署 |
 | mutation-safety-paradigm | 变更安全元规则：L0-L5 变更阶梯 + dry-run 三戒律（同路径/输出同构/零副作用）+ read_only/idempotent/non_idempotent 变更类声明 | 已部署 |

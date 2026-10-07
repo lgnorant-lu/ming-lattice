@@ -133,7 +133,8 @@ const DOMAIN_DEFS = {
       "ming-distiller",
       "ming-boundary",
       "compiler-pipeline-paradigm",
-      "review-signal-audit"
+      "review-signal-audit",
+      "repo-presentation"
     ],
     triggers: [
       "文档体系", "仓库文档", "readme",
@@ -170,7 +171,9 @@ const DOMAIN_DEFS = {
       // ── mutation-safety/classify 域门：专属无歧义词可开门（预览/分类是泛词不升） ──
       "dry-run", "whatif", "变更安全", "mutation safety", "幂等", "taxonomy", "枚举设计",
       // ── review-signal 域门：注释审计/信号位错裸词意图明确可开门 ──
-      "注释审计", "信号位错", "化石注释", "伪规则", "comment audit", "lint suppression"
+      "注释审计", "信号位错", "化石注释", "伪规则", "comment audit", "lint suppression",
+      // ── repo-presentation 域门：版本通道/徽章/渲染件裸词专属可开门（alpha/beta/rc 泛词不升） ──
+      "版本通道", "pre-release", "PEP 440", "semver", "README 美化", "徽章", "shields", "mermaid", "wordmark", "release channel", "cli banner"
     ],
     // ── weakTriggers（replay 实测）：文档 49:11、日志 8:0、配置 8:0、安全 4:1、
     //    ci 7:0——泛词裸命中全误派（查日志/编辑器配置/整理文档/CI 随口一提都被派工）。
@@ -209,7 +212,8 @@ const DOMAIN_DEFS = {
       "ming-distiller": ["沉淀", "蒸馏", "distill", "复盘", "retrospective", "经验回收", "查沉淀", "项目复盘"],
       "ming-boundary": ["项目图", "project graph", "事实提取", "fact extraction", "边界契约", "boundary contract", "依赖审计", "孤儿符号", "orphan detection", "断链检测", "dead link", "boundaries.yaml", "应然边", "接缝核验"],
       "compiler-pipeline-paradigm": ["编译器", "compiler", "lexer", "parser", "词法分析", "语法分析", "IR", "中间表示", "SSA", "寄存器分配", "JIT", "AOT", "codegen", "指令选择", "calling convention", "linker", "loader"],
-      "review-signal-audit": ["注释审计", "comment audit", "信号位错", "伪规则", "化石注释", "workaround注释", "todo清理", "规则晋升", "lint suppression", "祈使句", "抑制注释", "注释爬藤"]
+      "review-signal-audit": ["注释审计", "comment audit", "信号位错", "伪规则", "化石注释", "workaround注释", "todo清理", "规则晋升", "lint suppression", "祈使句", "抑制注释", "注释爬藤"],
+      "repo-presentation": ["版本通道", "版本号", "pre-release", "alpha", "beta", "rc", "semver", "PEP 440", "release channel", "版本一致性", "README 美化", "徽章", "shields", "mermaid", "details 折叠", "cli banner", "wordmark", "tag 命名", "浸泡期"]
     }
   }
 };

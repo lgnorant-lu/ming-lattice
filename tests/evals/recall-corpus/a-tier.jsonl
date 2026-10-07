@@ -69,3 +69,6 @@
 {"id": "a-069", "query": "仓里 workaround 注释和疑似化石规则扫一遍，能晋升成门禁的标出来", "expect": {"domain": "engineering", "skills": ["review-signal-audit"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "15.0"}
 {"id": "a-070", "query": "扫一遍注释审计——TODO 陈债、抑制注释爬藤、文档里的永久祈使句有没有该机械化的", "expect": {"domain": "engineering", "skills": ["review-signal-audit"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "15.0"}
 {"id": "a-071", "query": "audit stale comments and lint suppressions — which prose rules should become gates", "expect": {"domain": "engineering", "skills": ["review-signal-audit"]}, "tier": "A", "provenance": "scenario", "lang": "en", "of": "15.0"}
+{"id": "a-072", "query": "发布准备——版本通道上 alpha 泡够两周没，能不能升 beta/rc", "expect": {"domain": "engineering", "skills": ["repo-presentation"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "16.0"}
+{"id": "a-073", "query": "README 美化选型——徽章放不放、shields 托管件的隐私代价值不值", "expect": {"domain": "engineering", "skills": ["repo-presentation"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "16.0"}
+{"id": "a-074", "query": "when should a console app print its banner or wordmark — bare-invoke only or every call", "expect": {"domain": "engineering", "skills": ["repo-presentation"]}, "tier": "A", "provenance": "scenario", "lang": "en", "of": "16.0"}

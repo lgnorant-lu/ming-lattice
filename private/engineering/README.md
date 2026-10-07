@@ -25,6 +25,7 @@ private/engineering/
 ├── arch-core-paradigm/                # [A列-架构] 六边形/Ports-Adapters 最小形态、迁移接缝
 ├── review-core-paradigm/              # [A列-评审] 消融实验摘除存活性、独立上下文 critic、人筛回喂、证据收尾
 ├── review-signal-audit/               # [A列-评审] 静态信号面位错审计（五病型 taxonomy + sweep→harvest 收割晋升门禁提案）
+├── repo-presentation/                 # [A列-呈现] 版本通道判据（alpha/beta/rc 冻结面+浸泡）+ Semver/PEP440 双轨 + README 件隐私分层 + GFM 高级件 + CLI 人格面抑制契约
 ├── explore-core-paradigm/             # [A列-发散] 承诺前候选生成：升降模型 + VS尾部采样/异策略/形态学矩阵/premortem + disagree续探agree承诺
 ├── depth-core-paradigm/               # [A列-裁决] finding 下潜深度：动态序贯下潜 + 静态先验绊线 + 可行动性停止判据
 ├── mutation-safety-paradigm/          # [A列-变更安全] L0-L5 阶梯 + dry-run 三戒律（同路径/输出同构/零副作用）+ 变更类声明
@@ -46,7 +47,7 @@ private/engineering/
 ```
 Project Stack = 1 个开发工作流 (spec / characterize)
               + 1 套测试组合 (oracle + 语言 + [按需] 场景)
-              + [按需] A 列工程元包 (docs | docs-presentation | obs | sec | contract | config | arch | review | review-signal | explore | depth | mutation-safety | classify | ming-l | experience-direction)
+              + [按需] A 列工程元包 (docs | docs-presentation | obs | sec | contract | config | arch | review | review-signal | explore | depth | mutation-safety | classify | ming-l | experience-direction | repo-presentation)
               + [按需] B 列质量横切包 (overlay-core-paradigm)
               + 该层 scenes/<scene>.md 场景形态差
 ```

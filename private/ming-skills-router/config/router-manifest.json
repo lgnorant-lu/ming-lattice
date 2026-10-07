@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-07T16:08:18.178Z",
+  "generatedAt": "2026-10-07T16:35:42.715Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -282,7 +282,8 @@
         "ming-distiller",
         "ming-boundary",
         "compiler-pipeline-paradigm",
-        "review-signal-audit"
+        "review-signal-audit",
+        "repo-presentation"
       ],
       "triggers": [
         "文档体系",
@@ -443,7 +444,18 @@
         "化石注释",
         "伪规则",
         "comment audit",
-        "lint suppression"
+        "lint suppression",
+        "版本通道",
+        "pre-release",
+        "PEP 440",
+        "semver",
+        "README 美化",
+        "徽章",
+        "shields",
+        "mermaid",
+        "wordmark",
+        "release channel",
+        "cli banner"
       ],
       "weakTriggers": [
         "文档",
@@ -750,6 +762,27 @@
           "祈使句",
           "抑制注释",
           "注释爬藤"
+        ],
+        "repo-presentation": [
+          "版本通道",
+          "版本号",
+          "pre-release",
+          "alpha",
+          "beta",
+          "rc",
+          "semver",
+          "PEP 440",
+          "release channel",
+          "版本一致性",
+          "README 美化",
+          "徽章",
+          "shields",
+          "mermaid",
+          "details 折叠",
+          "cli banner",
+          "wordmark",
+          "tag 命名",
+          "浸泡期"
         ]
       }
     }
@@ -919,6 +952,7 @@
     "protocol-reverse": "ready",
     "pwn-chain": "ready",
     "radare2": "ready",
+    "repo-presentation": "ready",
     "reverse-engineering": "ready",
     "reverse-skill-router": "ready",
     "review-core-paradigm": "ready",
@@ -1282,6 +1316,31 @@
       "name": "radare2",
       "description": "Use this skill whenever the user wants to analyze binaries with radare2/r2 from the command line, including reverse engineering, disassembly, function analysis, strings/import inspection, patching, binary diffing, hex inspection, or r2 scripting. Also use it when the user mentions PE/ELF/Mach-O/DEX/WASM files together with CLI analysis, `rabin2`, `rasm2`, `radiff2`, `r2pipe`, or asks for radare2 command help on Windows/Linux/macOS.",
       "triggers": []
+    },
+    "repo-presentation": {
+      "name": "repo-presentation",
+      "description": "仓库呈现与版本通道规范元规则——pre-release 通道判据（alpha/beta/rc 冻结面与升档浸泡）、Semver/PEP440 双轨映射与版本字段漂移检测、README 组件选型与隐私分层（shields/VHS/asciinema 等）、GFM 高级件（details/Alert/mermaid/双主题）、CLI banner/wordmark 触发与抑制契约。当版本发布准备、pre-release 通道判定、README/仓库美化、徽章选型、CLI 标识输出设计时使用。触发词：版本号、alpha、beta、rc、pre-release、PEP 440、semver、README 美化、徽章、shields、mermaid、details 折叠、cli banner、wordmark、版本通道。不适用：CHANGELOG 写作、CI 徽章配置、PyPI 发布流程。",
+      "triggers": [
+        "版本通道",
+        "版本号",
+        "pre-release",
+        "alpha",
+        "beta",
+        "rc",
+        "semver",
+        "PEP 440",
+        "release channel",
+        "版本一致性",
+        "README 美化",
+        "徽章",
+        "shields",
+        "mermaid",
+        "details 折叠",
+        "cli banner",
+        "wordmark",
+        "tag 命名",
+        "浸泡期"
+      ]
     },
     "reverse-engineering": {
       "name": "reverse-engineering",
