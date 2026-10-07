@@ -48,8 +48,9 @@ node scripts/verify.mjs --profile <quick|affected|full|release>
 | Manifest 新鲜度 | `--check` 比较两份清单，忽略生成时间；只读，不自动修复 |
 | 门禁编排器与门微断言 | verify.mjs 的 profileSteps 步骤表完备性（quick/full/release 分派不丢步）、runStep 传播与 CLI 拒识；emit-operational-event stdin→NDJSON 契约（未知事件名 fail-closed）；secrets/pii/link-rot 门行为 fixture（签名命中/占位符豁免/打码红线/家目录路径/URL 剥尾） |
 | 可执行件测试登记 | `scripts/check-test-coverage.mjs`：scripts/ 与 private/*/scripts/ 每可执行件须在测试语料被点名或在 `tests/coverage-exempt.txt` 登记豁免理由；陈旧豁免条目反向校验 |
+| Gardener 趋势探针 | `scripts/gardener-trend.mjs` 契约断言：序列抽取、畸形行容错、新高/flat/baseline/absence 四态、window 截断、多序列分判、--strict 退出码与参数 fail-closed |
 
-测试定义在 [tests/run.mjs](../tests/run.mjs)，计数以运行结果为准（当前全量 35 个套件）。测试使用临时目录并在 finally 清理；可用 `SKILLS_TEST_TMPDIR` 指定已存在的测试临时父目录。CLI 隔离测试采用有界异步进程池（并发上限 4）调度以提升执行效率。
+测试定义在 [tests/run.mjs](../tests/run.mjs)，计数以运行结果为准（当前全量 50 个套件）。测试使用临时目录并在 finally 清理；可用 `SKILLS_TEST_TMPDIR` 指定已存在的测试临时父目录。CLI 隔离测试采用有界异步进程池（并发上限 4）调度以提升执行效率。
 
 ## 内容与部署检查
 
@@ -98,7 +99,7 @@ node tests/benchmarks/route-performance.mjs --json
 
 基准报告真实/合成路由规模、候选去重和合成 registry 构建的首次/中位/P95 耗时；断言只检查结果、规模关系和构建不写盘，不设置绝对毫秒阈值。
 
-工具链结构化事件可通过 `MING_SKILLS_EVENT_FILE=<path>` 开启，覆盖 manifest 构建、测试套件、lint 和 sync；默认不启用，不改变原有 stdout。
+工具链结构化事件默认落仓内 `.ming/lattice/state/operational-events.jsonl`（gitignored；`tests/run.mjs` 与经 `emit-operational-event.mjs` 的 lint/sync 均生效），可用 `MING_SKILLS_EVENT_FILE=<path>` 改指；manifest 构建仍为 env-only 不启用不写盘。事件旁路不改变原有 stdout 契约。
 
 ## 刷新清单
 

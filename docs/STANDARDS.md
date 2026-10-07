@@ -175,7 +175,9 @@ pwsh scripts/sync.ps1
 
 路由事件的机读字段见 [observability-event.schema.json](schemas/observability-event.schema.json)。启用方式为 `node scripts/route-core.mjs --event-file <path> [--work-unit-id <opaque-id>] <hint>`；不提供 `--event-file` 时不产生事件文件。事件只保留 `hint_hash`，并将失败原因收敛为稳定 `error_code`，不序列化异常消息。
 
-工具链事件使用环境变量 `MING_SKILLS_EVENT_FILE` 作为旁路目标，`MING_SKILLS_WORK_UNIT_ID` 作为可选关联 ID；未设置事件文件时，`build-router-manifest.mjs`、`tests/run.mjs`、`lint.ps1` 和 `sync.ps1` 不增加输出或写盘。事件只记录计数、布尔状态、仓库相对路径和稳定错误类型，旁路写入失败不改变主命令退出码。
+工具链事件使用环境变量 `MING_SKILLS_EVENT_FILE` 作为旁路目标，`MING_SKILLS_WORK_UNIT_ID` 作为可选关联 ID。默认 sink 为仓内 `.ming/lattice/state/operational-events.jsonl`（gitignored 运行时面，目录自动创建）：`lint.ps1`、`sync.ps1`（经 `emit-operational-event.mjs` 包装）与 `tests/run.mjs`（env `??=` 兜底）在 env 未配时落该文件；`build-router-manifest.mjs` 仍为 env-only，未设置时不增加输出或写盘。事件只记录计数、布尔状态、仓库相对路径和稳定错误类型，旁路写入失败不改变主命令退出码。
+
+事件流的消费方是 `scripts/gardener-trend.mjs`——gardener 趋势哨兵（informational 非门禁）：在坏方向指标序列（`lint.warn`/`lint.error`/`test.failed`/`test.skipped`）上做窗口新高检测，缺席序列如实报 `absence`；`verify.mjs` 尾部以非阻塞方式调用，`--strict` 可供外部 CI 把新高变非零退出。事件源解析序为 `--event-file` > `MING_SKILLS_EVENT_FILE` > 仓默认 sink。
 
 ---
 

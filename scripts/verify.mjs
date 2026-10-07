@@ -3,6 +3,7 @@
 // 支持 profiles: quick | affected | full | release
 
 import path from 'node:path';
+import { existsSync } from 'node:fs';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createPlan, getStagedFiles } from './plan.mjs';
 
@@ -95,6 +96,15 @@ export function runVerification({ profile = 'full', json = false } = {}) {
   log(`\n=============================================================================`);
   log(`[VERIFY RESULT] profile=${profile} status=${ok ? 'SUCCESS' : 'FAILED'} duration=${durationMs}ms`);
   log(`=============================================================================\n`);
+
+  // gardener 哨兵（非阻塞 informational）：telemetry 事件上坏方向序列新高检测——
+  // 味道爬升早发现；探针缺席或自身故障绝不影响门禁判定。
+  const gardener = path.join(ROOT, 'scripts', 'gardener-trend.mjs');
+  try {
+    if (existsSync(gardener)) {
+      spawnSync(process.execPath, [gardener], { cwd: ROOT, stdio: 'inherit' });
+    }
+  } catch { /* 哨兵失聪不拖门禁 */ }
 
   return { ok, profile, durationMs, steps };
 }

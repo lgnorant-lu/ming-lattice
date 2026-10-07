@@ -152,7 +152,9 @@ export function createRouteFailedEvent({ hint, duration, workUnitId, at, error }
 export function writeEvent(filePath, event) {
   if (typeof filePath !== 'string' || !filePath.trim()) throw new TypeError('event_file_required');
   if (event === null || typeof event !== 'object' || Array.isArray(event)) throw new TypeError('event_object_required');
-  fs.appendFileSync(path.resolve(filePath), `${JSON.stringify(event)}\n`, 'utf8');
+  const resolved = path.resolve(filePath);
+  fs.mkdirSync(path.dirname(resolved), { recursive: true });
+  fs.appendFileSync(resolved, `${JSON.stringify(event)}\n`, 'utf8');
 }
 
 export function emitEvent(event, filePath = process.env.MING_SKILLS_EVENT_FILE) {

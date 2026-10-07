@@ -166,6 +166,7 @@ export const ALL_SUITE_NAMES = [
   'docclass',
   'eol-gate',
   'fetch-cli',
+  'gardener-trend',
   'hook-engine',
   'hook-index',
   'hook-planner',
