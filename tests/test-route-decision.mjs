@@ -389,6 +389,32 @@ const GOLDEN_CASES = [
       assert.equal(res2.domain, 'engineering');
       assert.equal(res2.action, 'dispatch');
     }
+  },
+
+  // ── 11. 强弱分层域裁决 (a-074 实证：弱词域不得压强词命中域) ──
+  // 语义：域选择先走 strongPositive 层（triggers/qualityGate/显式点名），全弱才回退
+  // positive 层走 weak_trigger_only 降级；同级保持 [testing,protocol,reverse,ui,engineering] 序。
+  {
+    category: '强弱分层',
+    name: '11.1 工程强词胜 testing 弱词 (cli banner 域门 vs cli 泛词)',
+    hint: 'when should a cli banner show — bare-invoke only or every call',
+    must_include: ['repo-presentation'],
+    assert: (res, tc) => {
+      assert.equal(res.domain, 'engineering', '强词命中域必须胜弱词域——cli banner 是工程域门不是测试域证据');
+      assertSubset(tc.must_include, res.candidates, tc.name);
+    }
+  },
+  {
+    category: '强弱分层',
+    name: '11.2 全弱域仍回退弱词降级 (无强词时维持原语义)',
+    hint: '采集一下昨天的记录整理下',
+    must_include: ['testing-core-oracle'],
+    assert: (res, tc) => {
+      assert.equal(res.domain, 'testing');
+      assert.equal(res.action, 'ask');
+      assert.ok(res.reasons.some(r => r.startsWith('weak_trigger_only')));
+      assertSubset(tc.must_include, res.candidates, tc.name);
+    }
   }
 ];
 

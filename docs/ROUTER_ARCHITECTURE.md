@@ -28,7 +28,7 @@ registry + 本地 SKILL.md 身份 -> 构建时 availability
 
 ## 分类与组合
 
-实际内核：[route-core.mjs](../private/ming-skills-router/scripts/route-core.mjs)。先识别 review/explain/plan/implement，处理 Markdown 引用、围栏与明确否定，再按词边界匹配——英文词经 `flexVariants` 做受控形态学变体（注册单数词命中 s/es/ies 复数文本，注册复数词剥形命中单数文本；us/is 尾与短干禁剥防伪命中；CJK/数字尾项零变体），域触发/弱词/质量门/显式点名/否定从句排除共用同一语义；S3 词法层（CJK bigram + BM25F 字段加权，消费同一 activeText）在确定性域之外追加 candidates 并集、并在无域命中时升级为 ask——词法命中永不单独置域或 dispatch。多包名不会在第一个命中时提前返回。
+实际内核：[route-core.mjs](../private/ming-skills-router/scripts/route-core.mjs)。先识别 review/explain/plan/implement，处理 Markdown 引用、围栏与明确否定，再按词边界匹配——英文词经 `flexVariants` 做受控形态学变体（注册单数词命中 s/es/ies 复数文本，注册复数词剥形命中单数文本；us/is 尾与短干禁剥防伪命中；CJK/数字尾项零变体），域触发/弱词/质量门/显式点名/否定从句排除共用同一语义。域裁决分两层：**强词命中域（triggers/qualityGate/显式点名入 strongScores）恒优先于仅弱词命中域**，同级保持 testing→protocol→reverse→ui→engineering 固定序；全弱域回退 positive 层走 weak_trigger_only 降级 ask——弱词域不得压制强词域（强词是确定证据，弱词是"可能是"信号）。S3 词法层（CJK bigram + BM25F 字段加权，消费同一 activeText）在确定性域之外追加 candidates 并集、并在无域命中时升级为 ask——词法命中永不单独置域或 dispatch。多包名不会在第一个命中时提前返回。
 
 测试任务按语言、场景与工作流组合，工程质量可叠加。CLI 不覆盖表征意图；性质测试进入实际加载清单。测试/逆向等主任务冲突时返回 ask，而不是用置信度允许目标操作。
 

@@ -227,8 +227,13 @@ export function Decide(hint, manifest) {
     return decision;
   }
 
+  // 强弱分层域裁决：强词命中域恒优先于弱词域（a-074 实证——"cli banner"工程
+  // 强词被 testing 弱词 "cli" 按固定序压制的结构性缺陷）；同级内保持原固定序，
+  // 全弱域回退原语义走 weak_trigger_only 降级。显式点名 +2 入 strongScores 同层。
+  const DOMAIN_ORDER = ['testing', 'protocol', 'reverse', 'ui', 'engineering'];
+  const strongPositive = name => (strongScores[name] || 0) > 0;
   const domain = qualityGate && positive('engineering') ? 'engineering'
-    : ['testing', 'protocol', 'reverse', 'ui', 'engineering'].find(positive);
+    : (DOMAIN_ORDER.find(strongPositive) ?? DOMAIN_ORDER.find(positive));
   if (!domain) {
     // 词法层兜底召回：无域门命中但有可信词法近邻 → 升 ask 带候选，仍不 dispatch
     if (lexicalPicks.length) {
