@@ -145,6 +145,27 @@ skill 目录中各件对自身的反哺状态（人工审计视图，"该不该�
 | docs-*-idiom | 半反哺 | 2026-09-22 README 按其规则刷新（数字漂移清零+新件导航）；docs/ 树全量排版审计未做 |
 | arch-core-paradigm | 未反哺 | 无架构边界自检 |
 
+### 10a. 规范→执行面对照（位错审计的查据 SoT）
+
+review-signal-audit 祈使句面"机械化了吗"的对账表——每条散文规范标注执行面与现居层
+（L0 架构 / L1 机器门·测试 / L2 声明契约 / L3 散文自律）。L3 行=尚未机械化的有意
+居住（判断型规范）或卡低位候选；晋升走"确定性近零误报"判据。
+
+| 规范 | 出处 | 执行面 | 层 |
+|---|---|---|---|
+| vertical/ 永不入库（sourceGone 白名单例外） | AGENTS 铁律1 | `gate.vendor-boundary`(error) + `.gitignore` 与 sourceGone 白名单 lint 双向对账 | L1 |
+| 下架判定三方一致 | AGENTS 铁律3 | `fetch.mjs` 探活内建（codeload main+master+页面三测） | L1 内建 |
+| 不附 Devin trailer/AI 署名 | AGENTS 合规 | `gate.commit-msg` trailer 校验 | L1 |
+| find/grep PATH 护栏 | AGENTS/CLAUDE 护栏 | host-tools PATH shim（机械拦截） | L1 内建 |
+| SKILL-INDEX/CATALOG 登记同步 | forge §5 | `check-skill-index`（E 级） | L1 |
+| registry 字段词表只加不删 | contract-core 本仓化 | parity 契约测试 vocab 超集基线断言 | L1 |
+| registry 手工编辑用 python | AGENTS 铁律5 | 散文自律——**后果有网**：写坏即 registry-parity/schema 门拦 | L3 |
+| 脚本用 pwsh 7（编码安全） | AGENTS 铁律4 | 散文自律 | L3 |
+| cwd 陷阱（vertical/vertical） | AGENTS 铁律2 | 散文自律 | L3 |
+| pin=采集时版本语义 | AGENTS 铁律6 | 语义定义（update.ps1 diff 展示遵守） | L3 |
+| 私有资产不向外分发 | AGENTS 合规 | 散文 + deploy-drift 门管声明与链接双向对账 | 半 L3 |
+| 孤本保留上游许可声明 | AGENTS 合规 | 散文（白名单门管入库资格，许可内容不查） | L3 |
+
 ## 11. 候审与已删记录
 
 **候审（等消费方/等实例）**：

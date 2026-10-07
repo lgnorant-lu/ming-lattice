@@ -181,4 +181,21 @@ export function run() {
   const { bad: descBad, checked } = descCheck();
   assert.deepEqual(descBad, [], `frontmatter 投影漂移:\n${descBad.join('\n')}`);
   console.log(`  frontmatter 投影对账通过（desc 声明件 ${checked} 在场对账）`);
+
+  // 字段词表只加不删（contract-core 本仓化）：条目级键(4空格缩进)全集 ⊇ 基线。
+  // 删字段须显式改基线——使词表收缩在 diff 评审中显影，不再静默发生。
+  {
+    const VOCAB_BASELINE = new Set([
+      'acquiredAt', 'checkCache', 'deploy', 'desc', 'domain', 'enabled', 'evidence',
+      'family', 'graduation', 'kind', 'metaSystem', 'modules', 'note', 'openedAt',
+      'path', 'pin', 'rationale', 'repo', 'router', 'source', 'sourceGone', 'weight',
+    ]);
+    const text = fs.readFileSync(REGISTRY, 'utf8');
+    const current = new Set([...text.matchAll(/^    ([a-zA-Z_]+):/gm)].map(m => m[1]));
+    const deleted = [...VOCAB_BASELINE].filter(k => !current.has(k));
+    assert.deepEqual(deleted, [], `字段词表收缩（contract 破坏）——须显式评审并更新基线:\n${deleted.join('\n')}`);
+    const added = [...current].filter(k => !VOCAB_BASELINE.has(k));
+    if (added.length) console.log(`  [i] 词表新增（只加演进合法，宜并入基线）: ${added.join(', ')}`);
+    console.log(`  字段词表契约通过（基线 ${VOCAB_BASELINE.size} 键 ⊆ 现 ${current.size} 键）`);
+  }
 }
