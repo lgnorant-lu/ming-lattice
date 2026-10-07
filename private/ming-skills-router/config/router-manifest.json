@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-10-05T11:42:53.269Z",
+  "generatedAt": "2026-10-07T14:50:12.317Z",
   "domains": {
     "testing": {
       "description": "软件工程测试规范族 (11包: Oracle元规则, 绿场BDD/TDD, 棕场表征锁定, 性质变异, Rust/Py/JS/Go地道测试, CLI/爬虫场景, FFI契约)",
@@ -281,7 +281,8 @@
         "ming-experience-direction",
         "ming-distiller",
         "ming-boundary",
-        "compiler-pipeline-paradigm"
+        "compiler-pipeline-paradigm",
+        "review-signal-audit"
       ],
       "triggers": [
         "文档体系",
@@ -436,7 +437,14 @@
         "mutation safety",
         "幂等",
         "taxonomy",
-        "枚举设计"
+        "枚举设计",
+        "注释审计",
+        "信号位错",
+        "化石注释",
+        "伪规则",
+        "comment audit",
+        "lint suppression",
+        "lint suppressions"
       ],
       "weakTriggers": [
         "文档",
@@ -729,6 +737,21 @@
           "calling convention",
           "linker",
           "loader"
+        ],
+        "review-signal-audit": [
+          "注释审计",
+          "comment audit",
+          "信号位错",
+          "伪规则",
+          "化石注释",
+          "workaround注释",
+          "todo清理",
+          "规则晋升",
+          "lint suppression",
+          "lint suppressions",
+          "祈使句",
+          "抑制注释",
+          "注释爬藤"
         ]
       }
     }
@@ -901,6 +924,7 @@
     "reverse-engineering": "ready",
     "reverse-skill-router": "ready",
     "review-core-paradigm": "ready",
+    "review-signal-audit": "ready",
     "sec-core-paradigm": "ready",
     "testing-core-oracle": "ready",
     "testing-go-idiom": "ready",
@@ -1287,6 +1311,25 @@
         "独立评审",
         "fresh context",
         "critic"
+      ]
+    },
+    "review-signal-audit": {
+      "name": "review-signal-audit",
+      "description": "仓库静态信号面位错审计协议——注释/TODO族/抑制注释/文档祈使句/会话化石句多面扫描，按信任梯判内容坐错层（卡低位/化石/僵尸/影规则/复述五型），处置含删除/改写/晋升门禁的收割输出。当审计仓库注释质量、清理workaround注释、查伪规则化石、收TODO债账、评估散文规则能否机械化时使用。触发词：注释审计、comment audit、信号位错、伪规则、化石注释、TODO清理、workaround注释、规则晋升、lint suppression、祈使句扫描。不适用：单diff消融评审（走review-core-paradigm）、生成投影漂移对账（走边界门）。",
+      "triggers": [
+        "注释审计",
+        "comment audit",
+        "信号位错",
+        "伪规则",
+        "化石注释",
+        "workaround注释",
+        "todo清理",
+        "规则晋升",
+        "lint suppression",
+        "lint suppressions",
+        "祈使句",
+        "抑制注释",
+        "注释爬藤"
       ]
     },
     "sec-core-paradigm": {

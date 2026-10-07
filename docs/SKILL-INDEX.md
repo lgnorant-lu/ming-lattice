@@ -280,7 +280,7 @@ status: descriptive
 | **testing-scenario-cli** | 场景特化 | 命令行与脚本工具契约：参数退出码矩阵、可注入FS/Env、幂等性与防半成品 | cli-test, command-line-testing, exit-codes, golden-files |
 | **testing-scenario-scraper** | 场景特化 | 采集爬虫与清洗管道：离线 Fixture 优先、领域不变量、选择器健康度、活网仅作探针 | scraper-testing, crawler-test, selector-health, fixture-parsing |
 
-### 3. 工程元规范族（engineering/* 根级 19 包）
+### 3. 工程元规范族（engineering/* 根级 20 包）
 
 > 惯例：`metadata.layer` + `compose` 自声明装配；`*-paradigm` 带 references/sources.md 文献链 + Compose 节。导引见 `private/engineering/README.md`。
 
@@ -296,6 +296,7 @@ status: descriptive
 | arch-core-paradigm | 架构边界元规则：六边形/Ports-Adapters 最小形态 + FFI 迁移接缝 | 已部署 |
 | vendor-paradigm | 第三方内容入库范式：清单即锁/内容即产物/孤本例外 + vendored-vs-物化判据 + 物化器契约坑表 | 已部署 |
 | review-core-paradigm | 跨场景评审元规则：消融摘除存活性 + 独立上下文 critic + 人筛回喂 + 证据收尾 | 已部署 |
+| review-signal-audit | 静态信号面位错审计：信任梯五病型 taxonomy + sweep→harvest 收割晋升门禁提案（与 review-core-paradigm 互补：审存量非增量） | 已部署 |
 | explore-core-paradigm | 发散探索元规则：升降模型 + 五算子换轨（VS尾部采样/异策略/形态学/premortem/ToT）+ disagree续探agree承诺判据 | 已部署 |
 | depth-core-paradigm | 审计下潜深度裁决：动态序贯下潜（层级假设→区分度探针→后验收敛）+ 静态先验绊线 + 可行动性停止判据 | 已部署 |
 | mutation-safety-paradigm | 变更安全元规则：L0-L5 变更阶梯 + dry-run 三戒律（同路径/输出同构/零副作用）+ read_only/idempotent/non_idempotent 变更类声明 | 已部署 |

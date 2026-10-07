@@ -1738,6 +1738,12 @@ private:
     domain: routing
     note: "router-embeddings.json 构建/eval 工具链（transformers 嵌入管线——非技能资产不入部署）"
     deploy: {}
+  - name: review-signal-audit
+    path: private/engineering/review-signal-audit
+    enabled: true
+    note: "信号位错审计协议：注释/TODO/抑制/祈使句/化石句五面扫描+五病型处置+收割晋升门禁提案"
+    deploy:
+      claude: true
 
 # ── 候审区 (candidates) ──────────────────────────────────────────────
 # 包提案登记处：非实体包（无 SKILL.md），一进证据开市、二进证据触发毕业。

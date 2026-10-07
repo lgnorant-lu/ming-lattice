@@ -66,3 +66,6 @@
 {"id": "a-066", "query": "给每个命令声明幂等性和 confirm 档位的执行约束怎么设计", "expect": {"domain": "engineering", "skills": ["mutation-safety-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "14.1", "note": "避开「命令行」弱词干扰——弱词门语义由 10.x 组专测覆盖"}
 {"id": "a-067", "query": "新功能的枚举设计怎么定——加新值还是开新轴", "expect": {"domain": "engineering", "skills": ["classify-core-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "14.1"}
 {"id": "a-068", "query": "design a taxonomy for these finding types — facets not buckets", "expect": {"domain": "engineering", "skills": ["classify-core-paradigm"]}, "tier": "A", "provenance": "scenario", "lang": "en", "of": "14.1"}
+{"id": "a-069", "query": "仓里 workaround 注释和疑似化石规则扫一遍，能晋升成门禁的标出来", "expect": {"domain": "engineering", "skills": ["review-signal-audit"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "15.0"}
+{"id": "a-070", "query": "扫一遍注释审计——TODO 陈债、抑制注释爬藤、文档里的永久祈使句有没有该机械化的", "expect": {"domain": "engineering", "skills": ["review-signal-audit"]}, "tier": "A", "provenance": "scenario", "lang": "zh", "of": "15.0"}
+{"id": "a-071", "query": "audit stale comments and lint suppressions — which prose rules should become gates", "expect": {"domain": "engineering", "skills": ["review-signal-audit"]}, "tier": "A", "provenance": "scenario", "lang": "en", "of": "15.0"}

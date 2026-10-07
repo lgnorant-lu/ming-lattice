@@ -24,6 +24,7 @@ private/
 │   ├── overlay-core-paradigm/         # B列: 质量属性横切不变量单包
 │   ├── arch-core-paradigm/            # A列: 架构边界元规则 (六边形/Ports-Adapters 最小形态)
 │   ├── review-core-paradigm/          # A列: 评审元规则 (消融摘除存活性+独立critic+证据收尾)
+│   ├── review-signal-audit/           # A列: 信号位错审计 (五病型+sweep→harvest晋升收割)
 │   ├── explore-core-paradigm/         # A列: 发散探索元规则 (升降模型+换轨算子)
 │   ├── depth-core-paradigm/           # A列: 下潜深度裁决元规则 (序贯下潜+停止判据)
 │   ├── mutation-safety-paradigm/      # A列: 变更安全元规则 (L0-L5阶梯+dry-run三戒律)
