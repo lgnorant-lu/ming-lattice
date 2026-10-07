@@ -7,7 +7,8 @@ status: descriptive
 # SKILL-INDEX — 全部 skill 精要索引（路由参考）
 
 > 用途：第一层路由参考——AI/用户在任务开始时按此表选 skill。description 才是外层触发依据（Claude Code 按 frontmatter description 惰性加载）；本表是人工可读的精要版。
-> 生成：2026-08-18 · 覆盖：基座 20 部署模块 + 垂直 96 参考 + 私有 33
+> 生成：2026-08-18 · 覆盖：基座 20 部署模块 + 垂直 96 参考 + 私有 39（启用）/42（登记）
+> 后续增补：2026-10-08 repo-presentation（版本通道+呈现四域）与 review-signal-audit（信号位错审计）入库，engineering 元规范族至 21 包
 > 后续增补：2026-09-16 指纹专项（vertical fingerprintjs/ja4/creepjs + private antibot-fingerprint-paradigm/arch-core-paradigm）；2026-09-21 社区 Agent Skill 轮（vertical apk-reverse-community/birdview）
 > 后续增补：2026-09-18 工程元规范族小节补全（engineering/* 10 包）+ ming-skills-router + config-core-paradigm 登记
 > 后续增补：2026-09-21 MCP 工具链与 Frida 生态小节补登（18 个 2026-08-18 采集项漏登记）· 契约门禁 scripts/check-skill-index.mjs 落地
