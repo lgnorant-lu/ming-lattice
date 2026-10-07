@@ -10,9 +10,14 @@ export function run() {
   console.log('[TEST CONTRACT] lint contract modes (text, json, observability)...');
   const temp = fs.mkdtempSync(path.join(process.env.SKILLS_TEST_TMPDIR || os.tmpdir(), 'ming-lint-contract-'));
   try {
+    // 遥测隔离：套件触发的 lint 运行事件弃置到独立文件，不入生产 sink——
+    // 夹具统计混入真序列会让 gardener 把小样本报成新高（2026-10-08 实证）
+    const scratchEvents = path.join(temp, 'scratch-events.ndjson');
+
     // 1. JSON mode test on real repo
     const jsonRun = spawnSync('pwsh', ['-NoProfile', '-File', path.join(root, 'scripts/lint.ps1'), '-Json'], {
-      cwd: root, encoding: 'utf8', timeout: 120_000
+      cwd: root, encoding: 'utf8', timeout: 120_000,
+      env: { ...process.env, MING_SKILLS_EVENT_FILE: scratchEvents }
     });
     assert.equal(jsonRun.status, 0, `lint -Json failed: ${jsonRun.stderr}`);
     const issues = JSON.parse(jsonRun.stdout.trim());
@@ -76,7 +81,8 @@ private:
       '-RegistryPath', fixtureRegistry,
       '-RepoRoot', fixtureDir,
       '-Json'
-    ], { cwd: root, encoding: 'utf8', timeout: 120_000 });
+    ], { cwd: root, encoding: 'utf8', timeout: 120_000,
+      env: { ...process.env, MING_SKILLS_EVENT_FILE: scratchEvents } });
     assert.equal(fixtureJsonRun.status, 0, `fixture JSON run failed: ${fixtureJsonRun.stderr}`);
     const fixtureIssues = JSON.parse(fixtureJsonRun.stdout.trim());
     assert.equal(fixtureIssues.length, 4, 'synthetic fixture must produce exactly 4 issues');

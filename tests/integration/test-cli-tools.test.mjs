@@ -7,6 +7,12 @@ import { spawn } from 'node:child_process';
 
 const project = path.resolve(import.meta.dirname, '../..');
 
+// 遥测隔离：夹具仓 lint/sync 等经 emit 包装件的运行事件不得落入生产 sink
+// （run.mjs 给子进程兜底默认 .ming/lattice/state——夹具统计混进真序列会让
+// gardener 趋势探针把小样本报成新高）。默认弃置到本套件临时文件；
+// 调用方显式传 env.MING_SKILLS_EVENT_FILE 时仍生效。
+const CHILD_EVENT_FILE = fs.mkdtempSync(path.join(os.tmpdir(), 'cli-tools-events-')) + '/events.ndjson';
+
 function tree(root) {
   return fs.readdirSync(root, { recursive: true }).sort().map(name => {
     const file = path.join(root, name);
@@ -20,7 +26,12 @@ function tree(root) {
 
 function spawnAsync(cmd, args, options = {}) {
   return new Promise((resolve, reject) => {
-    const proc = spawn(cmd, args, { ...options, stdio: ['ignore', 'pipe', 'pipe'] });
+    const { env, ...rest } = options;
+    const proc = spawn(cmd, args, {
+      ...rest,
+      env: { ...process.env, MING_SKILLS_EVENT_FILE: CHILD_EVENT_FILE, ...(env ?? {}) },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
     let stdout = '';
     let stderr = '';
     const timer = options.timeout ? setTimeout(() => {

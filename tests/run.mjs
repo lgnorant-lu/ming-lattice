@@ -41,9 +41,11 @@ import { run as runTmpReaper } from './unit/test-tmp-reaper.test.mjs';
 import { run as runAgentsDrift } from './contract/test-agents-drift.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
-// 仓默认 telemetry sink（与 emit-operational-event.mjs 同一约定）：env 未配时落
-// .ming/lattice/state（gitignored 运行时面），让 gardener-trend 探针有连续数据可吃。
-process.env.MING_SKILLS_EVENT_FILE ??= path.join(root, '.ming', 'lattice', 'state', 'operational-events.jsonl');
+// suite_finished 事件显式指定默认 sink（不设 process.env）——route-core 读 env
+// 决定发不发事件，env 兜底会经继承让全部测试子进程的 route.decided/failed
+// 灌进生产序列（夹具/负路径排放污染趋势面，2026-10-08 实证）。lint/sync 的
+// 生产遥测由 emit-operational-event.mjs 自兜底覆盖，不经此路。
+const DEFAULT_EVENT_FILE = path.join(root, '.ming', 'lattice', 'state', 'operational-events.jsonl');
 const startedAt = process.hrtime.bigint();
 const requireAll = process.argv.includes('--require-all');
 const suitesArgIndex = process.argv.indexOf('--suites');
@@ -184,7 +186,7 @@ try {
     ok: failed === 0 && (!requireAll || skipped === 0),
     errorCode: failed || (requireAll && skipped) ? 'test_failed' : null,
     fields: { passed_suites: passed, failed_suites: failed, skipped_suites: skipped, total_suites: suites.length }
-  }));
+  }), process.env.MING_SKILLS_EVENT_FILE || DEFAULT_EVENT_FILE);
 } catch {
   console.error('test_observability_failed: event output unavailable');
 }

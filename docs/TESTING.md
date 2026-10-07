@@ -99,7 +99,7 @@ node tests/benchmarks/route-performance.mjs --json
 
 基准报告真实/合成路由规模、候选去重和合成 registry 构建的首次/中位/P95 耗时；断言只检查结果、规模关系和构建不写盘，不设置绝对毫秒阈值。
 
-工具链结构化事件默认落仓内 `.ming/lattice/state/operational-events.jsonl`（gitignored；`tests/run.mjs` 与经 `emit-operational-event.mjs` 的 lint/sync 均生效），可用 `MING_SKILLS_EVENT_FILE=<path>` 改指；manifest 构建仍为 env-only 不启用不写盘。事件旁路不改变原有 stdout 契约。
+工具链结构化事件默认落仓内 `.ming/lattice/state/operational-events.jsonl`（gitignored；经 `emit-operational-event.mjs` 的 lint/sync 与 `tests/run.mjs` 的 suite_finished 显式路径生效），可用 `MING_SKILLS_EVENT_FILE=<path>` 改指；manifest 构建仍为 env-only 不启用不写盘。事件旁路不改变原有 stdout 契约。套件内 spawn 的发事件命令须将 env 指到弃置文件（夹具统计不得混入生产序列——gardener 趋势面按此区分真伪新高）。
 
 ## 刷新清单
 
