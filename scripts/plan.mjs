@@ -164,6 +164,7 @@ export const ALL_SUITE_NAMES = [
   'distill-index',
   'distill-index-unit',
   'docclass',
+  'docs-count-parity',
   'eol-gate',
   'fetch-cli',
   'gardener-trend',

@@ -18,7 +18,7 @@ Ming 的 Agent 技能集散与工程中枢（Skills Hub & Monorepo）：统一�
 - **Lint 校验源基线**：全仓由 `scripts/lint.ps1` 校验 **182 处入口源**（20 基座模块 + 96 + 24 + 42 登记），保证 frontmatter、相对引用与入口脚本完整性。
 - **路由编排技能**：由 `config/router-manifest.json` 策划并受控编排 **54 个唯一技能**，分布于 5 大核心领域及 14 条可执行配方。
 - **供应链依赖基线**：离线 CycloneDX 1.5 SBOM 聚合 **1119 个依赖组件**；SCA 扫描覆盖 **39 个 lockfile**（离线缓存 0 advisory findings）。
-- **自动化质量门禁**：测试套件矩阵包含 **51 个独立测试套件**，覆盖单元、契约、隔离集成、效果评估与性能基准。
+- **自动化质量门禁**：测试套件矩阵包含 **52 个独立测试套件**，覆盖单元、契约、隔离集成、效果评估与性能基准。
 - **本地内容区**：`distill/`（经验沉淀与候审设计稿）与 `.logs/`（路由观测台账）为 gitignored 本地数据面——机制在仓、内容不入仓。
 
 ---
@@ -91,7 +91,7 @@ node scripts/verify.mjs --profile quick
 # 2. 增量模式：由 plan.mjs 分析暂存区并仅运行受影响任务
 node scripts/verify.mjs --profile affected
 
-# 3. 全量模式：51 个测试套件全量回归 + 严格离线供应链检查 (pre-push 默认)
+# 3. 全量模式：52 个测试套件全量回归 + 严格离线供应链检查 (pre-push 默认)
 node scripts/verify.mjs --profile full
 
 # 4. 发布模式：全量测试 + SBOM/SCA 深度比对防篡改 (--check-freshness) + Benchmark P95 性能硬阈值
@@ -129,7 +129,7 @@ node scripts/verify.mjs --profile release
 
 | 命令 | 用途 |
 |---|---|
-| `node tests/run.mjs --require-all` | 执行全套 51 个自动化测试套件 |
+| `node tests/run.mjs --require-all` | 执行全套 52 个自动化测试套件 |
 | `pwsh -File scripts/lint.ps1` | 全仓 182 处校验源静态规范与完整性检查 |
 | `node scripts/fetch.mjs` | 物化 vertical 参考层（按 registry pin 浅取；`--dry-run` 预览 / `--only <名>` 单项 / `--reconcile` 对齐漂移） |
 | `pwsh -File scripts/sync.ps1 -DryRun` | 预览技能部署分发情况（只读无副作用） |
@@ -140,7 +140,7 @@ node scripts/verify.mjs --profile release
 
 ### 5.3 文档导航
 
-- **[TESTING.md](docs/TESTING.md)**：51 个测试套件详细构成、运行方式与内容规范。
+- **[TESTING.md](docs/TESTING.md)**：52 个测试套件详细构成、运行方式与内容规范。
 - **[GIT_HOOKS.md](docs/GIT_HOOKS.md)**：Git Hooks 分层设计、`.hooksrc` 配置与快照一致性说明。
 - **[ROUTER_ARCHITECTURE.md](docs/ROUTER_ARCHITECTURE.md)**：路由决策内核、契约模式、Harness 适配层与 Stage-0 观测通道设计。
 - **[GOVERNANCE-SPINE.md](docs/GOVERNANCE-SPINE.md)**：工件本体清单、源/投影/消费方对账矩阵与候审/消融台账。

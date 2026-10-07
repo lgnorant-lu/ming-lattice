@@ -24,6 +24,7 @@ import { run as runSkillRecall } from './evals/test-skill-recall.mjs';
 import { run as runLexicalLayer } from './unit/test-lexical-layer.test.mjs';
 import { run as runGardenerTrend } from './unit/test-gardener-trend.test.mjs';
 import { run as runRouteMatcherPlural } from './unit/test-route-matcher-plural.test.mjs';
+import { run as runDocsCountParity } from './unit/test-docs-count-parity.test.mjs';
 import { run as runHookEngine } from './unit/test-hook-engine.test.mjs';
 import { run as runEolGate } from './unit/test-eol-gate.test.mjs';
 import { run as runLintContract } from './contract/test-lint-contract.mjs';
@@ -104,6 +105,7 @@ export const allSuites = [
   { name: 'lexical-layer', tier: 'unit', run: runLexicalLayer },
   { name: 'gardener-trend', tier: 'unit', run: runGardenerTrend },
   { name: 'route-matcher-plural', tier: 'unit', run: runRouteMatcherPlural },
+  { name: 'docs-count-parity', tier: 'contract', run: runDocsCountParity },
   { name: 'hook-engine', tier: 'unit', git: true, run: runHookEngine },
   { name: 'eol-gate', tier: 'unit', git: true, run: runEolGate },
   { name: 'fetch-cli', tier: 'unit', git: true, run: runFetchCli },

@@ -50,8 +50,9 @@ node scripts/verify.mjs --profile <quick|affected|full|release>
 | 可执行件测试登记 | `scripts/check-test-coverage.mjs`：scripts/ 与 private/*/scripts/ 每可执行件须在测试语料被点名或在 `tests/coverage-exempt.txt` 登记豁免理由；陈旧豁免条目反向校验 |
 | Gardener 趋势探针 | `scripts/gardener-trend.mjs` 契约断言：序列抽取、畸形行容错、新高/flat/baseline/absence 四态、window 截断、多序列分判、--strict 退出码与参数 fail-closed |
 | 路由匹配形态学 | mini-manifest 隔离 `matches` 语义：单复数双向命中（s/es/ies 加形与剥形）、边界与非英语尾防剥、CJK/标点零变体、否定从句与显式点名同语义、生产 manifest 锚点 |
+| 文档计数对账 | `docs-count-parity`：README/SKILL-INDEX 硬编码规模数对 registry-lite + router-manifest + ALL_SUITE_NAMES 真值逐断言；SBOM/SCA 制品数有意不纳入（高频变动，归供应链门面） |
 
-测试定义在 [tests/run.mjs](../tests/run.mjs)，计数以运行结果为准（当前全量 51 个套件）。测试使用临时目录并在 finally 清理；可用 `SKILLS_TEST_TMPDIR` 指定已存在的测试临时父目录。CLI 隔离测试采用有界异步进程池（并发上限 4）调度以提升执行效率。
+测试定义在 [tests/run.mjs](../tests/run.mjs)，计数以运行结果为准（当前全量 52 个套件）。测试使用临时目录并在 finally 清理；可用 `SKILLS_TEST_TMPDIR` 指定已存在的测试临时父目录。CLI 隔离测试采用有界异步进程池（并发上限 4）调度以提升执行效率。
 
 ## 内容与部署检查
 
