@@ -6,6 +6,10 @@
 - PEP 440：版本标识 `[{a|b|rc}N][.postN][.devN]` 规范与 `pip --pre` 默认过滤语义——官方规范，双轨映射的 PEP 侧正典。
 - AndroidX `androidx/docs/versioning.md`：库视角最完整的通道判据骨架——alpha01 起编、≥2 周/档浸泡期、beta=API freeze（例外仅 ship-blocker）、rc 与终版同构建、stable=已发 rc 直接转正。本包 §1.1 表的直接来源。
 - Go release cycle：主版本周期与 freeze 惯例参照（次要证据）。
+- 正例外证（dogfood 2026-10-08）：blog-tui 的 `git describe --tags →
+  -ldflags -X → internal/version.Version → --version/make version/deploy.ps1`
+  是"tag SoT + 构建期派生"判据的独立到达实现（Go 栈，非 maturin）——
+  版本字段零手双写，漂移在结构上不可能。§1.2/§1.3 判据跨栈普适的实证。
 
 ## README / 仓库美化
 
