@@ -187,6 +187,7 @@ export const ALL_SUITE_NAMES = [
   'route-decision-compatibility',
   'route-effects',
   'route-golden',
+  'route-matcher-plural',
   'route-observer',
   'route-safety',
   'sbom-generation',

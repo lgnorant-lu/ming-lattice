@@ -99,12 +99,30 @@ export function Decide(hint, manifest) {
   const text = (typeof hint === 'string' ? hint : '').trim().toLowerCase()
     .replace(/```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)/g, '')
     .replace(/^\s*>.*$/gm, '');
+  // en 形态学变体：边界匹配不认单复数变形是全域潜伏坑（lint suppression ✗ lint
+  // suppressions / git hooks ✗ git hook 实证）。仅 ASCII 字母结尾的词生成变体，
+  // 双向覆盖——单数词命中复数文本（+s/+es/ies），复数词命中单数文本（ies→y/
+  // es 剥/s 剥）。多词项只变形词尾。非英语规则面（ss/us/is 尾不剥 s、干长 ≥3、
+  // [^aeiou]o 才 +es）压形态学伪变体；残留 nonsense 变体永不命中真实文本，无害。
+  const flexVariants = (term) => {
+    const v = new Set([term]);
+    if (!/[a-z]$/i.test(term)) return v;
+    v.add(term + 's');
+    if (/(?:s|x|z|ch|sh|[^aeiou]o)$/i.test(term)) v.add(term + 'es');
+    if (/[^aeiou]y$/i.test(term)) v.add(`${term.slice(0, -1)}ies`);
+    if (/ies$/i.test(term) && term.length > 4) v.add(`${term.slice(0, -3)}y`);
+    if (/(?:s|x|z|ch|sh|o)es$/i.test(term) && term.length > 4) v.add(term.slice(0, -2));
+    if (/[^sui]s$/i.test(term) && term.length > 3) v.add(term.slice(0, -1));
+    return v;
+  };
   const matches = (value, term) => {
     if (typeof term !== 'string' || !term) return false;
-    const literal = term.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const variants = [...flexVariants(term)];
+    const literal = variants.map(v => v.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+    const body = variants.length > 1 ? `(?:${literal})` : literal;
     const left = /^[a-z0-9_]/i.test(term) ? '(^|[^a-z0-9_-])' : '';
     const right = /[a-z0-9_]$/i.test(term) ? '($|[^a-z0-9_-])' : '';
-    return new RegExp(`${left}${literal}${right}`, 'i').test(value);
+    return new RegExp(`${left}${body}${right}`, 'i').test(value);
   };
   const has = (...terms) => terms.some(term => matches(text, term));
   const readOnly = /(?:不(?:要)?|禁止|勿)(?:再|直接|擅自)?(?:修改|改动|实现|写入|执行)|\b(?:read[- ]only|do not (?:edit|modify|implement|execute)|don't (?:edit|modify|implement|execute))\b/i.test(text);
