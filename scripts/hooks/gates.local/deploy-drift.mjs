@@ -1,7 +1,7 @@
 // scripts/hooks/gates.local/deploy-drift.mjs
 // 部署漂移对账门（仓专）——registry deploy 声明 vs 客户端技能目录实际链接。
 //
-// 不变量：registry 声明 deploy.claude:true（含 base.modules 的 [claude]）的包
+// 不变量：registry 声明 deploy.ccswitch:true（含 base.modules 的 [ccswitch]）的包
 //   ⟺ 客户端技能目录里存在指向本仓的链接。
 //   外国链接（指向非本仓路径）不管；指向本仓但不在声明集的 = 孤儿链。
 //
@@ -13,17 +13,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseRegistryLite } from '../../lib/registry-lite.mjs';
 
-// registry 声明集：deployable/private 段 deploy.claude:true + base 段 modules.<name>: [claude]
+// registry 声明集：deployable/private 段 deploy.ccswitch:true + base 段 modules.<name>: [ccswitch]
 // 走 lib/registry-lite.mjs 共享解析（原手写行级解析是第 7 份复制，漂移无保险）
 function declaredDeploys(text) {
   const reg = parseRegistryLite(text);
   const names = new Set();
   for (const e of reg.entries) {
     if ((e.section === 'deployable' || e.section === 'private')
-      && e.maps.deploy?.claude === 'true') names.add(e.name);
+      && e.maps.deploy?.ccswitch === 'true') names.add(e.name);
     if (e.section === 'base' && e.maps.modules) {
       for (const [sub, clients] of Object.entries(e.maps.modules))
-        if (/[[\s,]claude[\s,\]]/.test(clients)) names.add(sub);
+        if (/[[\s,]ccswitch[\s,\]]/.test(clients)) names.add(sub);
     }
   }
   return names;
@@ -62,13 +62,13 @@ export const gate = {
     for (const name of declared) {
       if (!links.has(name)) {
         findings.push({ gate: 'deploy-drift', file: 'registry.yaml', matchText: name,
-          message: `声明 deploy.claude 但未链接到客户端：${name}（跑 pwsh scripts/sync.ps1 物化）` });
+          message: `声明 deploy.ccswitch 但未链接到客户端：${name}（跑 pwsh scripts/sync.ps1 物化）` });
       }
     }
     for (const name of links.keys()) {
       if (!declared.has(name)) {
         findings.push({ gate: 'deploy-drift', file: '.cc-switch', matchText: name,
-          message: `孤儿链：${name} 指向本仓但 registry 无 deploy.claude 声明（registry 漏登或残留链）` });
+          message: `孤儿链：${name} 指向本仓但 registry 无 deploy.ccswitch 声明（registry 漏登或残留链）` });
       }
     }
     return findings;

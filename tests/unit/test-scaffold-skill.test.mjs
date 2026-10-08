@@ -166,7 +166,7 @@ export function run() {
       const bannerIdx = reg.indexOf('候审区');
       assert.ok(bannerIdx > 0 && entIdx < bannerIdx,
         '条目须插在 candidates 横幅之前（private 段内）——复刻插位曾咬过 lite 解析');
-      assert.match(reg, /- name: zz-reg-fx\n {4}path: private\/zz-reg-fx\n {4}enabled: true\n {4}note: "[^"]+"\n {4}deploy:\n {6}claude: true/,
+      assert.match(reg, /- name: zz-reg-fx\n {4}path: private\/zz-reg-fx\n {4}enabled: true\n {4}note: "[^"]+"\n {4}deploy:\n {6}ccswitch: true/,
         '条目 schema 序位应与 upsert 正典一致');
     }
   } finally {

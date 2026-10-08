@@ -49,7 +49,7 @@ try {
     $trash = Join-Path $RepoRoot '.trash'
 
 # ---------- 收集部署单元 ----------
-# 单元: [ordered]@{ name; src; clients = @('claude',...) ; source = 'base|vertical|private' }
+# 单元: [ordered]@{ name; src; clients = @('ccswitch',...) ; source = 'base|vertical|private' }
 $units = @()
 
 foreach ($base in @($reg.base)) {

@@ -27,7 +27,7 @@ updatePolicy:
   ttlDays: 7            # checkCache 有效天数; 有效期内 update.ps1 不发起网络请求
   fetchMode: blob:none  # vendored .git 元数据模式（commit/tree, 不含 blob）
 targets:
-  claude: "%USERPROFILE%/.cc-switch/skills"   # env 占位由 sync.ps1 展开——SoT 不烙本机路径
+  ccswitch: "%USERPROFILE%/.cc-switch/skills"   # env 占位由 sync.ps1 展开——SoT 不烙本机路径
   # codex: "%USERPROFILE%/.codex/skills"      # 需要时启用并安装对应客户端
 
 # 层别登记表（元组管理）——SKILL.md metadata.layer 的合法值域。
@@ -75,26 +75,26 @@ base:
     acquiredAt: 2026-08-18
     enabled: true
     modules:
-      apk-reverse: [claude]
-      ida-reverse: [claude]
-      radare2: [claude]
-      js-reverse: [claude]
-      mobile-reverse: [claude]
-      dotnet-reverse: [claude]
-      malware-analysis: [claude]
-      reverse-engineering: [claude]
-      protocol-reverse: [claude]
-      firmware-pentest: [claude]
-      ghidra-reverse: [claude]
-      pwn-chain: [claude]
-      thick-client: [claude]
-      code-audit: [claude]
-      pentest-tools: [claude]
-      patch-diff-exploit: [claude]
-      binary-diff: [claude]
-      go-rust-reverse: [claude]
-      macos-reverse: [claude]
-      supply-chain-security: [claude]
+      apk-reverse: [ccswitch]
+      ida-reverse: [ccswitch]
+      radare2: [ccswitch]
+      js-reverse: [ccswitch]
+      mobile-reverse: [ccswitch]
+      dotnet-reverse: [ccswitch]
+      malware-analysis: [ccswitch]
+      reverse-engineering: [ccswitch]
+      protocol-reverse: [ccswitch]
+      firmware-pentest: [ccswitch]
+      ghidra-reverse: [ccswitch]
+      pwn-chain: [ccswitch]
+      thick-client: [ccswitch]
+      code-audit: [ccswitch]
+      pentest-tools: [ccswitch]
+      patch-diff-exploit: [ccswitch]
+      binary-diff: [ccswitch]
+      go-rust-reverse: [ccswitch]
+      macos-reverse: [ccswitch]
+      supply-chain-security: [ccswitch]
     checkCache:
       lastCheckedAt: 2026-08-18
       lastRemoteHead: 71acc8e
@@ -1277,7 +1277,7 @@ deployable:
     note: JSVMP 双路径实战(v3.4.1), 需 camoufox-reverse MCP
     desc: "Web JS 逆向实战（JSVMP 双路径: 算法追踪/环境伪装, 反爬三分法, 红线纪律）。适用于前端签名、加密参数、动态 Cookie、WASM 逆向, 尤其是混淆/JSVMP 类目标。"
     deploy:
-      claude: true
+      ccswitch: true
   - name: rust-reverse
     family: mirror
     path: deployable/rust-reverse
@@ -1287,7 +1287,7 @@ deployable:
     note: Rust 二进制专项, 补基座短板
     desc: "Rust 二进制逆向专项（指纹识别→rustfilt 去符号→crate 命名空间恢复→Ghidra 伪代码导出, Phase 0-5）。适用于 Rust 编写的 exe/so/ELF/Mach-O。"
     deploy:
-      claude: true
+      ccswitch: true
   - name: android-reverse
     family: mirror
     path: deployable/android-reverse
@@ -1297,7 +1297,7 @@ deployable:
     note: 自适应 Frida 绕过/Fragment 注入/Firebase 矩阵
     desc: "Android APK 全流程逆向（jadx 反编译/API 提取/自适应 Frida 绕过/Fragment 注入检测/Firebase 测试矩阵）。适用于 APK 接口提取、防护绕过、安全测试。"
     deploy:
-      claude: true
+      ccswitch: true
   - name: ios-reverse
     family: mirror
     path: deployable/ios-reverse
@@ -1307,7 +1307,7 @@ deployable:
     note: iOS 静态逆向(路径变量已修复)
     desc: "iOS IPA/Mach-O 静态逆向（提取/API 提取/凭据扫描/r2-Ghidra 二进制/反篡改检测/漏洞审计）。适用于 iOS App 逆向分析。"
     deploy:
-      claude: true
+      ccswitch: true
   - name: rs-js-reverse
     family: authored
     path: deployable/rs-js-reverse
@@ -1316,7 +1316,7 @@ deployable:
     domain: js
     note: 瑞数/RS 专项(基座覆盖为零), 5 份专项 references
     deploy:
-      claude: true
+      ccswitch: true
   - name: ctf-pwn
     family: mirror
     path: deployable/ctf-pwn
@@ -1324,7 +1324,7 @@ deployable:
     enabled: true
     domain: ctf
     deploy:
-      claude: true
+      ccswitch: true
   - name: ctf-web
     family: mirror
     path: deployable/ctf-web
@@ -1332,7 +1332,7 @@ deployable:
     enabled: true
     domain: ctf
     deploy:
-      claude: true
+      ccswitch: true
   - name: ctf-reverse
     family: mirror
     path: deployable/ctf-reverse
@@ -1340,7 +1340,7 @@ deployable:
     enabled: true
     domain: ctf
     deploy:
-      claude: true
+      ccswitch: true
   - name: ctf-crypto
     family: mirror
     path: deployable/ctf-crypto
@@ -1348,7 +1348,7 @@ deployable:
     enabled: true
     domain: ctf
     deploy:
-      claude: true
+      ccswitch: true
   - name: ctf-misc
     family: mirror
     path: deployable/ctf-misc
@@ -1356,7 +1356,7 @@ deployable:
     enabled: true
     domain: ctf
     deploy:
-      claude: true
+      ccswitch: true
   - name: ctf-forensics
     family: mirror
     path: deployable/ctf-forensics
@@ -1364,7 +1364,7 @@ deployable:
     enabled: true
     domain: ctf
     deploy:
-      claude: true
+      ccswitch: true
   - name: xbs-ast-deobfuscation
     family: mirror
     path: deployable/xbs-ast-deobfuscation
@@ -1374,7 +1374,7 @@ deployable:
     note: AST 流水线+站点混淆专档(硬编码路径已修)
     desc: "AST 反混淆流水线（可运行脚本 + 站点混淆家族专档: reese84/顶象/极验4/网易易盾/同花顺/小红书等）。适用于混淆 JS 还原。"
     deploy:
-      claude: true
+      ccswitch: true
   - name: xbs-verify-patcher
     family: mirror
     path: deployable/xbs-verify-patcher
@@ -1384,7 +1384,7 @@ deployable:
     note: 验证码求解编排(基座空白)
     desc: "验证码识别与求解编排（极验/易盾/腾讯/hCaptcha 等厂商流程）。适用于验证码场景逆向。"
     deploy:
-      claude: true
+      ccswitch: true
   - name: areclaw-analyze-apk
     family: authored
     path: deployable/areclaw-analyze-apk
@@ -1393,7 +1393,7 @@ deployable:
     enabled: true
     domain: apk
     deploy:
-      claude: true
+      ccswitch: true
   - name: areclaw-compare-versions
     family: authored
     path: deployable/areclaw-compare-versions
@@ -1402,7 +1402,7 @@ deployable:
     enabled: true
     domain: apk
     deploy:
-      claude: true
+      ccswitch: true
   - name: areclaw-find-api
     family: authored
     path: deployable/areclaw-find-api
@@ -1411,7 +1411,7 @@ deployable:
     enabled: true
     domain: apk
     deploy:
-      claude: true
+      ccswitch: true
   - name: areclaw-intercept
     family: authored
     path: deployable/areclaw-intercept
@@ -1420,7 +1420,7 @@ deployable:
     enabled: true
     domain: apk
     deploy:
-      claude: true
+      ccswitch: true
   - name: areclaw-register
     family: authored
     path: deployable/areclaw-register
@@ -1429,7 +1429,7 @@ deployable:
     enabled: true
     domain: apk
     deploy:
-      claude: true
+      ccswitch: true
   - name: malware-ioc-extraction
     family: authored
     path: deployable/malware-ioc-extraction
@@ -1439,7 +1439,7 @@ deployable:
     domain: mw
     note: IOC YAML schema+证据规则
     deploy:
-      claude: true
+      ccswitch: true
   - name: garlic-reverse
     family: authored
     path: deployable/garlic-reverse
@@ -1447,7 +1447,7 @@ deployable:
     domain: apk
     note: Garlic 反编译专项(CLI 优先, jadx 上位替代, MCP 可选)
     deploy:
-      claude: true
+      ccswitch: true
   - name: web-reverse-iv8
     family: mirror
     path: deployable/web-reverse-iv8
@@ -1456,7 +1456,7 @@ deployable:
     domain: js
     note: iv8 补环境全链 skill(v9.33, HAR追踪→定位→反混淆→iv8环境→本地验证, 阶段门硬阻断; frontmatter 元数据滞留 v9.6)
     deploy:
-      claude: true
+      ccswitch: true
 
   - name: jsc-deobfuscator
     family: authored
@@ -1465,7 +1465,7 @@ deployable:
     domain: js
     note: V8 字节码静态反混淆(Python 脚本, bytenode 对抗)
     deploy:
-      claude: true
+      ccswitch: true
 
   - name: ruyipage-skill
     family: mirror
@@ -1475,7 +1475,7 @@ deployable:
     domain: web
     note: ruyiPage 官方 skill v1.2(BiDi 原生/人机化/指纹浏览器/反爬)
     deploy:
-      claude: true
+      ccswitch: true
   - name: reverse-skill-router
     family: mirror
     path: deployable/reverse-skill-router
@@ -1484,7 +1484,7 @@ deployable:
     domain: routing
     note: 路由总控基座(base/reverse-skill/skills/SKILL.md 组装: 路由执行契约+master-route.ps1+case-init+ops 门禁), 全部 symlink 指向 base 单一事实源
     deploy:
-      claude: true
+      ccswitch: true
 private:
   - name: ming-skills-router
     metaSystem: true
@@ -1493,229 +1493,229 @@ private:
     router: false   # 显式豁免：路由基础设施自身不进 DOMAIN_DEFS（check-skill 免报 W）
     note: "全局无副作用领域分流与配方装配中枢 (Domain Gate & Recipe Dispatcher)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: docs-core-paradigm
     path: private/engineering/docs-core-paradigm
     enabled: true
     note: "跨场景文档元规则 (Diataxis四体裁 + Nygard ADR + 第一事实源)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: docs-presentation-idiom
     path: private/engineering/docs-presentation-idiom
     enabled: true
     note: "GitHub文档视觉排版与去疲劳范式 (块动线 + 零前缀 + 读者分流)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: obs-core-paradigm
     path: private/engineering/obs-core-paradigm
     enabled: true
     note: "跨场景可观测元规则 (宽结构化事件 + 相关ID + 脱敏红线)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: sec-core-paradigm
     path: private/engineering/sec-core-paradigm
     enabled: true
     note: "跨场景安全元规则 (运行时防御 + OWASP AST01~10 供应链)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: contract-core-paradigm
     path: private/engineering/contract-core-paradigm
     enabled: true
     note: "跨场景数据契约元规则 (只加不改义演进五条 + 宽容读取)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: config-core-paradigm
     path: private/engineering/config-core-paradigm
     enabled: true
     note: "跨场景配置归一化元规则 (十轴模型 + 组合解析 + 旗标生命周期 + 复杂度时钟)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: overlay-core-paradigm
     path: private/engineering/overlay-core-paradigm
     enabled: true
     note: "跨场景B级质量属性横切不变量 (性能/隐私/韧性/成本/兼容/无障碍)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: arch-core-paradigm
     path: private/engineering/arch-core-paradigm
     enabled: true
     note: "跨场景架构边界元规则 (六边形/Ports-Adapters 最小形态 + 迁移接缝)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: vendor-paradigm
     path: private/engineering/vendor-paradigm
     enabled: true
     note: "第三方内容入库范式元规则 (清单即锁/内容即产物/孤本例外 + vendored-vs-物化判据 + 物化器契约)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: review-core-paradigm
     path: private/engineering/review-core-paradigm
     enabled: true
     note: "跨场景评审元规则 (消融实验摘除存活性 + 独立上下文critic + 人筛回喂 + 证据收尾)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: explore-core-paradigm
     path: private/engineering/explore-core-paradigm
     enabled: true
     note: "跨场景发散探索元规则 (升降模型 + VS尾部采样/异策略路径/形态学矩阵/premortem/ToT 算子 + disagree续探agree进承诺判据)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: depth-core-paradigm
     path: private/engineering/depth-core-paradigm
     enabled: true
     note: "审计下潜深度裁决元规则 (动态序贯下潜 + 静态先验绊线回推 + 可行动性停止判据)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: mutation-safety-paradigm
     path: private/engineering/mutation-safety-paradigm
     enabled: true
     note: "变更安全范式 (L0-L5 阶梯 + dry-run 三戒律同路径/输出同构/零副作用 + 变更类三轴声明 + 反模式册)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: classify-core-paradigm
     path: private/engineering/classify-core-paradigm
     enabled: true
     note: "分类轴设计元规则 (分面优于鸽笼 + 决策分化律 + 封闭词表 + 豁免排气阀 + 三平面分离 + 容忍分层 + 宿主表达力光谱)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: compiler-pipeline-paradigm
     path: private/engineering/compiler-pipeline-paradigm
     enabled: true
     note: "编译器流水线九段契约元规则 (lex→codegen 段间契约 + 质量vs编译延迟取舍 + 抽象机选型 + ABI边界)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: ming-l-paradigm
     metaSystem: true
     path: private/engineering/ming-l-paradigm
     enabled: true
     note: "项目结构域分层元规则 (Ming-L 九域全景 + 粒度分级 + 候审档机制)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: ming-skill-forge
     metaSystem: true
     path: private/engineering/ming-skill-forge
     enabled: true
     note: "技能包创作与修订元规则 (渐进披露预算 + 触发面工艺 + 注册路由接线 + check-skill 硬门控)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: ming-boundary
     metaSystem: true
     path: private/engineering/ming-boundary
     enabled: true
     note: "项目图事实提取与边界契约断言组件 (ADR-0008: JSONL 事实 + 声明式 forbidden/allowed/required 契约)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: ming-experience-direction
     metaSystem: true
     path: private/engineering/ming-experience-direction
     enabled: true
     note: "体验导演式设计流水线元规则 (文档阶梯 + 宪法约束源 + 叙事主干 + 六门过审 + 媒介映射预算)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: antibot-fingerprint-paradigm
     path: private/antibot-fingerprint-paradigm
     enabled: true
     note: "反爬指纹对抗分层知识库 (JA3/JA4+h2+TCP/IP+JS一致性+判定引擎形态+组件选型)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: blog-content
     path: private/blog-content
     enabled: true
     router: false   # 显式豁免：直接点名使用，不进 DOMAIN_DEFS（check-skill 免报 W）
     note: 博客文章全生命周期规范(模板/frontmatter/命名/发布流程, 配 blog-tui+blog-web 生态)
     deploy:
-      claude: true
+      ccswitch: true
   - name: ui-oracle-protocol
     path: private/ui-oracle-protocol
     enabled: true
     note: 自研: UI 控件自动化作为协议逆向 oracle(时间戳对齐+流量窗口切片+重放判官), 配 timestamper.py
     deploy:
-      claude: true
+      ccswitch: true
   - name: xfqtrace-kit
     path: private/xfqtrace-kit
     enabled: true
     note: xfqtrace v2.2 skill 入口文档(pip 包 xfqtrace-skills 公开); 工具本体与 recipe 载荷本地外置不入仓
     deploy:
-      claude: true
+      ccswitch: true
   - name: ui-design-paradigms
     path: private/ui-design-paradigms
     enabled: true
     note: "全球主流 UI/UX 设计范式知识库"
     deploy:
-      claude: true
+      ccswitch: true
   - name: testing-core-oracle
     path: private/engineering/testing/testing-core-oracle
     enabled: true
     note: "测试体系中枢元规则与独立判定律 (Testing Oracle)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: testing-scenario-embed-ffi
     path: private/engineering/testing/testing-scenario-embed-ffi
     enabled: true
     note: "嵌入式与跨语言 FFI (Rust+V8+PyO3+JS补丁) 测试契约"
     deploy:
-      claude: true
+      ccswitch: true
   - name: testing-workflow-spec
     path: private/engineering/testing/testing-workflow-spec
     enabled: true
     note: "规格驱动开发 (Spec-Driven/BDD) 工作流驱动"
     deploy:
-      claude: true
+      ccswitch: true
   - name: testing-workflow-characterize
     path: private/engineering/testing/testing-workflow-characterize
     enabled: true
     note: "表征测试与 Golden 现状锁定 (Characterization Testing) 工作流驱动"
     deploy:
-      claude: true
+      ccswitch: true
   - name: testing-property-mutation
     path: private/engineering/testing/testing-property-mutation
     enabled: true
     note: "性质测试与变异测试杀伤力审计 (Property & Mutation Testing)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: testing-rust-idiom
     path: private/engineering/testing/testing-rust-idiom
     enabled: true
     note: "Rust 地道测试机制规范 (Testing Rust Idiomatic)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: testing-python-idiom
     path: private/engineering/testing/testing-python-idiom
     enabled: true
     note: "Python 地道测试机制规范 (Testing Python Idiomatic)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: testing-js-idiom
     path: private/engineering/testing/testing-js-idiom
     enabled: true
     note: "JS/TS 地道测试机制规范 (Testing JS/TS Idiomatic)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: testing-go-idiom
     path: private/engineering/testing/testing-go-idiom
     enabled: true
     note: "Go 地道测试机制规范 (Testing Go Idiomatic)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: testing-scenario-cli
     path: private/engineering/testing/testing-scenario-cli
     enabled: true
     note: "CLI 命令行与脚本工具测试场景规范 (Testing CLI Scenario)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: testing-scenario-scraper
     path: private/engineering/testing/testing-scenario-scraper
     enabled: true
     note: "数据采集与管道清洗测试场景规范 (Testing Scraper Scenario)"
     deploy:
-      claude: true
+      ccswitch: true
   - name: ming-distiller
     metaSystem: true
     path: private/ming-distiller
     enabled: true
     note: "项目级经验沉淀与检索双模态入口 (distill/ 索引+懒加载, skill库晋升走 _proposals staging)"
     deploy:
-      claude: true
+      ccswitch: true
 
   - name: host-tools
     kind: tool
@@ -1743,13 +1743,13 @@ private:
     enabled: true
     note: "信号位错审计协议：注释/TODO/抑制/祈使句/化石句五面扫描+五病型处置+收割晋升门禁提案"
     deploy:
-      claude: true
+      ccswitch: true
   - name: repo-presentation
     path: private/engineering/repo-presentation
     enabled: true
     note: "仓库呈现与版本通道规范元规则——pre-release 通道判据（alpha/beta/rc 冻结面与升档浸泡）、Semver/PEP440 双轨映射与版本字段漂移检测、README 组件选型与隐私分层（shields/VHS/asciinema 等）、GFM 高级件（details/Alert/mermaid/双主题）、CLI banner/wordmark 触发与抑制契约。当版本发布准备、pre-release 通道判定、README/仓库美化、徽章选型、CLI 标识输出设计时使用。触发词：版本号、alpha、beta、rc、pre-release、PEP 440、semver、README 美化、徽章、shields、mermaid、details 折叠、cli banner、wordmark、版本通道。不适用：CHANGELOG 写作、CI 徽章配置、PyPI 发布流程。"
     deploy:
-      claude: true
+      ccswitch: true
 
 # ── 候审区 (candidates) ──────────────────────────────────────────────
 # 包提案登记处：非实体包（无 SKILL.md），一进证据开市、二进证据触发毕业。

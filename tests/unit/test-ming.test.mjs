@@ -39,7 +39,7 @@ function mkFixture({ meta = '    metaSystem: true', skillMd = true, umbrella = U
   const packDir = path.join(root, 'private', 'ming-foo');
   fs.mkdirSync(packDir, { recursive: true });
   if (skillMd) fs.writeFileSync(path.join(packDir, 'SKILL.md'), '---\nname: ming-foo\n---\n');
-  const entry = `  - name: ming-foo\n${meta ? meta + '\n' : ''}    path: private/ming-foo\n    enabled: true\n    deploy:\n      claude: true\n`;
+  const entry = `  - name: ming-foo\n${meta ? meta + '\n' : ''}    path: private/ming-foo\n    enabled: true\n    deploy:\n      ccswitch: true\n`;
   fs.writeFileSync(path.join(root, 'registry.yaml'), `private:\n${entry}candidates:\n`);
   return root;
 }
@@ -184,9 +184,9 @@ export function run() {
     fs.mkdirSync(path.join(targetDir, 'base-mod-x'), { recursive: true });   // base modules 映射声明件
     fs.mkdirSync(path.join(root, '.ming', 'lattice'), { recursive: true });
     fs.writeFileSync(path.join(root, 'registry.yaml'),
-      `targets:\n  claude: "${targetDir.replace(/\\/g, '/')}"\n` +
-      `base:\n  - name: base-repo\n    modules:\n      base-mod-x: [claude]\n      base-mod-y: [claude]\n` +
-      `private:\n  - name: unit-a\n    deploy:\n      claude: true\n  - name: unit-b\n    deploy:\n      claude: true\n  - name: unit-c\n    deploy:\n      claude: true\n` +
+      `targets:\n  ccswitch: "${targetDir.replace(/\\/g, '/')}"\n` +
+      `base:\n  - name: base-repo\n    modules:\n      base-mod-x: [ccswitch]\n      base-mod-y: [ccswitch]\n` +
+      `private:\n  - name: unit-a\n    deploy:\n      ccswitch: true\n  - name: unit-b\n    deploy:\n      ccswitch: true\n  - name: unit-c\n    deploy:\n      ccswitch: true\n` +
       `  - name: unit-d\n    deploy:\n      codx: true\n`);   // codx 错拼客户名——应 warn 不静默
 
     const w = sh(LEDGER, ['--write'], { LEDGER_ROOT: root });
@@ -195,8 +195,8 @@ export function run() {
     const ledgerPath = path.join(root, '.ming', 'lattice', 'state', 'deploy-ledger.json');
     assert.ok(fs.existsSync(ledgerPath), '账本应落 state/');
     const led = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
-    assert.equal(led.clients.claude.entries.length, 3);
-    assert.ok(led.clients.claude.expected.includes('base-mod-x'),
+    assert.equal(led.clients.ccswitch.entries.length, 3);
+    assert.ok(led.clients.ccswitch.expected.includes('base-mod-x'),
       'base modules 映射应并入 expected');
 
     const clean = sh(LEDGER, ['--check'], { LEDGER_ROOT: root });

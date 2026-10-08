@@ -198,7 +198,7 @@ export function run() {
     const brokenRegistryFile = path.join(brokenRegistryDir, 'registry.yaml');
     fs.writeFileSync(brokenRegistryFile, `version: 1
 targets:
-  claude: ${JSON.stringify(path.join(brokenRegistryDir, 'targets'))}
+  ccswitch: ${JSON.stringify(path.join(brokenRegistryDir, 'targets'))}
 base: []
 vertical: []
 deployable: []
@@ -207,7 +207,7 @@ private:
     path: private/nonexistent-ghost-skill
     enabled: true
     deploy:
-      claude: true
+      ccswitch: true
 `);
     const syncGhostEventFile = path.join(temp, 'sync-ghost-events.ndjson');
     const syncGhostResult = spawnSync('pwsh', [
@@ -237,7 +237,7 @@ private:
     const invalidTargetRegistry = path.join(invalidTargetDir, 'registry.yaml');
     fs.writeFileSync(invalidTargetRegistry, `version: 1
 targets:
-  claude: ${JSON.stringify(path.join(invalidTargetDir, 'targets'))}
+  ccswitch: ${JSON.stringify(path.join(invalidTargetDir, 'targets'))}
 base: []
 vertical: []
 deployable: []

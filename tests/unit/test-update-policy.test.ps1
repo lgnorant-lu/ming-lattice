@@ -8,7 +8,7 @@ New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 
 $fail = 0
 function Write-Fixture($ttl) {
-    $body = "targets:`n  claude: `%USERPROFILE%`/.claude/skills`nvertical: []`ndeployable: []`nprivate: []`ncandidates:`n"
+    $body = "targets:`n  ccswitch: `%USERPROFILE%`/.claude/skills`nvertical: []`ndeployable: []`nprivate: []`ncandidates:`n"
     if ($null -ne $ttl) { $body += "updatePolicy:`n  ttlDays: $ttl`n" }
     $f = Join-Path $tmp "reg-$([guid]::NewGuid().ToString('N')).yaml"
     [IO.File]::WriteAllText($f, $body)

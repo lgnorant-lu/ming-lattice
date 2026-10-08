@@ -136,7 +136,7 @@ const regEntry =
   `    enabled: true\n` +
   `    note: "${note}"\n` +
   `    deploy:\n` +
-  `      claude: true\n`;
+  `      ccswitch: true\n`;
 
 if (dryRun) {
   for (const rel of Object.keys(files)) console.log(`[dry-run] 将写 ${path.join(destDir, rel)} (${files[rel].length} 字符)`);
@@ -166,7 +166,7 @@ if (eCount) {
 // （曾咬过：插在 candidates 横幅注释后→lite 解析器漏读）。
 if (register) {
   const uargs = [UPSERT, 'add', '--section', 'private', '--name', name,
-    '--path', `${under}/${name}`, '--note', note, '--deploy', 'claude'];
+    '--path', `${under}/${name}`, '--note', note, '--deploy', 'ccswitch'];
   if (name.startsWith('ming-')) uargs.push('--metaSystem');
   const r = spawnSync(process.execPath, uargs, {
     encoding: 'utf8', timeout: 60_000,
@@ -191,7 +191,7 @@ if (name.startsWith('ming-')) {
 console.log(`\n接线清单（forge §5 三处不可少）：`);
 console.log(register
   ? `  1. registry.yaml private 区条目已自动登记（--register）✓`
-  : `  1. registry.yaml private 区加条目: name=${name} path=${under}/${name} enabled/note/deploy.claude${name.startsWith('ming-') ? '/metaSystem' : ''}（或用 --register 自动登记）`);
+  : `  1. registry.yaml private 区加条目: name=${name} path=${under}/${name} enabled/note/deploy.ccswitch${name.startsWith('ming-') ? '/metaSystem' : ''}（或用 --register 自动登记）`);
 console.log(`  2. scripts/build-router-manifest.mjs DOMAIN_DEFS: 域 skills 列表 + skillTriggers 关键词 → node 重建 + --check`);
 console.log(`  3. ${under === 'private/engineering' ? 'private/engineering/README.md 资产图 + Compose 公式' : '对应目录 README 资产图'}`);
 console.log(`  4. node check-skill.mjs ${path.relative(REPO_ROOT, destDir)} ——接线后复检应为 E=0`);
