@@ -1,4 +1,4 @@
-# ming-skills-router
+# ming-lattice
 
 Ming 的 Agent 技能集散与工程中枢（Skills Hub & Monorepo）：统一管理测试规范族、逆向与安全知识库、垂直参考生态与部署分发，具备确定性配方路由（Skill Router）、离线优先供应链治理与分层自动化门禁流水线。
 

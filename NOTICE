@@ -1,0 +1,26 @@
+ming-lattice
+Copyright 2026 ming-lattice contributors
+
+This product includes content developed by the ming-lattice project
+(https://github.com/lgnorant-lu/ming-lattice).
+
+== Third-party content ==
+
+The following vendored/orphaned components are redistributed under their
+respective upstream licenses. Provenance ledger: registry.yaml
+(repo + 40-char pin + acquiredAt per entry).
+
+- base/reverse-skill — git submodule tracking upstream
+  https://github.com/zhaoxuya520/reverse-skill (with documented local
+  patches; see AGENTS.md)
+- vertical/ reference entries — index-only materialization via
+  scripts/fetch.mjs; upstream bytes are NOT committed except declared
+  sourceGone orphans:
+    - ruyipage-js / ruyipage-go / ruyipage-dev / ruyi-mcp
+      (upstream: github.com/LoseNine, removed by author; retained as
+      sourceGone orphans per vendor-paradigm governance)
+- deployable/ wrapper skills — SKILL.md facades pointing at vertical
+  sources; upstream licenses apply to the underlying content
+
+All other original content in this repository is licensed under the
+Apache License, Version 2.0 (see LICENSE).

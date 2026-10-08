@@ -6,7 +6,7 @@ status: normative
 
 # Git Hooks 门禁与自动化流水线规范（Git Hooks Governance）
 
-本文档定义 `ming-skills` 仓库的 Git Hook 门禁体系规范：Hook 清单、检查项、分级策略、安装指引、跳过策略与跨平台兼容性约束。
+本文档定义 `ming-lattice` 仓库的 Git Hook 门禁体系规范：Hook 清单、检查项、分级策略、安装指引、跳过策略与跨平台兼容性约束。
 
 ---
 
@@ -145,7 +145,7 @@ node scripts/check-supply-chain.mjs --strict --check-freshness --refresh-sca-cac
 仓库根目录通过 [`.hooksrc`](../.hooksrc) 进行门禁等级配置：
 
 ```ini
-# .hooksrc — ming-skills Git Hook 分级配置
+# .hooksrc — ming-lattice Git Hook 分级配置
 requireCommitMsg=true   # 是否强制提交格式（恒为 true）
 emojiLevel=error        # error | warn | off（默认 error: 绝对禁止 Emoji）
 mojibakeLevel=error     # error | warn | off（默认 error: 绝对禁止乱码）

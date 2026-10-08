@@ -4,9 +4,9 @@ domain: meta
 status: normative
 ---
 
-# ming-skills 仓库工程、测试与治理规范总纲 (STANDARDS)
+# ming-lattice 仓库工程、测试与治理规范总纲 (STANDARDS)
 
-本文档是 `ming-skills` 作为独立主权技能中枢（Skills Hub & Monorepo）的**核心治理总纲**。所有自研技能开发、测试验证、上游生态吸收与提交发布必须严格遵守本文档所列标准。
+本文档是 `ming-lattice` 作为独立主权技能中枢（Skills Hub & Monorepo）的**核心治理总纲**。所有自研技能开发、测试验证、上游生态吸收与提交发布必须严格遵守本文档所列标准。
 
 ---
 

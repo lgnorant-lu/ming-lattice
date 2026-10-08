@@ -1,4 +1,4 @@
-# ming-skills 单一事实源 (Single Source of Truth) v1.1
+# ming-lattice 单一事实源 (Single Source of Truth) v1.1
 # sync.ps1 / update.ps1 / lint.ps1 均从此文件读取。修改部署/启用状态请只改此文件。
 #
 # v1.1 变更（全局版本管理设计）：
@@ -21,7 +21,7 @@
 #                 check-skill --all 豁免 SKILL.md 契约；新类别值先在此说明再使用）
 
 schemaVersion: "1.1"
-description: "ming-skills 单一事实源：源 → 本地路径 → 版本记录 → 部署目标"
+description: "ming-lattice 单一事实源：源 → 本地路径 → 版本记录 → 部署目标"
 
 updatePolicy:
   ttlDays: 7            # checkCache 有效天数; 有效期内 update.ps1 不发起网络请求
