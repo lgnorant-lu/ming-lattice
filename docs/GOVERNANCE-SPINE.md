@@ -246,7 +246,7 @@ review-signal-audit 祈使句面"机械化了吗"的对账表——每条散文�
 - evil-merge 检测——merge commit tree≠双亲干净合并=走私变更面(Glyndor workflow 先例)；当前线性史单人仓不适用，分叉协作启用时再立
 - 文档簇引用规则门（图内化的实例面）——外部先例已查实：需求追踪矩阵(DO-178C/ISO26262/NASA SWE-059: 双向链接+孤儿=finding+粒度声明式)、Diataxis 四象限交叉引用规则(how-to<->explanation 可互指不可混体)、contextlint(文档依赖图/孤儿/环检测)、nodex(typed edges: supersedes/implements/covers/references 固定词表+pre-commit 门)、defines-provenance(DEFINES/DEPENDS_ON 声明式溯源)、gno audit(只读审计+稳定 finding id+exit 0/4/5)。开放位=簇x簇允许边矩阵作为通用治理原语+提交时自动排除临时文件引用；机制层(文档图/孤儿/断链)全部有现成实现可借
 - L 中枢串联——主轴框架间插件式互联，明确过早仅留槽
-- 远端推送待授权——`ming-skills-router` 远端 URL 未给 + 推令未下；本地已全绿待推。配套：旧仓 `ming-skills` 删除缺 `delete_repo` scope（gh auth refresh 或 web UI）；备份 `skills-collection-pre-vendorindex.bundle`（179M，含改史前全量旧史）去留自定
+- ~~远端推送待授权~~——**已清偿**（2026-10-08）：命名谱定名 `ming-lattice` 建新仓推送全史；旧仓 `ming-skills-router` 与 `ming-skills` 均已 archive+指路碑（前者留改史前旧史链，删除待 `delete_repo` scope——gh auth refresh 或 web UI 一键收尾）；备份 `skills-collection-pre-vendorindex.bundle`（179M，含改史前全量旧史）去留自定
 - 三方盘点评估已做、裁决"暂不动"（2026-09-23）——硬依赖 8 仓（ctf-skills 98 链等）+ 孤本 4 必留；建议删候选 8：jadx-mcp-server/jadx-mcp-plugin（jadx CLI 本体已装+garlic 上位）、ida-claude-plugins/d810-ng/hrtng（IDA 不在链）、ghidra-mcp-lauriewired（未就绪）、awesome-re-mcp（自标过时）、burp-mcp-portswigger（自标不用）；待裁 6：x64dbg-mcp/apktool-mcp-server/wire-mcp/har-mcp/harvest-mcp/mcp-for-security（工具未就绪但域可能有用）。用户裁"暂都留"——记录防重审，重启动时以此清单为基线
 - birdview 实仓试用——候选仓（项目级经验沉淀双模态入口）待真实蒸馏循环实证，首选 blog-tui 场景
 - ~~TOOL-VERDICTS<->vertical 覆盖 diff~~——**已对账清偿**（2026-10-07：18 就绪/19 缺失
